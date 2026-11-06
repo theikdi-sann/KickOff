@@ -1,0 +1,14 @@
+node_modules/
+.expo/
+.next/
+out/
+dist/
+dist-web/
+build/
+*.log
+.env
+.env.local
+.DS_Store
+.expo-shared/
+coverage/
+.aider*

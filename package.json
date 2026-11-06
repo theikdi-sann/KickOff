@@ -1,0 +1,16 @@
+{
+  "name": "xclub",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "mobile": "npm run start --workspace @xclub/mobile",
+    "mobile:web": "npm run web --workspace @xclub/mobile",
+    "admin": "npm run dev --workspace @xclub/admin",
+    "typecheck": "npm run typecheck --workspace @xclub/shared && npm run typecheck --workspace @xclub/mobile && npm run typecheck --workspace @xclub/admin",
+    "build:admin": "npm run build --workspace @xclub/admin"
+  }
+}

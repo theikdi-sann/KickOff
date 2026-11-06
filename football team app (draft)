@@ -1,0 +1,28 @@
+football team app (ticket selling, item selling, team news, match results, coming match fixtures)
+    1. login/register
+    2. 2 user (customer and admin) mobile app for customer using react native and web dashboard for admin
+    3. user profile(customer)
+    3. for 1 team (for now)
+    4. choose seat zone for ticket
+    5. and choose the seat number in zone
+    6. we will use stripe payment
+    7. system will give digital ticket (contain match details, user info and qrcode for field entrance and seat own proof)
+
+
+additional :
+    1. fan loyalty/ member
+    2. access
+    3. gift
+
+
+constraints:
+Scope constraints:
+    1. No Fan member for now
+    2. Seasonal Ticket unavailable for now
+    3. Support only 1 club
+    4. One Payment Gateway only stripe
+
+Technical constraints:
+    1. Database and Server Hosting (limited concurrent users)
+    2. Project timeline: have to finish within semester timeframe
+    3. Offline handling: to process payment and read news
