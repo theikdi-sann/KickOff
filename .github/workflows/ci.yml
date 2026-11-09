@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node (P1-25 pins 22 LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install workspace deps
+        run: npm ci
+
+      - name: Typecheck + lint
+        run: npm run check
+
+      - name: Shared unit tests (Vitest)
+        run: npm run test --workspace @xclub/shared
+
+      - name: Start local Supabase stack
+        run: npx supabase start
+
+      - name: DB lint (empty until Phase 3 migrations)
+        run: npx supabase db lint
+
+      - name: DB tests (pgTAP; empty until Phase 3)
+        run: npx supabase test db
+
+      - name: Edge function type check
+        run: npm run functions:check
+
+      - name: Admin production build
+        run: npm run build:admin
