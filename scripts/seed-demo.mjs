@@ -70,7 +70,9 @@ async function api(path, { method = 'GET', body, prefer, key = serviceRoleKey } 
     throw new Error(`${method} ${path} → ${response.status}: ${text}`);
   }
   if (response.status === 204) return null;
-  return response.json();
+  const text = await response.text();
+  if (text.length === 0) return null;
+  return JSON.parse(text);
 }
 
 async function ensureUser(user) {
@@ -202,6 +204,7 @@ async function main() {
         qr_nonce: 'demo-nonce-1',
         status: 'valid',
         issued_at: now,
+        used_at: null,
       },
       {
         id: 'tkt-demo-used',
