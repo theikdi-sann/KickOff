@@ -92,7 +92,14 @@ export default function MfaSettingsPage() {
     setBusy(true);
     setError(null);
     try {
-      const { error: unenrollError } = await createClient().auth.mfa.unenroll({
+      const supabase = createClient();
+      const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assurance?.currentLevel !== "aal2") {
+        throw new Error(
+          "For security, sign out and sign back in (completing the code step) before disabling 2FA.",
+        );
+      }
+      const { error: unenrollError } = await supabase.auth.mfa.unenroll({
         factorId: verifiedFactorId,
       });
       if (unenrollError) throw unenrollError;
