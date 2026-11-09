@@ -232,21 +232,21 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 ### Phase 4 — Edge Function Core
 
-- [ ] `P4-01` · `supabase/functions/deno.json` **[M]** — add `test`/`lint` tasks and strict compiler options.
-- [ ] `P4-02` · `supabase/functions/_shared/config.ts` **[N]** — Zod-validated env; fail fast on missing secret.
-- [ ] `P4-03` · `supabase/functions/_shared/logger.ts` **[N]** — structured logger; redact `authorization`, `cookie`, `password`, `sig`, `service_role`.
-- [ ] `P4-04` · `supabase/functions/_shared/errors.ts` **[N]** — `AppError` + `toApiError` mapping Zod/Postgres/Stripe/unknown.
-- [ ] `P4-05` · `supabase/functions/_shared/http.ts` **[N]** — CORS allowlist, `ok()`, `fail()`, method guard, request id.
-- [ ] `P4-06` · `supabase/functions/_shared/validate.ts` **[N]** — `validateBody/Query/Params(schema)`.
-- [ ] `P4-07` · `supabase/functions/_shared/supabase.ts` **[N]** — service-role client + user-scoped client factory.
-- [ ] `P4-08` · `supabase/functions/_shared/auth.ts` **[N]** — `requireUser`, `requireAdmin` (checks `app_metadata.role`).
-- [ ] `P4-09` · `supabase/functions/_shared/hmac.ts` **[N]** — HMAC-SHA256 sign/verify, constant-time compare, base64url.
-- [ ] `P4-10` · `supabase/functions/_shared/stripe.ts` **[N]** — Stripe REST wrapper: create session, retrieve session, refund, construct webhook event.
-- [ ] `P4-11` · `supabase/functions/_shared/audit.ts` **[N]** — insert `audit_logs` with actor/action/metadata.
-- [ ] `P4-12` · `supabase/functions/_shared/rate-limit.ts` **[N]** — calls `consume_rate_limit` (`P3-36`) keyed by IP + action for login/scan/checkout.
-- [ ] `P4-13` · `supabase/functions/health/index.ts` **[N]** — `GET /health`, `GET /health/ready` (DB + Stripe reachability).
-- [ ] `P4-14` · `supabase/functions/tests/http.test.ts` **[N]** — envelope, CORS, method guard, error mapping.
-- [ ] `P4-15` · `supabase/functions/tests/hmac.test.ts` **[N]** — sign/verify/tamper/constant-time.
+- [x] `P4-01` · `supabase/functions/deno.json` **[M]** — add `test`/`lint` tasks and strict compiler options.
+- [x] `P4-02` · `supabase/functions/_shared/config.ts` **[N]** — Zod-validated env; fail fast on missing secret.
+- [x] `P4-03` · `supabase/functions/_shared/logger.ts` **[N]** — structured logger; redact `authorization`, `cookie`, `password`, `sig`, `service_role`.
+- [x] `P4-04` · `supabase/functions/_shared/errors.ts` **[N]** — `AppError` + `toApiError` mapping Zod/Postgres/Stripe/unknown.
+- [x] `P4-05` · `supabase/functions/_shared/http.ts` **[N]** — CORS allowlist, `ok()`, `fail()`, method guard, request id.
+- [x] `P4-06` · `supabase/functions/_shared/validate.ts` **[N]** — `validateBody/Query/Params(schema)`.
+- [x] `P4-07` · `supabase/functions/_shared/supabase.ts` **[N]** — service-role client + user-scoped client factory.
+- [x] `P4-08` · `supabase/functions/_shared/auth.ts` **[N]** — `requireUser`, `requireAdmin` (checks `app_metadata.role`).
+- [x] `P4-09` · `supabase/functions/_shared/hmac.ts` **[N]** — HMAC-SHA256 sign/verify, constant-time compare, base64url.
+- [x] `P4-10` · `supabase/functions/_shared/stripe.ts` **[N]** — Stripe REST wrapper: create session, retrieve session, refund, construct webhook event.
+- [x] `P4-11` · `supabase/functions/_shared/audit.ts` **[N]** — insert `audit_logs` with actor/action/metadata.
+- [x] `P4-12` · `supabase/functions/_shared/rate-limit.ts` **[N]** — calls `consume_rate_limit` (`P3-36`) keyed by IP + action for login/scan/checkout.
+- [x] `P4-13` · `supabase/functions/health/index.ts` **[N]** — `GET /health`, `GET /health/ready` (DB + Stripe reachability).
+- [x] `P4-14` · `supabase/functions/tests/http.test.ts` **[N]** — envelope, CORS, method guard, error mapping.
+- [x] `P4-15` · `supabase/functions/tests/hmac.test.ts` **[N]** — sign/verify/tamper/constant-time.
 
 ---
 
