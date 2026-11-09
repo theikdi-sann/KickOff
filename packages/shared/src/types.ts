@@ -1,8 +1,49 @@
-export type Role = 'customer' | 'admin';
-export type MatchStatus = 'upcoming' | 'completed' | 'live';
-export type TicketStatus = 'valid' | 'used' | 'void';
-export type OrderStatus = 'paid' | 'pending' | 'failed';
+/**
+ * Barrel for shared data shapes.
+ *
+ * Canonical types now live in `entities.ts` (database rows) and `dto.ts` (wire
+ * payloads). The camelCase interfaces below are the Phase A UI shapes; they are
+ * kept only until Phase 10 moves every screen onto DTOs.
+ */
+import type {
+  MatchStatus,
+  NewsCategory,
+  OrderStatus,
+  Role,
+  ScanResultCode,
+  SeatStatus,
+  TicketStatus,
+} from './entities';
 
+export type {
+  AppSettingRow,
+  AuditLogRow,
+  DevicePlatform,
+  DeviceTokenRow,
+  HomeAway,
+  IsoTimestamp,
+  MatchRow,
+  MatchStatus,
+  NewsCategory,
+  NewsItemRow,
+  OrderRow,
+  OrderSeatRow,
+  OrderStatus,
+  ProfileRow,
+  RateLimitRow,
+  Role,
+  ScanEventRow,
+  ScanResultCode,
+  SeatHoldRow,
+  SeatRow,
+  SeatStatus,
+  StripeEventRow,
+  TicketRow,
+  TicketStatus,
+} from './entities';
+export type * from './dto';
+
+/** @deprecated Phase A UI shape — migrate to `ProfileDto`. */
 export interface Profile {
   id: string;
   email: string;
@@ -13,6 +54,7 @@ export interface Profile {
   joinedAt: string;
 }
 
+/** @deprecated Phase A UI shape — migrate to `MatchDto`. */
 export interface Match {
   id: string;
   opponent: string;
@@ -28,6 +70,7 @@ export interface Match {
   accent: string;
 }
 
+/** @deprecated Phase A UI shape — migrate to `ZoneDto`. */
 export interface Zone {
   id: string;
   matchId: string;
@@ -39,8 +82,7 @@ export interface Zone {
   seatsPerRow: number;
 }
 
-export type SeatStatus = 'available' | 'sold' | 'held';
-
+/** @deprecated Phase A UI shape — migrate to `SeatDto`. */
 export interface Seat {
   id: string;
   zoneId: string;
@@ -50,17 +92,19 @@ export interface Seat {
   status: SeatStatus;
 }
 
+/** @deprecated Phase A UI shape — migrate to `NewsDto`. */
 export interface NewsItem {
   id: string;
   title: string;
   excerpt: string;
   body: string;
-  category: 'Club News' | 'Match Report' | 'Announcement';
+  category: NewsCategory;
   publishedAt: string;
   readMinutes: number;
   imageColors: [string, string];
 }
 
+/** @deprecated Phase A UI shape — migrate to `OrderSeatDto`. */
 export interface OrderSeat {
   ticketId: string;
   zoneId: string;
@@ -70,6 +114,7 @@ export interface OrderSeat {
   priceSatang: number;
 }
 
+/** @deprecated Phase A UI shape — migrate to `OrderDto`. */
 export interface Order {
   id: string;
   userId: string;
@@ -82,6 +127,7 @@ export interface Order {
   paymentRef: string;
 }
 
+/** @deprecated Phase A UI shape — migrate to `TicketDto`. */
 export interface Ticket {
   id: string;
   orderId: string;
@@ -103,19 +149,22 @@ export interface Ticket {
   qrPayload: string;
 }
 
+/** @deprecated Phase A UI shape — migrate to `ScanResultDto`. */
 export interface ScanResult {
   ok: boolean;
-  code: 'valid' | 'used' | 'invalid' | 'wrong_match';
+  code: ScanResultCode;
   title: string;
   message: string;
   ticket?: Ticket;
 }
 
+/** @deprecated Phase A auth shape — replace with Supabase session state (P5-11). */
 export interface DemoSession {
   profile: Profile;
   signedInAt: string;
 }
 
+/** @deprecated Phase A booking shape — replace with holds (P6-05). */
 export interface BookingSelection {
   matchId: string;
   zoneId: string;
