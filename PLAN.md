@@ -252,25 +252,25 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 ### Phase 5 — Identity & Access
 
-- [ ] `P5-01` · `supabase/migrations/0025_auth_triggers.sql` **[N]** — `handle_new_user` inserts profile; `admin` role helper; bootstrap admin seed.
-- [ ] `P5-02` · `supabase/functions/admin-users/index.ts` **[N]** — `GET /admin-users`, `PATCH /admin-users/:id`, self-demote → 409; admin only.
-- [ ] `P5-03` · `supabase/functions/delete-account/index.ts` **[N]** — soft-delete profile, revoke sessions, anonymize orders/tickets.
-- [ ] `P5-04` · `apps/admin/src/lib/auth.ts` **[N]** — `signIn`, `signOut`, `getSession`, `requireAdmin`.
-- [ ] `P5-05` · `apps/admin/src/lib/use-session.ts` **[N]** — session hook + redirect helper.
-- [ ] `P5-06` · `apps/admin/src/app/login/page.tsx` **[M]** — Supabase sign-in; demo fill from `NEXT_PUBLIC_DEMO_*`; no hardcoded credentials in code.
-- [ ] `P5-07` · `apps/admin/src/app/login/mfa/page.tsx` **[N]** — TOTP challenge for aal2.
-- [ ] `P5-08` · `apps/admin/src/app/dashboard/layout.tsx` **[M]** — session gate via `useSession`; keep nav UI.
-- [ ] `P5-09` · `apps/admin/src/app/dashboard/settings/mfa/page.tsx` **[N]** — enroll/verify/disable TOTP.
-- [ ] `P5-10` · `apps/mobile/src/lib/auth.ts` **[N]** — signUp/signIn/signOut/reset/update profile.
-- [ ] `P5-11` · `apps/mobile/src/lib/store.tsx` **[M]** — session-only store: `hydrated`, `profile`, `signIn`, `signUp`, `signOut`, `signInDemo`. Remove tickets/orders/purchase/takenSeatIds.
-- [ ] `P5-12` · `apps/mobile/src/app/(auth)/login.tsx` **[M]** — Supabase sign-in.
-- [ ] `P5-13` · `apps/mobile/src/app/(auth)/register.tsx` **[M]** — Supabase sign-up + auto-login.
-- [ ] `P5-14` · `apps/mobile/src/app/(auth)/forgot-password.tsx` **[N]** — email reset.
-- [ ] `P5-15` · `apps/mobile/src/app/(auth)/reset-password.tsx` **[N]** — deep-link token + new password.
-- [ ] `P5-16` · `apps/admin/src/lib/queries/users.ts` **[N]** — `useUsers`, `useUpdateUser`.
-- [ ] `P5-17` · `apps/admin/src/app/dashboard/users/page.tsx` **[N]** — user list, role filter, promote/demote.
-- [ ] `P5-18` · `apps/admin/e2e/auth.spec.ts` **[N]** — login, wrong password, MFA challenge, logout.
-- [ ] `P5-19` · `supabase/tests/rls-auth.test.sql` **[N]** — customer cannot read another profile/order; admin can.
+- [x] `P5-01` · `supabase/migrations/0026_auth_triggers.sql` **[N]** — `handle_new_user` inserts profile; `admin` role helper; bootstrap admin seed. (Renumbered from `0025` — `0025_rate_limits.sql` owns that slot.)
+- [x] `P5-02` · `supabase/functions/admin-users/index.ts` **[N]** — `GET /admin-users`, `PATCH /admin-users/:id`, self-demote → 409; admin only.
+- [x] `P5-03` · `supabase/functions/delete-account/index.ts` **[N]** — soft-delete profile, revoke sessions, anonymize orders/tickets.
+- [x] `P5-04` · `apps/admin/src/lib/auth.ts` **[N]** — `signIn`, `signOut`, `getSession`, `requireAdmin`.
+- [x] `P5-05` · `apps/admin/src/lib/use-session.ts` **[N]** — session hook + redirect helper.
+- [x] `P5-06` · `apps/admin/src/app/login/page.tsx` **[M]** — Supabase sign-in; demo fill from `NEXT_PUBLIC_DEMO_*`; no hardcoded credentials in code.
+- [x] `P5-07` · `apps/admin/src/app/login/mfa/page.tsx` **[N]** — TOTP challenge for aal2.
+- [x] `P5-08` · `apps/admin/src/app/dashboard/layout.tsx` **[M]** — session gate via `useSession`; keep nav UI.
+- [x] `P5-09` · `apps/admin/src/app/dashboard/settings/mfa/page.tsx` **[N]** — enroll/verify/disable TOTP.
+- [x] `P5-10` · `apps/mobile/src/lib/auth.ts` **[N]** — signUp/signIn/signOut/reset/update profile.
+- [x] `P5-11` · `apps/mobile/src/lib/store.tsx` **[M]** — session-only store: `hydrated`, `profile`, `signIn`, `signUp`, `signOut`, `signInDemo`. Remove tickets/orders/purchase/takenSeatIds.
+- [x] `P5-12` · `apps/mobile/src/app/(auth)/login.tsx` **[M]** — Supabase sign-in.
+- [x] `P5-13` · `apps/mobile/src/app/(auth)/register.tsx` **[M]** — Supabase sign-up + auto-login.
+- [x] `P5-14` · `apps/mobile/src/app/(auth)/forgot-password.tsx` **[N]** — email reset.
+- [x] `P5-15` · `apps/mobile/src/app/(auth)/reset-password.tsx` **[N]** — deep-link token + new password.
+- [x] `P5-16` · `apps/admin/src/lib/queries/users.ts` **[N]** — `useUsers`, `useUpdateUser`.
+- [x] `P5-17` · `apps/admin/src/app/dashboard/users/page.tsx` **[N]** — user list, role filter, promote/demote.
+- [x] `P5-18` · `apps/admin/e2e/auth.spec.ts` **[N]** — login, wrong password, MFA challenge, logout.
+- [x] `P5-19` · `supabase/tests/rls-auth.test.sql` **[N]** — customer cannot read another profile/order; admin can.
 
 ---
 
@@ -524,6 +524,23 @@ These are the only tasks allowed to touch more than one file in one commit:
 | **F-12** | Push provider: Expo Push Service or FCM/APNs direct? | `P10b-18` |
 
 **F-2 does not block Phases 0–6. Resolve before `P7-03`. F-9 before `P7-01`. F-10 before Phase 12.**
+
+### §F Decisions (recorded 2026-11-10)
+
+| # | Decision |
+|---|---|
+| F-2 | Used tickets are **non-refundable by default**. Admin override is allowed with a reason; every override writes an `audit_logs` entry (`refundOrderSchema.overrideUsedTickets`). |
+| F-3 | Resale/transfer is **out of scope for v1**. |
+| F-5 | Admin TOTP 2FA is **required in production**, optional in local/dev. |
+| F-6 | Prices are **VAT-inclusive**; receipts show the VAT breakdown, checkout adds nothing. |
+| F-7 | `KICKOFF_LOCK_MINUTES = 15` — no new online sales in the last 15 minutes before kick-off. |
+| F-9 | **Card only for MVP**; PromptPay is a post-MVP config change (Checkout path unchanged). |
+| F-10 | Supabase region: **Singapore (`ap-southeast-1`)** — permanent, set at project creation. |
+| F-11 | Receipts are **server-generated PDFs** stored in the `receipts` bucket. |
+| F-12 | Push uses the **Expo Push Service**. |
+
+Still open: **F-1** (Stripe live mode — before `P12-04`), **F-4** (gate-id shape — before `P8-01`), **F-8** (brand lock — before `P11-07/08`).
+
 
 ---
 
