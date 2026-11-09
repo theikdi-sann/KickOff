@@ -63,7 +63,7 @@ export interface ZoneRow {
 export interface SeatRow {
   id: string;
   zone_id: string;
-  row: string;
+  row_label: string;
   number: number;
   status: SeatStatus;
   created_at: IsoTimestamp;
@@ -72,6 +72,7 @@ export interface SeatRow {
 /** `public.seat_holds` (P3-06). Active when `released_at` is null. */
 export interface SeatHoldRow {
   id: string;
+  hold_group_id: string;
   seat_id: string;
   user_id: string;
   expires_at: IsoTimestamp;
@@ -101,7 +102,7 @@ export interface OrderSeatRow {
   seat_id: string;
   ticket_id: string | null;
   zone_name: string;
-  row: string;
+  row_label: string;
   number: number;
   price_satang: number;
   created_at: IsoTimestamp;
@@ -131,6 +132,7 @@ export interface ScanEventRow {
   gate_id: string;
   admin_id: string;
   idempotency_key: string;
+  undone_at: IsoTimestamp | null;
   created_at: IsoTimestamp;
 }
 
