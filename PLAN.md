@@ -191,42 +191,42 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 ### Phase 3 — Supabase Data Layer
 
-- [ ] `P3-01` · `supabase/migrations/0001_init.sql` **[N]** — extensions (`pgcrypto`, `pg_cron`, `pg_net`, `pgtap`), enums (`match_status`, `seat_status`, `order_status`, `ticket_status`, `scan_result`), `set_updated_at()`, and `public.is_admin()` helper reading `auth.jwt() -> 'app_metadata' ->> 'role'`.
-- [ ] `P3-02` · `supabase/migrations/0002_profiles.sql` **[N]** — `profiles` + `handle_new_user()` trigger on `auth.users`.
-- [ ] `P3-03` · `supabase/migrations/0003_matches.sql` **[N]** — `matches` + indexes on `kickoff_at`, `status`.
-- [ ] `P3-04` · `supabase/migrations/0004_zones.sql` **[N]** — `zones` + FK + price integer check.
-- [ ] `P3-05` · `supabase/migrations/0005_seats.sql` **[N]** — `seats` with `unique(zone_id, row, number)`.
-- [ ] `P3-06` · `supabase/migrations/0006_seat_holds.sql` **[N]** — `seat_holds` with `expires_at`, `released_at`, and a partial unique index on `seat_id` where `released_at is null`; indexes on `user_id`. **DoD:** no `now()` in index predicates.
-- [ ] `P3-07` · `supabase/migrations/0007_orders.sql` **[N]** — `orders`, `stripe_session_id` unique, status, amount check.
-- [ ] `P3-08` · `supabase/migrations/0008_order_seats.sql` **[N]** — `order_seats`, `ticket_id` unique, snapshot `price_satang`.
-- [ ] `P3-09` · `supabase/migrations/0009_tickets.sql` **[N]** — `tickets`, `qr_nonce` unique, status, used_at.
-- [ ] `P3-10` · `supabase/migrations/0010_scan_events.sql` **[N]** — `scan_events`, `raw_hash`, result, gate_id, admin_id, `idempotency_key unique`, created_at.
-- [ ] `P3-11` · `supabase/migrations/0011_news.sql` **[N]** — `news_items` + published index.
-- [ ] `P3-12` · `supabase/migrations/0012_audit_logs.sql` **[N]** — `audit_logs` with actor/action/entity/metadata.
-- [ ] `P3-13` · `supabase/migrations/0013_app_settings.sql` **[N]** — `app_settings` (`key` PK, `value jsonb`, `updated_at`, `updated_by`).
-- [ ] `P3-14` · `supabase/migrations/0014_device_tokens.sql` **[N]** — `device_tokens` (`token` unique, platform, user_id).
-- [ ] `P3-15` · `supabase/migrations/0015_stripe_events.sql` **[N]** — `stripe_events` (`id` PK, type, processed_at) for webhook idempotency.
-- [ ] `P3-16` · `supabase/migrations/0016_rls_catalog.sql` **[N]** — policies for profiles (own read/update), matches/zones/seats (public read, admin write), news (published public read, admin write).
-- [ ] `P3-17` · `supabase/migrations/0017_rls_commerce.sql` **[N]** — policies for orders/order_seats/tickets/seat_holds/device_tokens: own read; writes via service-role functions.
-- [ ] `P3-18` · `supabase/migrations/0018_rls_admin.sql` **[N]** — policies for admin reads of orders/tickets/scan_events/audit_logs and writes to app_settings; uses `public.is_admin()` from `P3-01`.
-- [ ] `P3-19` · `supabase/migrations/0019_hold_functions.sql` **[N]** — `create_hold(match_id, seat_ids[])` in one transaction: release expired holds, check max seats and kickoff lock, insert holds; unique-index conflict → `conflict`; `release_hold(id)` sets `released_at`.
-- [ ] `P3-20` · `supabase/migrations/0020_order_functions.sql` **[N]** — `create_order_from_hold(hold_id)` validates the active hold, creates a `pending` order + `order_seats`, and releases the hold; `expire_pending_orders()` cancels pending orders and releases seats; `mark_order_paid(order_id, session_id, payment_intent_id)` idempotently converts `order_seats` to tickets and marks seats sold.
-- [ ] `P3-21` · `supabase/migrations/0021_scan_functions.sql` **[N]** — `scan_ticket(ticket_id, gate_id, admin_id)` atomic update + `undo_scan(scan_event_id, admin_id)`.
-- [ ] `P3-22` · `supabase/migrations/0022_views.sql` **[N]** — `zone_availability` (seat held when active hold **or** pending order exists), `match_sales_summary`, `order_receipt_view`.
-- [ ] `P3-23` · `supabase/migrations/0023_storage.sql` **[N]** — `receipts` bucket + storage policies (customer own folder, admin all).
-- [ ] `P3-24` · `supabase/migrations/0024_cron.sql` **[N]** — `pg_cron` jobs: mark expired holds `released_at`, expire pending orders, and nightly kickoff-reminder dispatch via `pg_net`.
-- [ ] `P3-25` · `supabase/seed.sql` **[N]** — seed catalog only: matches, zones, seats, news, app settings; idempotent via `on conflict`. **DoD:** `supabase db reset` twice yields identical catalog counts.
-- [ ] `P3-26` · `packages/shared/src/database.types.ts` **[N]** — generated via `npm run db:types`. **DoD:** typecheck passes.
-- [ ] `P3-27` · `apps/admin/src/lib/supabase/client.ts` **[N]** — browser Supabase client with anon key.
-- [ ] `P3-28` · `apps/admin/src/lib/supabase/server.ts` **[N]** — `@supabase/ssr` server client with cookie adapter.
-- [ ] `P3-29` · `apps/admin/src/proxy.ts` + `server.ts` **[N] [ATOMIC]** — Next 16 Proxy convention (not `middleware.ts`): refresh session cookie and redirect `/dashboard` when unauthenticated.
-- [ ] `P3-30` · `apps/mobile/src/lib/supabase.ts` **[N]** — `@supabase/supabase-js` client with `detectSessionInUrl: false`, auto-refresh on app state.
-- [ ] `P3-31` · `apps/mobile/src/lib/storage.ts` **[N]** — chunked encrypted storage adapter for Supabase sessions using `expo-secure-store`.
-- [ ] `P3-32` · `packages/shared/src/mock.ts` **[M]** — mark deprecated; keep exports until Phase 10.
-- [ ] `P3-33` · `supabase/tests/constraints.test.sql` **[N]** — pgTAP: unique seat, price integer, status transitions.
-- [ ] `P3-34` · `scripts/seed-demo.mjs` **[N]** — create demo auth users via Supabase Admin API, then insert profiles, orders (`ord-demo-1`, `ord-demo-used`), and tickets (`tkt-demo-1`, `tkt-demo-used`) with exact IDs; idempotent. **DoD:** `npm run db:seed-demo` twice yields identical counts.
-- [ ] `P3-35` · `packages/shared/src/index.ts` **[M]** — export generated `Database` types after `P3-26`. **DoD:** `import type { Database } from '@xclub/shared'` compiles.
-- [ ] `P3-36` · `supabase/migrations/0025_rate_limits.sql` **[N]** — `rate_limits` table + `consume_rate_limit(key text, window_seconds int, max_hits int)` security-definer function. **DoD:** service role only; RLS enabled.
+- [x] `P3-01` · `supabase/migrations/0001_init.sql` **[N]** — extensions (`pgcrypto`, `pg_cron`, `pg_net`, `pgtap`), enums (`match_status`, `seat_status`, `order_status`, `ticket_status`, `scan_result`), `set_updated_at()`, and `public.is_admin()` helper reading `auth.jwt() -> 'app_metadata' ->> 'role'`.
+- [x] `P3-02` · `supabase/migrations/0002_profiles.sql` **[N]** — `profiles` + `handle_new_user()` trigger on `auth.users`.
+- [x] `P3-03` · `supabase/migrations/0003_matches.sql` **[N]** — `matches` + indexes on `kickoff_at`, `status`.
+- [x] `P3-04` · `supabase/migrations/0004_zones.sql` **[N]** — `zones` + FK + price integer check.
+- [x] `P3-05` · `supabase/migrations/0005_seats.sql` **[N]** — `seats` with `unique(zone_id, row, number)`.
+- [x] `P3-06` · `supabase/migrations/0006_seat_holds.sql` **[N]** — `seat_holds` with `expires_at`, `released_at`, and a partial unique index on `seat_id` where `released_at is null`; indexes on `user_id`. **DoD:** no `now()` in index predicates.
+- [x] `P3-07` · `supabase/migrations/0007_orders.sql` **[N]** — `orders`, `stripe_session_id` unique, status, amount check.
+- [x] `P3-08` · `supabase/migrations/0008_order_seats.sql` **[N]** — `order_seats`, `ticket_id` unique, snapshot `price_satang`.
+- [x] `P3-09` · `supabase/migrations/0009_tickets.sql` **[N]** — `tickets`, `qr_nonce` unique, status, used_at.
+- [x] `P3-10` · `supabase/migrations/0010_scan_events.sql` **[N]** — `scan_events`, `raw_hash`, result, gate_id, admin_id, `idempotency_key unique`, created_at.
+- [x] `P3-11` · `supabase/migrations/0011_news.sql` **[N]** — `news_items` + published index.
+- [x] `P3-12` · `supabase/migrations/0012_audit_logs.sql` **[N]** — `audit_logs` with actor/action/entity/metadata.
+- [x] `P3-13` · `supabase/migrations/0013_app_settings.sql` **[N]** — `app_settings` (`key` PK, `value jsonb`, `updated_at`, `updated_by`).
+- [x] `P3-14` · `supabase/migrations/0014_device_tokens.sql` **[N]** — `device_tokens` (`token` unique, platform, user_id).
+- [x] `P3-15` · `supabase/migrations/0015_stripe_events.sql` **[N]** — `stripe_events` (`id` PK, type, processed_at) for webhook idempotency.
+- [x] `P3-16` · `supabase/migrations/0016_rls_catalog.sql` **[N]** — policies for profiles (own read/update), matches/zones/seats (public read, admin write), news (published public read, admin write).
+- [x] `P3-17` · `supabase/migrations/0017_rls_commerce.sql` **[N]** — policies for orders/order_seats/tickets/seat_holds/device_tokens: own read; writes via service-role functions.
+- [x] `P3-18` · `supabase/migrations/0018_rls_admin.sql` **[N]** — policies for admin reads of orders/tickets/scan_events/audit_logs and writes to app_settings; uses `public.is_admin()` from `P3-01`.
+- [x] `P3-19` · `supabase/migrations/0019_hold_functions.sql` **[N]** — `create_hold(match_id, seat_ids[])` in one transaction: release expired holds, check max seats and kickoff lock, insert holds; unique-index conflict → `conflict`; `release_hold(id)` sets `released_at`.
+- [x] `P3-20` · `supabase/migrations/0020_order_functions.sql` **[N]** — `create_order_from_hold(hold_id)` validates the active hold, creates a `pending` order + `order_seats`, and releases the hold; `expire_pending_orders()` cancels pending orders and releases seats; `mark_order_paid(order_id, session_id, payment_intent_id)` idempotently converts `order_seats` to tickets and marks seats sold.
+- [x] `P3-21` · `supabase/migrations/0021_scan_functions.sql` **[N]** — `scan_ticket(ticket_id, gate_id, admin_id)` atomic update + `undo_scan(scan_event_id, admin_id)`.
+- [x] `P3-22` · `supabase/migrations/0022_views.sql` **[N]** — `zone_availability` (seat held when active hold **or** pending order exists), `match_sales_summary`, `order_receipt_view`.
+- [x] `P3-23` · `supabase/migrations/0023_storage.sql` **[N]** — `receipts` bucket + storage policies (customer own folder, admin all).
+- [x] `P3-24` · `supabase/migrations/0024_cron.sql` **[N]** — `pg_cron` jobs: mark expired holds `released_at`, expire pending orders, and nightly kickoff-reminder dispatch via `pg_net`.
+- [x] `P3-25` · `supabase/seed.sql` **[N]** — seed catalog only: matches, zones, seats, news, app settings; idempotent via `on conflict`. **DoD:** `supabase db reset` twice yields identical catalog counts.
+- [x] `P3-26` · `packages/shared/src/database.types.ts` **[N]** — generated via `npm run db:types`. **DoD:** typecheck passes.
+- [x] `P3-27` · `apps/admin/src/lib/supabase/client.ts` **[N]** — browser Supabase client with anon key.
+- [x] `P3-28` · `apps/admin/src/lib/supabase/server.ts` **[N]** — `@supabase/ssr` server client with cookie adapter.
+- [x] `P3-29` · `apps/admin/src/proxy.ts` + `server.ts` **[N] [ATOMIC]** — Next 16 Proxy convention (not `middleware.ts`): refresh session cookie and redirect `/dashboard` when unauthenticated.
+- [x] `P3-30` · `apps/mobile/src/lib/supabase.ts` **[N]** — `@supabase/supabase-js` client with `detectSessionInUrl: false`, auto-refresh on app state.
+- [x] `P3-31` · `apps/mobile/src/lib/storage.ts` **[N]** — chunked encrypted storage adapter for Supabase sessions using `expo-secure-store`.
+- [x] `P3-32` · `packages/shared/src/mock.ts` **[M]** — mark deprecated; keep exports until Phase 10.
+- [x] `P3-33` · `supabase/tests/constraints.test.sql` **[N]** — pgTAP: unique seat, price integer, status transitions.
+- [x] `P3-34` · `scripts/seed-demo.mjs` **[N]** — create demo auth users via Supabase Admin API, then insert profiles, orders (`ord-demo-1`, `ord-demo-used`), and tickets (`tkt-demo-1`, `tkt-demo-used`) with exact IDs; idempotent. **DoD:** `npm run db:seed-demo` twice yields identical counts.
+- [x] `P3-35` · `packages/shared/src/index.ts` **[M]** — export generated `Database` types after `P3-26`. **DoD:** `import type { Database } from '@xclub/shared'` compiles.
+- [x] `P3-36` · `supabase/migrations/0025_rate_limits.sql` **[N]** — `rate_limits` table + `consume_rate_limit(key text, window_seconds int, max_hits int)` security-definer function. **DoD:** service role only; RLS enabled.
 
 ---
 
