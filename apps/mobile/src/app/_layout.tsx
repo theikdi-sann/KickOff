@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { AppProvider, useApp } from '@/lib/store';
 import { MockCommerceProvider } from '@/lib/mock-commerce';
+import { QueryProvider } from '@/lib/queries/query-provider';
 import { colors } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -50,11 +51,13 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <AppProvider>
-      <MockCommerceProvider>
-        <StatusBar style="dark" />
-        <RootNavigator />
-      </MockCommerceProvider>
-    </AppProvider>
+    <QueryProvider>
+      <AppProvider>
+        <MockCommerceProvider>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </MockCommerceProvider>
+      </AppProvider>
+    </QueryProvider>
   );
 }
