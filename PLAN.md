@@ -169,23 +169,23 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 ### Phase 2 — Shared Contracts
 
-- [ ] `P2-01` · `packages/shared/src/http.ts` **[N]** — `ApiResponse<T>`, `ApiError`, `ErrorCode` union (`unauthorized|forbidden|not_found|conflict|validation|rate_limited|payment_required|internal`).
-- [ ] `P2-02` · `packages/shared/src/entities.ts` **[N]** — DB-shaped entities mirroring Supabase tables.
-- [ ] `P2-03` · `packages/shared/src/dto.ts` **[N]** — wire DTOs (`MatchDto`, `ZoneDto`, `SeatDto`, `HoldDto`, `OrderDto`, `TicketDto`, `NewsDto`, `ProfileDto`, `ScanResultDto`).
-- [ ] `P2-04` · `packages/shared/src/types.ts` **[M]** — keep as re-export shim for `entities` + `dto`; mark legacy shapes deprecated.
-- [ ] `P2-05` · `packages/shared/src/schemas.ts` **[N]** — Zod schemas for every DTO plus requests: `signInSchema`, `signUpSchema`, `createHoldSchema`, `createOrderSchema`, `scanPayloadSchema`, `adminCreateMatchSchema`, `adminUpdateZoneSchema`, `newsInputSchema`, `paginationSchema`, `profileUpdateSchema`, `changePasswordSchema`, `refundOrderSchema`, `settingsUpdateSchema`. **DoD:** `z.infer` equals DTO type (compile assertions).
-- [ ] `P2-06` · `packages/shared/src/money.ts` **[N]** — `bahtToSatang`, `satangToBaht`, `sumSatang`, `assertSatang`.
-- [ ] `P2-07` · `packages/shared/src/format.ts` **[N]** — move `formatTHB`, `formatMatchDate/Time`, `formatFullDate`, `formatShortDate`; add `formatMatchDateTimeRange` pinned to `Asia/Bangkok`.
-- [ ] `P2-08` · `packages/shared/src/theme.ts` + `index.ts` **[M] [ATOMIC]** — remove formatter implementations; keep `palette`, `typography`, `mockBadge`; update barrel to export `format`. **DoD:** existing `import { formatTHB } from '@xclub/shared'` still works.
-- [ ] `P2-09` · `packages/shared/src/constants.ts` **[N]** — `SEAT_HOLD_TTL_SECONDS=600`, `MAX_SEATS_PER_ORDER=8`, `QR_VERSION=2`, `KICKOFF_LOCK_MINUTES=15`, `PENDING_ORDER_TTL_MINUTES=15`, `GATE_UNDO_SECONDS=60`.
-- [ ] `P2-10` · `packages/shared/src/qr.ts` **[M]** — add `TicketQrPayloadV2 { v:2, tid, mid, oid, n, sig }`, `encodeTicketQrPayload`, `parseTicketQrPayload`; keep v1 helpers marked deprecated until Phase 10. **DoD:** v2 round-trip test.
-- [ ] `P2-11` · `packages/shared/src/mock.ts` **[M]** — change `minimumPrice` to return `0` when no zones match. **DoD:** no `POSITIVE_INFINITY`.
-- [ ] `P2-12` · `apps/mobile/src/app/match/[id].tsx` **[M]** — render "Not on sale" when a match has no zones / price is 0. **DoD:** completed fixture `m-ryg` renders safely.
-- [ ] `P2-13` · `packages/shared/src/__tests__/schemas.test.ts` **[N]** — ≥20 invalid-payload cases.
-- [ ] `P2-14` · `packages/shared/src/__tests__/qr.test.ts` **[N]** — v2 encode/parse, tamper detection shape, v1 rejection in v2 parser.
-- [ ] `P2-15` · `packages/shared/src/__tests__/money.test.ts` **[N]** — satang round-trip, integer enforcement.
-- [ ] `P2-16` · `packages/shared/src/__tests__/format.test.ts` **[N]** — Bangkok timezone assertions.
-- [ ] `P2-17` · `packages/shared/src/index.ts` **[M]** — barrel: `entities`, `dto`, `schemas`, `http`, `money`, `format`, `theme`, `constants`, `qr`, plus temporary `mock` re-export until `P10c-02`.
+- [x] `P2-01` · `packages/shared/src/http.ts` **[N]** — `ApiResponse<T>`, `ApiError`, `ErrorCode` union (`unauthorized|forbidden|not_found|conflict|validation|rate_limited|payment_required|internal`).
+- [x] `P2-02` · `packages/shared/src/entities.ts` **[N]** — DB-shaped entities mirroring Supabase tables.
+- [x] `P2-03` · `packages/shared/src/dto.ts` **[N]** — wire DTOs (`MatchDto`, `ZoneDto`, `SeatDto`, `HoldDto`, `OrderDto`, `TicketDto`, `NewsDto`, `ProfileDto`, `ScanResultDto`).
+- [x] `P2-04` · `packages/shared/src/types.ts` **[M]** — keep as re-export shim for `entities` + `dto`; mark legacy shapes deprecated.
+- [x] `P2-05` · `packages/shared/src/schemas.ts` **[N]** — Zod schemas for every DTO plus requests: `signInSchema`, `signUpSchema`, `createHoldSchema`, `createOrderSchema`, `scanPayloadSchema`, `adminCreateMatchSchema`, `adminUpdateZoneSchema`, `newsInputSchema`, `paginationSchema`, `profileUpdateSchema`, `changePasswordSchema`, `refundOrderSchema`, `settingsUpdateSchema`. **DoD:** `z.infer` equals DTO type (compile assertions).
+- [x] `P2-06` · `packages/shared/src/money.ts` **[N]** — `bahtToSatang`, `satangToBaht`, `sumSatang`, `assertSatang`.
+- [x] `P2-07` · `packages/shared/src/format.ts` **[N]** — move `formatTHB`, `formatMatchDate/Time`, `formatFullDate`, `formatShortDate`; add `formatMatchDateTimeRange` pinned to `Asia/Bangkok`.
+- [x] `P2-08` · `packages/shared/src/theme.ts` + `index.ts` **[M] [ATOMIC]** — remove formatter implementations; keep `palette`, `typography`, `mockBadge`; update barrel to export `format`. **DoD:** existing `import { formatTHB } from '@xclub/shared'` still works.
+- [x] `P2-09` · `packages/shared/src/constants.ts` **[N]** — `SEAT_HOLD_TTL_SECONDS=600`, `MAX_SEATS_PER_ORDER=8`, `QR_VERSION=2`, `KICKOFF_LOCK_MINUTES=15`, `PENDING_ORDER_TTL_MINUTES=15`, `GATE_UNDO_SECONDS=60`.
+- [x] `P2-10` · `packages/shared/src/qr.ts` **[M]** — add `TicketQrPayloadV2 { v:2, tid, mid, oid, n, sig }`, `encodeTicketQrPayload`, `parseTicketQrPayload`; keep v1 helpers marked deprecated until Phase 10. **DoD:** v2 round-trip test.
+- [x] `P2-11` · `packages/shared/src/mock.ts` **[M]** — change `minimumPrice` to return `0` when no zones match. **DoD:** no `POSITIVE_INFINITY`.
+- [x] `P2-12` · `apps/mobile/src/app/match/[id].tsx` **[M]** — render "Not on sale" when a match has no zones / price is 0. **DoD:** completed fixture `m-ryg` renders safely.
+- [x] `P2-13` · `packages/shared/src/__tests__/schemas.test.ts` **[N]** — ≥20 invalid-payload cases.
+- [x] `P2-14` · `packages/shared/src/__tests__/qr.test.ts` **[N]** — v2 encode/parse, tamper detection shape, v1 rejection in v2 parser.
+- [x] `P2-15` · `packages/shared/src/__tests__/money.test.ts` **[N]** — satang round-trip, integer enforcement.
+- [x] `P2-16` · `packages/shared/src/__tests__/format.test.ts` **[N]** — Bangkok timezone assertions.
+- [x] `P2-17` · `packages/shared/src/index.ts` **[M]** — barrel: `entities`, `dto`, `schemas`, `http`, `money`, `format`, `theme`, `constants`, `qr`, plus temporary `mock` re-export until `P10c-02`.
 
 ---
 
