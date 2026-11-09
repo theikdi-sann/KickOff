@@ -33,16 +33,20 @@ export default function RegisterScreen() {
       setError('Please enter a valid email address.');
       return;
     }
-    if (password.length < 6) {
-      setError('Your password must be at least 6 characters.');
+    if (password.length < 8) {
+      setError('Your password must be at least 8 characters.');
       return;
     }
     setError(null);
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    await signUp(fullName.trim(), email.trim(), password);
-    setLoading(false);
-    router.replace('/');
+    try {
+      await signUp(fullName.trim(), email.trim(), password);
+      router.replace('/');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not create your account.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
