@@ -15,6 +15,7 @@ import {
   formatFullDate,
   formatMatchTime,
   formatTHB,
+  minimumPrice,
   mockMatches,
   mockZones,
   zoneAvailability,
@@ -60,6 +61,17 @@ export default function MatchDetailScreen() {
               </View>
               <AppText variant="small" color={colors.muted} style={styles.centerText}>
                 This fixture has ended. Match report is available in the club feed.
+              </AppText>
+            </Card>
+          ) : zones.length === 0 ? (
+            <Card style={styles.notOnSaleCard}>
+              <View style={styles.notOnSaleIcon}>
+                <TicketIcon size={22} color={colors.muted} />
+              </View>
+              <AppText variant="h3">Not on sale</AppText>
+              <AppText variant="small" color={colors.muted} style={styles.centerText}>
+                Tickets for this fixture are not available yet. Check back when the club opens
+                seating.
               </AppText>
             </Card>
           ) : (
@@ -159,6 +171,8 @@ export default function MatchDetailScreen() {
 
 function MatchHero({ match, onBack }: { match: Match; onBack: () => void }) {
   const completed = match.status === 'completed';
+  const price = minimumPrice(match.id);
+  const onSale = price > 0;
   return (
     <LinearGradient
       colors={match.posterColors}
@@ -246,16 +260,16 @@ function MatchHero({ match, onBack }: { match: Match; onBack: () => void }) {
         <View style={styles.heroCta}>
           <View>
             <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.metaLabel}>
-              TICKETS FROM
+              {onSale ? 'TICKETS FROM' : 'TICKETS'}
             </AppText>
-            <AppText variant="h2" color={colors.accent}>
-              {formatTHB(Math.min(...mockZones.filter((z) => z.matchId === match.id).map((z) => z.priceSatang)))}
+            <AppText variant="h2" color={onSale ? colors.accent : '#FFFFFF'}>
+              {onSale ? formatTHB(price) : 'Not on sale'}
             </AppText>
           </View>
           <View style={styles.availablePill}>
-            <View style={styles.availableDot} />
+            <View style={[styles.availableDot, !onSale && { backgroundColor: colors.muted }]} />
             <AppText variant="caption" color="#FFFFFF" style={styles.availableText}>
-              SEATS AVAILABLE
+              {onSale ? 'SEATS AVAILABLE' : 'COMING SOON'}
             </AppText>
           </View>
         </View>
@@ -491,6 +505,15 @@ const styles = StyleSheet.create({
   standText: { fontSize: 7, letterSpacing: 0.5 },
   mapNote: { fontSize: 10, lineHeight: 15, marginTop: 9 },
   resultCard: { padding: 20, alignItems: 'center', gap: 12 },
+  notOnSaleCard: { padding: 20, alignItems: 'center', gap: 10 },
+  notOnSaleIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   resultRow: { flexDirection: 'row', alignItems: 'center', gap: 22 },
   score: { fontSize: 44, lineHeight: 48 },
   centerText: { textAlign: 'center' },
