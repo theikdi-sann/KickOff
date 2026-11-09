@@ -26,3 +26,13 @@ Technical constraints:
     1. Database and Server Hosting (limited concurrent users)
     2. Project timeline: have to finish within semester timeframe
     3. Offline handling: to process payment and read news
+
+
+additional:
+  1. mini game for weekly gift for members
+      # ranking system included
+      # customer royalty and rentention
+  2. Replay previous matches
+  3. Watch Live (price)
+
+
