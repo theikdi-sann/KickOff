@@ -1,3 +1,8 @@
+/**
+ * @deprecated Phase A mock data layer. Kept only until every screen moves onto
+ * Supabase (P10c-02). `npm run check:no-mocks` fails while app sources import
+ * anything from this module.
+ */
 import type { Match, NewsItem, Order, Seat, Ticket, Zone } from './types';
 import { palette } from './theme';
 import { buildTicketQr } from './qr';
@@ -29,6 +34,7 @@ const makeMatch = (
   ...extra,
 });
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export const mockMatches: Match[] = [
   makeMatch('m-bkk', 'Bangkok Rovers', 'BKR', '2026-11-14T18:00:00+07:00', ['#0B6B3A', '#052E1A'], '#F4C430'),
   makeMatch('m-cmi', 'Chiang Mai FC', 'CMI', '2026-11-21T19:30:00+07:00', ['#065F46', '#022C22'], '#34D399'),
@@ -76,6 +82,7 @@ const zoneTemplates = [
   },
 ] as const;
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export const mockZones: Zone[] = mockMatches
   .filter((match) => match.status === 'upcoming')
   .flatMap((match) =>
@@ -99,6 +106,7 @@ function hash(input: string): number {
   return value;
 }
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export function buildSeatMap(zone: Zone): Seat[] {
   const seats: Seat[] = [];
   for (const row of zone.rows) {
@@ -118,11 +126,13 @@ export function buildSeatMap(zone: Zone): Seat[] {
   return seats;
 }
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export function seatsForZone(zoneId: string): Seat[] {
   const zone = mockZones.find((item) => item.id === zoneId);
   return zone ? buildSeatMap(zone) : [];
 }
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export function zoneAvailability(zone: Zone): { available: number; total: number } {
   const seats = buildSeatMap(zone);
   return {
@@ -131,12 +141,14 @@ export function zoneAvailability(zone: Zone): { available: number; total: number
   };
 }
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export function minimumPrice(matchId: string): number {
   const zones = mockZones.filter((zone) => zone.matchId === matchId);
   if (zones.length === 0) return 0;
   return zones.reduce((min, zone) => Math.min(min, zone.priceSatang), zones[0].priceSatang);
 }
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export const mockNews: NewsItem[] = [
   {
     id: 'n-matchday',
@@ -180,6 +192,7 @@ export const mockNews: NewsItem[] = [
   },
 ];
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export const demoCustomer = {
   id: 'u-fan',
   email: 'fan@xclub.app',
@@ -190,6 +203,7 @@ export const demoCustomer = {
   joinedAt: '2026-08-12T09:00:00+07:00',
 };
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export const demoAdmin = {
   id: 'u-admin',
   email: 'admin@xclub.app',
@@ -200,6 +214,7 @@ export const demoAdmin = {
   joinedAt: '2026-01-05T09:00:00+07:00',
 };
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export const seedOrders: Order[] = [
   {
     id: 'ord-demo-1',
@@ -282,6 +297,7 @@ const usedTicketBase: Omit<Ticket, 'qrPayload'> = {
   usedAt: '2026-10-25T17:42:00+07:00',
 };
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export const seedTickets: Ticket[] = [
   {
     ...seedTicketBase,
@@ -293,8 +309,10 @@ export const seedTickets: Ticket[] = [
   },
 ];
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export const demoProfile = demoCustomer;
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export function brandGradient(index = 0): [string, string] {
   const presets: [string, string][] = [
     ['#0B6B3A', '#041B10'],
@@ -305,6 +323,7 @@ export function brandGradient(index = 0): [string, string] {
   return presets[index % presets.length];
 }
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export function initialsFor(name: string): string {
   return name
     .split(' ')
@@ -314,4 +333,5 @@ export function initialsFor(name: string): string {
     .join('');
 }
 
+/** @deprecated Phase A mock data — removed in P10c-02. */
 export const zoneColorFallback = palette.primary;
