@@ -1,5 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import { createClient, processLock } from '@supabase/supabase-js';
+import type { Database } from '@xclub/shared';
 import { AppState, Platform } from 'react-native';
 import { secureStorage } from './storage';
 
@@ -12,7 +13,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: secureStorage,
     autoRefreshToken: true,

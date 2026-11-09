@@ -1,3 +1,4 @@
+import type { Database } from '@xclub/shared';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
@@ -21,7 +22,7 @@ export async function createClient() {
   const cookieStore = await cookies();
   const { url, anonKey } = requireEnv();
 
-  return createServerClient(url, anonKey, {
+  return createServerClient<Database>(url, anonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();

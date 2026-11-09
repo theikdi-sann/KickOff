@@ -1,5 +1,6 @@
 'use client';
 
+import type { Database } from '@xclub/shared';
 import { createBrowserClient } from '@supabase/ssr';
 
 function requireEnv() {
@@ -16,5 +17,5 @@ function requireEnv() {
 /** Browser Supabase client (anon key only; RLS enforces access). */
 export function createClient() {
   const { url, anonKey } = requireEnv();
-  return createBrowserClient(url, anonKey);
+  return createBrowserClient<Database>(url, anonKey);
 }

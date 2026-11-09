@@ -127,7 +127,7 @@ export async function updateProfile(input: {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) throw new Error('Not signed in');
 
-  const patch: Record<string, unknown> = {};
+  const patch: { full_name?: string; phone?: string | null } = {};
   if (input.fullName !== undefined) patch.full_name = input.fullName;
   if (input.phone !== undefined) patch.phone = input.phone;
 
