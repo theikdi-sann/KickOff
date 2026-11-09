@@ -71,6 +71,7 @@ const PG_CODE_MAP: Record<string, ErrorCode> = {
   "22023": "validation", // invalid_parameter_value
   "42501": "forbidden", // insufficient_privilege
   P0002: "not_found", // no_data_found
+  PGRST116: "not_found", // PostgREST: 0 rows for .single()
   P0001: "conflict", // raise_exception
 };
 
@@ -96,6 +97,12 @@ function fromPostgrest(error: { code: string; message: string }): MappedError {
 
 function fromStripe(error: Record<string, unknown>): MappedError {
   const type = typeof error.type === "string" ? error.type : "";
+  if (type === "StripeSignatureVerificationError") {
+    return {
+      status: 400,
+      error: { code: "unauthorized", message: "Invalid webhook signature" },
+    };
+  }
   if (type === "StripeCardError") {
     return {
       status: 402,
