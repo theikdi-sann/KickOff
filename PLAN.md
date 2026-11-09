@@ -138,32 +138,32 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 ### Phase 1 — Foundations & Tooling
 
-- [ ] `P1-01` · `package.json` (root) **[M]** — add `lint`, `test`, `check`, `check:no-mocks`, `db:start`, `db:stop`, `db:reset`, `db:seed-demo`, `db:types`, `db:test`, `functions:serve`, `functions:check`, `dev:admin`, `dev:mobile`, `build:admin`. **DoD:** `npm run check` resolves.
-- [ ] `P1-02` · `tsconfig.base.json` (root) **[N]** — strict, `moduleResolution: bundler`, path aliases `@xclub/shared`. **DoD:** all workspaces can extend it.
-- [ ] `P1-03` · `apps/admin/tsconfig.json` **[M]** — extend base; keep Next plugin + `.next/types`.
-- [ ] `P1-04` · `apps/mobile/tsconfig.json` **[M]** — extend base; keep Expo types and `@/*` alias.
-- [ ] `P1-05` · `packages/shared/tsconfig.json` **[M]** — extend base, `composite: true`, `declaration: true`.
-- [ ] `P1-06` · `apps/admin/eslint.config.mjs` **[M]** — add `no-explicit-any`, `no-console` (allow `warn`/`error`), `import/order`.
-- [ ] `P1-07` · `apps/mobile/eslint.config.js` **[M]** — same rules as `P1-06`.
-- [ ] `P1-08` · `.editorconfig` (root) **[N]** — LF, 2 spaces, final newline.
-- [ ] `P1-09` · `.gitignore` **[M]** — add `supabase/.temp`, `supabase/.branches`, `.env*`, `coverage`, `playwright-report`, `test-results`, `*.pdf`, `.expo`, `.next`, `dist`.
-- [ ] `P1-10` · `.env.example` (root) **[N]** — Supabase + Stripe + app URLs + demo credentials.
-- [ ] `P1-11` · `apps/admin/.env.local.example` **[N]** — `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_DEMO_EMAIL`, `NEXT_PUBLIC_DEMO_PASSWORD`.
-- [ ] `P1-12` · `apps/mobile/.env.example` **[N]** — `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_PUBLIC_FUNCTIONS_URL`.
-- [ ] `P1-13` · `supabase/.env.example` **[N]** — `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TICKET_HMAC_KEY`, `METRICS_TOKEN`, `ADMIN_APP_URL`, `MOBILE_DEEP_LINK`.
-- [ ] `P1-14` · `packages/shared/package.json` **[M]** — add `zod`; dev `vitest`; add `test` script; add `exports` for `./http`, `./schemas`, `./money`, `./format`.
-- [ ] `P1-15` · `apps/mobile/package.json` **[M]** — add `@supabase/supabase-js`, `react-native-url-polyfill`, `@tanstack/react-query`, `expo-secure-store`, `expo-file-system`, `expo-keep-awake`, `expo-notifications`, `posthog-react-native`; use `npx expo install` for Expo modules. **DoD:** `npm install` clean; `npx expo config` OK.
-- [ ] `P1-16` · `apps/admin/package.json` **[M]** — add `@supabase/supabase-js`, `@supabase/ssr`, `@tanstack/react-query`, `posthog-js`; dev `@playwright/test`. **DoD:** `npm install` clean.
-- [ ] `P1-17` · `supabase/functions/deno.json` **[N]** — pin `zod`, `stripe`, `pdf-lib`, and `std` imports; strict TS. **DoD:** `npx supabase functions serve` resolves imports.
-- [ ] `P1-18` · `packages/shared/vitest.config.ts` **[N]** — node environment, `src/**/*.test.ts`.
-- [ ] `P1-19` · `packages/shared/src/__tests__/smoke.test.ts` **[N]** — asserts `formatTHB(150000) === "฿1,500"`. **DoD:** `npm run test -w @xclub/shared` green.
-- [ ] `P1-20` · `apps/mobile/scripts/reset-project.js` — **delete**. **DoD:** `rg "reset-project" apps/mobile` only finds package.json.
-- [ ] `P1-21` · `apps/mobile/package.json` **[M]** — remove `reset-project` script; add `test` and `lint` scripts. **DoD:** `npm run reset-project` no longer exists.
-- [ ] `P1-22` · `supabase/config.toml` **[N]** — local API/db/studio ports, auth redirects (`xclub://auth/callback`, `http://localhost:3000/auth/callback`), storage buckets, cron.
-- [ ] `P1-23` · `scripts/check-functions.sh` **[N]** — `deno check` every `supabase/functions/**/index.ts`. **DoD:** script exits 0 on empty functions.
-- [ ] `P1-24` · `.github/workflows/ci.yml` **[N]** — install Node/Deno/Supabase CLI, `npm ci`, lint, typecheck, shared tests, `supabase start`, `supabase db lint`, `supabase test db`, `npm run functions:check`, admin build. **DoD:** workflow syntax valid.
-- [ ] `P1-25` · `.nvmrc` (root) **[N]** — Node 22 LTS. **DoD:** documented in README.
-- [ ] `P1-26` · `scripts/check-no-mocks.sh` **[N]** — fail if `mockMatches|mockZones|mockNews|seedOrders|seedTickets|minimumPrice|zoneAvailability` appears in `apps/mobile/src` or `apps/admin/src`. **DoD:** script exits 1 today and 0 after Phase 10.
+- [x] `P1-01` · `package.json` (root) **[M]** — add `lint`, `test`, `check`, `check:no-mocks`, `db:start`, `db:stop`, `db:reset`, `db:seed-demo`, `db:types`, `db:test`, `functions:serve`, `functions:check`, `dev:admin`, `dev:mobile`, `build:admin`. **DoD:** `npm run check` resolves.
+- [x] `P1-02` · `tsconfig.base.json` (root) **[N]** — strict, `moduleResolution: bundler`, path aliases `@xclub/shared`. **DoD:** all workspaces can extend it.
+- [x] `P1-03` · `apps/admin/tsconfig.json` **[M]** — extend base; keep Next plugin + `.next/types`.
+- [x] `P1-04` · `apps/mobile/tsconfig.json` **[M]** — extend base; keep Expo types and `@/*` alias.
+- [x] `P1-05` · `packages/shared/tsconfig.json` **[M]** — extend base, `composite: true`, `declaration: true`.
+- [x] `P1-06` · `apps/admin/eslint.config.mjs` **[M]** — add `no-explicit-any`, `no-console` (allow `warn`/`error`), `import/order`.
+- [x] `P1-07` · `apps/mobile/eslint.config.js` **[M]** — same rules as `P1-06`.
+- [x] `P1-08` · `.editorconfig` (root) **[N]** — LF, 2 spaces, final newline.
+- [x] `P1-09` · `.gitignore` **[M]** — add `supabase/.temp`, `supabase/.branches`, `.env*`, `coverage`, `playwright-report`, `test-results`, `*.pdf`, `.expo`, `.next`, `dist`.
+- [x] `P1-10` · `.env.example` (root) **[N]** — Supabase + Stripe + app URLs + demo credentials.
+- [x] `P1-11` · `apps/admin/.env.local.example` **[N]** — `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_DEMO_EMAIL`, `NEXT_PUBLIC_DEMO_PASSWORD`.
+- [x] `P1-12` · `apps/mobile/.env.example` **[N]** — `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_PUBLIC_FUNCTIONS_URL`.
+- [x] `P1-13` · `supabase/.env.example` **[N]** — `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TICKET_HMAC_KEY`, `METRICS_TOKEN`, `ADMIN_APP_URL`, `MOBILE_DEEP_LINK`.
+- [x] `P1-14` · `packages/shared/package.json` **[M]** — add `zod`; dev `vitest`; add `test` script; add `exports` for `./http`, `./schemas`, `./money`, `./format`.
+- [x] `P1-15` · `apps/mobile/package.json` **[M]** — add `@supabase/supabase-js`, `react-native-url-polyfill`, `@tanstack/react-query`, `expo-secure-store`, `expo-file-system`, `expo-keep-awake`, `expo-notifications`, `posthog-react-native`; use `npx expo install` for Expo modules. **DoD:** `npm install` clean; `npx expo config` OK.
+- [x] `P1-16` · `apps/admin/package.json` **[M]** — add `@supabase/supabase-js`, `@supabase/ssr`, `@tanstack/react-query`, `posthog-js`; dev `@playwright/test`. **DoD:** `npm install` clean.
+- [x] `P1-17` · `supabase/functions/deno.json` **[N]** — pin `zod`, `stripe`, `pdf-lib`, and `std` imports; strict TS. **DoD:** `npx supabase functions serve` resolves imports.
+- [x] `P1-18` · `packages/shared/vitest.config.ts` **[N]** — node environment, `src/**/*.test.ts`.
+- [x] `P1-19` · `packages/shared/src/__tests__/smoke.test.ts` **[N]** — asserts `formatTHB(150000) === "฿1,500"`. **DoD:** `npm run test -w @xclub/shared` green.
+- [x] `P1-20` · `apps/mobile/scripts/reset-project.js` — **delete**. **DoD:** `rg "reset-project" apps/mobile` only finds package.json.
+- [x] `P1-21` · `apps/mobile/package.json` **[M]** — remove `reset-project` script; add `test` and `lint` scripts. **DoD:** `npm run reset-project` no longer exists.
+- [x] `P1-22` · `supabase/config.toml` **[N]** — local API/db/studio ports, auth redirects (`xclub://auth/callback`, `http://localhost:3000/auth/callback`), storage buckets, cron.
+- [x] `P1-23` · `scripts/check-functions.sh` **[N]** — `deno check` every `supabase/functions/**/index.ts`. **DoD:** script exits 0 on empty functions.
+- [x] `P1-24` · `.github/workflows/ci.yml` **[N]** — install Node/Deno/Supabase CLI, `npm ci`, lint, typecheck, shared tests, `supabase start`, `supabase db lint`, `supabase test db`, `npm run functions:check`, admin build. **DoD:** workflow syntax valid.
+- [x] `P1-25` · `.nvmrc` (root) **[N]** — Node 22 LTS. **DoD:** documented in README.
+- [x] `P1-26` · `scripts/check-no-mocks.sh` **[N]** — fail if `mockMatches|mockZones|mockNews|seedOrders|seedTickets|minimumPrice|zoneAvailability` appears in `apps/mobile/src` or `apps/admin/src`. **DoD:** script exits 1 today and 0 after Phase 10.
 
 ---
 
