@@ -133,7 +133,8 @@ export function zoneAvailability(zone: Zone): { available: number; total: number
 
 export function minimumPrice(matchId: string): number {
   const zones = mockZones.filter((zone) => zone.matchId === matchId);
-  return zones.reduce((min, zone) => Math.min(min, zone.priceSatang), Number.POSITIVE_INFINITY);
+  if (zones.length === 0) return 0;
+  return zones.reduce((min, zone) => Math.min(min, zone.priceSatang), zones[0].priceSatang);
 }
 
 export const mockNews: NewsItem[] = [
