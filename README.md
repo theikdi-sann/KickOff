@@ -48,6 +48,12 @@ Any email + password works in mock mode.
 
 The mobile login also has a **Continue with demo fan account** button. The demo account starts with one active pass and one used pass.
 
+### Toolchain
+
+Node 22 LTS is the supported runtime for this repo (see `.nvmrc` — with nvm, run `nvm use`).
+Development on the school Wi-Fi network additionally requires the tunnel dev server:
+`cd apps/mobile && npx expo start --tunnel` (fresh QR code on every restart).
+
 ---
 
 ## Demo script (5 minutes)
