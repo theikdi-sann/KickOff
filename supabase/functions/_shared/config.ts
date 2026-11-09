@@ -37,6 +37,11 @@ export function getEnv(): Env {
   return cached;
 }
 
+/** Test helper: clears the cached environment so the next getEnv() re-reads it. */
+export function resetEnvCache(): void {
+  cached = null;
+}
+
 /** Test/health helper: for callers that only need the Supabase pair. */
 export function getSupabaseEnv(): Pick<Env, "SUPABASE_URL" | "SUPABASE_ANON_KEY" | "SUPABASE_SERVICE_ROLE_KEY"> {
   const env = getEnv();
