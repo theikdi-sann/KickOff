@@ -1,5 +1,6 @@
 export * from './entities';
 export * from './dto';
+export * from './database.types';
 export * from './http';
 export * from './schemas';
 export * from './money';
