@@ -46,6 +46,7 @@ async function handler(request: Request): Promise<Response> {
       .eq("user_id", targetId)
       .is("released_at", null),
     db.from("tickets").update({ status: "void" }).eq("user_id", targetId),
+    db.from("orders").update({ payment_ref: null }).eq("user_id", targetId),
   ]);
 
   await writeAudit(
