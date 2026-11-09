@@ -51,3 +51,9 @@ Deno.test("hides unknown errors", () => {
   assertEquals(mapped.error.code, "internal");
   assertEquals(mapped.error.message, "Internal server error");
 });
+
+Deno.test("maps Stripe signature failures to 400", () => {
+  const mapped = toApiError({ type: "StripeSignatureVerificationError", message: "bad sig" });
+  assertEquals(mapped.status, 400);
+  assertEquals(mapped.error.code, "unauthorized");
+});
