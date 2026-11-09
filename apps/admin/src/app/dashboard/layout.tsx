@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   ChevronRight,
@@ -10,14 +10,17 @@ import {
   Megaphone,
   QrCode,
   Search,
+  ShieldCheck,
   Ticket,
+  Users,
   Bell,
 } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import type { User } from "@supabase/supabase-js";
+import type { ReactNode } from "react";
 import { Logo } from "@/components/logo";
 import { Badge } from "@/components/ui";
-import { useAdmin } from "@/lib/store";
-import { cn } from "@/lib/utils";
+import { useSessionGuard, useSignOut } from "@/lib/use-session";
+import { cn, displayName, initialsFor } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -25,6 +28,8 @@ const navItems = [
   { href: "/dashboard/news", label: "News & results", icon: Megaphone },
   { href: "/dashboard/scan", label: "Gate scan", icon: QrCode },
   { href: "/dashboard/tickets", label: "Orders & passes", icon: Ticket },
+  { href: "/dashboard/users", label: "Users", icon: Users },
+  { href: "/dashboard/settings/mfa", label: "Security", icon: ShieldCheck },
 ];
 
 const pageTitles: Record<string, string> = {
@@ -33,17 +38,14 @@ const pageTitles: Record<string, string> = {
   "/dashboard/news": "News & results",
   "/dashboard/scan": "Gate validation",
   "/dashboard/tickets": "Orders & passes",
+  "/dashboard/users": "Users",
+  "/dashboard/settings/mfa": "Security",
 };
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const { hydrated, profile } = useAdmin();
-  const router = useRouter();
+  const session = useSessionGuard({ requireAdmin: true });
 
-  useEffect(() => {
-    if (hydrated && !profile) router.replace("/login");
-  }, [hydrated, profile, router]);
-
-  if (!hydrated || !profile) {
+  if (session.status !== "authenticated" || !session.user) {
     return (
       <div className="grid min-h-screen place-items-center bg-[#F5F7F6]">
         <div className="flex flex-col items-center gap-3">
@@ -51,20 +53,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             X
           </div>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
-            Loading operations…
+            {session.status === "mfa_required" ? "Checking two-factor…" : "Loading operations…"}
           </p>
         </div>
       </div>
     );
   }
 
-  return <AdminShell>{children}</AdminShell>;
+  return <AdminShell user={session.user}>{children}</AdminShell>;
 }
 
-function AdminShell({ children }: { children: ReactNode }) {
+function AdminShell({ children, user }: { children: ReactNode; user: User }) {
   const pathname = usePathname();
-  const { profile, signOut } = useAdmin();
-  if (!profile) return null;
+  const signOut = useSignOut();
+  const name = displayName(user);
+  const initials = initialsFor(name);
+  const email = user.email ?? "";
   const currentTitle =
     Object.entries(pageTitles)
       .sort((a, b) => b[0].length - a[0].length)
@@ -109,16 +113,16 @@ function AdminShell({ children }: { children: ReactNode }) {
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
           <div className="flex items-center gap-2.5">
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-gold text-xs font-bold text-night">
-              {profile.initials}
+              {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-semibold text-white">{profile.fullName}</p>
-              <p className="truncate text-[10px] text-emerald-100/45">{profile.email}</p>
+              <p className="truncate text-xs font-semibold text-white">{name}</p>
+              <p className="truncate text-[10px] text-emerald-100/45">{email}</p>
             </div>
           </div>
           <button
             type="button"
-            onClick={signOut}
+            onClick={() => void signOut()}
             className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 py-2 text-[11px] font-medium text-emerald-50/60 transition hover:bg-white/5 hover:text-white">
             <LogOut size={13} />
             Sign out
@@ -163,7 +167,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                 </span>
               </div>
               <div className="grid h-9 w-9 place-items-center rounded-xl bg-pitch text-[11px] font-bold text-white">
-                {profile.initials}
+                {initials}
               </div>
             </div>
           </div>
