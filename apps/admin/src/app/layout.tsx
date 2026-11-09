@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
 import { AdminProvider } from "@/lib/store";
+import { QueryProvider } from "@/lib/query-provider";
 
 import "./globals.css";
 
@@ -26,7 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable} ${barlow.variable} h-full`}>
       <body className="min-h-full antialiased">
-        <AdminProvider>{children}</AdminProvider>
+        <QueryProvider>
+          <AdminProvider>{children}</AdminProvider>
+        </QueryProvider>
       </body>
     </html>
   );
