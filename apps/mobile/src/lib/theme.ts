@@ -1,5 +1,4 @@
 import { Platform } from 'react-native';
-
 import { palette } from '@xclub/shared';
 
 export const colors = {

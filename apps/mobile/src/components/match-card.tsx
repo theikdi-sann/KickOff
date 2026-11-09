@@ -1,9 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { CalendarDays, ChevronRight, MapPin } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
-
 import { formatMatchDate, formatMatchTime, formatTHB, minimumPrice, type Match } from '@xclub/shared';
-
 import { AppText, Crest, Pill } from '@/components/ui';
 import { colors, fonts, radii, shadow } from '@/lib/theme';
 

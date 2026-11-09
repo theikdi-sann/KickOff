@@ -10,7 +10,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-
 import { AppText, MockTag, PrimaryButton } from '@/components/ui';
 import { useApp } from '@/lib/store';
 import { colors, fonts, radii } from '@/lib/theme';

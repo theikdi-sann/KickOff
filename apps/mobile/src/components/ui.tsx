@@ -12,7 +12,6 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { colors, fonts, radii, shadow } from '@/lib/theme';
 
 type TextVariant = 'display' | 'title' | 'h2' | 'h3' | 'body' | 'small' | 'caption' | 'label';

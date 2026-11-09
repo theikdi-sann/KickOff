@@ -4,9 +4,7 @@ import * as Sharing from 'expo-sharing';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-
 import { formatFullDate, formatTHB, formatShortDate, type Order } from '@xclub/shared';
-
 import { AppText, Card, Pill, Screen } from '@/components/ui';
 import { useApp } from '@/lib/store';
 import { colors, fonts, radii } from '@/lib/theme';

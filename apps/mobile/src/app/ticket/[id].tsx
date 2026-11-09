@@ -15,9 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { StatusBar } from 'expo-status-bar';
-
 import { formatFullDate, formatMatchTime, formatTHB } from '@xclub/shared';
-
 import { AppText, Pill, Screen } from '@/components/ui';
 import { useApp } from '@/lib/store';
 import { colors, radii, shadow } from '@/lib/theme';

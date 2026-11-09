@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import {
   buildSeatMap,
   formatMatchDate,
@@ -13,7 +12,6 @@ import {
   mockMatches,
   mockZones,
 } from '@xclub/shared';
-
 import { AppText, Card, Pill, PrimaryButton, Screen } from '@/components/ui';
 import { useApp } from '@/lib/store';
 import { colors, radii } from '@/lib/theme';

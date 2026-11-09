@@ -3,9 +3,7 @@ import { ChevronLeft, Clock3, Share2 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-
 import { formatFullDate, mockNews } from '@xclub/shared';
-
 import { AppText, Card, Pill, Screen } from '@/components/ui';
 import { colors, radii, shadow } from '@/lib/theme';
 

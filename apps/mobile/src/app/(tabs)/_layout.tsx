@@ -1,7 +1,6 @@
 import { Redirect, Tabs } from 'expo-router';
 import { Home, Ticket, UserRound } from 'lucide-react-native';
 import { StyleSheet } from 'react-native';
-
 import { useApp } from '@/lib/store';
 import { colors, fonts } from '@/lib/theme';
 

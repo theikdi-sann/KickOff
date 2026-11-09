@@ -10,7 +10,6 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-
 import {
   demoCustomer,
   formatMatchDate,
@@ -23,7 +22,6 @@ import {
   zoneAvailability,
   type NewsItem,
 } from '@xclub/shared';
-
 import { MatchCard, ResultRow } from '@/components/match-card';
 import {
   AppText,

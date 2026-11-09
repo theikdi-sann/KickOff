@@ -4,9 +4,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-
 import { CLUB_TAGLINE } from '@xclub/shared';
-
 import { AppText, MockTag, PrimaryButton } from '@/components/ui';
 import { colors, radii, shadow } from '@/lib/theme';
 

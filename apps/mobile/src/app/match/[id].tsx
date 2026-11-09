@@ -11,7 +11,6 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-
 import {
   formatFullDate,
   formatMatchTime,
@@ -22,7 +21,6 @@ import {
   type Match,
   type Zone,
 } from '@xclub/shared';
-
 import {
   AppText,
   Card,

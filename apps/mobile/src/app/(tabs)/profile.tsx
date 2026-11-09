@@ -12,9 +12,7 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
-
 import { formatTHB, formatShortDate } from '@xclub/shared';
-
 import { AppText, Card, MockTag, PageScroll, Pill, Screen } from '@/components/ui';
 import { useApp } from '@/lib/store';
 import { colors, fonts, radii } from '@/lib/theme';

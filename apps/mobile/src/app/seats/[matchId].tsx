@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import {
   buildSeatMap,
   formatMatchDate,
@@ -14,7 +13,6 @@ import {
   type Seat,
   type Zone,
 } from '@xclub/shared';
-
 import { AppText, Pill, PrimaryButton, Screen } from '@/components/ui';
 import { useApp } from '@/lib/store';
 import { colors, radii, shadow } from '@/lib/theme';
