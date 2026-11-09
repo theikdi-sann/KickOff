@@ -38,6 +38,12 @@ export async function proxy(request: NextRequest) {
 
   const { pathname, search } = request.nextUrl;
 
+  let requiresMfa = false;
+  if (user) {
+    const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    requiresMfa = assurance?.nextLevel === 'aal2' && assurance?.currentLevel !== 'aal2';
+  }
+
   if (!user && pathname.startsWith('/dashboard')) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';
@@ -46,7 +52,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && pathname === '/login') {
+  if (user && requiresMfa && pathname.startsWith('/dashboard')) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/login/mfa';
+    redirectUrl.search = '';
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  if (user && !requiresMfa && (pathname === '/login' || pathname === '/login/mfa')) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/dashboard';
     redirectUrl.search = '';
@@ -57,5 +70,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login'],
+  matcher: ['/dashboard/:path*', '/login', '/login/mfa'],
 };
