@@ -2,36 +2,43 @@
 
 import { ArrowRight, Eye, EyeOff, Lock, Mail, QrCode, ShieldCheck, Ticket } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Logo } from "@/components/logo";
 import { Badge } from "@/components/ui";
-import { useAdmin } from "@/lib/store";
+import { isAdminUser, needsMfa, signIn } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/client";
+
+const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_EMAIL ?? "";
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { hydrated, profile, signIn } = useAdmin();
-  const [email, setEmail] = useState("admin@xclub.app");
-  const [password, setPassword] = useState("xclubadmin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (hydrated && profile) router.replace("/dashboard");
-  }, [hydrated, profile, router]);
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!email.includes("@") || password.length < 4) {
-      setError("Enter a valid email and a password of at least 4 characters.");
+    if (!email.includes("@") || password.length < 8) {
+      setError("Enter a valid email and a password of at least 8 characters.");
       return;
     }
     setError(null);
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 450));
-    await signIn(email, password);
-    setLoading(false);
-    router.replace("/dashboard");
+    try {
+      const user = await signIn(email, password);
+      if (!isAdminUser(user)) {
+        await createClient().auth.signOut();
+        throw new Error("This account does not have admin access.");
+      }
+      router.replace((await needsMfa()) ? "/login/mfa" : "/dashboard");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not sign in.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -91,7 +98,8 @@ export default function LoginPage() {
               OPERATIONS.
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              Use the demo credentials or any email and password in this mock build.
+              Sign in with your club staff account. Admin access requires two-factor
+              authentication when enabled for your profile.
             </p>
           </div>
 
@@ -147,24 +155,28 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-700">
-                  Demo credentials
-                </p>
-                <p className="mt-0.5 text-xs text-amber-700/80">admin@xclub.app · xclubadmin</p>
+            {DEMO_EMAIL && DEMO_PASSWORD ? (
+              <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-700">
+                    Demo credentials
+                  </p>
+                  <p className="mt-0.5 text-xs text-amber-700/80">
+                    {DEMO_EMAIL} · {DEMO_PASSWORD}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail(DEMO_EMAIL);
+                    setPassword(DEMO_PASSWORD);
+                    setError(null);
+                  }}
+                  className="rounded-lg bg-white px-2.5 py-1.5 text-[10px] font-semibold text-amber-700 shadow-sm">
+                  Fill
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail("admin@xclub.app");
-                  setPassword("xclubadmin");
-                  setError(null);
-                }}
-                className="rounded-lg bg-white px-2.5 py-1.5 text-[10px] font-semibold text-amber-700 shadow-sm">
-                Fill
-              </button>
-            </div>
+            ) : null}
 
             {error ? (
               <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">
@@ -184,10 +196,10 @@ export default function LoginPage() {
                 <ShieldCheck size={17} />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-800">Prototype authentication</p>
+                <p className="text-xs font-semibold text-slate-800">Protected staff access</p>
                 <p className="mt-1 text-[11px] leading-5 text-slate-500">
-                  Role-based Supabase auth replaces this local mock in Phase B. Admin actions are
-                  persisted in your browser only.
+                  Sessions use Supabase Auth with HTTP-only cookies. Admin accounts can enrol TOTP
+                  from Security settings; non-admin accounts are refused.
                 </p>
               </div>
             </div>
