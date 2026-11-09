@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatTHB } from "../theme";
+import { formatTHB } from "../format";
 
 describe("formatTHB smoke", () => {
   it("formats integer baht amounts without decimals", () => {
