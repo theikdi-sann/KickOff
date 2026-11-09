@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { invokeFunction } from "@/lib/functions";
 import { createClient } from "@/lib/supabase/client";
 
 export type UserRole = "customer" | "admin";
@@ -57,16 +58,10 @@ export function useUpdateUser() {
 
   return useMutation({
     mutationFn: async (input: { id: string; role?: UserRole }): Promise<AdminUser> => {
-      const supabase = createClient();
-      const { data, error } = await supabase.functions.invoke("admin-users", {
+      return invokeFunction<AdminUser>("admin-users", {
         method: "PATCH",
         body: input,
       });
-      if (error) {
-        const context = (error as { context?: { error?: { message?: string } } }).context;
-        throw new Error(context?.error?.message ?? error.message);
-      }
-      return data as AdminUser;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
