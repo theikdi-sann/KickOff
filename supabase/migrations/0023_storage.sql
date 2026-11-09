@@ -8,7 +8,9 @@ set public = excluded.public,
     file_size_limit = excluded.file_size_limit,
     allowed_mime_types = excluded.allowed_mime_types;
 
-alter table storage.objects enable row level security;
+-- Supabase already enables RLS on storage.objects; ALTER TABLE requires table
+-- ownership, which the migration role does not have on hosted projects.
+-- Policies can still be created from SQL.
 
 drop policy if exists receipts_read_own on storage.objects;
 create policy receipts_read_own on storage.objects
