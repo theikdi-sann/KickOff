@@ -9,6 +9,7 @@ build/
 .env
 .env.*
 !.env.example
+!.env.local.example
 .env.local
 .DS_Store
 .expo-shared/
