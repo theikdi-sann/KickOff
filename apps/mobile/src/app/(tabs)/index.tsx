@@ -32,12 +32,14 @@ import {
   Screen,
   SectionHeading,
 } from '@/components/ui';
+import { useMockCommerce } from '@/lib/mock-commerce';
 import { useApp } from '@/lib/store';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { profile, tickets } = useApp();
+  const { profile } = useApp();
+  const { tickets } = useMockCommerce();
   const upcoming = mockMatches.filter((match) => match.status === 'upcoming');
   const results = mockMatches.filter((match) => match.status === 'completed');
   const nextMatch = upcoming[0];

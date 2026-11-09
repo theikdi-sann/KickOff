@@ -13,6 +13,7 @@ import {
   mockZones,
 } from '@xclub/shared';
 import { AppText, Card, Pill, PrimaryButton, Screen } from '@/components/ui';
+import { useMockCommerce } from '@/lib/mock-commerce';
 import { useApp } from '@/lib/store';
 import { colors, radii } from '@/lib/theme';
 
@@ -23,7 +24,8 @@ export default function CheckoutScreen() {
     zoneId: string;
     seats: string;
   }>();
-  const { profile, purchase } = useApp();
+  const { profile } = useApp();
+  const { purchase } = useMockCommerce();
   const insets = useSafeAreaInsets();
   const [processing, setProcessing] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(600);

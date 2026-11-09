@@ -14,12 +14,14 @@ import { useRouter } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { formatTHB, formatShortDate } from '@xclub/shared';
 import { AppText, Card, MockTag, PageScroll, Pill, Screen } from '@/components/ui';
+import { useMockCommerce } from '@/lib/mock-commerce';
 import { useApp } from '@/lib/store';
 import { colors, fonts, radii } from '@/lib/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile, tickets, orders, signOut } = useApp();
+  const { profile, signOut } = useApp();
+  const { tickets, orders } = useMockCommerce();
   const active = tickets.filter((ticket) => ticket.status === 'valid').length;
   const spent = orders
     .filter((order) => order.status === 'paid')

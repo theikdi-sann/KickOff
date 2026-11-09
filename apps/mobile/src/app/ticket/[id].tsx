@@ -17,13 +17,13 @@ import QRCode from 'react-native-qrcode-svg';
 import { StatusBar } from 'expo-status-bar';
 import { formatFullDate, formatMatchTime, formatTHB } from '@xclub/shared';
 import { AppText, Pill, Screen } from '@/components/ui';
-import { useApp } from '@/lib/store';
+import { useMockCommerce } from '@/lib/mock-commerce';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function TicketDetailScreen() {
   const router = useRouter();
   const { id, new: isNew, count } = useLocalSearchParams<{ id: string; new?: string; count?: string }>();
-  const { getTicket } = useApp();
+  const { getTicket } = useMockCommerce();
   const ticket = getTicket(id);
   const used = ticket?.status === 'used';
 

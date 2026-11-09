@@ -6,12 +6,14 @@ import { useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { formatFullDate, formatTHB, formatShortDate, type Order } from '@xclub/shared';
 import { AppText, Card, Pill, Screen } from '@/components/ui';
+import { useMockCommerce } from '@/lib/mock-commerce';
 import { useApp } from '@/lib/store';
 import { colors, fonts, radii } from '@/lib/theme';
 
 export default function OrdersScreen() {
   const router = useRouter();
-  const { orders, profile } = useApp();
+  const { orders } = useMockCommerce();
+  const { profile } = useApp();
   const [busyId, setBusyId] = useState<string | null>(null);
   const sorted = [...orders].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),

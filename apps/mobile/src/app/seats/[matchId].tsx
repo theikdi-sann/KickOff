@@ -14,7 +14,7 @@ import {
   type Zone,
 } from '@xclub/shared';
 import { AppText, Pill, PrimaryButton, Screen } from '@/components/ui';
-import { useApp } from '@/lib/store';
+import { useMockCommerce } from '@/lib/mock-commerce';
 import { colors, radii, shadow } from '@/lib/theme';
 
 const MAX_SEATS = 6;
@@ -23,7 +23,7 @@ export default function SeatSelectionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { matchId, zoneId: initialZoneId } = useLocalSearchParams<{ matchId: string; zoneId?: string }>();
-  const { takenSeatIds } = useApp();
+  const { takenSeatIds } = useMockCommerce();
   const match = mockMatches.find((item) => item.id === matchId) ?? mockMatches[0];
   const zones = useMemo(() => mockZones.filter((zone) => zone.matchId === match.id), [match.id]);
   const [zoneId, setZoneId] = useState(

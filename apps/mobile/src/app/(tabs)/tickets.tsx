@@ -5,12 +5,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { formatMatchDate, formatTHB } from '@xclub/shared';
 import { TicketCard } from '@/components/ticket-card';
 import { AppText, Card, MockTag, PageScroll, PrimaryButton, Screen } from '@/components/ui';
-import { useApp } from '@/lib/store';
+import { useMockCommerce } from '@/lib/mock-commerce';
 import { colors, fonts, radii } from '@/lib/theme';
 
 export default function TicketsScreen() {
   const router = useRouter();
-  const { tickets, orders } = useApp();
+  const { tickets, orders } = useMockCommerce();
   const [tab, setTab] = useState<'active' | 'past'>('active');
 
   const active = tickets
