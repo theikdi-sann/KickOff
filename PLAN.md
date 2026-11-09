@@ -295,22 +295,22 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 ### Phase 7 — Commerce & Fulfilment
 
-- [ ] `P7-01` · `supabase/functions/stripe-checkout/index.ts` **[N]** — create pending order from hold, create Stripe Checkout Session in THB, return URL. **DoD:** amount comes from DB, never client.
-- [ ] `P7-02` · `supabase/functions/stripe-webhook/index.ts` **[N]** — verify signature, insert `stripe_events` idempotently, handle `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`; if the order is no longer pending, issue an automatic refund and audit. **DoD:** replay is a no-op.
-- [ ] `P7-03` · `supabase/functions/refund-order/index.ts` **[N]** — admin refund via Stripe; block used tickets unless override flag (`F-2`).
-- [ ] `P7-04` · `supabase/functions/receipt/index.ts` **[N]** — PDF with `pdf-lib`; write to `receipts` bucket; return signed URL.
-- [ ] `P7-05` · `supabase/functions/orders-aggregate/index.ts` **[N]** — admin KPI aggregate (revenue, sold, scans, range).
-- [ ] `P7-06` · `apps/mobile/src/lib/queries/orders.ts` **[N]** — `useOrders`, `useOrder`, `useCreateOrder`.
-- [ ] `P7-07` · `apps/mobile/src/lib/queries/tickets.ts` **[N]** — `useTickets`, `useTicket`.
-- [ ] `P7-08` · `apps/mobile/src/lib/receipt.ts` **[N]** — request signed URL; download with `expo-file-system`; share with `expo-sharing`.
-- [ ] `P7-15` · `apps/admin/src/lib/queries/orders.ts` **[N]** — `useOrders`, `useOrder`, `useRefund`.
-- [ ] `P7-16` · `apps/admin/src/app/dashboard/tickets/page.tsx` **[M]** — server pagination/search; "Export CSV" for current filter.
-- [ ] `P7-17` · `apps/admin/src/app/dashboard/tickets/[orderId]/page.tsx` **[N]** — order detail, seats, payment ref, refund, receipt.
-- [ ] `P7-18` · `apps/admin/src/lib/export.ts` **[N]** — RFC-4180 CSV + BOM.
-- [ ] `P7-19` · `apps/admin/src/app/dashboard/page.tsx` **[M]** — KPI cards from `useOrdersAggregate` + `useScanStats`; `now` from `new Date()`.
-- [ ] `P7-20` · `supabase/functions/tests/orders.test.ts` **[N]** — create order → webhook → tickets → receipt.
-- [ ] `P7-21` · `supabase/functions/tests/webhook.test.ts` **[N]** — replay same event; single fulfilment.
-- [ ] `P7-22` · `supabase/functions/ticket-qr/index.ts` **[N]** — ownership-checked endpoint returning the signed V2 payload for a ticket; uses the stored `qr_nonce`, no client-side signing. **DoD:** only the ticket owner or admin can fetch it.
+- [x] `P7-01` · `supabase/functions/stripe-checkout/index.ts` **[N]** — create pending order from hold, create Stripe Checkout Session in THB, return URL. **DoD:** amount comes from DB, never client.
+- [x] `P7-02` · `supabase/functions/stripe-webhook/index.ts` **[N]** — verify signature, insert `stripe_events` idempotently, handle `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`; if the order is no longer pending, issue an automatic refund and audit. **DoD:** replay is a no-op.
+- [x] `P7-03` · `supabase/functions/refund-order/index.ts` **[N]** — admin refund via Stripe; block used tickets unless override flag (`F-2`).
+- [x] `P7-04` · `supabase/functions/receipt/index.ts` **[N]** — PDF with `pdf-lib`; write to `receipts` bucket; return signed URL.
+- [x] `P7-05` · `supabase/functions/orders-aggregate/index.ts` **[N]** — admin KPI aggregate (revenue, sold, scans, range).
+- [x] `P7-06` · `apps/mobile/src/lib/queries/orders.ts` **[N]** — `useOrders`, `useOrder`, `useCreateOrder`.
+- [x] `P7-07` · `apps/mobile/src/lib/queries/tickets.ts` **[N]** — `useTickets`, `useTicket`.
+- [x] `P7-08` · `apps/mobile/src/lib/receipt.ts` **[N]** — request signed URL; download with `expo-file-system`; share with `expo-sharing`.
+- [x] `P7-15` · `apps/admin/src/lib/queries/orders.ts` **[N]** — `useOrders`, `useOrder`, `useRefund`.
+- [x] `P7-16` · `apps/admin/src/app/dashboard/tickets/page.tsx` **[M]** — server pagination/search; "Export CSV" for current filter.
+- [x] `P7-17` · `apps/admin/src/app/dashboard/tickets/[orderId]/page.tsx` **[N]** — order detail, seats, payment ref, refund, receipt.
+- [x] `P7-18` · `apps/admin/src/lib/export.ts` **[N]** — RFC-4180 CSV + BOM.
+- [x] `P7-19` · `apps/admin/src/app/dashboard/page.tsx` **[M]** — KPI cards from `useOrdersAggregate` + `useScanStats`; `now` from `new Date()`.
+- [x] `P7-20` · `supabase/functions/tests/orders.test.ts` **[N]** — create order → webhook → tickets → receipt.
+- [x] `P7-21` · `supabase/functions/tests/webhook.test.ts` **[N]** — replay same event; single fulfilment.
+- [x] `P7-22` · `supabase/functions/ticket-qr/index.ts` **[N]** — ownership-checked endpoint returning the signed V2 payload for a ticket; uses the stored `qr_nonce`, no client-side signing. **DoD:** only the ticket owner or admin can fetch it.
 
 ---
 
