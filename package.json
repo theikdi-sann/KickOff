@@ -10,7 +10,21 @@
     "mobile": "npm run start --workspace @xclub/mobile",
     "mobile:web": "npm run web --workspace @xclub/mobile",
     "admin": "npm run dev --workspace @xclub/admin",
+    "dev:admin": "npm run dev --workspace @xclub/admin",
+    "dev:mobile": "npm run start --workspace @xclub/mobile",
     "typecheck": "npm run typecheck --workspace @xclub/shared && npm run typecheck --workspace @xclub/mobile && npm run typecheck --workspace @xclub/admin",
-    "build:admin": "npm run build --workspace @xclub/admin"
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "check": "npm run typecheck && npm run lint",
+    "check:no-mocks": "bash scripts/check-no-mocks.sh",
+    "build:admin": "npm run build --workspace @xclub/admin",
+    "db:start": "npx supabase start",
+    "db:stop": "npx supabase stop",
+    "db:reset": "npx supabase db reset",
+    "db:seed-demo": "npx supabase db reset",
+    "db:types": "npx supabase gen types typescript --local > packages/shared/src/database.types.ts",
+    "db:test": "npx supabase test db",
+    "functions:serve": "npx supabase functions serve",
+    "functions:check": "bash scripts/check-functions.sh"
   }
 }
