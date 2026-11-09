@@ -15,13 +15,16 @@ import {
   Users,
 } from "lucide-react";
 import { Badge, SectionTitle } from "@/components/ui";
+import { useOrdersAggregate, useScanStats } from "@/lib/queries/orders";
 import { useAdmin } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { formatMatchDate, formatMatchTime, formatTHB, zoneAvailability } from "@xclub/shared";
 
 export default function DashboardPage() {
-  const { matches, zones, orders, news, usedTicketIds } = useAdmin();
-  const now = new Date("2026-11-05T09:00:00+07:00");
+  const { matches, zones, orders, news } = useAdmin();
+  const aggregate = useOrdersAggregate();
+  const scans = useScanStats();
+  const now = new Date();
   const upcoming = matches
     .filter((match) => match.status === "upcoming")
     .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
@@ -31,8 +34,8 @@ export default function DashboardPage() {
   const available = nextZones.reduce((sum, zone) => sum + zoneAvailability(zone).available, 0);
   const sold = capacity - available;
   const sellThrough = capacity ? Math.round((sold / capacity) * 100) : 0;
-  const revenue = orders.filter((order) => order.status === "paid").reduce((sum, order) => sum + order.amountSatang, 0);
-  const ticketsSold = orders.reduce((sum, order) => sum + order.seats.length, 0);
+  const revenue = aggregate.data?.revenueSatang ?? 0;
+  const ticketsSold = aggregate.data?.ticketsSold ?? 0;
   const recentOrders = [...orders]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 4);
@@ -60,7 +63,7 @@ export default function DashboardPage() {
           icon={<CircleDollarSign size={17} />}
           label="Ticket revenue"
           value={formatTHB(revenue)}
-          note="+18.4% vs last fixture"
+          note="Paid orders, last 30 days"
           tone="green"
         />
         <StatCard
@@ -80,8 +83,8 @@ export default function DashboardPage() {
         <StatCard
           icon={<QrCode size={17} />}
           label="Gate scans"
-          value={String(usedTicketIds.length)}
-          note="Mock validation events"
+          value={String(scans.data?.valid ?? 0)}
+          note={`${scans.data?.total ?? 0} scans, last 30 days`}
           tone="violet"
         />
       </div>
@@ -204,7 +207,7 @@ export default function DashboardPage() {
               <div className="flex-1">
                 <p className="text-xs font-semibold">Gate 2 · North Stand</p>
                 <p className="mt-0.5 text-[10px] text-emerald-50/45">
-                  {usedTicketIds.length} passes validated today
+                  {scans.data?.total ?? 0} scans recorded
                 </p>
               </div>
               <QrCode size={18} className="text-gold" />
