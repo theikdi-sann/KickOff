@@ -17,30 +17,43 @@ import { colors, fonts, radii } from '@/lib/theme';
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn, signInDemo } = useApp();
-  const [email, setEmail] = useState('fan@xclub.app');
-  const [password, setPassword] = useState('xclubdemo');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const demoEnabled = Boolean(
+    process.env.EXPO_PUBLIC_DEMO_EMAIL && process.env.EXPO_PUBLIC_DEMO_PASSWORD,
+  );
 
   const handleSignIn = async () => {
-    if (!email.includes('@') || password.length < 4) {
-      setError('Enter a valid email and a password of at least 4 characters.');
+    if (!email.includes('@') || password.length < 8) {
+      setError('Enter a valid email and a password of at least 8 characters.');
       return;
     }
     setError(null);
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 450));
-    await signIn(email, password);
-    setLoading(false);
-    router.replace('/');
+    try {
+      await signIn(email, password);
+      router.replace('/');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not sign in.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDemo = async () => {
+    setError(null);
     setLoading(true);
-    await signInDemo();
-    setLoading(false);
-    router.replace('/');
+    try {
+      await signInDemo();
+      router.replace('/');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Demo sign-in is unavailable.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -109,6 +122,15 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
+          <Pressable
+            onPress={() => router.push('/forgot-password')}
+            hitSlop={8}
+            style={styles.forgot}>
+            <AppText variant="caption" color={colors.primary}>
+              Forgot your password?
+            </AppText>
+          </Pressable>
+
           <PrimaryButton
             label="Sign in"
             onPress={handleSignIn}
@@ -117,19 +139,26 @@ export default function LoginScreen() {
             style={styles.submit}
           />
 
-          <View style={styles.orRow}>
-            <View style={styles.orLine} />
-            <AppText variant="caption" color={colors.muted}>
-              OR
-            </AppText>
-            <View style={styles.orLine} />
-          </View>
+          {demoEnabled ? (
+            <>
+              <View style={styles.orRow}>
+                <View style={styles.orLine} />
+                <AppText variant="caption" color={colors.muted}>
+                  OR
+                </AppText>
+                <View style={styles.orLine} />
+              </View>
 
-          <PrimaryButton label="Continue with demo fan account" tone="gold" onPress={handleDemo} />
-          <AppText variant="small" color={colors.muted} style={styles.hint}>
-            Mock mode: any email and password will sign you in. The demo account is preloaded with
-            one match pass.
-          </AppText>
+              <PrimaryButton
+                label="Continue with demo fan account"
+                tone="gold"
+                onPress={handleDemo}
+              />
+              <AppText variant="small" color={colors.muted} style={styles.hint}>
+                The demo account is preloaded with one active pass and one used pass.
+              </AppText>
+            </>
+          ) : null}
         </View>
 
         <Pressable onPress={() => router.push('/register')} style={styles.registerLink}>
@@ -226,5 +255,6 @@ const styles = StyleSheet.create({
   orRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 2 },
   orLine: { flex: 1, height: 1, backgroundColor: colors.line },
   hint: { textAlign: 'center', fontSize: 11, lineHeight: 17, paddingHorizontal: 12 },
+  forgot: { alignSelf: 'flex-end', marginTop: -4, marginBottom: 4, paddingVertical: 4 },
   registerLink: { marginTop: 'auto', alignItems: 'center', paddingTop: 32 },
 });
