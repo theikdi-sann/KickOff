@@ -4,6 +4,7 @@ on:
   push:
     branches: [master]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   check:
@@ -39,10 +40,10 @@ jobs:
       - name: Start local Supabase stack
         run: npx supabase start
 
-      - name: DB lint (empty until Phase 3 migrations)
+      - name: DB lint
         run: npx supabase db lint
 
-      - name: DB tests (pgTAP; empty until Phase 3)
+      - name: DB tests (pgTAP)
         run: npx supabase test db
 
       - name: Edge function type check
@@ -56,3 +57,47 @@ jobs:
 
       - name: Admin production build
         run: npm run build:admin
+
+  # Runs manually once a hosted Supabase project exists. Configure the repository
+  # secrets listed below; without them the job is skipped by GitHub.
+  e2e-auth:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install workspace deps
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build admin against the hosted project
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
+            echo "Skipping: NEXT_PUBLIC_SUPABASE_* repository secrets are not configured."
+            exit 0
+          fi
+          npm run build:admin
+
+      - name: Run auth E2E
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_MFA: ${{ vars.E2E_MFA }}
+        run: |
+          if [ -z "$E2E_ADMIN_EMAIL" ] || [ -z "$E2E_ADMIN_PASSWORD" ]; then
+            echo "Skipping: E2E_ADMIN_* repository secrets are not configured."
+            exit 0
+          fi
+          npm run test:e2e --workspace @xclub/admin
