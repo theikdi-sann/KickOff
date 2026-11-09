@@ -48,5 +48,11 @@ jobs:
       - name: Edge function type check
         run: npm run functions:check
 
+      - name: Edge function lint + tests
+        working-directory: supabase/functions
+        run: |
+          deno lint
+          deno test --allow-env --allow-net tests/
+
       - name: Admin production build
         run: npm run build:admin
