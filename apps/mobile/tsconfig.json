@@ -1,14 +1,14 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "strict": true,
+    "lib": ["dom", "esnext"],
+    "noEmit": true,
+    "jsx": "react-jsx",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@/assets/*": [
-        "./assets/*"
-      ]
+      "@/*": ["./src/*"],
+      "@/assets/*": ["./assets/*"],
+      "@xclub/shared": ["../../packages/shared/src/index.ts"],
+      "@xclub/shared/*": ["../../packages/shared/src/*"]
     }
   },
   "include": [
