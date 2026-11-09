@@ -10,7 +10,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
-
 import { Badge, Modal, SectionTitle } from "@/components/ui";
 import { useAdmin, type NewsInput } from "@/lib/store";
 import { cn } from "@/lib/utils";

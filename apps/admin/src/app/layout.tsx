@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
-
 import { AdminProvider } from "@/lib/store";
 
 import "./globals.css";

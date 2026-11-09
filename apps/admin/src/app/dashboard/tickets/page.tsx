@@ -2,7 +2,6 @@
 
 import { Download, QrCode, RotateCcw, Search, Ticket, Wallet } from "lucide-react";
 import { useState } from "react";
-
 import { Badge, SectionTitle } from "@/components/ui";
 import { useAdmin } from "@/lib/store";
 import { cn } from "@/lib/utils";

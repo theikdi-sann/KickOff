@@ -14,7 +14,6 @@ import {
   XCircle,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
 import { Badge, SectionTitle } from "@/components/ui";
 import { useAdmin } from "@/lib/store";
 import { formatMatchDate, formatMatchTime, formatTHB, type ScanResult } from "@xclub/shared";
