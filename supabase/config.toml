@@ -121,7 +121,7 @@ file_size_limit = "50MiB"
 # Local parity of the buckets created by the Phase 3 migrations on the hosted
 # project (buckets are created via SQL there). Kept here so `supabase start`
 # locally matches app expectations.
-[storage.buckets.ticket-pdfs]
+[storage.buckets.receipts]
 public = false
 file_size_limit = "10MiB"
 allowed_mime_types = ["application/pdf"]

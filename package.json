@@ -25,7 +25,7 @@
     "db:start": "npx supabase start",
     "db:stop": "npx supabase stop",
     "db:reset": "npx supabase db reset",
-    "db:seed-demo": "npx supabase db reset",
+    "db:seed-demo": "node scripts/seed-demo.mjs",
     "db:types": "npx supabase gen types typescript --local > packages/shared/src/database.types.ts",
     "db:test": "npx supabase test db",
     "functions:serve": "npx supabase functions serve",
