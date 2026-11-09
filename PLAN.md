@@ -276,20 +276,20 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 ### Phase 6 — Catalog & Availability
 
-- [ ] `P6-01` · `apps/mobile/src/lib/queries/query-client.ts` **[N]** — `QueryClient` config (stale times, retry policy).
-- [ ] `P6-02` · `apps/mobile/src/lib/queries/matches.ts` **[N]** — `useMatches`, `useMatch`, `useNextMatch`.
-- [ ] `P6-03` · `apps/mobile/src/lib/queries/news.ts` **[N]** — `useNews`, `useNewsItem`.
-- [ ] `P6-04` · `apps/mobile/src/lib/queries/seats.ts` **[N]** — `useZones`, `useSeatMap`.
-- [ ] `P6-05` · `apps/mobile/src/lib/queries/holds.ts` **[N]** — `useCreateHold`, `useHold`, `useReleaseHold`.
-- [ ] `P6-06` · `apps/admin/src/lib/queries/query-client.ts` **[N]** — admin `QueryClient`.
-- [ ] `P6-07` · `apps/admin/src/lib/queries/matches.ts` **[N]** — `useMatches`, `useMatch`, `useZones`, `useCreateMatch`, `useUpdateMatch`, `useDeleteMatch`, `useUpdateZone`, `useAddZone`, `useDeleteZone`.
-- [ ] `P6-08` · `apps/admin/src/lib/queries/news.ts` **[N]** — `useNews`, `useCreateNews`, `useUpdateNews`, `useDeleteNews`.
-- [ ] `P6-09` · `apps/admin/src/components/match-form.tsx` **[N]** — `adminCreateMatchSchema` validation.
-- [ ] `P6-10` · `apps/admin/src/components/zone-editor.tsx` **[N]** — name/description/price/rows/seats/color; no retroactive price changes to existing `order_seats`.
-- [ ] `P6-11` · `apps/admin/src/components/zone-create-form.tsx` **[N]** — configurable rows/seats; replaces hardcoded `['A','B'], 10`.
-- [ ] `P6-12` · `apps/admin/src/components/news-form.tsx` **[N]** — create/edit article.
-- [ ] `P6-13` · `supabase/tests/hold-concurrency.test.sql` **[N]** — 10 parallel holds on one seat → exactly 1 success.
-- [ ] `P6-14` · `supabase/tests/hold-ttl.test.sql` **[N]** — expired hold releases seat; kickoff lock rejects holds.
+- [x] `P6-01` · `apps/mobile/src/lib/queries/query-client.ts` **[N]** — `QueryClient` config (stale times, retry policy).
+- [x] `P6-02` · `apps/mobile/src/lib/queries/matches.ts` **[N]** — `useMatches`, `useMatch`, `useNextMatch`.
+- [x] `P6-03` · `apps/mobile/src/lib/queries/news.ts` **[N]** — `useNews`, `useNewsItem`.
+- [x] `P6-04` · `apps/mobile/src/lib/queries/seats.ts` **[N]** — `useZones`, `useSeatMap`.
+- [x] `P6-05` · `apps/mobile/src/lib/queries/holds.ts` **[N]** — `useCreateHold`, `useHold`, `useReleaseHold`.
+- [x] `P6-06` · `apps/admin/src/lib/queries/query-client.ts` **[N]** — admin `QueryClient`.
+- [x] `P6-07` · `apps/admin/src/lib/queries/matches.ts` **[N]** — `useMatches`, `useMatch`, `useZones`, `useCreateMatch`, `useUpdateMatch`, `useDeleteMatch`, `useUpdateZone`, `useAddZone`, `useDeleteZone`.
+- [x] `P6-08` · `apps/admin/src/lib/queries/news.ts` **[N]** — `useNews`, `useCreateNews`, `useUpdateNews`, `useDeleteNews`.
+- [x] `P6-09` · `apps/admin/src/components/match-form.tsx` **[N]** — `adminCreateMatchSchema` validation.
+- [x] `P6-10` · `apps/admin/src/components/zone-editor.tsx` **[N]** — name/description/price/rows/seats/color; no retroactive price changes to existing `order_seats`.
+- [x] `P6-11` · `apps/admin/src/components/zone-create-form.tsx` **[N]** — configurable rows/seats; replaces hardcoded `['A','B'], 10`.
+- [x] `P6-12` · `apps/admin/src/components/news-form.tsx` **[N]** — create/edit article.
+- [x] `P6-13` · `supabase/tests/hold-concurrency.test.sql` **[N]** — 10 parallel holds on one seat → exactly 1 success.
+- [x] `P6-14` · `supabase/tests/hold-ttl.test.sql` **[N]** — expired hold releases seat; kickoff lock rejects holds.
 
 ---
 
