@@ -130,9 +130,9 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 ### Phase 0 — Recon & Baseline
 
-- [ ] `P0-01` · `docs/BASELINE.md` **[N]** — record Node/npm/Supabase CLI versions, repo inventory, current commands, and known gaps. **DoD:** file committed.
-- [ ] `P0-02` · *repo root* — run `npm ci && npm run typecheck && npm run lint --workspace @xclub/admin && npm run lint --workspace @xclub/mobile && npm run build:admin`; capture output in chat. **DoD:** green baseline or documented failures.
-- [ ] `P0-03` · `PLAN-v2.md` — append §G with `P0-02` results. **DoD:** §G no longer empty.
+- [x] `P0-01` · `docs/BASELINE.md` **[N]** — record Node/npm/Supabase CLI versions, repo inventory, current commands, and known gaps. **DoD:** file committed.
+- [x] `P0-02` · *repo root* — run `npm ci && npm run typecheck && npm run lint --workspace @xclub/admin && npm run lint --workspace @xclub/mobile && npm run build:admin`; capture output in chat. **DoD:** green baseline or documented failures.
+- [x] `P0-03` · `PLAN-v2.md` — append §G with `P0-02` results. **DoD:** §G no longer empty.
 
 ---
 
@@ -529,7 +529,12 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 ## §G Baseline (populated by `P0-03`)
 
-_Empty until Phase 0 executes._
+Recorded 2026-11-09, full details in `docs/BASELINE.md`.
+
+- **Environment:** Node 26.13.0 · npm 12.2.2 · Supabase CLI not installed globally (`npx` resolves v3.0.0) · Git 2.56.0.
+- **Inventory:** root workspace (`apps/admin` Next.js 16.4.5, `apps/mobile` Expo SDK 58, `packages/shared`), all on mock stores; `PLAN.md` is SSOT. Stray untracked root `tsconfig.json` noted; not committed.
+- **`P0-02` results:** green baseline — `npm ci`, `typecheck` (shared/mobile/admin), `lint` (admin/mobile), `build:admin` all exit 0; production build renders 10 routes.
+- **Known gaps at baseline:** 14 moderate npm-audit findings (dev toolchain only: `@typescript-eslint/*`, `eslint-plugin-expo` — deferred to `P1-14`–`P1-17`); Supabase CLI/config/migrations/env absent (Phase 1); no test harness (Phase 1); G12 legacy files untouched until Phase 10b; `npm run mobile -- --tunnel` broken (use `cd apps/mobile && npx expo start --tunnel`).
 
 ---
 
