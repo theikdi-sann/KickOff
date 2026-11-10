@@ -174,7 +174,7 @@ site_url = "http://localhost:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-# Mobile deep link (scheme "xclub" — see apps/mobile/app.json) + admin web callback.
+# Mobile deep link (scheme "xclub" — see apps/mobile/app.config.ts) + admin web callback.
 additional_redirect_urls = ["http://localhost:3000/auth/callback", "xclub://auth/callback", "xclub://reset-password"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
@@ -494,4 +494,15 @@ import_map = "./functions/deno.json"
 [functions.scan-demo]
 enabled = true
 verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.devices]
+enabled = true
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+# Scheduled by pg_cron, which has no user JWT; the function checks x-cron-secret.
+[functions.send-kickoff-reminders]
+enabled = true
+verify_jwt = false
 import_map = "./functions/deno.json"

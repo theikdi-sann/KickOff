@@ -5,16 +5,30 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { AppProvider, useApp } from '@/lib/store';
-import { MockCommerceProvider } from '@/lib/mock-commerce';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { QueryProvider } from '@/lib/queries/query-provider';
+import { AppProvider, useApp } from '@/lib/store';
 import { colors } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync();
 
+/** Branded boot screen shown while fonts load and the session hydrates. */
+function BrandSplash() {
+  return (
+    <View style={styles.splash}>
+      <View style={styles.crest}>
+        <Text style={styles.crestLetter}>X</Text>
+      </View>
+      <Text style={styles.wordmark}>XCLUB</Text>
+      <Text style={styles.tagline}>MATCHDAY, SIMPLIFIED</Text>
+      <ActivityIndicator color={colors.accent} style={styles.spinner} />
+    </View>
+  );
+}
+
 function RootNavigator() {
   const { hydrated } = useApp();
-  if (!hydrated) return null;
+  if (!hydrated) return <BrandSplash />;
 
   return (
     <Stack
@@ -48,16 +62,56 @@ export default function RootLayout() {
     if (fontsLoaded) SplashScreen.hideAsync().catch(() => undefined);
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded) return <BrandSplash />;
 
   return (
     <QueryProvider>
       <AppProvider>
-        <MockCommerceProvider>
-          <StatusBar style="dark" />
-          <RootNavigator />
-        </MockCommerceProvider>
+        <StatusBar style="dark" />
+        <RootNavigator />
       </AppProvider>
     </QueryProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#07130D',
+  },
+  crest: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0B6B3A',
+    borderWidth: 1,
+    borderColor: 'rgba(244, 196, 48, 0.4)',
+  },
+  crestLetter: {
+    color: '#F4C430',
+    fontSize: 34,
+    fontWeight: '800',
+    letterSpacing: -1,
+  },
+  wordmark: {
+    marginTop: 18,
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: 6,
+  },
+  tagline: {
+    marginTop: 6,
+    color: 'rgba(236, 253, 245, 0.45)',
+    fontSize: 9,
+    fontWeight: '600',
+    letterSpacing: 2.5,
+  },
+  spinner: {
+    marginTop: 26,
+  },
+});

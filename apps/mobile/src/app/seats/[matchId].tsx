@@ -4,65 +4,104 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  buildSeatMap,
   formatMatchDate,
   formatMatchTime,
   formatTHB,
-  mockMatches,
-  mockZones,
-  type Seat,
-  type Zone,
+  MAX_SEATS_PER_ORDER,
+  type SeatDto,
+  type ZoneDto,
 } from '@xclub/shared';
-import { AppText, Pill, PrimaryButton, Screen } from '@/components/ui';
-import { useMockCommerce } from '@/lib/mock-commerce';
+import { AppText, EmptyState, Pill, PrimaryButton, Screen, Skeleton } from '@/components/ui';
+import { useCreateHold } from '@/lib/queries/holds';
+import { useMatch } from '@/lib/queries/matches';
+import { useSeatMap, useZones } from '@/lib/queries/seats';
 import { colors, radii, shadow } from '@/lib/theme';
-
-const MAX_SEATS = 6;
 
 export default function SeatSelectionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { matchId, zoneId: initialZoneId } = useLocalSearchParams<{ matchId: string; zoneId?: string }>();
-  const { takenSeatIds } = useMockCommerce();
-  const match = mockMatches.find((item) => item.id === matchId) ?? mockMatches[0];
-  const zones = useMemo(() => mockZones.filter((zone) => zone.matchId === match.id), [match.id]);
-  const [zoneId, setZoneId] = useState(
-    initialZoneId && zones.some((zone) => zone.id === initialZoneId) ? initialZoneId : zones[0]?.id ?? '',
-  );
+  const matchQuery = useMatch(matchId);
+  const zonesQuery = useZones(matchId);
+  const createHold = useCreateHold();
+
+  const [zoneId, setZoneId] = useState(initialZoneId ?? '');
   const [selected, setSelected] = useState<string[]>([]);
-  const zone = zones.find((item) => item.id === zoneId) ?? zones[0];
-  const seats = useMemo(() => (zone ? buildSeatMap(zone) : []), [zone]);
-  const taken = useMemo(() => new Set(takenSeatIds(match.id)), [takenSeatIds, match.id]);
+  const [holdError, setHoldError] = useState<string | null>(null);
+
+  const match = matchQuery.data;
+  const zones = zonesQuery.data ?? [];
+  const zone: ZoneDto | undefined = zones.find((item) => item.id === zoneId) ?? zones[0];
+  const seatsQuery = useSeatMap(zone?.id);
+  const seats = useMemo(() => seatsQuery.data ?? [], [seatsQuery.data]);
   const rows = zone?.rows ?? [];
   const selectedSeats = seats.filter((seat) => selected.includes(seat.id));
   const total = (zone?.priceSatang ?? 0) * selected.length;
-  const soldCount = seats.filter((seat) => seat.status !== 'available' || taken.has(seat.id)).length;
+  const soldCount = seats.filter((seat) => seat.status !== 'available').length;
 
-  const chooseZone = (next: Zone) => {
+  const chooseZone = (next: ZoneDto) => {
     setZoneId(next.id);
     setSelected([]);
+    setHoldError(null);
   };
 
-  const toggleSeat = (seat: Seat) => {
-    if (seat.status !== 'available' || taken.has(seat.id)) return;
+  const toggleSeat = (seat: SeatDto) => {
+    if (seat.status !== 'available') return;
+    setHoldError(null);
     setSelected((current) => {
       if (current.includes(seat.id)) return current.filter((id) => id !== seat.id);
-      if (current.length >= MAX_SEATS) return current;
+      if (current.length >= MAX_SEATS_PER_ORDER) return current;
       return [...current, seat.id];
     });
   };
 
-  const continueToCheckout = () => {
-    if (!zone || selected.length === 0) return;
-    router.push({
-      pathname: '/checkout',
-      params: {
-        matchId: match.id,
-        zoneId: zone.id,
-        seats: selectedSeats.map((seat) => seat.label).join(','),
-      },
-    });
+  const continueToCheckout = async () => {
+    if (!match || !zone || selected.length === 0) return;
+    setHoldError(null);
+    try {
+      const hold = await createHold.mutateAsync({ matchId: match.id, seatIds: selected });
+      router.push({
+        pathname: '/checkout',
+        params: {
+          holdId: hold.id,
+          matchId: match.id,
+          zoneId: zone.id,
+          seats: selectedSeats.map((seat) => seat.label).join(','),
+        },
+      });
+    } catch (error) {
+      setHoldError(error instanceof Error ? error.message : 'Those seats are no longer available.');
+      void seatsQuery.refetch();
+      setSelected([]);
+    }
   };
+
+  if (matchQuery.isLoading) {
+    return (
+      <Screen>
+        <View style={{ padding: 20, gap: 14 }}>
+          <Skeleton height={52} radius={16} />
+          <Skeleton height={86} radius={16} />
+          <Skeleton height={420} radius={22} />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (!match) {
+    return (
+      <Screen>
+        <View style={{ padding: 20 }}>
+          <EmptyState
+            title="Fixture unavailable"
+            description={
+              matchQuery.error instanceof Error ? matchQuery.error.message : 'This match could not be found.'
+            }
+          />
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -78,7 +117,7 @@ export default function SeatSelectionScreen() {
                 XCLUB VS {match.opponent.toUpperCase()}
               </AppText>
             </View>
-            <Pill label="MOCK" tone="gold" />
+            <Pill label="LIVE" tone="green" />
           </View>
 
           <View style={styles.matchStrip}>
@@ -166,7 +205,7 @@ export default function SeatSelectionScreen() {
                     {seats
                       .filter((seat) => seat.row === row)
                       .map((seat) => {
-                        const isSold = seat.status !== 'available' || taken.has(seat.id);
+                        const isSold = seat.status !== 'available';
                         const isSelected = selected.includes(seat.id);
                         return (
                           <Pressable
@@ -205,10 +244,17 @@ export default function SeatSelectionScreen() {
           <View style={styles.note}>
             <ShieldCheck size={15} color={colors.primary} />
             <AppText variant="small" color={colors.muted} style={styles.noteText}>
-              You can select up to {MAX_SEATS} seats per order. Seats are held for 10 minutes while
-              you check out.
+              You can select up to {MAX_SEATS_PER_ORDER} seats per order. Seats are held for 10
+              minutes while you check out.
             </AppText>
           </View>
+          {holdError ? (
+            <View style={styles.note}>
+              <AppText variant="small" color={colors.danger} style={styles.noteText}>
+                {holdError}
+              </AppText>
+            </View>
+          ) : null}
         </ScrollView>
 
         <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
@@ -222,8 +268,9 @@ export default function SeatSelectionScreen() {
           </View>
           <PrimaryButton
             label={selected.length ? 'Continue' : 'Select a seat'}
-            onPress={continueToCheckout}
+            onPress={() => void continueToCheckout()}
             disabled={selected.length === 0}
+            loading={createHold.isPending}
             style={styles.barButton}
           />
         </View>

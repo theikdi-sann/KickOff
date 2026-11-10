@@ -389,42 +389,42 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 #### 10a — Bootstrap & API
 
-- [ ] `P10a-01` · `apps/mobile/src/lib/api.ts` **[N]** — typed Edge Function client, auth header, single-flight refresh, `ApiError` mapping.
-- [ ] `P10a-02` · `apps/mobile/src/app/_layout.tsx` **[M]** — `QueryClientProvider` + Supabase auth bootstrap; branded splash instead of `return null`.
-- [ ] `P10a-03` · `apps/mobile/src/lib/queries/profile.ts` **[N]** — `useProfile`, `useUpdateProfile`, `useChangePassword`.
+- [x] `P10a-01` · `apps/mobile/src/lib/api.ts` **[N]** — typed Edge Function client, auth header, single-flight refresh, `ApiError` mapping.
+- [x] `P10a-02` · `apps/mobile/src/app/_layout.tsx` **[M]** — `QueryClientProvider` + Supabase auth bootstrap; branded splash instead of `return null`.
+- [x] `P10a-03` · `apps/mobile/src/lib/queries/profile.ts` **[N]** — `useProfile`, `useUpdateProfile`, `useChangePassword`.
 
 #### 10b — Migrate each surface
 
-- [ ] `P10b-01` · `apps/mobile/src/app/(tabs)/index.tsx` **[M]** — `useMatches` + `useNews`; skeleton, empty state, pull-to-refresh.
-- [ ] `P10b-02` · `apps/mobile/src/app/match/[id].tsx` **[M]** — `useMatch` + `useZones`; "Not on sale" guard.
-- [ ] `P10b-03` · `apps/mobile/src/app/seats/[matchId].tsx` **[M]** — `useSeatMap`; cap from `MAX_SEATS_PER_ORDER`; `useCreateHold`.
-- [ ] `P10b-04` · `apps/mobile/src/app/checkout.tsx` **[M]** — server hold totals; Stripe URL; polling; cancel path.
-- [ ] `P10b-05` · `apps/mobile/src/app/(tabs)/tickets.tsx` **[M]** — `useTickets`; active/past tabs.
-- [ ] `P10b-06` · `apps/mobile/src/app/ticket/[id].tsx` **[M]** — signed V2 payload; keep-awake; USED overlay.
-- [ ] `P10b-07` · `apps/mobile/src/app/orders.tsx` **[M]** — `useOrders`; receipt download.
-- [ ] `P10b-08` · `apps/mobile/src/app/orders/[id].tsx` **[N]** — order detail.
-- [ ] `P10b-09` · `apps/mobile/src/app/(tabs)/profile.tsx` **[M]** — derive counts from hooks; do **not** render `profile.role`; links to edit/settings/legal/support.
-- [ ] `P10b-10` · `apps/mobile/src/app/profile/edit.tsx` **[N]** — `PATCH /me` + password change.
-- [ ] `P10b-11` · `apps/mobile/src/app/settings.tsx` **[N]** — notifications, language, sign out, delete account, `resetLocalSession()`.
-- [ ] `P10b-12` · `apps/mobile/src/app/news/[id].tsx` **[M]** — `useNewsItem`.
-- [ ] `P10b-13` · `apps/mobile/src/components/match-card.tsx` **[M]** — accept `MatchDto`.
-- [ ] `P10b-14` · `apps/mobile/src/components/ticket-card.tsx` **[M]** — accept `TicketDto`; no props change.
-- [ ] `P10b-15` · `apps/mobile/app.json` → `apps/mobile/app.config.ts` **[ATOMIC]** — preserve `scheme: "xclub"`, `web.output: "server"`, `experiments`, `userInterfaceStyle`, plugins; add `expo-notifications` and `extra.functionsUrl`. **DoD:** `npx expo config` diff shows only intended additions.
-- [ ] `P10b-16` · `apps/mobile/src/lib/notifications.ts` **[N]** — permission, token registration via Edge Function, kickoff reminders T-24h/T-2h.
-- [ ] `P10b-17` · `supabase/functions/devices/index.ts` **[N]** — `POST /devices`, `DELETE /devices/:token`.
-- [ ] `P10b-18` · `supabase/functions/send-kickoff-reminders/index.ts` **[N]** — scheduled push via Expo.
-- [ ] `P10b-19` · `apps/mobile/src/app/legal/[doc].tsx` **[N]** — terms/privacy/refund static render.
-- [ ] `P10b-20` · `apps/mobile/src/app/orders.tsx` **[M]** — delete `buildReceiptHtml` + `expo-print` HTML branch (strictly after `P7-08`). **DoD:** `rg "buildReceiptHtml"` = 0.
-- [ ] `P10b-21` · *repo root* — run `npm run check:no-mocks` and record the remaining mock references before deletion. **DoD:** list is empty or each remaining file is scheduled for a migration task.
-- [ ] `P10b-22` · `apps/mobile/src/lib/store.tsx` **[M]** — collapse to session-only store (if not already at `P5-11`).
-- [ ] `P10b-23` · `apps/mobile/package.json` **[M]** — remove AsyncStorage if unused. **DoD:** `rg "AsyncStorage"` = 0.
+- [x] `P10b-01` · `apps/mobile/src/app/(tabs)/index.tsx` **[M]** — `useMatches` + `useNews`; skeleton, empty state, pull-to-refresh.
+- [x] `P10b-02` · `apps/mobile/src/app/match/[id].tsx` **[M]** — `useMatch` + `useZones`; "Not on sale" guard.
+- [x] `P10b-03` · `apps/mobile/src/app/seats/[matchId].tsx` **[M]** — `useSeatMap`; cap from `MAX_SEATS_PER_ORDER`; `useCreateHold`.
+- [x] `P10b-04` · `apps/mobile/src/app/checkout.tsx` **[M]** — server hold totals; Stripe URL; polling; cancel path.
+- [x] `P10b-05` · `apps/mobile/src/app/(tabs)/tickets.tsx` **[M]** — `useTickets`; active/past tabs.
+- [x] `P10b-06` · `apps/mobile/src/app/ticket/[id].tsx` **[M]** — signed V2 payload; keep-awake; USED overlay.
+- [x] `P10b-07` · `apps/mobile/src/app/orders.tsx` **[M]** — `useOrders`; receipt download.
+- [x] `P10b-08` · `apps/mobile/src/app/orders/[id].tsx` **[N]** — order detail.
+- [x] `P10b-09` · `apps/mobile/src/app/(tabs)/profile.tsx` **[M]** — derive counts from hooks; do **not** render `profile.role`; links to edit/settings/legal/support.
+- [x] `P10b-10` · `apps/mobile/src/app/profile/edit.tsx` **[N]** — `PATCH /me` + password change.
+- [x] `P10b-11` · `apps/mobile/src/app/settings.tsx` **[N]** — notifications, language, sign out, delete account, `resetLocalSession()`.
+- [x] `P10b-12` · `apps/mobile/src/app/news/[id].tsx` **[M]** — `useNewsItem`.
+- [x] `P10b-13` · `apps/mobile/src/components/match-card.tsx` **[M]** — accept `MatchDto`.
+- [x] `P10b-14` · `apps/mobile/src/components/ticket-card.tsx` **[M]** — accept `TicketDto`; no props change.
+- [x] `P10b-15` · `apps/mobile/app.json` → `apps/mobile/app.config.ts` **[ATOMIC]** — preserve `scheme: "xclub"`, `web.output: "server"`, `experiments`, `userInterfaceStyle`, plugins; add `expo-notifications` and `extra.functionsUrl`. **DoD:** `npx expo config` diff shows only intended additions.
+- [x] `P10b-16` · `apps/mobile/src/lib/notifications.ts` **[N]** — permission, token registration via Edge Function, kickoff reminders T-24h/T-2h.
+- [x] `P10b-17` · `supabase/functions/devices/index.ts` **[N]** — `POST /devices`, `DELETE /devices/:token`.
+- [x] `P10b-18` · `supabase/functions/send-kickoff-reminders/index.ts` **[N]** — scheduled push via Expo.
+- [x] `P10b-19` · `apps/mobile/src/app/legal/[doc].tsx` **[N]** — terms/privacy/refund static render.
+- [x] `P10b-20` · `apps/mobile/src/app/orders.tsx` **[M]** — delete `buildReceiptHtml` + `expo-print` HTML branch (strictly after `P7-08`). **DoD:** `rg "buildReceiptHtml"` = 0.
+- [x] `P10b-21` · *repo root* — run `npm run check:no-mocks` and record the remaining mock references before deletion. **DoD:** list is empty or each remaining file is scheduled for a migration task.
+- [x] `P10b-22` · `apps/mobile/src/lib/store.tsx` **[M]** — collapse to session-only store (if not already at `P5-11`).
+- [x] `P10b-23` · `apps/mobile/package.json` **[M]** — remove AsyncStorage if unused. **DoD:** `rg "AsyncStorage"` = 0.
 
 #### 10c — MVP gate
 
-- [ ] `P10c-01` · *repo root* — run the full demo flow: admin login → create fixture → configure zones → fan login → select seats → Stripe test card `4242 4242 4242 4242` → webhook issues tickets → QR pass → admin scan approves → second scan rejects → PDF receipt. **DoD:** documented in chat with screenshots/logs. **Do not proceed to Phase 11/12 extras until green.**
-- [ ] `P10c-02` · `packages/shared/src/index.ts` **[M]** — remove the temporary `export * from './mock'` after `P10b-21` and `P10c-01` are green. **DoD:** no app imports mock.
-- [ ] `P10c-03` · `packages/shared/src/mock.ts` — **delete**. **DoD:** `npm run typecheck` and `npm run check:no-mocks` green.
-- [ ] `P10c-04` · `packages/shared/package.json` **[M]** — remove the `./mock` export entry. **DoD:** `npm pack --dry-run` clean.
+- [x] `P10c-01` · *repo root* — run the full demo flow: admin login → create fixture → configure zones → fan login → select seats → Stripe test card `4242 4242 4242 4242` → webhook issues tickets → QR pass → admin scan approves → second scan rejects → PDF receipt. **DoD:** documented in chat with screenshots/logs. **Do not proceed to Phase 11/12 extras until green.**
+- [x] `P10c-02` · `packages/shared/src/index.ts` **[M]** — remove the temporary `export * from './mock'` after `P10b-21` and `P10c-01` are green. **DoD:** no app imports mock.
+- [x] `P10c-03` · `packages/shared/src/mock.ts` — **delete**. **DoD:** `npm run typecheck` and `npm run check:no-mocks` green.
+- [x] `P10c-04` · `packages/shared/package.json` **[M]** — remove the `./mock` export entry. **DoD:** `npm pack --dry-run` clean.
 
 ---
 

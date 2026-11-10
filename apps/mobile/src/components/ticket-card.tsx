@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { CalendarDays, MapPin, QrCode } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { formatMatchDate, formatMatchTime, formatTHB, type Ticket } from '@xclub/shared';
+import { formatMatchDate, formatMatchTime, formatTHB, type TicketDto } from '@xclub/shared';
 import { AppText, Pill } from '@/components/ui';
 import { colors, radii, shadow } from '@/lib/theme';
 
@@ -10,7 +10,7 @@ export function TicketCard({
   onPress,
   compact = false,
 }: {
-  ticket: Ticket;
+  ticket: TicketDto;
   onPress: () => void;
   compact?: boolean;
 }) {

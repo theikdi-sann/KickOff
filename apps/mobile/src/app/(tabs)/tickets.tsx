@@ -1,28 +1,54 @@
 import { ChevronRight, ReceiptText, Ticket as TicketIcon } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { formatMatchDate, formatTHB } from '@xclub/shared';
 import { TicketCard } from '@/components/ticket-card';
-import { AppText, Card, MockTag, PageScroll, PrimaryButton, Screen } from '@/components/ui';
-import { useMockCommerce } from '@/lib/mock-commerce';
-import { colors, fonts, radii } from '@/lib/theme';
+import {
+  AppText,
+  Card,
+  LiveTag,
+  PageScroll,
+  PrimaryButton,
+  Screen,
+  Skeleton,
+} from '@/components/ui';
+import { useOrders } from '@/lib/queries/orders';
+import { useTickets } from '@/lib/queries/tickets';
+import { colors, radii } from '@/lib/theme';
 
 export default function TicketsScreen() {
   const router = useRouter();
-  const { tickets, orders } = useMockCommerce();
+  const ticketsQuery = useTickets();
+  const ordersQuery = useOrders();
   const [tab, setTab] = useState<'active' | 'past'>('active');
+
+  const tickets = ticketsQuery.data ?? [];
+  const orders = ordersQuery.data ?? [];
+  const paidOrders = orders.filter((order) => order.status === 'paid');
 
   const active = tickets
     .filter((ticket) => ticket.status === 'valid')
     .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
-  const past = tickets.filter((ticket) => ticket.status !== 'valid');
+  const past = tickets
+    .filter((ticket) => ticket.status !== 'valid')
+    .sort((a, b) => new Date(b.kickoffAt).getTime() - new Date(a.kickoffAt).getTime());
   const shown = tab === 'active' ? active : past;
-  const orderTotal = orders.filter((order) => order.status === 'paid').length;
+  const loading = ticketsQuery.isLoading || ordersQuery.isLoading;
+  const refreshing = ticketsQuery.isRefetching || ordersQuery.isRefetching;
+
+  const refresh = () => {
+    void ticketsQuery.refetch();
+    void ordersQuery.refetch();
+  };
 
   return (
     <Screen>
-      <PageScroll bottom={118}>
+      <PageScroll
+        bottom={118}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
+        }>
         <View style={styles.header}>
           <View>
             <AppText variant="caption" color={colors.primary} style={styles.eyebrow}>
@@ -32,7 +58,7 @@ export default function TicketsScreen() {
               My tickets
             </AppText>
           </View>
-          <MockTag />
+          <LiveTag />
         </View>
 
         <View style={styles.segmented}>
@@ -41,16 +67,27 @@ export default function TicketsScreen() {
             active={tab === 'active'}
             onPress={() => setTab('active')}
           />
-          <Segment label={`Past · ${past.length}`} active={tab === 'past'} onPress={() => setTab('past')} />
+          <Segment
+            label={`Past · ${past.length}`}
+            active={tab === 'past'}
+            onPress={() => setTab('past')}
+          />
         </View>
 
-        {shown.length ? (
+        {loading ? (
+          <View style={styles.list}>
+            <Skeleton height={172} radius={18} />
+            <Skeleton height={172} radius={18} />
+          </View>
+        ) : shown.length ? (
           <View style={styles.list}>
             {shown.map((ticket) => (
               <TicketCard
                 key={ticket.id}
                 ticket={ticket}
-                onPress={() => router.push({ pathname: '/ticket/[id]', params: { id: ticket.id } })}
+                onPress={() =>
+                  router.push({ pathname: '/ticket/[id]', params: { id: ticket.id } })
+                }
               />
             ))}
           </View>
@@ -65,7 +102,11 @@ export default function TicketsScreen() {
             <AppText variant="small" color={colors.muted} style={styles.emptyText}>
               Pick an upcoming fixture, choose your exact seat, and your pass will appear here.
             </AppText>
-            <PrimaryButton label="Browse fixtures" onPress={() => router.push('/')} style={styles.emptyButton} />
+            <PrimaryButton
+              label="Browse fixtures"
+              onPress={() => router.push('/(tabs)')}
+              style={styles.emptyButton}
+            />
           </Card>
         )}
 
@@ -78,7 +119,8 @@ export default function TicketsScreen() {
           <View style={styles.flex}>
             <AppText variant="label">Order history</AppText>
             <AppText variant="small" color={colors.muted}>
-              {orderTotal} paid {orderTotal === 1 ? 'order' : 'orders'} · receipts available
+              {paidOrders.length} paid {paidOrders.length === 1 ? 'order' : 'orders'} · receipts
+              available
             </AppText>
           </View>
           <View style={styles.orderTotal}>
@@ -86,7 +128,7 @@ export default function TicketsScreen() {
               TOTAL
             </AppText>
             <AppText variant="label">
-              {formatTHB(orders.reduce((sum, order) => sum + (order.status === 'paid' ? order.amountSatang : 0), 0))}
+              {formatTHB(paidOrders.reduce((sum, order) => sum + order.amountSatang, 0))}
             </AppText>
           </View>
           <ChevronRight size={18} color={colors.muted} />
@@ -97,8 +139,8 @@ export default function TicketsScreen() {
           <View style={styles.flex}>
             <AppText variant="label">Keep your pass ready</AppText>
             <AppText variant="small" color={colors.muted} style={styles.infoText}>
-              Your QR is stored on this device and can be shown offline. Gate validation itself needs
-              a connection in this prototype.
+              Open your pass before you reach the gate so the signed QR is ready. Each pass admits
+              one entry and is validated live by the scanner.
             </AppText>
           </View>
         </Card>
@@ -106,7 +148,8 @@ export default function TicketsScreen() {
         {active[0] ? (
           <View style={styles.hintRow}>
             <AppText variant="caption" color={colors.muted} style={styles.hintText}>
-              NEXT ENTRY · {formatMatchDate(active[0].kickoffAt).toUpperCase()} · {active[0].venue.toUpperCase()}
+              NEXT ENTRY · {formatMatchDate(active[0].kickoffAt).toUpperCase()} ·{' '}
+              {active[0].venue.toUpperCase()}
             </AppText>
           </View>
         ) : null}
@@ -115,7 +158,15 @@ export default function TicketsScreen() {
   );
 }
 
-function Segment({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function Segment({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable onPress={onPress} style={[styles.segment, active && styles.segmentActive]}>
       <AppText variant="label" color={active ? '#FFFFFF' : colors.muted} style={styles.segmentText}>
@@ -208,5 +259,4 @@ const styles = StyleSheet.create({
   infoText: { marginTop: 3, fontSize: 11, lineHeight: 16 },
   hintRow: { marginTop: 22, paddingHorizontal: 20, alignItems: 'center' },
   hintText: { fontSize: 8, letterSpacing: 0.8 },
-  font: { fontFamily: fonts.bold },
 });

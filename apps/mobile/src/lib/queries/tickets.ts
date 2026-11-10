@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { TicketDto } from '@xclub/shared';
+import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
 interface TicketJoin {
@@ -82,5 +83,24 @@ export function useTicket(id: string | undefined) {
       if (result.error) throw new Error(result.error.message);
       return mapTicket(result.data as unknown as TicketJoin, holder);
     },
+  });
+}
+
+export interface TicketQrPayload {
+  qrPayload: string;
+  version: number;
+  status: string;
+}
+
+/**
+ * Fetches the short-lived signed V2 payload from `ticket-qr`. The ticket row
+ * itself never exposes the QR, so the pass stays server-signed.
+ */
+export function useTicketQr(id: string | undefined) {
+  return useQuery({
+    queryKey: ['ticket-qr', id],
+    enabled: Boolean(id),
+    staleTime: 60_000,
+    queryFn: () => api.post<TicketQrPayload>('ticket-qr', { ticketId: id! }),
   });
 }

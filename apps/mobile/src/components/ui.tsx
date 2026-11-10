@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type DimensionValue,
   type StyleProp,
   type TextStyle,
   type ViewStyle,
@@ -67,14 +68,17 @@ export function PageScroll({
   children,
   contentStyle,
   bottom = 120,
+  refreshControl,
 }: {
   children: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   bottom?: number;
+  refreshControl?: ReactElement;
 }) {
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
+      refreshControl={refreshControl}
       contentContainerStyle={[{ paddingBottom: bottom }, contentStyle]}>
       {children}
     </ScrollView>
@@ -289,11 +293,57 @@ export function ScreenHeader({
   );
 }
 
-export function MockTag({ dark = false }: { dark?: boolean }) {
+export function LiveTag({ dark = false }: { dark?: boolean }) {
   return (
-    <View style={[styles.mockTag, dark && { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
-      <View style={styles.mockDot} />
-      <Text style={[styles.mockText, dark && { color: '#FFFFFF' }]}>MOCK</Text>
+    <View style={[styles.liveTag, dark && { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
+      <View style={styles.liveDot} />
+      <Text style={[styles.liveText, dark && { color: '#FFFFFF' }]}>LIVE</Text>
+    </View>
+  );
+}
+
+/** Neutral placeholder block used while a query is loading. */
+export function Skeleton({
+  height = 16,
+  width = '100%' as DimensionValue,
+  radius = 10,
+  style,
+}: {
+  height?: number;
+  width?: DimensionValue;
+  radius?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View
+      style={[
+        { height, width, borderRadius: radius, backgroundColor: colors.surfaceAlt },
+        style,
+      ]}
+    />
+  );
+}
+
+export function EmptyState({
+  title,
+  description,
+  icon,
+}: {
+  title: string;
+  description?: string;
+  icon?: ReactNode;
+}) {
+  return (
+    <View style={styles.emptyState}>
+      {icon ? <View style={styles.emptyIcon}>{icon}</View> : null}
+      <AppText variant="h3" style={styles.emptyTitle}>
+        {title}
+      </AppText>
+      {description ? (
+        <AppText variant="small" color={colors.muted} style={styles.emptyDescription}>
+          {description}
+        </AppText>
+      ) : null}
     </View>
   );
 }
@@ -367,21 +417,38 @@ const styles = StyleSheet.create({
   backText: { fontSize: 34, lineHeight: 36, marginTop: -4, fontFamily: fonts.body },
   headerCenter: { flex: 1, alignItems: 'center', gap: 2 },
   headerRight: { width: 40, alignItems: 'flex-end' },
-  mockTag: {
+  liveTag: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     alignSelf: 'flex-start',
-    backgroundColor: colors.softGold,
+    backgroundColor: colors.softGreen,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: radii.pill,
   },
-  mockDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.warning },
-  mockText: {
+  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.primary },
+  liveText: {
     fontFamily: fonts.bold,
     fontSize: 8,
     letterSpacing: 1,
-    color: '#8A6400',
+    color: colors.primary,
   },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 36,
+    paddingHorizontal: 24,
+    gap: 6,
+  },
+  emptyIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.softGreen,
+    marginBottom: 6,
+  },
+  emptyTitle: { textAlign: 'center' },
+  emptyDescription: { textAlign: 'center', maxWidth: 280 },
 });

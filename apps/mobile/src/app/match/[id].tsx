@@ -15,36 +15,74 @@ import {
   formatFullDate,
   formatMatchTime,
   formatTHB,
-  minimumPrice,
-  mockMatches,
-  mockZones,
-  zoneAvailability,
-  type Match,
-  type Zone,
+  type MatchDto,
+  type ZoneDto,
 } from '@xclub/shared';
 import {
   AppText,
   Card,
   Crest,
-  MockTag,
+  EmptyState,
+  LiveTag,
   PageScroll,
   Pill,
   Screen,
+  Skeleton,
 } from '@/components/ui';
+import { useMatch } from '@/lib/queries/matches';
+import { useZones, useZoneAvailability } from '@/lib/queries/seats';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function MatchDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const match = mockMatches.find((item) => item.id === id) ?? mockMatches[0];
-  const zones = mockZones.filter((zone) => zone.matchId === match.id);
+  const matchQuery = useMatch(id);
+  const zonesQuery = useZones(id);
+  const availabilityQuery = useZoneAvailability(id);
+
+  const match = matchQuery.data;
+  const zones = zonesQuery.data ?? [];
+  const availability = availabilityQuery.data ?? {};
+
+  if (matchQuery.isLoading) {
+    return (
+      <Screen style={{ backgroundColor: colors.bg }}>
+        <StatusBar style="light" />
+        <View style={{ padding: 20, gap: 16 }}>
+          <Skeleton height={320} radius={22} />
+          <Skeleton height={120} radius={22} />
+          <Skeleton height={74} radius={18} />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (matchQuery.error || !match) {
+    return (
+      <Screen style={{ backgroundColor: colors.bg }}>
+        <StatusBar style="light" />
+        <View style={{ padding: 20 }}>
+          <EmptyState
+            title="Fixture unavailable"
+            description={
+              matchQuery.error instanceof Error
+                ? matchQuery.error.message
+                : 'This match could not be found.'
+            }
+          />
+        </View>
+      </Screen>
+    );
+  }
+
   const completed = match.status === 'completed';
+  const minPrice = zones.length ? Math.min(...zones.map((zone) => zone.priceSatang)) : undefined;
 
   return (
     <Screen style={{ backgroundColor: colors.bg }}>
       <StatusBar style="light" />
       <PageScroll bottom={40} contentStyle={{ paddingBottom: 44 }}>
-        <MatchHero match={match} onBack={() => router.back()} />
+        <MatchHero match={match} fromPriceSatang={minPrice} onBack={() => router.back()} />
 
         <View style={styles.body}>
           {completed ? (
@@ -83,7 +121,7 @@ export default function MatchDetailScreen() {
                   </AppText>
                   <AppText variant="h2">Seating zones</AppText>
                 </View>
-                <MockTag />
+                <LiveTag />
               </View>
 
               <View style={styles.zoneList}>
@@ -91,6 +129,12 @@ export default function MatchDetailScreen() {
                   <ZoneRow
                     key={zone.id}
                     zone={zone}
+                    availability={
+                      availability[zone.id] ?? {
+                        total: zone.rows.length * zone.seatsPerRow,
+                        available: zone.rows.length * zone.seatsPerRow,
+                      }
+                    }
                     onPress={() =>
                       router.push({
                         pathname: '/seats/[matchId]',
@@ -160,7 +204,7 @@ export default function MatchDetailScreen() {
           <View style={styles.notice}>
             <Info size={14} color={colors.warning} />
             <AppText variant="caption" color="#8A6400" style={styles.noticeText}>
-              PHASE A PROTOTYPE · PAYMENT AND TICKET ISSUING ARE SIMULATED
+              SECURE CHECKOUT · HMAC-SIGNED PASSES · LIVE GATE VALIDATION
             </AppText>
           </View>
         </View>
@@ -169,10 +213,17 @@ export default function MatchDetailScreen() {
   );
 }
 
-function MatchHero({ match, onBack }: { match: Match; onBack: () => void }) {
+function MatchHero({
+  match,
+  fromPriceSatang,
+  onBack,
+}: {
+  match: MatchDto;
+  fromPriceSatang?: number;
+  onBack: () => void;
+}) {
   const completed = match.status === 'completed';
-  const price = minimumPrice(match.id);
-  const onSale = price > 0;
+  const onSale = fromPriceSatang !== undefined;
   return (
     <LinearGradient
       colors={match.posterColors}
@@ -185,7 +236,7 @@ function MatchHero({ match, onBack }: { match: Match; onBack: () => void }) {
         <Pressable onPress={onBack} style={styles.back}>
           <ChevronLeft size={22} color="#FFFFFF" />
         </Pressable>
-        <MockTag dark />
+        <LiveTag dark />
         <View style={styles.heroTopSpacer} />
       </View>
 
@@ -263,7 +314,7 @@ function MatchHero({ match, onBack }: { match: Match; onBack: () => void }) {
               {onSale ? 'TICKETS FROM' : 'TICKETS'}
             </AppText>
             <AppText variant="h2" color={onSale ? colors.accent : '#FFFFFF'}>
-              {onSale ? formatTHB(price) : 'Not on sale'}
+              {onSale ? formatTHB(fromPriceSatang) : 'Not on sale'}
             </AppText>
           </View>
           <View style={styles.availablePill}>
@@ -278,8 +329,15 @@ function MatchHero({ match, onBack }: { match: Match; onBack: () => void }) {
   );
 }
 
-function ZoneRow({ zone, onPress }: { zone: Zone; onPress: () => void }) {
-  const availability = zoneAvailability(zone);
+function ZoneRow({
+  zone,
+  availability,
+  onPress,
+}: {
+  zone: ZoneDto;
+  availability: { total: number; available: number };
+  onPress: () => void;
+}) {
   const soldOut = availability.available === 0;
   return (
     <Pressable

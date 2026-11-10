@@ -1,5 +1,11 @@
 /** Shared business constants. Values are also mirrored in SQL/Edge Functions. */
 
+/** Brand copy used across the member app. */
+export const CLUB_NAME = 'XClub';
+export const CLUB_TAGLINE = 'Your digital ticket to match day.';
+export const STADIUM = 'XClub Arena';
+export const COMPETITION = 'Thai Premier League';
+
 /** A seat hold expires after 10 minutes. */
 export const SEAT_HOLD_TTL_SECONDS = 600;
 

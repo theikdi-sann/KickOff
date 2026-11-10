@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { CLUB_TAGLINE } from '@xclub/shared';
-import { AppText, MockTag, PrimaryButton } from '@/components/ui';
+import { AppText, LiveTag, PrimaryButton } from '@/components/ui';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function WelcomeScreen() {
@@ -34,7 +34,7 @@ export default function WelcomeScreen() {
               </AppText>
             </View>
           </View>
-          <MockTag dark />
+          <LiveTag dark />
         </View>
 
         <View style={styles.hero}>

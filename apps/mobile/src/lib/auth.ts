@@ -97,6 +97,11 @@ export async function signOut(): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+/** Clears the local session without waiting on a network round-trip. */
+export async function resetLocalSession(): Promise<void> {
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+}
+
 export async function requestPasswordReset(email: string): Promise<void> {
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
     redirectTo: 'xclub://reset-password',

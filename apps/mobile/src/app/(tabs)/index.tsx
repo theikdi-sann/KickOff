@@ -9,48 +9,75 @@ import {
   Ticket as TicketIcon,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import {
-  demoCustomer,
   formatMatchDate,
   formatMatchTime,
   formatTHB,
-  minimumPrice,
-  mockMatches,
-  mockNews,
-  mockZones,
-  zoneAvailability,
-  type NewsItem,
+  type NewsDto,
 } from '@xclub/shared';
 import { MatchCard, ResultRow } from '@/components/match-card';
 import {
   AppText,
   Card,
   Crest,
-  MockTag,
+  EmptyState,
+  LiveTag,
   PageScroll,
   Screen,
   SectionHeading,
+  Skeleton,
 } from '@/components/ui';
-import { useMockCommerce } from '@/lib/mock-commerce';
-import { useApp } from '@/lib/store';
+import { useMatches } from '@/lib/queries/matches';
+import { useNews } from '@/lib/queries/news';
+import { useProfile } from '@/lib/queries/profile';
+import { useZones } from '@/lib/queries/seats';
+import { useTickets } from '@/lib/queries/tickets';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { profile } = useApp();
-  const { tickets } = useMockCommerce();
-  const upcoming = mockMatches.filter((match) => match.status === 'upcoming');
-  const results = mockMatches.filter((match) => match.status === 'completed');
+  const profileQuery = useProfile();
+  const matchesQuery = useMatches();
+  const newsQuery = useNews();
+  const ticketsQuery = useTickets();
+
+  const matches = matchesQuery.data ?? [];
+  const news = newsQuery.data ?? [];
+  const tickets = ticketsQuery.data ?? [];
+  const upcoming = matches.filter((match) => match.status === 'upcoming');
+  const results = matches.filter((match) => match.status === 'completed');
   const nextMatch = upcoming[0];
-  const firstName = (profile?.fullName ?? demoCustomer.fullName).split(' ')[0];
+  const zonesQuery = useZones(nextMatch?.id);
+  const zones = zonesQuery.data ?? [];
+
+  const profile = profileQuery.data;
+  const firstName = (profile?.fullName ?? 'there').split(' ')[0];
   const validTickets = tickets.filter((ticket) => ticket.status === 'valid');
-  const nextZones = mockZones.filter((zone) => zone.matchId === nextMatch.id);
-  const seatsLeft = nextZones.reduce((total, zone) => total + zoneAvailability(zone).available, 0);
+  const minPrice = zones.length ? Math.min(...zones.map((zone) => zone.priceSatang)) : undefined;
+  const seatsLeft = zones.reduce(
+    (total, zone) => total + zone.rows.length * zone.seatsPerRow,
+    0,
+  );
+  const featured = news[0];
+
+  const loading = matchesQuery.isLoading || newsQuery.isLoading;
+  const refreshing =
+    matchesQuery.isRefetching || newsQuery.isRefetching || ticketsQuery.isRefetching;
+
+  const refresh = () => {
+    void matchesQuery.refetch();
+    void newsQuery.refetch();
+    void ticketsQuery.refetch();
+  };
 
   return (
     <Screen>
-      <PageScroll bottom={118}>
+      <PageScroll
+        bottom={118}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
+        }>
         <View style={styles.header}>
           <View style={styles.brandRow}>
             <View style={styles.logo}>
@@ -68,14 +95,14 @@ export default function HomeScreen() {
             </View>
           </View>
           <View style={styles.headerRight}>
-            <MockTag />
-            <Pressable style={styles.iconButton}>
+            <LiveTag />
+            <Pressable style={styles.iconButton} onPress={() => router.push('/tickets')}>
               <Bell size={18} color={colors.text} />
-              <View style={styles.notifDot} />
+              {validTickets.length > 0 ? <View style={styles.notifDot} /> : null}
             </Pressable>
             <Pressable onPress={() => router.push('/profile')} style={styles.avatar}>
               <AppText variant="label" color="#FFFFFF">
-                {profile?.initials ?? 'NC'}
+                {profile?.initials ?? 'XC'}
               </AppText>
             </Pressable>
           </View>
@@ -90,183 +117,246 @@ export default function HomeScreen() {
           </AppText>
         </View>
 
-        <Pressable
-          onPress={() => router.push({ pathname: '/match/[id]', params: { id: nextMatch.id } })}
-          style={({ pressed }) => [styles.heroWrap, pressed && { opacity: 0.96 }]}>
-          <LinearGradient
-            colors={nextMatch.posterColors}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.hero}>
-            <View style={styles.heroGlow} />
-            <View style={styles.heroTop}>
-              <View style={styles.livePill}>
-                <View style={styles.liveDot} />
-                <AppText variant="caption" color="#FFFFFF" style={styles.liveText}>
-                  NEXT HOME MATCH
-                </AppText>
-              </View>
-              <View style={styles.competition}>
-                <AppText variant="caption" color="rgba(255,255,255,0.6)" style={styles.compText}>
-                  {nextMatch.competition.toUpperCase()}
-                </AppText>
-              </View>
-            </View>
-
-            <View style={styles.heroTeams}>
-              <View style={styles.heroTeam}>
-                <Crest short="XC" size={54} colors={['#16A34A', '#064E2B']} />
-                <AppText variant="label" color="#FFFFFF">
-                  XCLUB
-                </AppText>
-              </View>
-              <View style={styles.heroCenter}>
-                <AppText variant="display" color="#FFFFFF" style={styles.heroVs}>
-                  VS
-                </AppText>
-                <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.heroKick}>
-                  {formatMatchTime(nextMatch.kickoffAt)} KICK-OFF
-                </AppText>
-              </View>
-              <View style={styles.heroTeam}>
-                <Crest short={nextMatch.opponentShort} size={54} colors={[nextMatch.accent, '#1E293B']} />
-                <AppText variant="label" color="#FFFFFF" numberOfLines={1} style={styles.heroOpp}>
-                  {nextMatch.opponent.toUpperCase()}
-                </AppText>
-              </View>
-            </View>
-
-            <View style={styles.heroDivider} />
-
-            <View style={styles.heroMeta}>
-              <View style={styles.heroMetaItem}>
-                <CalendarDays size={14} color={colors.accent} />
-                <View>
-                  <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.metaLabel}>
-                    DATE
+        {loading ? (
+          <View style={styles.heroWrap}>
+            <Skeleton height={330} radius={22} />
+          </View>
+        ) : nextMatch ? (
+          <Pressable
+            onPress={() => router.push({ pathname: '/match/[id]', params: { id: nextMatch.id } })}
+            style={({ pressed }) => [styles.heroWrap, pressed && { opacity: 0.96 }]}>
+            <LinearGradient
+              colors={nextMatch.posterColors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.hero}>
+              <View style={styles.heroGlow} />
+              <View style={styles.heroTop}>
+                <View style={styles.livePill}>
+                  <View style={styles.liveDot} />
+                  <AppText variant="caption" color="#FFFFFF" style={styles.liveText}>
+                    NEXT HOME MATCH
                   </AppText>
-                  <AppText variant="label" color="#FFFFFF">
-                    {formatMatchDate(nextMatch.kickoffAt)}
+                </View>
+                <View style={styles.competition}>
+                  <AppText variant="caption" color="rgba(255,255,255,0.6)" style={styles.compText}>
+                    {nextMatch.competition.toUpperCase()}
                   </AppText>
                 </View>
               </View>
-              <View style={styles.heroMetaItem}>
-                <MapPin size={14} color={colors.accent} />
-                <View>
-                  <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.metaLabel}>
-                    VENUE
-                  </AppText>
+
+              <View style={styles.heroTeams}>
+                <View style={styles.heroTeam}>
+                  <Crest short="XC" size={54} colors={['#16A34A', '#064E2B']} />
                   <AppText variant="label" color="#FFFFFF">
-                    {nextMatch.venue}
+                    XCLUB
+                  </AppText>
+                </View>
+                <View style={styles.heroCenter}>
+                  <AppText variant="display" color="#FFFFFF" style={styles.heroVs}>
+                    VS
+                  </AppText>
+                  <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.heroKick}>
+                    {formatMatchTime(nextMatch.kickoffAt)} KICK-OFF
+                  </AppText>
+                </View>
+                <View style={styles.heroTeam}>
+                  <Crest
+                    short={nextMatch.opponentShort}
+                    size={54}
+                    colors={[nextMatch.accent, '#1E293B']}
+                  />
+                  <AppText variant="label" color="#FFFFFF" numberOfLines={1} style={styles.heroOpp}>
+                    {nextMatch.opponent.toUpperCase()}
                   </AppText>
                 </View>
               </View>
-            </View>
 
-            <View style={styles.heroFooter}>
-              <View>
-                <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.metaLabel}>
-                  TICKETS FROM
-                </AppText>
-                <AppText variant="h2" color={colors.accent}>
-                  {formatTHB(minimumPrice(nextMatch.id))}
-                </AppText>
+              <View style={styles.heroDivider} />
+
+              <View style={styles.heroMeta}>
+                <View style={styles.heroMetaItem}>
+                  <CalendarDays size={14} color={colors.accent} />
+                  <View>
+                    <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.metaLabel}>
+                      DATE
+                    </AppText>
+                    <AppText variant="label" color="#FFFFFF">
+                      {formatMatchDate(nextMatch.kickoffAt)}
+                    </AppText>
+                  </View>
+                </View>
+                <View style={styles.heroMetaItem}>
+                  <MapPin size={14} color={colors.accent} />
+                  <View>
+                    <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.metaLabel}>
+                      VENUE
+                    </AppText>
+                    <AppText variant="label" color="#FFFFFF">
+                      {nextMatch.venue}
+                    </AppText>
+                  </View>
+                </View>
               </View>
-              <View style={styles.heroButton}>
-                <AppText variant="label" color={colors.ink}>
-                  Get tickets
-                </AppText>
-                <ArrowUpRight size={15} color={colors.ink} />
+
+              <View style={styles.heroFooter}>
+                <View>
+                  <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.metaLabel}>
+                    TICKETS FROM
+                  </AppText>
+                  <AppText variant="h2" color={colors.accent}>
+                    {minPrice === undefined ? 'Not on sale' : formatTHB(minPrice)}
+                  </AppText>
+                </View>
+                <View style={styles.heroButton}>
+                  <AppText variant="label" color={colors.ink}>
+                    Get tickets
+                  </AppText>
+                  <ArrowUpRight size={15} color={colors.ink} />
+                </View>
               </View>
-            </View>
-          </LinearGradient>
-        </Pressable>
+            </LinearGradient>
+          </Pressable>
+        ) : (
+          <Card style={styles.heroWrap}>
+            <EmptyState
+              title="No fixtures on sale"
+              description="The next home fixture will appear here as soon as the club publishes it."
+            />
+          </Card>
+        )}
 
         <View style={styles.statsRow}>
-          <Stat value={String(validTickets.length)} label="Active passes" icon={<TicketIcon size={15} color={colors.primary} />} />
-          <Stat value={String(upcoming.length)} label="Home fixtures" icon={<CalendarDays size={15} color={colors.primary} />} />
-          <Stat value={String(seatsLeft)} label="Seats left" icon={<MapPin size={15} color={colors.primary} />} />
+          <Stat
+            value={String(validTickets.length)}
+            label="Active passes"
+            icon={<TicketIcon size={15} color={colors.primary} />}
+          />
+          <Stat
+            value={String(upcoming.length)}
+            label="Home fixtures"
+            icon={<CalendarDays size={15} color={colors.primary} />}
+          />
+          <Stat
+            value={String(seatsLeft)}
+            label="Seats on sale"
+            icon={<MapPin size={15} color={colors.primary} />}
+          />
         </View>
 
         <View style={styles.section}>
-          <SectionHeading title="Upcoming fixtures" />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontal}>
-            {upcoming.map((match) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                onPress={() => router.push({ pathname: '/match/[id]', params: { id: match.id } })}
-              />
-            ))}
-          </ScrollView>
+          <SectionHeading
+            title="Upcoming fixtures"
+            action={upcoming.length > 0 ? 'See all' : undefined}
+            onAction={() => router.push('/(tabs)/tickets')}
+          />
+          {matchesQuery.isLoading ? (
+            <Skeleton height={232} radius={22} />
+          ) : upcoming.length === 0 ? (
+            <EmptyState title="No upcoming fixtures" description="Check back soon for the next match." />
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontal}>
+              {upcoming.map((match) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  onPress={() => router.push({ pathname: '/match/[id]', params: { id: match.id } })}
+                />
+              ))}
+            </ScrollView>
+          )}
         </View>
 
         <View style={styles.section}>
           <SectionHeading title="Latest news" />
-          <Pressable
-            onPress={() => router.push({ pathname: '/news/[id]', params: { id: mockNews[0].id } })}
-            style={({ pressed }) => [styles.featureCard, pressed && { opacity: 0.94 }]}>
-            <LinearGradient
-              colors={mockNews[0].imageColors}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.featureImage}>
-              <View style={styles.featureBadge}>
-                <AppText variant="caption" color="#FFFFFF" style={styles.featureBadgeText}>
-                  {mockNews[0].category.toUpperCase()}
-                </AppText>
-              </View>
-              <View style={styles.featureMark}>
-                <AppText variant="display" color="rgba(255,255,255,0.14)" style={styles.featureMarkText}>
-                  XC
-                </AppText>
-              </View>
-            </LinearGradient>
-            <View style={styles.featureBody}>
-              <AppText variant="h3" numberOfLines={2}>
-                {mockNews[0].title}
-              </AppText>
-              <AppText variant="small" color={colors.muted} numberOfLines={2} style={styles.featureExcerpt}>
-                {mockNews[0].excerpt}
-              </AppText>
-              <View style={styles.newsMeta}>
-                <Clock3 size={11} color={colors.muted} />
-                <AppText variant="caption" color={colors.muted} style={styles.newsMetaText}>
-                  {mockNews[0].readMinutes} MIN READ · {formatMatchDate(mockNews[0].publishedAt).toUpperCase()}
-                </AppText>
-              </View>
-            </View>
-          </Pressable>
+          {newsQuery.isLoading ? (
+            <Skeleton height={300} radius={22} />
+          ) : !featured ? (
+            <EmptyState title="No news yet" description="Club updates will land here." />
+          ) : (
+            <>
+              <Pressable
+                onPress={() => router.push({ pathname: '/news/[id]', params: { id: featured.id } })}
+                style={({ pressed }) => [styles.featureCard, pressed && { opacity: 0.94 }]}>
+                <LinearGradient
+                  colors={featured.imageColors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.featureImage}>
+                  <View style={styles.featureBadge}>
+                    <AppText variant="caption" color="#FFFFFF" style={styles.featureBadgeText}>
+                      {featured.category.toUpperCase()}
+                    </AppText>
+                  </View>
+                  <View style={styles.featureMark}>
+                    <AppText
+                      variant="display"
+                      color="rgba(255,255,255,0.14)"
+                      style={styles.featureMarkText}>
+                      XC
+                    </AppText>
+                  </View>
+                </LinearGradient>
+                <View style={styles.featureBody}>
+                  <AppText variant="h3" numberOfLines={2}>
+                    {featured.title}
+                  </AppText>
+                  <AppText
+                    variant="small"
+                    color={colors.muted}
+                    numberOfLines={2}
+                    style={styles.featureExcerpt}>
+                    {featured.excerpt}
+                  </AppText>
+                  <View style={styles.newsMeta}>
+                    <Clock3 size={11} color={colors.muted} />
+                    <AppText variant="caption" color={colors.muted} style={styles.newsMetaText}>
+                      {featured.readMinutes} MIN READ ·{' '}
+                      {formatMatchDate(featured.publishedAt).toUpperCase()}
+                    </AppText>
+                  </View>
+                </View>
+              </Pressable>
 
-          <Card style={styles.newsList}>
-            {mockNews.slice(1, 4).map((item, index) => (
-              <NewsRow
-                key={item.id}
-                item={item}
-                last={index === 2}
-                onPress={() => router.push({ pathname: '/news/[id]', params: { id: item.id } })}
-              />
-            ))}
-          </Card>
+              {news.length > 1 ? (
+                <Card style={styles.newsList}>
+                  {news.slice(1, 4).map((item, index) => (
+                    <NewsRow
+                      key={item.id}
+                      item={item}
+                      last={index === Math.min(news.length, 4) - 2}
+                      onPress={() =>
+                        router.push({ pathname: '/news/[id]', params: { id: item.id } })
+                      }
+                    />
+                  ))}
+                </Card>
+              ) : null}
+            </>
+          )}
         </View>
 
         <View style={styles.section}>
           <SectionHeading title="Recent results" />
           <Card style={styles.resultsCard}>
-            {results.map((match, index) => (
-              <View key={match.id} style={index === results.length - 1 && { borderBottomWidth: 0 }}>
-                <ResultRow match={match} />
-              </View>
-            ))}
+            {results.length === 0 ? (
+              <EmptyState title="No results yet" description="Completed matches will be listed here." />
+            ) : (
+              results.map((match, index) => (
+                <View key={match.id} style={index === results.length - 1 && { borderBottomWidth: 0 }}>
+                  <ResultRow match={match} />
+                </View>
+              ))
+            )}
           </Card>
         </View>
 
         <View style={styles.footerNote}>
           <AppText variant="caption" color={colors.muted} style={styles.footerText}>
-            UI-FIRST PROTOTYPE · PAYMENTS AND VALIDATION ARE SIMULATED
+            XCLUB · SECURE TICKETS, LIVE GATE VALIDATION
           </AppText>
         </View>
       </PageScroll>
@@ -290,7 +380,7 @@ function Stat({ value, label, icon }: { value: string; label: string; icon: Reac
   );
 }
 
-function NewsRow({ item, last, onPress }: { item: NewsItem; last: boolean; onPress: () => void }) {
+function NewsRow({ item, last, onPress }: { item: NewsDto; last: boolean; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}

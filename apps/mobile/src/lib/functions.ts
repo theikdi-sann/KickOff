@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { api } from './api';
 
 interface InvokeOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
@@ -6,27 +6,13 @@ interface InvokeOptions {
   headers?: Record<string, string>;
 }
 
-interface ErrorEnvelope {
-  error?: { message?: string; code?: string };
-}
-
-/** Invokes an Edge Function and unwraps the shared `{ ok, error }` envelope. */
+/**
+ * Backwards-compatible Edge Function helper. New code should use `api` directly
+ * so it can inspect `ApiClientError` (status, retryability, request id).
+ */
 export async function invokeFunction<T>(
   name: string,
   options: InvokeOptions = {},
 ): Promise<T> {
-  const { data, error } = await supabase.functions.invoke(name, options);
-  if (!error) return data as T;
-
-  const response = (error as { context?: Response }).context;
-  let message = error.message;
-  if (response) {
-    try {
-      const payload = (await response.clone().json()) as ErrorEnvelope;
-      message = payload.error?.message ?? message;
-    } catch {
-      // Non-JSON error body.
-    }
-  }
-  throw new Error(message);
+  return api.call<T>(name, options);
 }

@@ -7,7 +7,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./theme": "./src/theme.ts",
-    "./mock": "./src/mock.ts",
     "./http": "./src/http.ts",
     "./schemas": "./src/schemas.ts",
     "./money": "./src/money.ts",

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import type { OrderDto, OrderSeatDto } from '@xclub/shared';
 import { invokeFunction } from '@/lib/functions';
 import { supabase } from '@/lib/supabase';
@@ -56,9 +56,15 @@ function mapOrder(row: OrderJoin): OrderDto {
 
 const SELECT = '*, order_seats(seat_id,ticket_id,zone_name,row_label,number,price_satang), matches(opponent)';
 
-export function useOrders() {
+export function useOrders(
+  options: {
+    /** Poll while returning from Stripe and waiting for the webhook. */
+    refetchInterval?: UseQueryOptions<OrderDto[]>['refetchInterval'];
+  } = {},
+) {
   return useQuery({
     queryKey: ['orders'],
+    refetchInterval: options.refetchInterval ?? false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
@@ -70,10 +76,17 @@ export function useOrders() {
   });
 }
 
-export function useOrder(id: string | undefined) {
+export function useOrder(
+  id: string | undefined,
+  options: {
+    /** Poll while an order is waiting for the Stripe webhook to confirm it. */
+    refetchInterval?: UseQueryOptions<OrderDto>['refetchInterval'];
+  } = {},
+) {
   return useQuery({
     queryKey: ['order', id],
     enabled: Boolean(id),
+    refetchInterval: options.refetchInterval ?? false,
     queryFn: async () => {
       const { data, error } = await supabase.from('orders').select(SELECT).eq('id', id!).single();
       if (error) throw new Error(error.message);

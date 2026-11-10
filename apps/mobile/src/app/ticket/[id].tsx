@@ -12,20 +12,40 @@ import {
   Ticket as TicketIcon,
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { useKeepAwake } from 'expo-keep-awake';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { StatusBar } from 'expo-status-bar';
 import { formatFullDate, formatMatchTime, formatTHB } from '@xclub/shared';
-import { AppText, Pill, Screen } from '@/components/ui';
-import { useMockCommerce } from '@/lib/mock-commerce';
+import { AppText, Pill, Screen, Skeleton } from '@/components/ui';
+import { useTicket, useTicketQr } from '@/lib/queries/tickets';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function TicketDetailScreen() {
   const router = useRouter();
-  const { id, new: isNew, count } = useLocalSearchParams<{ id: string; new?: string; count?: string }>();
-  const { getTicket } = useMockCommerce();
-  const ticket = getTicket(id);
+  // The QR only needs to be readable; don't let the screen lock at the gate.
+  useKeepAwake();
+  const {
+    id,
+    new: isNew,
+    count,
+  } = useLocalSearchParams<{ id: string; new?: string; count?: string }>();
+  const ticketQuery = useTicket(id);
+  const qrQuery = useTicketQr(id);
+  const ticket = ticketQuery.data;
+  const qrPayload = qrQuery.data?.qrPayload ?? '';
   const used = ticket?.status === 'used';
+
+  if (ticketQuery.isLoading) {
+    return (
+      <Screen dark>
+        <StatusBar style="light" />
+        <View style={styles.empty}>
+          <Skeleton height={420} radius={28} width="100%" />
+        </View>
+      </Screen>
+    );
+  }
 
   if (!ticket) {
     return (
@@ -36,7 +56,9 @@ export default function TicketDetailScreen() {
             Pass not found
           </AppText>
           <AppText variant="small" color={colors.nightMuted} style={styles.emptyText}>
-            This ticket is not stored on this device.
+            {ticketQuery.error instanceof Error
+              ? ticketQuery.error.message
+              : 'This pass could not be loaded.'}
           </AppText>
           <Pressable onPress={() => router.replace('/tickets')} style={styles.emptyButton}>
             <AppText variant="label" color={colors.ink}>
@@ -50,7 +72,7 @@ export default function TicketDetailScreen() {
 
   const sharePass = async () => {
     await Share.share({
-      message: `XClub match pass\n${ticket.matchLabel}\n${formatFullDate(ticket.kickoffAt)} · ${formatMatchTime(ticket.kickoffAt)}\n${ticket.zoneName} · Row ${ticket.row} · Seat ${ticket.number}\nHolder: ${ticket.holder}\n\nThis is a mock pass from the Phase A prototype.`,
+      message: `XClub match pass\n${ticket.matchLabel}\n${formatFullDate(ticket.kickoffAt)} · ${formatMatchTime(ticket.kickoffAt)}\n${ticket.zoneName} · Row ${ticket.row} · Seat ${ticket.number}\nHolder: ${ticket.holder}\n\nThe QR is signed and checked live at the gate.`,
     }).catch(() => undefined);
   };
 
@@ -147,14 +169,30 @@ export default function TicketDetailScreen() {
           </View>
 
           <View style={styles.qrSection}>
-            <View style={styles.qrBox}>
-              <QRCode
-                value={ticket.qrPayload}
-                size={186}
-                color="#07130D"
-                backgroundColor="#FFFFFF"
-                quietZone={8}
-              />
+            <Pressable
+              onPress={() => void qrQuery.refetch()}
+              style={styles.qrBox}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh signed QR code">
+              {qrPayload ? (
+                <QRCode
+                  value={qrPayload}
+                  size={186}
+                  color="#07130D"
+                  backgroundColor="#FFFFFF"
+                  quietZone={8}
+                />
+              ) : (
+                <View style={styles.qrLoading}>
+                  {qrQuery.error ? (
+                    <AppText variant="small" color={colors.muted} style={styles.qrError}>
+                      Tap to reload your QR
+                    </AppText>
+                  ) : (
+                    <ActivityIndicator color={colors.primary} />
+                  )}
+                </View>
+              )}
               {used ? (
                 <View style={styles.usedOverlay}>
                   <AppText variant="display" color="#FFFFFF" style={styles.usedText}>
@@ -162,11 +200,11 @@ export default function TicketDetailScreen() {
                   </AppText>
                 </View>
               ) : null}
-            </View>
+            </Pressable>
             <View style={styles.scanRow}>
               <QrIcon size={14} color={colors.accent} />
               <AppText variant="caption" color={colors.accent} style={styles.scanText}>
-                SCAN AT GATE 2 · ONE ENTRY ONLY
+                SCAN AT THE GATE · ONE ENTRY ONLY
               </AppText>
             </View>
             <AppText variant="caption" color="rgba(255,255,255,0.4)" style={styles.ticketId}>
@@ -202,7 +240,12 @@ export default function TicketDetailScreen() {
 
         <View style={styles.actions}>
           <Pressable
-            onPress={() => Alert.alert('Mock action', 'Apple Wallet integration is outside the prototype scope.')}
+            onPress={() =>
+              Alert.alert(
+                'Wallet pass unavailable',
+                'Apple Wallet passes are not part of this release. Use the in-app pass at the gate.',
+              )
+            }
             style={({ pressed }) => [styles.actionButton, pressed && { opacity: 0.7 }]}>
             <Smartphone size={17} color="#FFFFFF" />
             <AppText variant="label" color="#FFFFFF">
@@ -229,14 +272,15 @@ export default function TicketDetailScreen() {
             </AppText>
             <AppText variant="small" color={colors.nightMuted} style={styles.infoText}>
               Arrive 60 minutes early. Have this pass open at full brightness. Photo ID may be
-              requested. Screenshots and forwarded QR codes are rejected at the gate.
+              requested. Each pass admits one entry, so sharing the QR does not create a second
+              admission.
             </AppText>
           </View>
         </View>
 
         <View style={styles.metaGrid}>
-          <MetaTile icon={<Clock3 size={15} color={colors.accent} />} label="GATES OPEN" value="16:00" />
-          <MetaTile icon={<MapPin size={15} color={colors.accent} />} label="ENTRY" value="Gate 2" />
+          <MetaTile icon={<Clock3 size={15} color={colors.accent} />} label="GATES OPEN" value="2H BEFORE" />
+          <MetaTile icon={<MapPin size={15} color={colors.accent} />} label="ENTRY" value="Any gate" />
           <MetaTile icon={<TicketIcon size={15} color={colors.accent} />} label="ORDER" value={ticket.orderId.slice(-6).toUpperCase()} />
         </View>
 
@@ -250,7 +294,7 @@ export default function TicketDetailScreen() {
         </Pressable>
 
         <AppText variant="caption" color="#52665B" style={styles.footer}>
-          MOCK PASS · PHASE A PROTOTYPE · NOT VALID FOR REAL ENTRY
+          SECURE PASS · SIGNED QR · VALID FOR ONE ENTRY
         </AppText>
       </ScrollView>
     </Screen>
@@ -429,6 +473,14 @@ const styles = StyleSheet.create({
     padding: 6,
     overflow: 'hidden',
   },
+  qrLoading: {
+    width: 186,
+    height: 186,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  qrError: { textAlign: 'center' },
   usedOverlay: {
     position: 'absolute',
     top: 0,

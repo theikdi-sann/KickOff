@@ -70,6 +70,9 @@ async function handler(request: Request): Promise<Response> {
   try {
     const session = await createCheckoutSession({
       mode: "payment",
+      // F-9: card-only MVP. Without this, Stripe enables every method switched
+      // on in the dashboard (PromptPay appeared during the Phase 10 demo).
+      allowed_payment_method_types: ["card"],
       customer_email: context.user.email ?? undefined,
       currency: "thb",
       line_items: seatRows.map((seat) => ({
@@ -88,7 +91,7 @@ async function handler(request: Request): Promise<Response> {
         metadata: { order_id: order.id, user_id: order.user_id },
       },
       success_url: `${env.MOBILE_DEEP_LINK}orders?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${env.MOBILE_DEEP_LINK}checkout?cancelled=1`,
+      cancel_url: `${env.MOBILE_DEEP_LINK}orders?checkout=cancelled`,
       expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
     });
 

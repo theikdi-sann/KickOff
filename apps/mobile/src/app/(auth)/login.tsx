@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { AppText, MockTag, PrimaryButton } from '@/components/ui';
+import { AppText, LiveTag, PrimaryButton } from '@/components/ui';
 import { useApp } from '@/lib/store';
 import { colors, fonts, radii } from '@/lib/theme';
 
@@ -65,7 +65,7 @@ export default function LoginScreen() {
           <Pressable onPress={() => router.back()} style={styles.back}>
             <ChevronLeft size={22} color={colors.text} />
           </Pressable>
-          <MockTag />
+          <LiveTag />
         </View>
 
         <View style={styles.brandRow}>

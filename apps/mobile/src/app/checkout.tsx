@@ -1,73 +1,227 @@
-import { Check, CreditCard, Lock, ShieldCheck, Timer, X } from 'lucide-react-native';
+import { Lock, ShieldCheck, Timer, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import * as WebBrowser from 'expo-web-browser';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { formatMatchDate, formatMatchTime, formatTHB } from '@xclub/shared';
 import {
-  buildSeatMap,
-  formatMatchDate,
-  formatMatchTime,
-  formatTHB,
-  mockMatches,
-  mockZones,
-} from '@xclub/shared';
-import { AppText, Card, Pill, PrimaryButton, Screen } from '@/components/ui';
-import { useMockCommerce } from '@/lib/mock-commerce';
-import { useApp } from '@/lib/store';
-import { colors, radii } from '@/lib/theme';
+  AppText,
+  Card,
+  EmptyState,
+  Pill,
+  PrimaryButton,
+  Screen,
+  Skeleton,
+} from '@/components/ui';
+import { errorMessage } from '@/lib/api';
+import { useHold, useReleaseHold } from '@/lib/queries/holds';
+import { useMatch } from '@/lib/queries/matches';
+import { useCreateOrder, useOrder } from '@/lib/queries/orders';
+import { useProfile } from '@/lib/queries/profile';
+import { useSeatMap, useZones } from '@/lib/queries/seats';
+import { colors } from '@/lib/theme';
+
+/** How often to check whether the Stripe webhook has confirmed the order. */
+const POLL_INTERVAL_MS = 2500;
+/** Give the webhook this long before offering the orders screen instead. */
+const VERIFY_TIMEOUT_MS = 90_000;
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const { matchId, zoneId, seats: seatParam } = useLocalSearchParams<{
-    matchId: string;
-    zoneId: string;
-    seats: string;
+  const {
+    holdId,
+    matchId: matchParam,
+    zoneId: zoneParam,
+  } = useLocalSearchParams<{
+    holdId?: string;
+    matchId?: string;
+    zoneId?: string;
   }>();
-  const { profile } = useApp();
-  const { purchase } = useMockCommerce();
   const insets = useSafeAreaInsets();
-  const [processing, setProcessing] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(600);
-  const match = mockMatches.find((item) => item.id === matchId) ?? mockMatches[0];
-  const zone = mockZones.find((item) => item.id === zoneId);
-  const labels = useMemo(() => (seatParam ?? '').split(',').filter(Boolean), [seatParam]);
-  const seats = useMemo(() => {
-    if (!zone) return [];
-    return buildSeatMap(zone).filter((seat) => labels.includes(seat.label));
-  }, [zone, labels]);
-  const total = (zone?.priceSatang ?? 0) * seats.length;
+  const [orderId, setOrderId] = useState<string>();
+  const [payError, setPayError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
+  const [verifyExpired, setVerifyExpired] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  const holdQuery = useHold(holdId);
+  const hold = holdQuery.data;
+  const matchQuery = useMatch(hold?.matchId ?? matchParam);
+  const zonesQuery = useZones(hold?.matchId ?? matchParam);
+  const zone = zonesQuery.data?.find((item) => item.id === zoneParam);
+  const seatMapQuery = useSeatMap(zone?.id);
+  const profileQuery = useProfile();
+  const releaseHold = useReleaseHold();
+  const createOrder = useCreateOrder();
+  const orderQuery = useOrder(orderId, {
+    // Stop polling as soon as the webhook gives the order a final status.
+    refetchInterval: (query) => (query.state.data?.status === 'pending' ? POLL_INTERVAL_MS : false),
+  });
+
+  const match = matchQuery.data;
+  const order = orderQuery.data;
+
+  // `create_order_from_hold` releases the hold, so the order becomes the source
+  // of truth for which seats this checkout is for once payment has started.
+  const heldSeatIds = useMemo(
+    () =>
+      new Set(order?.seats.map((seat) => seat.seatId) ?? hold?.seatIds ?? []),
+    [order?.seats, hold?.seatIds],
+  );
+  const seats = useMemo(
+    () => (seatMapQuery.data ?? []).filter((seat) => heldSeatIds.has(seat.id)),
+    [seatMapQuery.data, heldSeatIds],
+  );
+  const standName = zone?.name ?? order?.seats[0]?.zoneName ?? '—';
+  const seatLabels =
+    seats.map((seat) => seat.label).join(', ') ||
+    order?.seats.map((seat) => `${seat.row}${seat.number}`).join(', ') ||
+    '—';
+  const rowLabels = [
+    ...new Set(
+      seats.length ? seats.map((seat) => seat.row) : (order?.seats.map((seat) => seat.row) ?? []),
+    ),
+  ].join(', ') || '—';
+
+  const total = order?.amountSatang ?? (zone?.priceSatang ?? 0) * seats.length;
 
   useEffect(() => {
-    const timer = setInterval(() => setSecondsLeft((value) => Math.max(0, value - 1)), 1000);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const handlePay = async () => {
-    if (!zone || seats.length === 0) {
-      Alert.alert('Selection expired', 'Please go back and choose your seats again.');
-      return;
-    }
-    setProcessing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1700));
-    try {
-      const result = await purchase({
-        match,
-        zone,
-        seats,
-        holder: profile?.fullName ?? 'XClub Supporter',
-      });
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-      setProcessing(false);
+  // Once the webhook marks the order paid, issue the passes and leave checkout.
+  const navigated = useRef(false);
+  useEffect(() => {
+    if (order?.status !== 'paid' || navigated.current) return;
+    navigated.current = true;
+    const ticketId = order.seats.find((seat) => seat.ticketId)?.ticketId;
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+      () => undefined,
+    );
+    if (ticketId) {
       router.replace({
         pathname: '/ticket/[id]',
-        params: { id: result.tickets[0].id, new: '1', count: String(result.tickets.length) },
+        params: { id: ticketId, new: '1', count: String(order.seats.length) },
       });
-    } catch {
-      setProcessing(false);
-      Alert.alert('Mock payment failed', 'Please try again.');
+    } else {
+      router.replace('/orders');
+    }
+  }, [order, router]);
+
+  // Stop waiting forever if Stripe took the money but the webhook is late.
+  useEffect(() => {
+    if (!orderId || order?.status !== 'pending') return;
+    const timer = setTimeout(() => setVerifyExpired(true), VERIFY_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [orderId, order?.status]);
+
+  const expiresAt = hold ? new Date(hold.expiresAt).getTime() : 0;
+  const secondsLeft = hold ? Math.max(0, Math.floor((expiresAt - now) / 1000)) : 0;
+  const holdExpired = Boolean(hold) && !orderId && secondsLeft === 0;
+  const verifying =
+    Boolean(orderId) && (!order || order.status === 'pending') && !verifyExpired;
+  const processing = createOrder.isPending || redirecting || verifying;
+  const paymentStopped =
+    verifyExpired || Boolean(order && order.status !== 'pending' && order.status !== 'paid');
+
+  const handlePay = async () => {
+    if (!holdId) return;
+    setPayError(null);
+    try {
+      const result = await createOrder.mutateAsync(holdId);
+      setOrderId(result.orderId);
+      setRedirecting(true);
+      if (Platform.OS === 'web') {
+        await WebBrowser.openBrowserAsync(result.url, { showTitle: false });
+      } else {
+        await WebBrowser.openAuthSessionAsync(result.url, 'xclub://orders');
+      }
+    } catch (error) {
+      setPayError(errorMessage(error));
+    } finally {
+      setRedirecting(false);
     }
   };
+
+  const handleClose = async () => {
+    // Backing out before paying must not keep other supporters locked out.
+    if (!orderId && holdId) {
+      await releaseHold.mutateAsync(holdId).catch(() => undefined);
+    }
+    router.back();
+  };
+
+  if (holdQuery.isLoading || matchQuery.isLoading || (zone && seatMapQuery.isLoading)) {
+    return (
+      <Screen>
+        <View style={styles.loading}>
+          <Skeleton height={64} radius={16} />
+          <Skeleton height={128} radius={18} />
+          <Skeleton height={180} radius={18} />
+          <Skeleton height={128} radius={18} />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (!holdId) {
+    return (
+      <Screen>
+        <View style={styles.loading}>
+          <EmptyState
+            title="No seats held"
+            description="Pick your seats again to start a new checkout."
+          />
+          <PrimaryButton label="Back to fixtures" onPress={() => router.replace('/(tabs)')} />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (!hold && !orderId) {
+    return (
+      <Screen>
+        <View style={styles.loading}>
+          <EmptyState
+            title={holdQuery.isError ? 'Could not load your hold' : 'Hold expired'}
+            description={
+              holdQuery.isError && holdQuery.error instanceof Error
+                ? holdQuery.error.message
+                : 'Your seat hold has ended. Choose your seats again to continue.'
+            }
+          />
+          <PrimaryButton
+            label="Choose seats"
+            onPress={() =>
+              match?.id
+                ? router.replace({ pathname: '/match/[id]', params: { id: match.id } })
+                : router.replace('/(tabs)')
+            }
+          />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (!match) {
+    return (
+      <Screen>
+        <View style={styles.loading}>
+          <EmptyState
+            title="Fixture unavailable"
+            description={
+              matchQuery.error instanceof Error
+                ? matchQuery.error.message
+                : 'This match could not be found.'
+            }
+          />
+        </View>
+      </Screen>
+    );
+  }
 
   const minutes = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
   const seconds = String(secondsLeft % 60).padStart(2, '0');
@@ -75,7 +229,7 @@ export default function CheckoutScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.iconButton}>
+        <Pressable onPress={() => void handleClose()} style={styles.iconButton}>
           <X size={20} color={colors.text} />
         </Pressable>
         <View style={styles.headerCenter}>
@@ -84,12 +238,24 @@ export default function CheckoutScreen() {
             STEP 2 OF 3 · PAYMENT
           </AppText>
         </View>
-        <View style={styles.timer}>
-          <Timer size={13} color={colors.warning} />
-          <AppText variant="label" color={colors.warning} style={styles.timerText}>
-            {minutes}:{seconds}
-          </AppText>
-        </View>
+        {verifying ? (
+          <View style={styles.timer}>
+            <ShieldCheck size={13} color={colors.primary} />
+            <AppText variant="label" color={colors.primary} style={styles.timerText}>
+              VERIFYING
+            </AppText>
+          </View>
+        ) : (
+          <View style={styles.timer}>
+            <Timer size={13} color={holdExpired ? colors.danger : colors.warning} />
+            <AppText
+              variant="label"
+              color={holdExpired ? colors.danger : colors.warning}
+              style={styles.timerText}>
+              {holdExpired ? 'EXPIRED' : `${minutes}:${seconds}`}
+            </AppText>
+          </View>
+        )}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -103,10 +269,14 @@ export default function CheckoutScreen() {
             <View style={styles.flex}>
               <AppText variant="label">XClub vs {match.opponent}</AppText>
               <AppText variant="small" color={colors.muted} style={styles.matchMeta}>
-                {formatMatchDate(match.kickoffAt)} · {formatMatchTime(match.kickoffAt)} · {match.venue}
+                {formatMatchDate(match.kickoffAt)} · {formatMatchTime(match.kickoffAt)} ·{' '}
+                {match.venue}
               </AppText>
             </View>
-            <Pill label={`${seats.length} ${seats.length === 1 ? 'SEAT' : 'SEATS'}`} tone="green" />
+            <Pill
+              label={`${seats.length} ${seats.length === 1 ? 'SEAT' : 'SEATS'}`}
+              tone="green"
+            />
           </View>
 
           <View style={styles.dashed} />
@@ -116,19 +286,19 @@ export default function CheckoutScreen() {
               <AppText variant="caption" color={colors.muted} style={styles.rowLabel}>
                 STAND
               </AppText>
-              <AppText variant="label">{zone?.name ?? '—'}</AppText>
+              <AppText variant="label">{standName}</AppText>
             </View>
             <View>
               <AppText variant="caption" color={colors.muted} style={styles.rowLabel}>
                 SEATS
               </AppText>
-              <AppText variant="label">{seats.map((seat) => seat.label).join(', ')}</AppText>
+              <AppText variant="label">{seatLabels}</AppText>
             </View>
             <View style={styles.alignRight}>
               <AppText variant="caption" color={colors.muted} style={styles.rowLabel}>
                 ROWS
               </AppText>
-              <AppText variant="label">{[...new Set(seats.map((seat) => seat.row))].join(', ')}</AppText>
+              <AppText variant="label">{rowLabels}</AppText>
             </View>
           </View>
         </Card>
@@ -139,13 +309,13 @@ export default function CheckoutScreen() {
         <Card style={styles.attendee}>
           <View style={styles.avatar}>
             <AppText variant="label" color="#FFFFFF">
-              {profile?.initials ?? 'NC'}
+              {profileQuery.data?.initials ?? 'XC'}
             </AppText>
           </View>
           <View style={styles.flex}>
-            <AppText variant="label">{profile?.fullName ?? 'Nara Chaiyaporn'}</AppText>
+            <AppText variant="label">{profileQuery.data?.fullName ?? 'XClub supporter'}</AppText>
             <AppText variant="small" color={colors.muted}>
-              {profile?.email ?? 'fan@xclub.app'}
+              {profileQuery.data?.email ?? 'Signed in'}
             </AppText>
           </View>
           <Pill label="TICKET HOLDER" tone="muted" />
@@ -167,51 +337,24 @@ export default function CheckoutScreen() {
           <View style={styles.cardBrandRow}>
             <View style={styles.visa}>
               <AppText variant="caption" color="#FFFFFF" style={styles.visaText}>
-                VISA
+                STRIPE
               </AppText>
             </View>
             <View style={styles.flex}>
-              <AppText variant="label">Test card ending 4242</AppText>
+              <AppText variant="label">Secure hosted checkout</AppText>
               <AppText variant="small" color={colors.muted}>
-                Mock saved card · no real charge
+                Card details are entered on Stripe, never in the app.
               </AppText>
             </View>
             <View style={styles.checkCircle}>
-              <Check size={13} color="#FFFFFF" />
-            </View>
-          </View>
-
-          <View style={styles.cardFields}>
-            <View style={[styles.cardField, { flex: 1 }]}>
-              <AppText variant="caption" color={colors.muted} style={styles.fieldLabel}>
-                CARD NUMBER
-              </AppText>
-              <AppText variant="label" color={colors.muted}>
-                •••• •••• •••• 4242
-              </AppText>
-            </View>
-            <View style={styles.cardField}>
-              <AppText variant="caption" color={colors.muted} style={styles.fieldLabel}>
-                EXPIRY
-              </AppText>
-              <AppText variant="label" color={colors.muted}>
-                12/29
-              </AppText>
-            </View>
-            <View style={styles.cardField}>
-              <AppText variant="caption" color={colors.muted} style={styles.fieldLabel}>
-                CVC
-              </AppText>
-              <AppText variant="label" color={colors.muted}>
-                •••
-              </AppText>
+              <ShieldCheck size={13} color="#FFFFFF" />
             </View>
           </View>
 
           <View style={styles.brandRow}>
-            <CreditCard size={14} color={colors.muted} />
+            <Lock size={14} color={colors.muted} />
             <AppText variant="caption" color={colors.muted} style={styles.brandText}>
-              HOSTED CHECKOUT COMES IN PHASE C · THIS BUTTON SIMULATES SUCCESS
+              YOU WILL BE REDIRECTED TO STRIPE. USE A TEST CARD SUCH AS 4242 4242 4242 4242.
             </AppText>
           </View>
         </Card>
@@ -220,7 +363,10 @@ export default function CheckoutScreen() {
           ORDER SUMMARY
         </AppText>
         <Card style={styles.receipt}>
-          <Line label={`${seats.length} × ${zone?.name ?? 'Match ticket'}`} value={formatTHB(total)} />
+          <Line
+            label={`${seats.length} × ${zone?.name ?? 'Match ticket'}`}
+            value={formatTHB(total)}
+          />
           <Line label="Booking fee" value={formatTHB(0)} muted />
           <Line label="Payment processing" value={formatTHB(0)} muted />
           <View style={styles.dashed} />
@@ -247,6 +393,24 @@ export default function CheckoutScreen() {
             TRANSFERABLE ONLY THROUGH THE CLUB.
           </AppText>
         </View>
+
+        {payError ? (
+          <AppText variant="small" color={colors.danger} style={styles.error}>
+            {payError}
+          </AppText>
+        ) : null}
+
+        {verifyExpired ? (
+          <AppText variant="small" color={colors.muted} style={styles.error}>
+            Payment is taking longer than usual to confirm. Open your orders to check the status.
+          </AppText>
+        ) : null}
+
+        {order && order.status !== 'pending' && order.status !== 'paid' ? (
+          <AppText variant="small" color={colors.muted} style={styles.error}>
+            Payment was not completed. Open your orders to check the status and try again.
+          </AppText>
+        ) : null}
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
@@ -258,14 +422,22 @@ export default function CheckoutScreen() {
             {formatTHB(total)}
           </AppText>
         </View>
-        <PrimaryButton
-          label={processing ? 'Processing…' : `Pay ${formatTHB(total)}`}
-          onPress={handlePay}
-          loading={processing}
-          disabled={seats.length === 0}
-          icon={<Lock size={16} color="#FFFFFF" />}
-          style={styles.payButton}
-        />
+        {paymentStopped ? (
+          <PrimaryButton
+            label="View orders"
+            onPress={() => router.replace('/orders')}
+            style={styles.payButton}
+          />
+        ) : (
+          <PrimaryButton
+            label={processing ? 'Confirming…' : `Pay ${formatTHB(total)}`}
+            onPress={() => void handlePay()}
+            loading={processing}
+            disabled={holdExpired || seats.length === 0}
+            icon={<Lock size={16} color="#FFFFFF" />}
+            style={styles.payButton}
+          />
+        )}
       </View>
     </Screen>
   );
@@ -316,6 +488,7 @@ const styles = StyleSheet.create({
   },
   timerText: { fontSize: 10 },
   scroll: { paddingHorizontal: 20, paddingBottom: 120 },
+  loading: { padding: 20, gap: 16, flex: 1, justifyContent: 'center' },
   summary: { padding: 15 },
   summaryTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   crest: {
@@ -365,11 +538,11 @@ const styles = StyleSheet.create({
     width: 44,
     height: 30,
     borderRadius: 6,
-    backgroundColor: '#1A1F71',
+    backgroundColor: '#635BFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  visaText: { fontSize: 9, letterSpacing: 1 },
+  visaText: { fontSize: 8, letterSpacing: 0.6 },
   checkCircle: {
     width: 22,
     height: 22,
@@ -378,17 +551,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardFields: {
-    flexDirection: 'row',
-    gap: 10,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radii.md,
-    padding: 12,
-    marginTop: 13,
-  },
-  cardField: { gap: 3 },
-  fieldLabel: { fontSize: 7, letterSpacing: 0.7 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 11 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 13 },
   brandText: { fontSize: 7, letterSpacing: 0.5, flex: 1 },
   receipt: { padding: 15, gap: 10 },
   line: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -405,6 +568,7 @@ const styles = StyleSheet.create({
   secureText: { fontSize: 7, letterSpacing: 0.7 },
   terms: { flexDirection: 'row', gap: 7, marginTop: 16, paddingHorizontal: 4 },
   termsText: { flex: 1, fontSize: 7, lineHeight: 11, letterSpacing: 0.3 },
+  error: { marginTop: 14, paddingHorizontal: 4 },
   footer: {
     position: 'absolute',
     left: 0,

@@ -38,7 +38,20 @@ export class EdgeFunctionError extends Error {
 export async function invokeFunction<T>(name: string, options: InvokeOptions = {}): Promise<T> {
   const supabase = createClient();
   const { data, error } = await supabase.functions.invoke(name, options);
-  if (!error) return data as T;
+  if (!error) {
+    // Edge Functions answer with the shared `{ ok, data }` envelope.
+    const envelope = data as { ok?: unknown; data?: T; error?: ErrorEnvelope["error"] } | null;
+    if (envelope && typeof envelope === "object" && "ok" in envelope) {
+      if (envelope.ok === true) return envelope.data as T;
+      if (envelope.error) {
+        throw new EdgeFunctionError(envelope.error.message ?? "The request failed.", {
+          code: envelope.error.code,
+          network: false,
+        });
+      }
+    }
+    return data as T;
+  }
 
   const name_ = (error as { name?: string }).name ?? "";
   const network = name_ === "FunctionsFetchError" || name_ === "FunctionsRelayError";

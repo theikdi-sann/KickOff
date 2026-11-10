@@ -13,24 +13,34 @@ import {
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { formatTHB, formatShortDate } from '@xclub/shared';
-import { AppText, Card, MockTag, PageScroll, Pill, Screen } from '@/components/ui';
-import { useMockCommerce } from '@/lib/mock-commerce';
-import { useApp } from '@/lib/store';
-import { colors, fonts, radii } from '@/lib/theme';
+import { AppText, Card, LiveTag, PageScroll, Pill, Screen } from '@/components/ui';
+import { signOut } from '@/lib/auth';
+import { useOrders } from '@/lib/queries/orders';
+import { useProfile } from '@/lib/queries/profile';
+import { useTickets } from '@/lib/queries/tickets';
+import { colors, radii } from '@/lib/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile, signOut } = useApp();
-  const { tickets, orders } = useMockCommerce();
+  const profileQuery = useProfile();
+  const ticketsQuery = useTickets();
+  const ordersQuery = useOrders();
+  const profile = profileQuery.data;
+  const tickets = ticketsQuery.data ?? [];
+  const orders = ordersQuery.data ?? [];
   const active = tickets.filter((ticket) => ticket.status === 'valid').length;
   const spent = orders
     .filter((order) => order.status === 'paid')
     .reduce((sum, order) => sum + order.amountSatang, 0);
 
   const confirmSignOut = () => {
-    Alert.alert('Sign out?', 'Your mock tickets will stay on this device.', [
+    Alert.alert('Sign out?', "You'll need to sign in again to access your passes.", [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
+      {
+        text: 'Sign out',
+        style: 'destructive',
+        onPress: () => void signOut().catch(() => undefined),
+      },
     ]);
   };
 
@@ -42,20 +52,20 @@ export default function ProfileScreen() {
             <AppText variant="caption" color="rgba(255,255,255,0.6)" style={styles.heroEyebrow}>
               SUPPORTER ACCOUNT
             </AppText>
-            <MockTag dark />
+            <LiveTag dark />
           </View>
           <View style={styles.identity}>
             <View style={styles.avatar}>
               <AppText variant="display" color="#FFFFFF" style={styles.initials}>
-                {profile?.initials ?? 'NC'}
+                {profile?.initials ?? 'XC'}
               </AppText>
             </View>
             <View style={styles.flex}>
               <AppText variant="h2" color="#FFFFFF">
-                {profile?.fullName ?? 'Nara Chaiyaporn'}
+                {profile?.fullName ?? 'XClub supporter'}
               </AppText>
               <AppText variant="small" color={colors.nightMuted}>
-                {profile?.email ?? 'fan@xclub.app'}
+                {profile?.email ?? 'Signed in'}
               </AppText>
               <View style={styles.verified}>
                 <ShieldCheck size={12} color={colors.accent} />
@@ -83,7 +93,7 @@ export default function ProfileScreen() {
               <View style={styles.flex}>
                 <AppText variant="label">Supporter since</AppText>
                 <AppText variant="small" color={colors.muted}>
-                  {formatShortDate(profile?.joinedAt ?? '2026-08-12T09:00:00+07:00')}
+                  {profile?.joinedAt ? formatShortDate(profile.joinedAt) : '—'}
                 </AppText>
               </View>
               <Pill label="2026/27" tone="gold" />
@@ -97,8 +107,8 @@ export default function ProfileScreen() {
             <MenuItem
               icon={<UserRound size={18} color={colors.primary} />}
               label="Personal details"
-              detail={profile?.phone ?? '080 000 0000'}
-              onPress={() => Alert.alert('Mock screen', 'Profile editing arrives with the Supabase phase.')}
+              detail={profile?.phone ?? 'Name, phone & password'}
+              onPress={() => router.push('/profile/edit')}
             />
             <MenuItem
               icon={<ReceiptText size={18} color={colors.primary} />}
@@ -109,14 +119,19 @@ export default function ProfileScreen() {
             <MenuItem
               icon={<CreditCard size={18} color={colors.primary} />}
               label="Payment methods"
-              detail="Visa •••• 4242"
-              onPress={() => Alert.alert('Stripe test mode', 'Real card management is part of Phase C.')}
+              detail="Cards are entered at checkout"
+              onPress={() =>
+                Alert.alert(
+                  'Payment methods',
+                  'Card details are collected securely by Stripe each time you check out. XClub never stores your card number.',
+                )
+              }
             />
             <MenuItem
               icon={<Bell size={18} color={colors.primary} />}
-              label="Notifications"
-              detail="Match reminders"
-              onPress={() => Alert.alert('Post-MVP', 'Push notifications are outside the prototype scope.')}
+              label="Settings & notifications"
+              detail="Reminders, language, account"
+              onPress={() => router.push('/settings')}
               last
             />
           </Card>
@@ -129,29 +144,21 @@ export default function ProfileScreen() {
               icon={<HelpCircle size={18} color={colors.primary} />}
               label="Help & stadium info"
               detail="Gates, travel, rules"
-              onPress={() => Alert.alert('XClub Arena', 'Gates open 2 hours before kick-off. Gate 2 for North Stand.')}
+              onPress={() =>
+                Alert.alert(
+                  'XClub Arena',
+                  'Gates open 2 hours before kick-off and close 2 hours after. Scan your pass at any gate assigned to this fixture.',
+                )
+              }
             />
             <MenuItem
               icon={<ShieldCheck size={18} color={colors.primary} />}
               label="Ticket terms"
               detail="Single-match passes"
-              onPress={() => Alert.alert('Ticket terms', 'Mock terms for the prototype.')}
+              onPress={() => router.push('/legal/terms')}
               last
             />
           </Card>
-
-          <View style={styles.mockCard}>
-            <View style={styles.mockHeader}>
-              <View style={styles.mockDot} />
-              <AppText variant="label" color="#8A6400">
-                Prototype data layer
-              </AppText>
-            </View>
-            <AppText variant="small" color="#8A6400" style={styles.mockText}>
-              Auth, payments, tickets, and gate validation are simulated locally. Supabase and Stripe
-              test mode replace this layer in Phase B/C.
-            </AppText>
-          </View>
 
           <Pressable onPress={confirmSignOut} style={styles.signOut}>
             <LogOut size={16} color={colors.danger} />
@@ -161,7 +168,7 @@ export default function ProfileScreen() {
           </Pressable>
 
           <AppText variant="caption" color={colors.muted} style={styles.version}>
-            XCLUB MOCK BUILD · v0.1.0
+            XCLUB MEMBER APP · v0.1.0
           </AppText>
         </View>
       </PageScroll>
@@ -280,17 +287,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   menuDetail: { fontSize: 11, marginTop: 1 },
-  mockCard: {
-    marginTop: 22,
-    backgroundColor: colors.softGold,
-    borderWidth: 1,
-    borderColor: '#F3E3A7',
-    borderRadius: radii.lg,
-    padding: 15,
-  },
-  mockHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
-  mockDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.warning },
-  mockText: { fontSize: 11, lineHeight: 16 },
   signOut: {
     marginTop: 24,
     minHeight: 50,
@@ -304,5 +300,4 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   version: { textAlign: 'center', fontSize: 8, letterSpacing: 0.8, marginTop: 18 },
-  font: { fontFamily: fonts.bold },
 });

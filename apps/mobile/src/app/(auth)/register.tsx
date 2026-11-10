@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { AppText, MockTag, PrimaryButton } from '@/components/ui';
+import { AppText, LiveTag, PrimaryButton } from '@/components/ui';
 import { useApp } from '@/lib/store';
 import { colors, fonts, radii } from '@/lib/theme';
 
@@ -58,7 +58,7 @@ export default function RegisterScreen() {
           <Pressable onPress={() => router.back()} style={styles.back}>
             <ChevronLeft size={22} color={colors.text} />
           </Pressable>
-          <MockTag />
+          <LiveTag />
         </View>
 
         <AppText variant="display" style={styles.title}>
@@ -114,7 +114,7 @@ export default function RegisterScreen() {
 
           <PrimaryButton label="Create account" onPress={handleSignUp} loading={loading} />
           <AppText variant="small" color={colors.muted} style={styles.terms}>
-            By continuing you agree to the mock terms of service and match day ground rules.
+            By continuing you agree to the terms of service and match day ground rules.
           </AppText>
         </View>
 

@@ -1,12 +1,19 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { CalendarDays, ChevronRight, MapPin } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { formatMatchDate, formatMatchTime, formatTHB, minimumPrice, type Match } from '@xclub/shared';
+import { formatMatchDate, formatMatchTime, formatTHB, type MatchDto } from '@xclub/shared';
 import { AppText, Crest, Pill } from '@/components/ui';
 import { colors, fonts, radii, shadow } from '@/lib/theme';
 
-export function MatchCard({ match, onPress }: { match: Match; onPress: () => void }) {
-  const price = minimumPrice(match.id);
+export function MatchCard({
+  match,
+  fromPriceSatang,
+  onPress,
+}: {
+  match: MatchDto;
+  fromPriceSatang?: number;
+  onPress: () => void;
+}) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.cardWrap, pressed && { opacity: 0.9 }]}>
       <LinearGradient
@@ -40,7 +47,7 @@ export function MatchCard({ match, onPress }: { match: Match; onPress: () => voi
             FROM
           </AppText>
           <AppText variant="h3" color={colors.accent}>
-            {formatTHB(price)}
+            {fromPriceSatang === undefined ? '—' : formatTHB(fromPriceSatang)}
           </AppText>
         </View>
       </LinearGradient>
@@ -48,7 +55,7 @@ export function MatchCard({ match, onPress }: { match: Match; onPress: () => voi
   );
 }
 
-export function ResultRow({ match, onPress }: { match: Match; onPress?: () => void }) {
+export function ResultRow({ match, onPress }: { match: MatchDto; onPress?: () => void }) {
   const win = (match.homeScore ?? 0) > (match.awayScore ?? 0);
   const draw = (match.homeScore ?? 0) === (match.awayScore ?? 0);
   return (

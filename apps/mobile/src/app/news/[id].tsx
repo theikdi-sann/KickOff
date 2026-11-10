@@ -3,15 +3,50 @@ import { ChevronLeft, Clock3, Share2 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { formatFullDate, mockNews } from '@xclub/shared';
-import { AppText, Card, Pill, Screen } from '@/components/ui';
+import { formatFullDate } from '@xclub/shared';
+import { AppText, Card, EmptyState, Pill, Screen, Skeleton } from '@/components/ui';
+import { useNews, useNewsItem } from '@/lib/queries/news';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function NewsDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const item = mockNews.find((article) => article.id === id) ?? mockNews[0];
-  const related = mockNews.filter((article) => article.id !== item.id).slice(0, 2);
+  const itemQuery = useNewsItem(id);
+  const newsQuery = useNews();
+  const item = itemQuery.data;
+
+  if (itemQuery.isLoading) {
+    return (
+      <Screen>
+        <StatusBar style="light" />
+        <View style={{ padding: 20, gap: 14 }}>
+          <Skeleton height={270} radius={22} />
+          <Skeleton height={160} radius={18} />
+          <Skeleton height={120} radius={18} />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (!item) {
+    return (
+      <Screen>
+        <StatusBar style="light" />
+        <View style={{ padding: 20 }}>
+          <EmptyState
+            title="Article unavailable"
+            description={
+              itemQuery.error instanceof Error
+                ? itemQuery.error.message
+                : 'This article could not be found.'
+            }
+          />
+        </View>
+      </Screen>
+    );
+  }
+
+  const related = (newsQuery.data ?? []).filter((article) => article.id !== item.id).slice(0, 2);
   const paragraphs = item.body.split('\n\n');
 
   const shareArticle = async () => {
@@ -128,7 +163,7 @@ export default function NewsDetailScreen() {
             ))}
           </View>
 
-          <Pressable onPress={() => router.replace('/')} style={styles.backHome}>
+          <Pressable onPress={() => router.replace('/(tabs)')} style={styles.backHome}>
             <AppText variant="label" color={colors.primary}>
               Back to home
             </AppText>

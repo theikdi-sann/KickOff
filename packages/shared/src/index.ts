@@ -26,4 +26,3 @@ export type {
 } from './types';
 
 // Temporary: the mock data layer is removed in P10c-02.
-export * from './mock';
