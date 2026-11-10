@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   ChevronRight,
+  DoorOpen,
   LayoutDashboard,
   LogOut,
   Megaphone,
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/matches", label: "Matches & seating", icon: CalendarDays },
   { href: "/dashboard/news", label: "News & results", icon: Megaphone },
+  { href: "/dashboard/gates", label: "Gates", icon: DoorOpen },
   { href: "/dashboard/scan", label: "Gate scan", icon: QrCode },
   { href: "/dashboard/tickets", label: "Orders & passes", icon: Ticket },
   { href: "/dashboard/users", label: "Users", icon: Users },
@@ -36,6 +38,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard": "Overview",
   "/dashboard/matches": "Matches & seating",
   "/dashboard/news": "News & results",
+  "/dashboard/gates": "Gates",
   "/dashboard/scan": "Gate validation",
   "/dashboard/tickets": "Orders & passes",
   "/dashboard/users": "Users",

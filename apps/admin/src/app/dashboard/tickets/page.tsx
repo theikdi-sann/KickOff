@@ -12,6 +12,7 @@ import {
   type AdminOrder,
   type OrdersFilter,
 } from "@/lib/queries/orders";
+import { useOrderScanUsage } from "@/lib/queries/scan";
 import { formatShortDate, formatTHB } from "@xclub/shared";
 
 const PAGE_SIZE = 10;
@@ -57,6 +58,7 @@ export default function TicketsPage() {
   const scans = useScanStats();
 
   const orders = data?.items ?? [];
+  const usage = useOrderScanUsage(orders.map((order) => order.id));
   const total = data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -166,6 +168,9 @@ export default function TicketsPage() {
                     <td className="px-4 py-3.5 text-xs text-slate-600">{order.matchLabel}</td>
                     <td className="px-4 py-3.5 text-xs text-slate-500">
                       {order.seats.map((seat) => `${seat.row}${seat.number}`).join(", ")}
+                      <p className="text-[10px] text-slate-400">
+                        {usage.data?.[order.id]?.used ?? 0}/{order.seats.length} scanned
+                      </p>
                     </td>
                     <td className="px-4 py-3.5 text-xs font-semibold text-slate-800">
                       {formatTHB(order.amountSatang)}
