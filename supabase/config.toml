@@ -451,6 +451,12 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/deno.json"
 
+# Machine endpoint: authenticated by x-metrics-token, not a user JWT.
+[functions.metrics]
+enabled = true
+verify_jwt = false
+import_map = "./functions/deno.json"
+
 [functions.stripe-checkout]
 enabled = true
 verify_jwt = true

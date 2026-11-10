@@ -9,6 +9,8 @@ export * from './format';
 export * from './theme';
 export * from './constants';
 export * from './qr';
+export * from './i18n/en';
+export * from './greeting';
 
 // Phase A UI shapes — deleted in Phase 10 (P10c). Imported by existing screens.
 export type {

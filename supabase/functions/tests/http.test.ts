@@ -77,6 +77,28 @@ Deno.test("guardMethod() rejects disallowed methods with 405", () => {
   }
 });
 
+Deno.test("corsHeaders() allows every header the Supabase SDK sends", () => {
+  const headers = corsHeaders(request("/", { headers: { origin: "http://localhost:3000" } }));
+  const allowed = (headers.get("access-control-allow-headers") ?? "")
+    .split(",")
+    .map((header) => header.trim().toLowerCase());
+
+  // supabase-js sends x-client-info on every function call; missing it makes the
+  // browser fail the CORS preflight before the request ever leaves the page.
+  for (const header of [
+    "authorization",
+    "apikey",
+    "content-type",
+    "x-client-info",
+    "x-retry-count",
+    "traceparent",
+    "tracestate",
+    "baggage",
+  ]) {
+    assertEquals(allowed.includes(header), true, `${header} must be allowed`);
+  }
+});
+
 Deno.test("handlePreflight() answers OPTIONS with 204 + CORS", () => {
   const response = handlePreflight(
     request("/", { method: "OPTIONS", headers: { origin: "http://localhost:3000" } }),

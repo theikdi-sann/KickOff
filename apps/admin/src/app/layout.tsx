@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
-import { brandCssVariables } from "@kickoff/shared";
+import { brand, brandCssVariables } from "@kickoff/shared";
 import { ClientProviders } from "@/components/providers";
 
 import "./globals.css";
@@ -20,8 +20,38 @@ const barlow = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "KickOff Admin · Matchday operations",
-  description: "KickOff admin dashboard prototype for fixtures, seating, news and gate validation.",
+  metadataBase: new URL(process.env.ADMIN_APP_URL ?? "http://localhost:3000"),
+  title: {
+    default: "KickOff Admin · Matchday operations",
+    template: "%s · KickOff Admin",
+  },
+  description: "KickOff admin dashboard for fixtures, seating, news and gate validation.",
+  applicationName: "KickOff Admin",
+  openGraph: {
+    type: "website",
+    siteName: "KickOff",
+    locale: "en_US",
+    url: "/",
+    title: "KickOff Admin · Matchday operations",
+    description: "Fixtures, seating, orders and gate validation in one operations console.",
+  },
+  icons: {
+    icon: [{ url: "/favicon.ico", sizes: "any" }],
+    shortcut: "/favicon.ico",
+  },
+  // The console is staff-only: never index it, and keep it out of caches.
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: { index: false, follow: false },
+  },
+};
+
+// Next 16 moved themeColor out of Metadata; it is a viewport field now.
+export const viewport: Viewport = {
+  themeColor: brand.night,
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

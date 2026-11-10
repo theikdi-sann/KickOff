@@ -18,6 +18,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: 'kickoff',
   userInterfaceStyle: 'light',
   android: {
+    package: 'app.kickoff.fan',
     adaptiveIcon: {
       backgroundColor: brand.night,
       foregroundImage: './assets/images/android-icon-foreground.png',
@@ -25,6 +26,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
+  },
+  ios: {
+    bundleIdentifier: 'app.kickoff.fan',
+    supportsTablet: false,
   },
   web: {
     output: 'server',

@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import {
+  bangkokGreeting,
   formatMatchDate,
   formatMatchTime,
   formatTHB,
@@ -110,7 +111,7 @@ export default function HomeScreen() {
 
         <View style={styles.greeting}>
           <AppText variant="body" color={colors.muted}>
-            Good evening, {firstName}.
+            {bangkokGreeting()}, {firstName}.
           </AppText>
           <AppText variant="h2" style={styles.greetingTitle}>
             Are you ready for match day?

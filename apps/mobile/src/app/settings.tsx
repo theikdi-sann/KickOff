@@ -66,24 +66,28 @@ export default function SettingsScreen() {
   };
 
   const handleSignOut = () => {
-    Alert.alert('Sign out?', "You'll need to sign in again to access your passes.", [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign out',
-        style: 'destructive',
-        onPress: () => {
-          void signOut()
-            .then(() => router.replace('/(auth)/welcome'))
-            .catch((error) => Alert.alert('Sign out failed', errorMessage(error)));
+    Alert.alert(
+      'Sign out?',
+      "You'll need to sign in again to access your passes. Offline copies on this device are removed.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign out',
+          style: 'destructive',
+          onPress: () => {
+            void signOut()
+              .then(() => router.replace('/(auth)/welcome'))
+              .catch((error) => Alert.alert('Sign out failed', errorMessage(error)));
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const handleDelete = () => {
     Alert.alert(
       'Delete account?',
-      'Your account will be closed, passes voided, and personal details removed. This cannot be undone.',
+      'Your account will be closed, unused passes voided and personal details removed. This cannot be undone. The request is recorded in the club audit log.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -189,8 +193,8 @@ export default function SettingsScreen() {
         <View style={styles.info}>
           <ShieldAlert size={15} color={colors.muted} />
           <AppText variant="caption" color={colors.muted} style={styles.infoText}>
-            Deleting your account voids unused passes and revokes access immediately. Contact the
-            club if you need help with an existing refund.
+            Deleting your account voids unused passes, revokes access immediately and writes an
+            audit record for the club. Contact the club if you need help with an existing refund.
           </AppText>
         </View>
 

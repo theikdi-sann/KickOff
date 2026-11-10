@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { MatchForm } from "@/components/match-form";
+import { track } from "@/lib/analytics";
 import {
   Badge,
   ConfirmDialog,
@@ -74,6 +75,7 @@ export default function MatchesPage() {
   const handleCreate = async (input: AdminMatchInput) => {
     const match = await createMatch.mutateAsync(input);
     setCreating(false);
+    track("fixture_created", { matchId: match.id, opponent: match.opponent });
     toast({
       title: "Fixture created",
       description: `KickOff vs ${match.opponent} is ready for seating.`,

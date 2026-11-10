@@ -97,6 +97,13 @@ export default function ScanPage() {
   const [undoDeadline, setUndoDeadline] = useState<number | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const scannerRef = useRef<{ stop: () => Promise<void>; clear: () => void } | null>(null);
+  const resultRef = useRef<HTMLDivElement | null>(null);
+
+  // Keyboard and screen-reader flow: move focus to the outcome as soon as it
+  // lands so the announcement is read instead of the stale panel.
+  useEffect(() => {
+    if (result) resultRef.current?.focus();
+  }, [result]);
 
   const activeGates = useMemo(() => (gates ?? []).filter((gate) => gate.active), [gates]);
   const selectedGate =
@@ -262,6 +269,7 @@ export default function ScanPage() {
                 <select
                   value={selectedGate.id}
                   onChange={(event) => chooseGate(event.target.value)}
+                  aria-label="Validation gate"
                   className="bg-transparent text-xs font-semibold text-slate-700 outline-none">
                   {(gates ?? []).map((gate) => (
                     <option key={gate.id} value={gate.id}>
@@ -383,8 +391,11 @@ export default function ScanPage() {
                   ) : null}
 
                   <div className="mt-4">
-                    <label className="label mb-1.5 block">Manual pass payload</label>
+                    <label htmlFor="gate-manual-payload" className="label mb-1.5 block">
+                      Manual pass payload
+                    </label>
                     <textarea
+                      id="gate-manual-payload"
                       value={manual}
                       onChange={(event) => setManual(event.target.value)}
                       placeholder="Paste an KICKOFF-V2: payload here…"
@@ -502,7 +513,13 @@ export default function ScanPage() {
                     </p>
                   </div>
                 ) : (
-                  <div>
+                  <div
+                    ref={resultRef}
+                    tabIndex={-1}
+                    role={result.ok ? "status" : "alert"}
+                    aria-live={result.ok ? "polite" : "assertive"}
+                    aria-atomic="true"
+                    className="outline-none">
                     <div className="flex items-start gap-3">
                       <div
                         className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-white ${
@@ -596,7 +613,9 @@ export default function ScanPage() {
                 ) : demo.data ? (
                   <div className="p-5">
                     <div className="flex justify-center rounded-2xl border border-slate-200 bg-white p-4">
-                      <QRCodeSVG value={demo.data.payload} size={164} level="M" />
+                      <div role="img" aria-label="Demo pass QR code">
+                        <QRCodeSVG value={demo.data.payload} size={164} level="M" />
+                      </div>
                     </div>
                     <div className="mt-4 rounded-xl bg-slate-50 p-3">
                       <p className="text-xs font-semibold text-slate-800">

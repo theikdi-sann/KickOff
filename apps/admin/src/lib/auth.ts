@@ -1,6 +1,7 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
+import { identify, reset, track } from "@/lib/analytics";
 import { createClient } from "@/lib/supabase/client";
 
 export function isAdminUser(user: User | null | undefined): boolean {
@@ -16,6 +17,8 @@ export async function signIn(email: string, password: string): Promise<User> {
   });
   if (error) throw new Error(error.message);
   if (!data.user) throw new Error("Sign-in returned no user");
+  identify(data.user.id, { email: data.user.email ?? "", role: "admin" });
+  track("admin_signed_in");
   return data.user;
 }
 
@@ -23,6 +26,7 @@ export async function signOut(): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error(error.message);
+  reset();
 }
 
 export async function getSession(): Promise<User | null> {

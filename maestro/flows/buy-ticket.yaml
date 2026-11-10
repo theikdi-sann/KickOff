@@ -1,0 +1,65 @@
+# Mobile buy + QR smoke (P11-06).
+#
+# Prerequisites:
+#   - a development build (or Expo Go) with EXPO_PUBLIC_DEMO_EMAIL /
+#     EXPO_PUBLIC_DEMO_PASSWORD exported, so the demo-fan shortcut is shown
+#   - the seeded demo fixture and its zones (`npm run db:seed-demo`)
+#
+# Run:
+#   maestro test maestro/flows/buy-ticket.yaml
+#
+# The flow stops at the Pay button on purpose: pressing it opens Stripe
+# Checkout in a Custom Tab, and completing a card payment belongs to the
+# Playwright refund walkthrough (`apps/admin/e2e/ops.spec.ts`), which can drive
+# the hosted page. The QR half of the smoke uses the demo fan's existing pass.
+appId: app.kickoff.fan
+name: Buy a ticket and open the signed QR pass
+tags:
+  - smoke
+---
+- launchApp:
+    clearState: true
+
+# Fresh install → welcome; an existing session skips straight to the tabs.
+- runFlow:
+    when:
+      visible: "Get started"
+    commands:
+      - tapOn: "Get started"
+- runFlow:
+    when:
+      visible: "Continue with demo fan account"
+    commands:
+      - tapOn: "Continue with demo fan account"
+
+- assertVisible: "Are you ready for match day?"
+- assertVisible: "Get tickets"
+
+# Fixture → zone → exact seat → hold.
+- tapOn: "Get tickets"
+- assertVisible: "Match information"
+- tapOn:
+    text: ".*LEFT"
+    index: 0
+- assertVisible: "Choose your seat"
+- tapOn: "Seat (?!.*unavailable).*"
+- assertVisible: "Continue"
+- tapOn: "Continue"
+
+# Checkout renders the held seats and the test-mode Pay action.
+- assertVisible: "Checkout"
+- assertVisible:
+    text: "Pay .*"
+
+# Leave the checkout without paying and open the pass wallet.
+- back
+- back
+- back
+- tapOn: "Tickets"
+- assertVisible: "My tickets"
+- tapOn:
+    text: "VALID"
+    index: 0
+- assertVisible: "OFFICIAL MATCH PASS"
+- assertVisible: "SCAN AT THE GATE · ONE ENTRY ONLY"
+- assertVisible: "Refresh signed QR code"

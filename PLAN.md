@@ -433,28 +433,140 @@ These are the only tasks allowed to touch more than one file in one commit:
 - [x] `P11-01` · `supabase/tests/rls.test.sql` **[N]** — customer A cannot read customer B's orders/tickets; admin can.
 - [x] `P11-02` · `supabase/tests/order-expiry.test.sql` **[N]** — pending order expires and releases its seats; paid order does not.
 - [x] `P11-03` · `supabase/tests/scan-concurrency.test.sql` **[N]** — 10 parallel scans → 1 valid.
-- [ ] `P11-04` · `apps/admin/playwright.config.ts` **[N]** — webServer config, base URL.
-- [ ] `P11-05` · `apps/admin/e2e/ops.spec.ts` **[N]** — login → create match → scan demo → export CSV → refund.
-- [ ] `P11-06` · `maestro/flows/buy-ticket.yaml` **[N]** — mobile buy/QR smoke.
-- [ ] `P11-07` · `packages/shared/src/i18n/en.ts` **[N]** — typed string table.
+- [x] `P11-04` · `apps/admin/playwright.config.ts` **[N]** — webServer config, base URL.
+- [x] `P11-05` · `apps/admin/e2e/ops.spec.ts` **[N]** — login → create match → scan demo → export CSV → refund.
+- [x] `P11-06` · `maestro/flows/buy-ticket.yaml` **[N]** — mobile buy/QR smoke.
+- [x] `P11-07` · `packages/shared/src/i18n/en.ts` **[N]** — typed string table.
 - [ ] `P11-08` · `packages/shared/src/i18n/th.ts` **[N]** — Thai table. **Deferred past v1 (§F language decision) — English only for now.**
-- [ ] `P11-09` · `packages/shared/src/i18n/index.ts` **[N]** — resolver + `t()`.
-- [ ] `P11-10` · `apps/mobile/src/lib/i18n.ts` **[N]** — locale resolver bound to settings.
-- [ ] `P11-11` · `apps/mobile/src/app/(auth)/welcome.tsx` **[M]** — extract copy to i18n.
-- [ ] `P11-12` · `apps/mobile/src/app/(tabs)/index.tsx` **[M]** — time-aware greeting with `Asia/Bangkok`; test at 00:00/06:00/12:00/18:00 UTC.
+- [ ] `P11-09` · `packages/shared/src/i18n/index.ts` **[N]** — resolver + `t()`. **Deferred past v1 (§F language decision).**
+- [ ] `P11-10` · `apps/mobile/src/lib/i18n.ts` **[N]** — locale resolver bound to settings. **Deferred past v1 (§F language decision).**
+- [ ] `P11-11` · `apps/mobile/src/app/(auth)/welcome.tsx` **[M]** — extract copy to i18n. **Deferred past v1 (§F language decision).**
+- [x] `P11-12` · `apps/mobile/src/app/(tabs)/index.tsx` **[M]** — time-aware greeting with `Asia/Bangkok`; test at 00:00/06:00/12:00/18:00 UTC.
 - [x] `P11-13` · `.github/workflows/ci.yml` **[M]** — add `npm run check:no-mocks` after the mock deletion gate. **DoD:** CI fails if a mock import returns.
-- [ ] `P11-14` · `apps/mobile/src/app/(tabs)/_layout.tsx` **[M]** — a11y labels, roles, hit-slop ≥ 44pt.
+- [x] `P11-14` · `apps/mobile/src/app/(tabs)/_layout.tsx` **[M]** — a11y labels, roles, hit-slop ≥ 44pt.
 - [x] `P11-15` · `apps/mobile/src/components/ui.tsx` **[M]** — add `Skeleton`, `EmptyState`, `ErrorState`.
-- [ ] `P11-16` · `apps/mobile/src/lib/analytics.ts` **[N]** — PostHog adapter + no-op dev mode.
-- [ ] `P11-17` · `apps/admin/src/lib/analytics.ts` **[N]** — PostHog admin events.
-- [ ] `P11-18` · `supabase/functions/metrics/index.ts` **[N]** — JSON metrics for uptime/alerting (orders, scans, failed scans, hold conflicts); requires `x-metrics-token` matching `METRICS_TOKEN`.
-- [ ] `P11-19` · `apps/admin/src/app/layout.tsx` **[M]** — expand metadata: openGraph, icons, `robots: { index:false, follow:false }`, `themeColor`. Do **not** touch `<html className>`.
-- [ ] `P11-20` · `apps/admin/src/app/dashboard/page.tsx` **[M]** — `export const dynamic = 'force-dynamic'` (or no-store fetch). **DoD:** build reports `/dashboard` as dynamic.
-- [ ] `P11-21` · `docs/SECURITY.md` **[N]** — RLS matrix, secret handling, Stripe/webhook, QR, rate limits.
-- [ ] `P11-22` · `docs/TESTING.md` **[N]** — commands for unit, pgTAP, Deno, Playwright, Maestro.
-- [ ] `P11-23` · `apps/mobile/src/app/(tabs)/_layout.tsx` **[M]** — dynamic type + safe-area check.
-- [ ] `P11-24` · `apps/admin/src/app/dashboard/scan/page.tsx` **[M]** — keyboard/ARIA/focus pass for scanner.
-- [ ] `P11-25` · `apps/mobile/src/app/settings.tsx` **[M]** — confirm dialogs + destructive-action audit copy.
+- [x] `P11-16` · `apps/mobile/src/lib/analytics.ts` **[N]** — PostHog adapter + no-op dev mode.
+- [x] `P11-17` · `apps/admin/src/lib/analytics.ts` **[N]** — PostHog admin events.
+- [x] `P11-18` · `supabase/functions/metrics/index.ts` **[N]** — JSON metrics for uptime/alerting (orders, scans, failed scans, hold conflicts); requires `x-metrics-token` matching `METRICS_TOKEN`.
+- [x] `P11-19` · `apps/admin/src/app/layout.tsx` **[M]** — expand metadata: openGraph, icons, `robots: { index:false, follow:false }`, `themeColor`. Do **not** touch `<html className>`.
+- [x] `P11-20` · `apps/admin/src/app/dashboard/page.tsx` **[M]** — `export const dynamic = 'force-dynamic'` (or no-store fetch). **DoD:** build reports `/dashboard` as dynamic.
+- [x] `P11-21` · `docs/SECURITY.md` **[N]** — RLS matrix, secret handling, Stripe/webhook, QR, rate limits.
+- [x] `P11-22` · `docs/TESTING.md` **[N]** — commands for unit, pgTAP, Deno, Playwright, Maestro.
+- [x] `P11-23` · `apps/mobile/src/app/(tabs)/_layout.tsx` **[M]** — dynamic type + safe-area check.
+- [x] `P11-24` · `apps/admin/src/app/dashboard/scan/page.tsx` **[M]** — keyboard/ARIA/focus pass for scanner.
+- [x] `P11-25` · `apps/mobile/src/app/settings.tsx` **[M]** — confirm dialogs + destructive-action audit copy.
+
+#### Phase 11 remaining items — complete
+
+**Summary:** the quality/polish backlog is closed except the deliberately deferred
+i18n chain. An admin Playwright walkthrough now drives login → fixture creation →
+gate scan → CSV export → Stripe refund; a Maestro flow documents the mobile buy
+and QR path; the tab bar is accessible and safe-area aware; PostHog adapters are
+no-ops without a token; the `metrics` Edge Function exposes an uptime snapshot
+behind `x-metrics-token`; the admin console ships full metadata, a non-indexed
+`robots` policy and a genuinely dynamic `/dashboard`; and `docs/SECURITY.md` +
+`docs/TESTING.md` document the security model and every test layer.
+
+**Errors / Notes**
+
+- **`P11-09`–`P11-11` follow `P11-08` into deferral.** PLAN §F (recorded
+  2026-11-10) defers the Thai table *and* the resolver chain; only `P11-07`
+  (typed `en.ts`) was implemented, so both locales cannot drift apart later.
+- **Next 16 segment config only applies from a Server Component.** `dashboard/page.tsx`
+  was a client component, so `export const dynamic` on it would have been ignored.
+  The view moved to `dashboard/overview.tsx` (still `"use client"`) and the route
+  is now a thin server page. `npm run build:admin` reports `ƒ /dashboard`.
+- **`themeColor` is a `Viewport` field in Next 16**, not `Metadata`. It is exported
+  from `layout.tsx` as `export const viewport`; `<html className>` is byte-identical
+  (asserted by the phase test).
+- **The Maestro CLI is not installed in this environment.** The flow is written to
+  the current UI copy and asserted at source level; `docs/TESTING.md` records the
+  install command and the fact that CI does not run it yet. To make the `appId`
+  real, `app.config.ts` now declares `app.kickoff.fan` for Android and iOS.
+- **The ops refund stage provisions its own fixture.** Seeded demo orders only
+  carry `payment_ref`, so `refund-order` would 409. When
+  `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + `STRIPE_SECRET_KEY`
+  are exported, the spec creates a confirmed test-mode PaymentIntent plus a paid
+  order row, refunds it through the UI, then deletes the row. Without those keys
+  the refund test skips instead of failing.
+- **The scan stage tolerates the gate window.** The seeded `m-bkk` fixture is
+  outside kick-off ±2h on most days, so the spec accepts `Valid pass` *or* the
+  documented window rejection, and only exercises Undo when admission happened.
+- **`P11-18` metrics has no conflict table to read**, so `holds.conflicts` counts
+  seats that collected more than one hold row in the 24h window (contention
+  proxy), while `holds.created` is the raw count. Scans are windowed to 24h;
+  order totals are all-time.
+- **`metrics` also needed `verify_jwt = false`.** The platform JWT gate rejects
+  token-only callers before the function runs, so `supabase/config.toml` now
+  opts this one endpoint out (it authenticates with `x-metrics-token`). Verified
+  live: `200` with the token, `401` with a wrong one.
+- **Analytics are silent by design.** Mobile: no client is constructed in `__DEV__`
+  or without `EXPO_PUBLIC_POSTHOG_KEY`. Admin: `posthog.init` is skipped during SSR
+  and without `NEXT_PUBLIC_POSTHOG_KEY`. Events wired so far: `admin_signed_in`,
+  `fixture_created`, `order_refunded`.
+- **CORS allowlist missed `x-client-info`.** supabase-js 2.119 sends
+  `x-client-info` (and can send `x-retry-count`/`traceparent`/`tracestate`/`baggage`)
+  on every Edge Function call; the allowlist did not name them, so the browser
+  failed the preflight and every admin/mobile function call (refund, scan, QR)
+  surfaced as a network error. `_shared/http.ts` now mirrors the SDK's
+  `@supabase/supabase-js/cors` list, `tests/http.test.ts` locks it in, and the
+  functions were redeployed to the hosted project.
+- **The scan stage now provisions its own gate.** The hosted project had no
+  `gates` rows (seed cleanup removed them), so `/dashboard/scan` answered
+  "No active gate is configured". The spec creates a stable `e2e-gate` row
+  assigned to the seeded fixture through the Gates UI and selects it in the
+  scanner. It is **reused on later runs and not deleted**: `scan_events.gate_id`
+  is `ON DELETE RESTRICT`, so a gate with scan history cannot be removed without
+  destroying the audit trail.
+- **The ops fixture leaked once** when the first run hit the 30s timeout mid-step;
+  the walkthrough now calls `test.slow()` and cleanup uses existence checks, and
+  the leaked rows were removed from the hosted database.
+- **The functions must be deployed with the import map in this environment.**
+  Docker is absent, so the server-side bundler needs
+  `npx supabase functions deploy --import-map supabase/functions/deno.json --yes --remote=<ref>`;
+  without it the deploy fails on `Relative import path "zod"`. Recorded in
+  `docs/TESTING.md`.
+- **Verification:** `npm test` 0 (69 shared Vitest + admin + 18 script tests),
+  `npm run check` 0, `bash scripts/run-pgtap.sh` all suites green,
+  `node scripts/mvp-gate.mjs` 15/15, `npm run functions:check` 0,
+  `npm run check:no-mocks` 0, `npm run build:admin` 0 with `/dashboard` marked
+  dynamic, `deno test tests/` 36 passed (9 integration ignored),
+  `apps/admin/e2e/ops.spec.ts` 2/2 on two consecutive runs (gate reuse included),
+  and live checks: CORS preflight now lists `x-client-info`, `metrics` answers
+  200 with the token and 401 without it.
+
+**Files created**
+
+- `scripts/tests/phase11.test.mjs` — source-level contracts for P11-04/05/06/14/16/17/18/19/20/21/22/23/24/25.
+- `apps/admin/e2e/ops.spec.ts` — `P11-05` operations walkthrough + refund provisioning.
+- `maestro/flows/buy-ticket.yaml` — `P11-06` buy/QR smoke.
+- `packages/shared/src/i18n/en.ts` — `P11-07` `StringTable` + English copy.
+- `packages/shared/src/__tests__/i18n.test.ts` — table shape/blank-copy tests.
+- `packages/shared/src/greeting.ts` + `src/__tests__/greeting.test.ts` — `P11-12` Bangkok greeting (4 UTC cases).
+- `apps/mobile/src/lib/analytics.ts` — `P11-16` PostHog adapter.
+- `apps/admin/src/lib/analytics.ts` — `P11-17` PostHog browser adapter.
+- `apps/admin/src/app/dashboard/overview.tsx` — `P11-20` client view split out of the route.
+- `supabase/functions/metrics/index.ts` + `supabase/functions/_shared/metrics.ts` — `P11-18` endpoint and pure helpers.
+- `supabase/functions/tests/metrics.test.ts` — token/conflict/failed-scan unit tests.
+- `docs/SECURITY.md` — `P11-21`.
+- `docs/TESTING.md` — `P11-22`.
+
+**Files modified**
+
+- `apps/admin/playwright.config.ts` — verified only (`P11-04`); no change needed.
+- `apps/admin/src/app/layout.tsx` — metadata + `viewport` (`P11-19`).
+- `apps/admin/src/app/dashboard/page.tsx` — server boundary with `force-dynamic` (`P11-20`).
+- `apps/admin/src/app/dashboard/scan/page.tsx` — live-region roles, focus move, label/id, gate aria-label, QR `role="img"` (`P11-24`).
+- `apps/admin/src/app/dashboard/tickets/page.tsx`, `.../matches/page.tsx`, `src/lib/auth.ts` — analytics events (`P11-17`).
+- `supabase/functions/_shared/http.ts` — CORS allowlist now covers every header the Supabase SDK sends (`x-client-info`, retry/trace headers).
+- `supabase/functions/tests/http.test.ts` — added the CORS/SDK-header contract test.
+- `apps/admin/tests/phase9.test.mjs` — dashboard hooks now asserted in `overview.tsx`.
+- `apps/admin/.env.local.example`, `apps/mobile/.env.example` — PostHog env keys.
+- `apps/mobile/app.config.ts` — `app.kickoff.fan` package/bundle ids for Maestro.
+- `apps/mobile/src/app/(tabs)/_layout.tsx` — labels/test ids/min 48pt (`P11-14`) + font-scale/safe-area height (`P11-23`).
+- `apps/mobile/src/app/(tabs)/index.tsx` — `bangkokGreeting()` (`P11-12`).
+- `apps/mobile/src/app/settings.tsx` — destructive confirm copy with audit trail (`P11-25`).
+- `packages/shared/src/index.ts` — export the string table and greeting helpers.
 
 #### Stage 0 → 1a → 1b → 1c — complete
 

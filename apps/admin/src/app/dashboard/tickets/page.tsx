@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { Badge, ConfirmDialog, SectionTitle, useToast } from "@/components/ui";
+import { track } from "@/lib/analytics";
 import { downloadCsv, toCsv, type CsvColumn } from "@/lib/export";
 import {
   useOrders,
@@ -101,6 +102,7 @@ export default function TicketsPage() {
         description: `${refunding.id} was refunded through Stripe.`,
         tone: "green",
       });
+      track("order_refunded", { orderId: refunding.id });
     } catch (caught) {
       toast({
         title: "Refund failed",

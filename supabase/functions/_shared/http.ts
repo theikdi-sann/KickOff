@@ -2,7 +2,11 @@ import { AppError, toApiError } from "./errors.ts";
 
 const DEFAULT_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"];
 const ALLOWED_METHODS = "GET, POST, PATCH, DELETE, OPTIONS";
-const ALLOWED_HEADERS = "authorization, apikey, content-type, x-request-id, idempotency-key";
+// Mirrors the headers supabase-js sends (see `@supabase/supabase-js/cors`) plus
+// the ones this API adds. A missing header fails the browser preflight before
+// the request reaches the function, so keep this list in sync with the SDK.
+const ALLOWED_HEADERS =
+  "authorization, apikey, content-type, x-client-info, x-retry-count, traceparent, tracestate, baggage, x-request-id, idempotency-key";
 
 /** CORS allowlist from env (comma separated) with sensible local defaults. */
 export function allowedOrigins(): string[] {
