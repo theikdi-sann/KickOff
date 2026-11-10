@@ -19,8 +19,8 @@ function key(): string {
 }
 
 function adminToken(env: ReturnType<typeof requireEnv>): Promise<string> {
-  const email = Deno.env.get("ADMIN_EMAIL") ?? "admin@xclub.app";
-  const password = Deno.env.get("ADMIN_PASSWORD") ?? "xclubadmin";
+  const email = Deno.env.get("ADMIN_EMAIL") ?? "admin@kickoff.app";
+  const password = Deno.env.get("ADMIN_PASSWORD") ?? "kickoffadmin";
   return login(env, email, password);
 }
 
@@ -68,10 +68,10 @@ async function setKickoff(env: ReturnType<typeof requireEnv>, iso: string): Prom
 }
 
 function tamper(qr: string): string {
-  const payload = JSON.parse(qr.slice("XCLUB-V2:".length)) as { sig: string };
+  const payload = JSON.parse(qr.slice("KICKOFF-V2:".length)) as { sig: string };
   const last = payload.sig.at(-1) === "A" ? "B" : "A";
   payload.sig = `${payload.sig.slice(0, -1)}${last}`;
-  return `XCLUB-V2:${JSON.stringify(payload)}`;
+  return `KICKOFF-V2:${JSON.stringify(payload)}`;
 }
 
 Deno.test({
@@ -85,13 +85,13 @@ Deno.test({
     const noKey = await scanTicket(
       env,
       admin,
-      { qr: "XCLUB-V2:{}", gateId: GATE },
+      { qr: "KICKOFF-V2:{}", gateId: GATE },
       false,
     );
     assertEquals(noKey.status, 422);
 
     const notAdmin = await scanTicket(env, fan, {
-      qr: "XCLUB-V2:{}",
+      qr: "KICKOFF-V2:{}",
       gateId: GATE,
       idempotencyKey: key(),
     });
@@ -312,7 +312,7 @@ Deno.test({
 
     // No valid ticket in a fresh project is a legitimate 409.
     if (demo.status === 200) {
-      assertEquals(demo.body.data?.payload.startsWith("XCLUB-V2:"), true);
+      assertEquals(demo.body.data?.payload.startsWith("KICKOFF-V2:"), true);
       assertExists(demo.body.data?.ticket.id);
     } else {
       assertEquals(demo.status, 409);

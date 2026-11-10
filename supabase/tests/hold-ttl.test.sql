@@ -3,7 +3,7 @@ begin;
 select plan(3);
 
 insert into auth.users (id, email)
-values ('00000000-0000-0000-0000-0000000000d2', 'ttl@xclub.test')
+values ('00000000-0000-0000-0000-0000000000d2', 'ttl@kickoff.test')
 on conflict (id) do nothing;
 
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000d2', true);

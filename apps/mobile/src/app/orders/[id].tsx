@@ -2,7 +2,7 @@ import { Download, ReceiptText } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { formatFullDate, formatTHB } from '@xclub/shared';
+import { formatFullDate, formatTHB } from '@kickoff/shared';
 import {
   AppText,
   Card,

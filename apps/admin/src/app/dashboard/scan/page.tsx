@@ -37,9 +37,9 @@ import {
   formatTHB,
   type ScanResultCode,
   type TicketDto,
-} from "@xclub/shared";
+} from "@kickoff/shared";
 
-const GATE_STORAGE_KEY = "xclub.gate.v1";
+const GATE_STORAGE_KEY = "kickoff.gate.v1";
 const UNDO_WINDOW_MS = 60_000;
 
 type DisplayCode = ScanResultCode | "queued" | "error";
@@ -223,7 +223,7 @@ export default function ScanPage() {
 
     try {
       const { Html5Qrcode } = await import("html5-qrcode");
-      const scanner = new Html5Qrcode("xclub-gate-scanner", { verbose: false });
+      const scanner = new Html5Qrcode("kickoff-gate-scanner", { verbose: false });
       scannerRef.current = scanner;
       await scanner.start(
         { facingMode: "environment" },
@@ -342,7 +342,7 @@ export default function ScanPage() {
                 <div className="p-5">
                   <div className="relative overflow-hidden rounded-2xl bg-night">
                     <div
-                      id="xclub-gate-scanner"
+                      id="kickoff-gate-scanner"
                       className="mx-auto flex min-h-[300px] w-full items-center justify-center [&_video]:w-full [&_video]:object-cover"
                     />
                     {!scanning ? (
@@ -387,7 +387,7 @@ export default function ScanPage() {
                     <textarea
                       value={manual}
                       onChange={(event) => setManual(event.target.value)}
-                      placeholder="Paste an XCLUB-V2: payload here…"
+                      placeholder="Paste an KICKOFF-V2: payload here…"
                       className="input min-h-[80px] resize-y font-mono text-[10px] leading-5"
                     />
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
@@ -600,7 +600,7 @@ export default function ScanPage() {
                     </div>
                     <div className="mt-4 rounded-xl bg-slate-50 p-3">
                       <p className="text-xs font-semibold text-slate-800">
-                        {demo.data.ticket?.holder ?? "XClub fan"}
+                        {demo.data.ticket?.holder ?? "KickOff fan"}
                       </p>
                       <p className="mt-0.5 text-[10px] text-slate-500">
                         {demo.data.ticket?.matchLabel} · {demo.data.ticket?.zoneName}{" "}

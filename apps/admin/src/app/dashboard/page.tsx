@@ -20,7 +20,7 @@ import { useNews } from "@/lib/queries/news";
 import { useOrders, useOrdersAggregate } from "@/lib/queries/orders";
 import { useScanStats } from "@/lib/queries/scan";
 import { cn } from "@/lib/utils";
-import { formatMatchDate, formatMatchTime, formatTHB } from "@xclub/shared";
+import { formatMatchDate, formatMatchTime, formatTHB } from "@kickoff/shared";
 
 export default function DashboardPage() {
   const matchesQuery = useMatches();
@@ -166,7 +166,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <h2 className="display mt-3 text-[38px] leading-9">
-                      XClub vs {next.opponent}
+                      KickOff vs {next.opponent}
                     </h2>
                     <p className="mt-1 text-xs text-emerald-50/50">
                       {formatMatchDate(next.kickoffAt)} · {formatMatchTime(next.kickoffAt)} · {next.venue}

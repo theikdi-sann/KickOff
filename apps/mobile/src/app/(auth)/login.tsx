@@ -75,7 +75,7 @@ export default function LoginScreen() {
             </AppText>
           </View>
           <AppText variant="h2" style={styles.brand}>
-            XCLUB
+            KICKOFF
           </AppText>
         </View>
 
@@ -163,7 +163,7 @@ export default function LoginScreen() {
 
         <Pressable onPress={() => router.push('/register')} style={styles.registerLink}>
           <AppText variant="small" color={colors.muted}>
-            New to XClub?{' '}
+            New to KickOff?{' '}
             <AppText variant="label" color={colors.primary}>
               Create an account
             </AppText>

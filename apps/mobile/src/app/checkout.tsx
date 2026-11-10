@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { formatMatchDate, formatMatchTime, formatTHB } from '@xclub/shared';
+import { formatMatchDate, formatMatchTime, formatTHB } from '@kickoff/shared';
 import {
   AppText,
   Card,
@@ -137,7 +137,7 @@ export default function CheckoutScreen() {
       if (Platform.OS === 'web') {
         await WebBrowser.openBrowserAsync(result.url, { showTitle: false });
       } else {
-        await WebBrowser.openAuthSessionAsync(result.url, 'xclub://orders');
+        await WebBrowser.openAuthSessionAsync(result.url, 'kickoff://orders');
       }
     } catch (error) {
       setPayError(errorMessage(error));
@@ -263,11 +263,11 @@ export default function CheckoutScreen() {
           <View style={styles.summaryTop}>
             <View style={styles.crest}>
               <AppText variant="h3" color="#FFFFFF">
-                XC
+                KO
               </AppText>
             </View>
             <View style={styles.flex}>
-              <AppText variant="label">XClub vs {match.opponent}</AppText>
+              <AppText variant="label">KickOff vs {match.opponent}</AppText>
               <AppText variant="small" color={colors.muted} style={styles.matchMeta}>
                 {formatMatchDate(match.kickoffAt)} · {formatMatchTime(match.kickoffAt)} ·{' '}
                 {match.venue}
@@ -309,11 +309,11 @@ export default function CheckoutScreen() {
         <Card style={styles.attendee}>
           <View style={styles.avatar}>
             <AppText variant="label" color="#FFFFFF">
-              {profileQuery.data?.initials ?? 'XC'}
+              {profileQuery.data?.initials ?? 'KO'}
             </AppText>
           </View>
           <View style={styles.flex}>
-            <AppText variant="label">{profileQuery.data?.fullName ?? 'XClub supporter'}</AppText>
+            <AppText variant="label">{profileQuery.data?.fullName ?? 'KickOff supporter'}</AppText>
             <AppText variant="small" color={colors.muted}>
               {profileQuery.data?.email ?? 'Signed in'}
             </AppText>

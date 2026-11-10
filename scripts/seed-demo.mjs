@@ -37,8 +37,8 @@ const ADMIN_ID = '22222222-2222-4222-8222-222222222222';
 
 const customer = {
   id: CUSTOMER_ID,
-  email: process.env.DEMO_EMAIL ?? 'fan@xclub.app',
-  password: process.env.DEMO_PASSWORD ?? 'xclubdemo',
+  email: process.env.DEMO_EMAIL ?? 'fan@kickoff.app',
+  password: process.env.DEMO_PASSWORD ?? 'kickoffdemo',
   fullName: 'Nara Chaiyaporn',
   phone: '081 234 5678',
   role: 'customer',
@@ -46,8 +46,8 @@ const customer = {
 
 const admin = {
   id: ADMIN_ID,
-  email: process.env.ADMIN_DEMO_EMAIL ?? 'admin@xclub.app',
-  password: process.env.ADMIN_DEMO_PASSWORD ?? 'xclubadmin',
+  email: process.env.ADMIN_DEMO_EMAIL ?? 'admin@kickoff.app',
+  password: process.env.ADMIN_DEMO_PASSWORD ?? 'kickoffadmin',
   fullName: 'Club Operations',
   phone: '02 555 0188',
   role: 'admin',

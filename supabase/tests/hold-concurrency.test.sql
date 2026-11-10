@@ -4,7 +4,7 @@ create extension if not exists dblink;
 select plan(1);
 
 insert into auth.users (id, email)
-values ('00000000-0000-0000-0000-0000000000d1', 'racer@xclub.test')
+values ('00000000-0000-0000-0000-0000000000d1', 'racer@kickoff.test')
 on conflict (id) do nothing;
 
 insert into public.matches (id, opponent, opponent_short, kickoff_at)

@@ -1,6 +1,6 @@
-# PLAN — XClub Ticketing Platform
+# PLAN — KickOff Ticketing Platform
 
-**Project:** XClub — monorepo (`apps/admin`, `apps/mobile`, `packages/shared`, `supabase/`)
+**Project:** KickOff — monorepo (`apps/admin`, `apps/mobile`, `packages/shared`, `supabase/`)
 **Version:** 2 — supersedes the v1 plan
 **Role of this file:** single source of truth for the implementation agent.
 **Status:** FINAL — rewritten for **Supabase + Stripe test mode + npm workspaces**.
@@ -131,7 +131,7 @@ These are the only tasks allowed to touch more than one file in one commit:
 ### Phase 0 — Recon & Baseline
 
 - [x] `P0-01` · `docs/BASELINE.md` **[N]** — record Node/npm/Supabase CLI versions, repo inventory, current commands, and known gaps. **DoD:** file committed.
-- [x] `P0-02` · *repo root* — run `npm ci && npm run typecheck && npm run lint --workspace @xclub/admin && npm run lint --workspace @xclub/mobile && npm run build:admin`; capture output in chat. **DoD:** green baseline or documented failures.
+- [x] `P0-02` · *repo root* — run `npm ci && npm run typecheck && npm run lint --workspace @kickoff/admin && npm run lint --workspace @kickoff/mobile && npm run build:admin`; capture output in chat. **DoD:** green baseline or documented failures.
 - [x] `P0-03` · `PLAN-v2.md` — append §G with `P0-02` results. **DoD:** §G no longer empty.
 
 ---
@@ -139,7 +139,7 @@ These are the only tasks allowed to touch more than one file in one commit:
 ### Phase 1 — Foundations & Tooling
 
 - [x] `P1-01` · `package.json` (root) **[M]** — add `lint`, `test`, `check`, `check:no-mocks`, `db:start`, `db:stop`, `db:reset`, `db:seed-demo`, `db:types`, `db:test`, `functions:serve`, `functions:check`, `dev:admin`, `dev:mobile`, `build:admin`. **DoD:** `npm run check` resolves.
-- [x] `P1-02` · `tsconfig.base.json` (root) **[N]** — strict, `moduleResolution: bundler`, path aliases `@xclub/shared`. **DoD:** all workspaces can extend it.
+- [x] `P1-02` · `tsconfig.base.json` (root) **[N]** — strict, `moduleResolution: bundler`, path aliases `@kickoff/shared`. **DoD:** all workspaces can extend it.
 - [x] `P1-03` · `apps/admin/tsconfig.json` **[M]** — extend base; keep Next plugin + `.next/types`.
 - [x] `P1-04` · `apps/mobile/tsconfig.json` **[M]** — extend base; keep Expo types and `@/*` alias.
 - [x] `P1-05` · `packages/shared/tsconfig.json` **[M]** — extend base, `composite: true`, `declaration: true`.
@@ -156,10 +156,10 @@ These are the only tasks allowed to touch more than one file in one commit:
 - [x] `P1-16` · `apps/admin/package.json` **[M]** — add `@supabase/supabase-js`, `@supabase/ssr`, `@tanstack/react-query`, `posthog-js`; dev `@playwright/test`. **DoD:** `npm install` clean.
 - [x] `P1-17` · `supabase/functions/deno.json` **[N]** — pin `zod`, `stripe`, `pdf-lib`, and `std` imports; strict TS. **DoD:** `npx supabase functions serve` resolves imports.
 - [x] `P1-18` · `packages/shared/vitest.config.ts` **[N]** — node environment, `src/**/*.test.ts`.
-- [x] `P1-19` · `packages/shared/src/__tests__/smoke.test.ts` **[N]** — asserts `formatTHB(150000) === "฿1,500"`. **DoD:** `npm run test -w @xclub/shared` green.
+- [x] `P1-19` · `packages/shared/src/__tests__/smoke.test.ts` **[N]** — asserts `formatTHB(150000) === "฿1,500"`. **DoD:** `npm run test -w @kickoff/shared` green.
 - [x] `P1-20` · `apps/mobile/scripts/reset-project.js` — **delete**. **DoD:** `rg "reset-project" apps/mobile` only finds package.json.
 - [x] `P1-21` · `apps/mobile/package.json` **[M]** — remove `reset-project` script; add `test` and `lint` scripts. **DoD:** `npm run reset-project` no longer exists.
-- [x] `P1-22` · `supabase/config.toml` **[N]** — local API/db/studio ports, auth redirects (`xclub://auth/callback`, `http://localhost:3000/auth/callback`), storage buckets, cron.
+- [x] `P1-22` · `supabase/config.toml` **[N]** — local API/db/studio ports, auth redirects (`kickoff://auth/callback`, `http://localhost:3000/auth/callback`), storage buckets, cron.
 - [x] `P1-23` · `scripts/check-functions.sh` **[N]** — `deno check` every `supabase/functions/**/index.ts`. **DoD:** script exits 0 on empty functions.
 - [x] `P1-24` · `.github/workflows/ci.yml` **[N]** — install Node/Deno/Supabase CLI, `npm ci`, lint, typecheck, shared tests, `supabase start`, `supabase db lint`, `supabase test db`, `npm run functions:check`, admin build. **DoD:** workflow syntax valid.
 - [x] `P1-25` · `.nvmrc` (root) **[N]** — Node 22 LTS. **DoD:** documented in README.
@@ -176,7 +176,7 @@ These are the only tasks allowed to touch more than one file in one commit:
 - [x] `P2-05` · `packages/shared/src/schemas.ts` **[N]** — Zod schemas for every DTO plus requests: `signInSchema`, `signUpSchema`, `createHoldSchema`, `createOrderSchema`, `scanPayloadSchema`, `adminCreateMatchSchema`, `adminUpdateZoneSchema`, `newsInputSchema`, `paginationSchema`, `profileUpdateSchema`, `changePasswordSchema`, `refundOrderSchema`, `settingsUpdateSchema`. **DoD:** `z.infer` equals DTO type (compile assertions).
 - [x] `P2-06` · `packages/shared/src/money.ts` **[N]** — `bahtToSatang`, `satangToBaht`, `sumSatang`, `assertSatang`.
 - [x] `P2-07` · `packages/shared/src/format.ts` **[N]** — move `formatTHB`, `formatMatchDate/Time`, `formatFullDate`, `formatShortDate`; add `formatMatchDateTimeRange` pinned to `Asia/Bangkok`.
-- [x] `P2-08` · `packages/shared/src/theme.ts` + `index.ts` **[M] [ATOMIC]** — remove formatter implementations; keep `palette`, `typography`, `mockBadge`; update barrel to export `format`. **DoD:** existing `import { formatTHB } from '@xclub/shared'` still works.
+- [x] `P2-08` · `packages/shared/src/theme.ts` + `index.ts` **[M] [ATOMIC]** — remove formatter implementations; keep `palette`, `typography`, `mockBadge`; update barrel to export `format`. **DoD:** existing `import { formatTHB } from '@kickoff/shared'` still works.
 - [x] `P2-09` · `packages/shared/src/constants.ts` **[N]** — `SEAT_HOLD_TTL_SECONDS=600`, `MAX_SEATS_PER_ORDER=8`, `QR_VERSION=2`, `KICKOFF_LOCK_MINUTES=15`, `PENDING_ORDER_TTL_MINUTES=15`, `GATE_UNDO_SECONDS=60`.
 - [x] `P2-10` · `packages/shared/src/qr.ts` **[M]** — add `TicketQrPayloadV2 { v:2, tid, mid, oid, n, sig }`, `encodeTicketQrPayload`, `parseTicketQrPayload`; keep v1 helpers marked deprecated until Phase 10. **DoD:** v2 round-trip test.
 - [x] `P2-11` · `packages/shared/src/mock.ts` **[M]** — change `minimumPrice` to return `0` when no zones match. **DoD:** no `POSITIVE_INFINITY`.
@@ -225,7 +225,7 @@ These are the only tasks allowed to touch more than one file in one commit:
 - [x] `P3-32` · `packages/shared/src/mock.ts` **[M]** — mark deprecated; keep exports until Phase 10.
 - [x] `P3-33` · `supabase/tests/constraints.test.sql` **[N]** — pgTAP: unique seat, price integer, status transitions.
 - [x] `P3-34` · `scripts/seed-demo.mjs` **[N]** — create demo auth users via Supabase Admin API, then insert profiles, orders (`ord-demo-1`, `ord-demo-used`), and tickets (`tkt-demo-1`, `tkt-demo-used`) with exact IDs; idempotent. **DoD:** `npm run db:seed-demo` twice yields identical counts.
-- [x] `P3-35` · `packages/shared/src/index.ts` **[M]** — export generated `Database` types after `P3-26`. **DoD:** `import type { Database } from '@xclub/shared'` compiles.
+- [x] `P3-35` · `packages/shared/src/index.ts` **[M]** — export generated `Database` types after `P3-26`. **DoD:** `import type { Database } from '@kickoff/shared'` compiles.
 - [x] `P3-36` · `supabase/migrations/0025_rate_limits.sql` **[N]** — `rate_limits` table + `consume_rate_limit(key text, window_seconds int, max_hits int)` security-definer function. **DoD:** service role only; RLS enabled.
 
 ---
@@ -376,7 +376,7 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 #### Errors / Notes
 
-- **Verification:** `npm run test -w @xclub/admin` 10/10, `npm run typecheck`, `npm run lint`, `npm run build:admin` all green after `store.tsx` was removed.
+- **Verification:** `npm run test -w @kickoff/admin` 10/10, `npm run typecheck`, `npm run lint`, `npm run build:admin` all green after `store.tsx` was removed.
 - **Removed dead provider:** `apps/admin/src/lib/query-provider.tsx` was superseded by `components/providers.tsx` and unreferenced; deleted.
 - **Login copy:** removed the last “Mock”/“mock build” strings; the badge now reads “Live” and password reset points to an administrator.
 - **`posthog-js` retained:** reserved for `P11-17`; not a mock-only dependency.
@@ -409,7 +409,7 @@ These are the only tasks allowed to touch more than one file in one commit:
 - [x] `P10b-12` · `apps/mobile/src/app/news/[id].tsx` **[M]** — `useNewsItem`.
 - [x] `P10b-13` · `apps/mobile/src/components/match-card.tsx` **[M]** — accept `MatchDto`.
 - [x] `P10b-14` · `apps/mobile/src/components/ticket-card.tsx` **[M]** — accept `TicketDto`; no props change.
-- [x] `P10b-15` · `apps/mobile/app.json` → `apps/mobile/app.config.ts` **[ATOMIC]** — preserve `scheme: "xclub"`, `web.output: "server"`, `experiments`, `userInterfaceStyle`, plugins; add `expo-notifications` and `extra.functionsUrl`. **DoD:** `npx expo config` diff shows only intended additions.
+- [x] `P10b-15` · `apps/mobile/app.json` → `apps/mobile/app.config.ts` **[ATOMIC]** — preserve `scheme: "kickoff"`, `web.output: "server"`, `experiments`, `userInterfaceStyle`, plugins; add `expo-notifications` and `extra.functionsUrl`. **DoD:** `npx expo config` diff shows only intended additions.
 - [x] `P10b-16` · `apps/mobile/src/lib/notifications.ts` **[N]** — permission, token registration via Edge Function, kickoff reminders T-24h/T-2h.
 - [x] `P10b-17` · `supabase/functions/devices/index.ts` **[N]** — `POST /devices`, `DELETE /devices/:token`.
 - [x] `P10b-18` · `supabase/functions/send-kickoff-reminders/index.ts` **[N]** — scheduled push via Expo.
@@ -437,7 +437,7 @@ These are the only tasks allowed to touch more than one file in one commit:
 - [ ] `P11-05` · `apps/admin/e2e/ops.spec.ts` **[N]** — login → create match → scan demo → export CSV → refund.
 - [ ] `P11-06` · `maestro/flows/buy-ticket.yaml` **[N]** — mobile buy/QR smoke.
 - [ ] `P11-07` · `packages/shared/src/i18n/en.ts` **[N]** — typed string table.
-- [ ] `P11-08` · `packages/shared/src/i18n/th.ts` **[N]** — Thai table.
+- [ ] `P11-08` · `packages/shared/src/i18n/th.ts` **[N]** — Thai table. **Deferred past v1 (§F language decision) — English only for now.**
 - [ ] `P11-09` · `packages/shared/src/i18n/index.ts` **[N]** — resolver + `t()`.
 - [ ] `P11-10` · `apps/mobile/src/lib/i18n.ts` **[N]** — locale resolver bound to settings.
 - [ ] `P11-11` · `apps/mobile/src/app/(auth)/welcome.tsx` **[M]** — extract copy to i18n.
@@ -462,8 +462,8 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 - [ ] `P12-01` · `apps/mobile/eas.json` **[N]** — development/preview/production profiles.
 - [ ] `P12-02` · `apps/mobile/app.config.ts` **[M]** — version/build from env, `runtimeVersion`, bundle IDs, `extra.functionsUrl`.
-- [ ] `P12-03` · `apps/mobile/assets/*` — final icons, splash, notification icon. **Blocked by `F-8` (brand lock).**
-- [ ] `P12-04` · `.github/workflows/deploy-supabase.yml` **[N]** — `supabase link`, `db push`, `functions deploy`, secrets.
+- [ ] `P12-03` · `apps/mobile/assets/*` — final icons, splash, notification icon. **Unblocked — `F-8` resolved (KickOff brand).**
+- [ ] `P12-04` · `.github/workflows/deploy-supabase.yml` **[N]** — `supabase link`, `db push`, `functions deploy`, secrets. **`F-1` resolved: ships Stripe *test* keys only; live keys are a post-launch secret rotation, not a workflow change.**
 - [ ] `P12-05` · `.github/workflows/deploy-admin.yml` **[N]** — Vercel deploy on `main`.
 - [ ] `P12-06` · `.github/workflows/eas-build.yml` **[N]** — EAS build/update on tag.
 - [ ] `P12-07` · `docs/RUNBOOK.md` **[N]** — matchday checklist, scanner outage, refund, key rotation, Stripe incident.
@@ -482,7 +482,7 @@ These are the only tasks allowed to touch more than one file in one commit:
 1. **`P1-15` / `P1-16` / `P1-17` before Phase 2** — dependencies first.
 2. **`P2-10` before Phase 8** — QR v2 envelope before signing/scanning.
 3. **`P2-11` before `P2-12`** — shared helper before mobile consumer.
-4. **`P2-08` is atomic** — formatter split and barrel update in one commit; keep `formatTHB` importable from `@xclub/shared`.
+4. **`P2-08` is atomic** — formatter split and barrel update in one commit; keep `formatTHB` importable from `@kickoff/shared`.
 5. **Phase 3 schema + RLS before any client data reads** — `P3-16..P3-18` hard gate.
 6. **`P3-19` holds before `P3-20` orders** — order creation reads a valid hold.
 7. **`P3-21` scan function before `P8-01`** — route wraps the SQL primitive.
@@ -538,7 +538,7 @@ These are the only tasks allowed to touch more than one file in one commit:
 | **F-5** | Admin 2FA required for production, or optional? | `P5-07`, `P5-09` |
 | **F-6** | VAT 7% included in `price_satang` or added at checkout? | `P7-04` receipt layout |
 | **F-7** | `KICKOFF_LOCK_MINUTES = 15` acceptable? | `P3-19` |
-| **F-8** | Brand lock: XClub / Arena / Barlow + Inter confirmed for v1? | `P11-07/08`, `P12-03` |
+| **F-8** | Brand lock: KickOff / Arena / Barlow + Inter confirmed for v1? | `P11-07/08`, `P12-03` |
 | **F-9** | Stripe payment methods: card only, or PromptPay too? | `P7-01` |
 | **F-10** | Supabase hosting region (Singapore recommended for THB/Thailand latency)? | `P12-04` |
 | **F-11** | PDF receipt: server-generated (plan) or Stripe-hosted receipt? | `P7-04` |
@@ -560,8 +560,19 @@ These are the only tasks allowed to touch more than one file in one commit:
 | F-11 | Receipts are **server-generated PDFs** stored in the `receipts` bucket. |
 | F-12 | Push uses the **Expo Push Service**. |
 | F-4 | Gates are **first-class rows** (`gates`) with an assigned fixture; the scanner picks a gate, the server derives `wrong_match` from `gates.match_id`, and the scan window is **kick-off −2h .. +2h** (plus `match.status = 'completed'`). |
+| F-1 | **Stripe test mode only for this build.** Live-mode merchant setup is out of scope; `supabase/functions/_shared/config.ts` rejects any key that does not start with `sk_test_`. Going live is a secret rotation plus removing that guard — no code change. |
+| F-8 | **Brand locked: KickOff.** Club `KickOff`, stadium `KickOff Arena`, type `Barlow Condensed` (display) + `Inter` (body), palette = the current green/gold tokens. All tokens live in `packages/shared/src/theme.ts`; see `docs/BRAND.md`. |
 
-Still open: **F-1** (Stripe live mode — before `P12-04`), **F-8** (brand lock — before `P11-07/08`).
+**No §F questions remain open.**
+
+### §F Language decision (recorded 2026-11-10)
+
+**English only for v1.** All UI copy is written inline in English; there is no
+string table yet. `P11-07` (typed `en.ts`) is still worth doing as the
+extraction step, but **`P11-08` (`th.ts`) and the rest of the i18n resolver
+chain (`P11-09`–`P11-11`) are deferred past v1** — Thai localisation is a
+post-launch feature, not a Phase 11 blocker. `P11-12` (Bangkok-time greeting)
+is unrelated to locale and stays in scope.
 
 
 ---
@@ -646,7 +657,7 @@ $$;
 | `TICKET_HMAC_KEY` | dev key | rotated | rotated | QR sign/verify |
 | `METRICS_TOKEN` | dev token | staging | prod | metrics endpoint |
 | `ADMIN_APP_URL` | `http://localhost:3000` | staging | prod | Stripe redirects |
-| `MOBILE_DEEP_LINK` | `xclub://` | `xclub://` | `xclub://` | Stripe redirects |
+| `MOBILE_DEEP_LINK` | `kickoff://` | `kickoff://` | `kickoff://` | Stripe redirects |
 | `SUPABASE_ACCESS_TOKEN` | — | CI | CI | deploy workflow |
 | `SUPABASE_PROJECT_ID` | — | staging ref | prod ref | deploy workflow |
 

@@ -15,8 +15,8 @@ function jsonRequest(body: string): Request {
 }
 
 Deno.test("validateBody parses a valid body", async () => {
-  const value = await validateBody(jsonRequest('{"name":"XClub"}'), schema);
-  assertEquals(value, { name: "XClub" });
+  const value = await validateBody(jsonRequest('{"name":"KickOff"}'), schema);
+  assertEquals(value, { name: "KickOff" });
 });
 
 Deno.test("validateBody rejects malformed JSON with a validation error", async () => {

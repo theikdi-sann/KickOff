@@ -15,7 +15,7 @@ import {
   formatMatchTime,
   formatTHB,
   type NewsDto,
-} from '@xclub/shared';
+} from '@kickoff/shared';
 import { MatchCard, ResultRow } from '@/components/match-card';
 import {
   AppText,
@@ -87,7 +87,7 @@ export default function HomeScreen() {
             </View>
             <View>
               <AppText variant="h3" style={styles.brand}>
-                XCLUB
+                KICKOFF
               </AppText>
               <AppText variant="caption" color={colors.muted} style={styles.brandSub}>
                 MEMBER APP
@@ -102,7 +102,7 @@ export default function HomeScreen() {
             </Pressable>
             <Pressable onPress={() => router.push('/profile')} style={styles.avatar}>
               <AppText variant="label" color="#FFFFFF">
-                {profile?.initials ?? 'XC'}
+                {profile?.initials ?? 'KO'}
               </AppText>
             </Pressable>
           </View>
@@ -147,9 +147,9 @@ export default function HomeScreen() {
 
               <View style={styles.heroTeams}>
                 <View style={styles.heroTeam}>
-                  <Crest short="XC" size={54} colors={['#16A34A', '#064E2B']} />
+                  <Crest short="KO" size={54} colors={[colors.primaryBright, colors.primaryDark]} />
                   <AppText variant="label" color="#FFFFFF">
-                    XCLUB
+                    KICKOFF
                   </AppText>
                 </View>
                 <View style={styles.heroCenter}>
@@ -296,7 +296,7 @@ export default function HomeScreen() {
                       variant="display"
                       color="rgba(255,255,255,0.14)"
                       style={styles.featureMarkText}>
-                      XC
+                      KO
                     </AppText>
                   </View>
                 </LinearGradient>
@@ -356,7 +356,7 @@ export default function HomeScreen() {
 
         <View style={styles.footerNote}>
           <AppText variant="caption" color={colors.muted} style={styles.footerText}>
-            XCLUB · SECURE TICKETS, LIVE GATE VALIDATION
+            KICKOFF · SECURE TICKETS, LIVE GATE VALIDATION
           </AppText>
         </View>
       </PageScroll>
@@ -387,7 +387,7 @@ function NewsRow({ item, last, onPress }: { item: NewsDto; last: boolean; onPres
       style={({ pressed }) => [styles.newsRow, last && { borderBottomWidth: 0 }, pressed && { opacity: 0.7 }]}>
       <LinearGradient colors={item.imageColors} style={styles.newsThumb}>
         <AppText variant="caption" color="rgba(255,255,255,0.8)" style={styles.thumbText}>
-          {item.category === 'Match Report' ? 'FT' : 'XC'}
+          {item.category === 'Match Report' ? 'FT' : 'KO'}
         </AppText>
       </LinearGradient>
       <View style={styles.newsInfo}>

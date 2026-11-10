@@ -1,6 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import { createClient, processLock } from '@supabase/supabase-js';
-import type { Database } from '@xclub/shared';
+import type { Database } from '@kickoff/shared';
 import { AppState, Platform } from 'react-native';
 import { secureStorage } from './storage';
 

@@ -17,9 +17,9 @@ function BrandSplash() {
   return (
     <View style={styles.splash}>
       <View style={styles.crest}>
-        <Text style={styles.crestLetter}>X</Text>
+        <Text style={styles.crestLetter}>K</Text>
       </View>
-      <Text style={styles.wordmark}>XCLUB</Text>
+      <Text style={styles.wordmark}>KICKOFF</Text>
       <Text style={styles.tagline}>MATCHDAY, SIMPLIFIED</Text>
       <ActivityIndicator color={colors.accent} style={styles.spinner} />
     </View>
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#07130D',
+    backgroundColor: colors.night,
   },
   crest: {
     width: 64,
@@ -87,12 +87,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0B6B3A',
+    backgroundColor: colors.primary,
     borderWidth: 1,
     borderColor: 'rgba(244, 196, 48, 0.4)',
   },
   crestLetter: {
-    color: '#F4C430',
+    color: colors.accent,
     fontSize: 34,
     fontWeight: '800',
     letterSpacing: -1,

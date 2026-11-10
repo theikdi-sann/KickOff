@@ -17,7 +17,7 @@ import {
   formatTHB,
   type MatchDto,
   type ZoneDto,
-} from '@xclub/shared';
+} from '@kickoff/shared';
 import {
   AppText,
   Card,
@@ -91,7 +91,7 @@ export default function MatchDetailScreen() {
                 FULL TIME
               </AppText>
               <View style={styles.resultRow}>
-                <Crest short="XC" size={46} colors={['#16A34A', '#064E2B']} />
+                <Crest short="KO" size={46} colors={[colors.primaryBright, colors.primaryDark]} />
                 <AppText variant="display" style={styles.score}>
                   {match.homeScore} – {match.awayScore}
                 </AppText>
@@ -148,7 +148,7 @@ export default function MatchDetailScreen() {
               <Card style={styles.mapCard}>
                 <View style={styles.mapHeader}>
                   <AppText variant="label">Stadium overview</AppText>
-                  <Pill label="XCLUB ARENA" tone="muted" />
+                  <Pill label="KICKOFF ARENA" tone="muted" />
                 </View>
                 <View style={styles.map}>
                   <View style={styles.pitch}>
@@ -203,7 +203,7 @@ export default function MatchDetailScreen() {
 
           <View style={styles.notice}>
             <Info size={14} color={colors.warning} />
-            <AppText variant="caption" color="#8A6400" style={styles.noticeText}>
+            <AppText variant="caption" color={colors.goldInk} style={styles.noticeText}>
               SECURE CHECKOUT · HMAC-SIGNED PASSES · LIVE GATE VALIDATION
             </AppText>
           </View>
@@ -251,9 +251,9 @@ function MatchHero({
 
       <View style={styles.heroTeams}>
         <View style={styles.team}>
-          <Crest short="XC" size={72} colors={['#16A34A', '#064E2B']} />
+          <Crest short="KO" size={72} colors={[colors.primaryBright, colors.primaryDark]} />
           <AppText variant="h3" color="#FFFFFF">
-            XCLUB
+            KICKOFF
           </AppText>
           <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.homeAway}>
             HOME
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
   map: {
     height: 150,
     borderRadius: radii.md,
-    backgroundColor: '#0F2A1C',
+    backgroundColor: colors.primaryDeep,
     marginTop: 12,
     padding: 12,
     justifyContent: 'center',

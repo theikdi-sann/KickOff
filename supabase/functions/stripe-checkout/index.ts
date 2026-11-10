@@ -82,7 +82,7 @@ async function handler(request: Request): Promise<Response> {
           unit_amount: seat.price_satang,
           product_data: {
             name: `${seat.zone_name} · ${seat.row_label}${seat.number}`,
-            description: `XClub vs ${match.opponent} · ${new Date(match.kickoff_at).toISOString()}`,
+            description: `KickOff vs ${match.opponent} · ${new Date(match.kickoff_at).toISOString()}`,
           },
         },
       })),

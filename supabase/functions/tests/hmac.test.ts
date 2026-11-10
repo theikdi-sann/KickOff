@@ -8,7 +8,7 @@ import {
   verifyHmac,
 } from "../_shared/hmac.ts";
 
-const SECRET = "xclub-test-secret-that-is-long-enough";
+const SECRET = "kickoff-test-secret-that-is-long-enough";
 const PAYLOAD = "v2|tkt-1|m-bkk|ord-1|nonce-abc";
 
 Deno.test("signHmac is deterministic and base64url-safe", async () => {

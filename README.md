@@ -1,4 +1,4 @@
-# XClub — UI-first prototype
+# KickOff — UI-first prototype
 
 **Your digital ticket to match day.**
 
@@ -43,8 +43,8 @@ Any email + password works in mock mode.
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Admin (web) | `admin@xclub.app` | `xclubadmin` |
-| Fan (mobile) | `fan@xclub.app` | `xclubdemo` |
+| Admin (web) | `admin@kickoff.app` | `kickoffadmin` |
+| Fan (mobile) | `fan@kickoff.app` | `kickoffdemo` |
 
 The mobile login also has a **Continue with demo fan account** button. The demo account starts with one active pass and one used pass.
 
@@ -152,7 +152,7 @@ Both apps import this package, so the mock will not drift from the eventual Supa
 
 ## Design system
 
-Placeholder club identity, no real club assets:
+Club identity: **KickOff** (stadium `KickOff Arena`), green/gold palette:
 
 - Pitch green `#0B6B3A`
 - Gold `#F4C430`
@@ -160,7 +160,11 @@ Placeholder club identity, no real club assets:
 - Ink `#0F172A`
 - Barlow Condensed for display type, Inter for body
 
-The mobile theme lives in `apps/mobile/src/lib/theme.ts`; the shared palette lives in `packages/shared/src/theme.ts`; admin tokens live in `apps/admin/src/app/globals.css`.
+**`packages/shared/src/theme.ts` is the single source of truth** for brand
+colour; the mobile theme derives from it in `apps/mobile/src/lib/theme.ts`
+and the admin console receives it as CSS variables from
+`apps/admin/src/app/layout.tsx` → `apps/admin/src/app/globals.css`. Re-skinning
+means editing one file. See [`docs/BRAND.md`](docs/BRAND.md).
 
 ---
 

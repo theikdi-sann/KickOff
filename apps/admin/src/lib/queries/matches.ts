@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toMatchDto, toZoneDto } from "@xclub/shared";
+import { toMatchDto, toZoneDto } from "@kickoff/shared";
 import { createClient } from "@/lib/supabase/client";
 
 export interface AdminMatchInput {

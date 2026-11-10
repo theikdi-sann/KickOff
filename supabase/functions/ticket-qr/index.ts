@@ -50,7 +50,7 @@ async function handler(request: Request): Promise<Response> {
 
   return ok(
     {
-      qrPayload: `XCLUB-V2:${JSON.stringify(payload)}`,
+      qrPayload: `KICKOFF-V2:${JSON.stringify(payload)}`,
       version: 2,
       status: ticket.status,
     },

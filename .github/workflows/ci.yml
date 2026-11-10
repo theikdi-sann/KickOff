@@ -35,7 +35,7 @@ jobs:
         run: npm run check
 
       - name: Shared unit tests (Vitest)
-        run: npm run test --workspace @xclub/shared
+        run: npm run test --workspace @kickoff/shared
 
       - name: Start local Supabase stack
         run: npx supabase start
@@ -100,4 +100,4 @@ jobs:
             echo "Skipping: E2E_ADMIN_* repository secrets are not configured."
             exit 0
           fi
-          npm run test:e2e --workspace @xclub/admin
+          npm run test:e2e --workspace @kickoff/admin

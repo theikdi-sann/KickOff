@@ -16,7 +16,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { StatusBar } from 'expo-status-bar';
-import { formatFullDate, formatMatchTime, formatTHB } from '@xclub/shared';
+import { formatFullDate, formatMatchTime, formatTHB } from '@kickoff/shared';
 import { AppText, Pill, Screen, Skeleton } from '@/components/ui';
 import { useTicket, useTicketQr } from '@/lib/queries/tickets';
 import { colors, radii, shadow } from '@/lib/theme';
@@ -72,7 +72,7 @@ export default function TicketDetailScreen() {
 
   const sharePass = async () => {
     await Share.share({
-      message: `XClub match pass\n${ticket.matchLabel}\n${formatFullDate(ticket.kickoffAt)} · ${formatMatchTime(ticket.kickoffAt)}\n${ticket.zoneName} · Row ${ticket.row} · Seat ${ticket.number}\nHolder: ${ticket.holder}\n\nThe QR is signed and checked live at the gate.`,
+      message: `KickOff match pass\n${ticket.matchLabel}\n${formatFullDate(ticket.kickoffAt)} · ${formatMatchTime(ticket.kickoffAt)}\n${ticket.zoneName} · Row ${ticket.row} · Seat ${ticket.number}\nHolder: ${ticket.holder}\n\nThe QR is signed and checked live at the gate.`,
     }).catch(() => undefined);
   };
 
@@ -116,7 +116,7 @@ export default function TicketDetailScreen() {
         ) : null}
 
         <LinearGradient
-          colors={used ? ['#263238', '#121A16'] : ['#0E7A45', '#064E2B', '#07130D']}
+          colors={used ? ['#263238', '#121A16'] : [colors.primaryBright, colors.primaryDark, colors.night]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.pass}>
@@ -130,7 +130,7 @@ export default function TicketDetailScreen() {
               </View>
               <View>
                 <AppText variant="h3" color="#FFFFFF" style={styles.brand}>
-                  XCLUB
+                  KICKOFF
                 </AppText>
                 <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.brandSub}>
                   OFFICIAL MATCH PASS
@@ -145,7 +145,7 @@ export default function TicketDetailScreen() {
               {formatMatchTime(ticket.kickoffAt)} KICK-OFF · {ticket.venue.toUpperCase()}
             </AppText>
             <AppText variant="title" color="#FFFFFF" style={styles.matchTitle}>
-              XClub vs {ticket.opponent}
+              KickOff vs {ticket.opponent}
             </AppText>
             <AppText variant="small" color="rgba(255,255,255,0.65)">
               {formatFullDate(ticket.kickoffAt)}
@@ -153,13 +153,13 @@ export default function TicketDetailScreen() {
           </View>
 
           <View style={styles.teamsRow}>
-            <TeamBadge short="XC" label="XCLUB" colors={['#16A34A', '#064E2B']} />
+            <TeamBadge short="KO" label="KICKOFF" colors={[colors.primaryBright, colors.primaryDark]} />
             <View style={styles.vs}>
               <AppText variant="caption" color="rgba(255,255,255,0.4)">
                 VS
               </AppText>
             </View>
-            <TeamBadge short={ticket.opponent.slice(0, 3).toUpperCase()} label={ticket.opponent.toUpperCase()} colors={['#F4C430', '#92400E']} />
+            <TeamBadge short={ticket.opponent.slice(0, 3).toUpperCase()} label={ticket.opponent.toUpperCase()} colors={[colors.accent, colors.accentDeep]} />
           </View>
 
           <View style={styles.perforation}>
@@ -178,7 +178,7 @@ export default function TicketDetailScreen() {
                 <QRCode
                   value={qrPayload}
                   size={186}
-                  color="#07130D"
+                  color={colors.night}
                   backgroundColor="#FFFFFF"
                   quietZone={8}
                 />
@@ -293,7 +293,7 @@ export default function TicketDetailScreen() {
           </AppText>
         </Pressable>
 
-        <AppText variant="caption" color="#52665B" style={styles.footer}>
+        <AppText variant="caption" color={colors.mutedGreen} style={styles.footer}>
           SECURE PASS · SIGNED QR · VALID FOR ONE ENTRY
         </AppText>
       </ScrollView>

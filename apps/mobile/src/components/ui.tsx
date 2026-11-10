@@ -163,7 +163,7 @@ export function Pill({
 }) {
   const map = {
     green: { bg: colors.softGreen, text: colors.primary },
-    gold: { bg: colors.softGold, text: '#8A6400' },
+    gold: { bg: colors.softGold, text: colors.goldInk },
     dark: { bg: 'rgba(255,255,255,0.12)', text: '#FFFFFF' },
     muted: { bg: colors.surfaceAlt, text: colors.muted },
     red: { bg: '#FEE2E2', text: colors.danger },
@@ -200,10 +200,13 @@ export function SectionHeading({
   );
 }
 
+/** Default crest gradient — brand primary pair. */
+const defaultCrestColors: [string, string] = [colors.primary, colors.primaryDark];
+
 export function Crest({
   short,
   size = 52,
-  colors: crestColors = ['#0B6B3A', '#064E2B'],
+  colors: crestColors = defaultCrestColors,
 }: {
   short: string;
   size?: number;

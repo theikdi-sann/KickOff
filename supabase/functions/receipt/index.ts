@@ -75,7 +75,7 @@ async function handler(request: Request): Promise<Response> {
   const muted = rgb(0.35, 0.4, 0.47);
 
   let y = 790;
-  page.drawText("XCLUB", { x: 48, y, size: 26, font: bold, color: green });
+  page.drawText("KICKOFF", { x: 48, y, size: 26, font: bold, color: green });
   page.drawText("Matchday receipt", { x: 48, y: y - 20, size: 11, font, color: muted });
   page.drawText(receipt.status === "refunded" ? "REFUNDED" : "PAID", {
     x: 470,
@@ -91,7 +91,7 @@ async function handler(request: Request): Promise<Response> {
   const rows: Array<[string, string]> = [
     ["Order", receipt.order_id],
     ["Holder", `${receipt.holder} · ${receipt.holder_email}`],
-    ["Fixture", `XClub vs ${receipt.opponent}`],
+    ["Fixture", `KickOff vs ${receipt.opponent}`],
     ["Kick-off", longDate(receipt.kickoff_at)],
     ["Venue", receipt.venue],
     ["Paid", receipt.paid_at ? longDate(receipt.paid_at) : "—"],
@@ -140,7 +140,7 @@ async function handler(request: Request): Promise<Response> {
     "Prices include Thai VAT (7%). This receipt is proof of purchase, not a tax invoice.",
     { x: 48, y, size: 8, font, color: muted },
   );
-  page.drawText("XClub Arena · Bangkok · xclub.app", { x: 48, y: y - 14, size: 8, font, color: muted });
+  page.drawText("KickOff Arena · Bangkok · kickoff.app", { x: 48, y: y - 14, size: 8, font, color: muted });
 
   const bytes = await pdf.save();
   const path = `${receipt.user_id}/${receipt.order_id}.pdf`;

@@ -27,7 +27,7 @@ export function initialsFor(name: string): string {
       .filter(Boolean)
       .map((part) => part[0]?.toUpperCase() ?? '')
       .slice(0, 2)
-      .join('') || 'XC'
+      .join('') || 'KO'
   );
 }
 
@@ -37,7 +37,7 @@ export function profileFromUser(user: User, row?: ProfileRow | null): AppProfile
     row?.full_name ||
     (typeof metadataName === 'string' ? metadataName : '') ||
     user.email?.split('@')[0] ||
-    'XClub fan';
+    'KickOff fan';
   const email = row?.email || user.email || '';
 
   return {
@@ -104,7 +104,7 @@ export async function resetLocalSession(): Promise<void> {
 
 export async function requestPasswordReset(email: string): Promise<void> {
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: 'xclub://reset-password',
+    redirectTo: 'kickoff://reset-password',
   });
   if (error) throw new Error(error.message);
 }

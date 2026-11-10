@@ -13,7 +13,7 @@ export function serviceClient(): SupabaseClient {
   const env = getEnv();
   return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: AUTH_OPTIONS,
-    global: { headers: { "x-client-info": "xclub-edge" } },
+    global: { headers: { "x-client-info": "kickoff-edge" } },
   });
 }
 
@@ -25,7 +25,7 @@ export function userClient(accessToken: string): SupabaseClient {
     global: {
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "x-client-info": "xclub-edge",
+        "x-client-info": "kickoff-edge",
       },
     },
   });

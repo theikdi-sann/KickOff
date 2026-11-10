@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
-import type { ScanResultCode } from "@xclub/shared";
+import type { ScanResultCode } from "@kickoff/shared";
 import { listQueue, type QueuedScan } from "@/lib/offline-queue";
 import {
   getDemoPass,
@@ -141,7 +141,7 @@ export function useScanEvents(input: { gateId?: string; limit?: number } = {}) {
           undoneAt: row.undone_at,
           ticketId: row.tickets?.id ?? null,
           holder: holders[row.tickets?.user_id ?? ""] || "Unknown pass",
-          matchLabel: `XClub vs ${row.tickets?.matches?.opponent ?? "opponent"}`,
+          matchLabel: `KickOff vs ${row.tickets?.matches?.opponent ?? "opponent"}`,
           zoneName: seat?.zones?.name ?? "",
           seatLabel: `${rowLabel}${seat?.number ?? ""}`,
         };

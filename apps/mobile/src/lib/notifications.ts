@@ -3,6 +3,7 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { AndroidImportance, IosAuthorizationStatus } from 'expo-notifications';
 import { Platform } from 'react-native';
+import { brand } from '@kickoff/shared';
 import { api } from './api';
 
 /** Show alerts while the app is foregrounded; the OS handles the rest. */
@@ -43,7 +44,7 @@ export async function registerPushToken(): Promise<string> {
       name: 'Match updates',
       importance: AndroidImportance.DEFAULT,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#0B6B3A',
+      lightColor: brand.primary,
     });
   }
 

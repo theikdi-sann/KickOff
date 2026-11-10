@@ -3,7 +3,7 @@ import { ChevronLeft, Clock3, Share2 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { formatFullDate } from '@xclub/shared';
+import { formatFullDate } from '@kickoff/shared';
 import { AppText, Card, EmptyState, Pill, Screen, Skeleton } from '@/components/ui';
 import { useNews, useNewsItem } from '@/lib/queries/news';
 import { colors, radii, shadow } from '@/lib/theme';
@@ -51,7 +51,7 @@ export default function NewsDetailScreen() {
 
   const shareArticle = async () => {
     await Share.share({
-      message: `${item.title}\n\n${item.excerpt}\n\nRead more in the XClub app.`,
+      message: `${item.title}\n\n${item.excerpt}\n\nRead more in the KickOff app.`,
     }).catch(() => undefined);
   };
 
@@ -75,7 +75,7 @@ export default function NewsDetailScreen() {
           </View>
           <View style={styles.heroMark}>
             <AppText variant="display" color="rgba(255,255,255,0.12)" style={styles.heroMarkText}>
-              XC
+              KO
             </AppText>
           </View>
           <View style={styles.heroBottom}>
@@ -97,11 +97,11 @@ export default function NewsDetailScreen() {
             <View style={styles.byline}>
               <View style={styles.avatar}>
                 <AppText variant="caption" color="#FFFFFF">
-                  XC
+                  KO
                 </AppText>
               </View>
               <View style={styles.flex}>
-                <AppText variant="label">XClub Media</AppText>
+                <AppText variant="label">KickOff Media</AppText>
                 <View style={styles.readRow}>
                   <Clock3 size={11} color={colors.muted} />
                   <AppText variant="caption" color={colors.muted} style={styles.readText}>
@@ -131,7 +131,7 @@ export default function NewsDetailScreen() {
               “Every match is better when the stands are full.”
             </AppText>
             <AppText variant="caption" color={colors.muted} style={styles.quoteBy}>
-              XCLUB SUPPORTERS TRUST
+              KICKOFF SUPPORTERS TRUST
             </AppText>
           </View>
 
@@ -148,7 +148,7 @@ export default function NewsDetailScreen() {
                 style={({ pressed }) => [styles.relatedRow, pressed && { opacity: 0.7 }]}>
                 <LinearGradient colors={article.imageColors} style={styles.relatedThumb}>
                   <AppText variant="caption" color="rgba(255,255,255,0.8)" style={styles.relatedThumbText}>
-                    {article.category === 'Match Report' ? 'FT' : 'XC'}
+                    {article.category === 'Match Report' ? 'FT' : 'KO'}
                   </AppText>
                 </LinearGradient>
                 <View style={styles.flex}>

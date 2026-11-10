@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { TicketDto } from '@xclub/shared';
+import type { TicketDto } from '@kickoff/shared';
 import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
@@ -26,10 +26,10 @@ function mapTicket(row: TicketJoin, holder: string): TicketDto {
     id: row.id,
     orderId: row.order_id,
     matchId: row.match_id,
-    matchLabel: `XClub vs ${row.matches?.opponent ?? 'opponent'}`,
+    matchLabel: `KickOff vs ${row.matches?.opponent ?? 'opponent'}`,
     opponent: row.matches?.opponent ?? '',
     kickoffAt: row.matches?.kickoff_at ?? '',
-    venue: row.matches?.venue ?? 'XClub Arena',
+    venue: row.matches?.venue ?? 'KickOff Arena',
     holder,
     zoneId: '',
     zoneName: seat?.zones?.name ?? '',
@@ -54,7 +54,7 @@ async function holderName(): Promise<string> {
   const metadataName = data.user?.user_metadata?.full_name;
   return typeof metadataName === 'string' && metadataName.length > 0
     ? metadataName
-    : data.user?.email ?? 'XClub fan';
+    : data.user?.email ?? 'KickOff fan';
 }
 
 export function useTickets() {

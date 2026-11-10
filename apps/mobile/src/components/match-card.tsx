@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { CalendarDays, ChevronRight, MapPin } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { formatMatchDate, formatMatchTime, formatTHB, type MatchDto } from '@xclub/shared';
+import { formatMatchDate, formatMatchTime, formatTHB, type MatchDto } from '@kickoff/shared';
 import { AppText, Crest, Pill } from '@/components/ui';
 import { colors, fonts, radii, shadow } from '@/lib/theme';
 
@@ -27,7 +27,7 @@ export function MatchCard({
           <ChevronRight size={17} color="rgba(255,255,255,0.7)" />
         </View>
         <View style={styles.teams}>
-          <Crest short="XC" size={46} colors={['#16A34A', '#064E2B']} />
+          <Crest short="KO" size={46} colors={[colors.primaryBright, colors.primaryDark]} />
           <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.vs}>
             VS
           </AppText>

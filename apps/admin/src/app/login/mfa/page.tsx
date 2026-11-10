@@ -81,7 +81,7 @@ export default function MfaChallengePage() {
   };
 
   return (
-    <div className="grid min-h-screen place-items-center bg-[#F5F7F6] px-6 py-10">
+    <div className="grid min-h-screen place-items-center bg-app px-6 py-10">
       <div className="w-full max-w-md">
         <div className="mb-8 flex items-center justify-between">
           <Logo />

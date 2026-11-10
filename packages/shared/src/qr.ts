@@ -5,7 +5,7 @@ import type { Ticket } from './types';
 /* Signing/verification happens only in Edge Functions (TICKET_HMAC).  */
 /* ------------------------------------------------------------------ */
 
-export const QR_V2_PREFIX = 'XCLUB-V2:';
+export const QR_V2_PREFIX = 'KICKOFF-V2:';
 
 export interface TicketQrPayloadV2 {
   v: 2;
@@ -41,7 +41,7 @@ export function parseTicketQrPayload(
     return { ok: false, reason: 'Legacy v1 ticket codes are no longer accepted.' };
   }
   if (!value.startsWith(QR_V2_PREFIX)) {
-    return { ok: false, reason: 'Not an XClub ticket QR code.' };
+    return { ok: false, reason: 'Not an KickOff ticket QR code.' };
   }
 
   let parsed: unknown;
@@ -84,7 +84,7 @@ export function parseTicketQrPayload(
 /* ------------------------------------------------------------------ */
 
 /** @deprecated Use `QR_V2_PREFIX` / `TicketQrPayloadV2`. */
-export const MOCK_QR_PREFIX = 'XCLUB-MOCK-V1:';
+export const MOCK_QR_PREFIX = 'KICKOFF-MOCK-V1:';
 
 /** @deprecated Use `TicketQrPayloadV2`. */
 export interface MockQrPayload {
@@ -137,7 +137,7 @@ export function decodeTicketQr(
 ): { ok: true; payload: MockQrPayload } | { ok: false; reason: string } {
   const value = raw.trim();
   if (!value.startsWith(MOCK_QR_PREFIX)) {
-    return { ok: false, reason: 'Not an XClub ticket QR code.' };
+    return { ok: false, reason: 'Not an KickOff ticket QR code.' };
   }
   try {
     const parsed = JSON.parse(value.slice(MOCK_QR_PREFIX.length)) as MockQrPayload;

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { adminCreateMatchSchema, type MatchDto } from "@xclub/shared";
+import { adminCreateMatchSchema, type MatchDto, brand } from "@kickoff/shared";
 import type { AdminMatchInput } from "@/lib/queries/matches";
 
-const DEFAULT_COLORS: [string, string] = ["#0B6B3A", "#052E1A"];
-const DEFAULT_ACCENT = "#F4C430";
+const DEFAULT_COLORS: [string, string] = [brand.primary, brand.primaryDark];
+const DEFAULT_ACCENT = brand.accent;
 
 interface MatchFormProps {
   initial?: Partial<MatchDto>;
@@ -30,7 +30,7 @@ export function MatchForm({ initial, submitting = false, onSubmit }: MatchFormPr
     opponent: initial?.opponent ?? "",
     opponentShort: initial?.opponentShort ?? "",
     kickoffAt: toLocalInput(initial?.kickoffAt),
-    venue: initial?.venue ?? "XClub Arena",
+    venue: initial?.venue ?? "KickOff Arena",
     competition: initial?.competition ?? "Thai Premier League",
     homeAway: initial?.homeAway ?? "home",
   });

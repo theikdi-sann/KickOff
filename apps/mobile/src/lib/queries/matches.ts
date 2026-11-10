@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { toMatchDto } from '@xclub/shared';
+import { toMatchDto } from '@kickoff/shared';
 import { supabase } from '@/lib/supabase';
 
 export function useMatches() {

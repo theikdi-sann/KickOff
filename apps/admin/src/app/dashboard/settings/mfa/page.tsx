@@ -43,7 +43,7 @@ export default function MfaSettingsPage() {
       const supabase = createClient();
       const { data, error: enrollError } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: `XClub Admin ${new Date().toISOString().slice(0, 10)}`,
+        friendlyName: `KickOff Admin ${new Date().toISOString().slice(0, 10)}`,
       });
       if (enrollError) throw enrollError;
       setEnrollment({

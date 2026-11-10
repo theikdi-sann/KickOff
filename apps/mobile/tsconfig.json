@@ -7,8 +7,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/assets/*": ["./assets/*"],
-      "@xclub/shared": ["../../packages/shared/src/index.ts"],
-      "@xclub/shared/*": ["../../packages/shared/src/*"]
+      "@kickoff/shared": ["../../packages/shared/src/index.ts"],
+      "@kickoff/shared/*": ["../../packages/shared/src/*"]
     }
   },
   "include": [

@@ -122,7 +122,7 @@ async function handler(request: Request): Promise<Response> {
     to: token,
     sound: "default",
     title: "Matchday is coming",
-    body: `XClub vs ${match!.opponent} · ${bangkokKickoff(match!.kickoff_at)} at ${match!.venue}. Have your pass ready.`,
+    body: `KickOff vs ${match!.opponent} · ${bangkokKickoff(match!.kickoff_at)} at ${match!.venue}. Have your pass ready.`,
     data: { url: "/(tabs)" },
   }));
 

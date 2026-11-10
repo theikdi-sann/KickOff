@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { HoldDto } from '@xclub/shared';
+import type { HoldDto } from '@kickoff/shared';
 import { supabase } from '@/lib/supabase';
 
 interface RpcHold {

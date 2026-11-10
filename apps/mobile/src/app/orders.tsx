@@ -2,7 +2,7 @@ import { ChevronLeft, Download, ReceiptText } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { formatTHB, formatShortDate, type OrderDto } from '@xclub/shared';
+import { formatTHB, formatShortDate, type OrderDto } from '@kickoff/shared';
 import { AppText, Card, EmptyState, Pill, Screen, Skeleton } from '@/components/ui';
 import { errorMessage } from '@/lib/api';
 import { useOrders } from '@/lib/queries/orders';
@@ -50,7 +50,7 @@ export default function OrdersScreen() {
         <View style={styles.headerCenter}>
           <AppText variant="h3">Orders & receipts</AppText>
           <AppText variant="caption" color={colors.muted} style={styles.headerSub}>
-            {orders.length} {orders.length === 1 ? 'ORDER' : 'ORDERS'} · {profileQuery.data?.fullName?.toUpperCase() ?? 'XCLUB MEMBER'}
+            {orders.length} {orders.length === 1 ? 'ORDER' : 'ORDERS'} · {profileQuery.data?.fullName?.toUpperCase() ?? 'KICKOFF MEMBER'}
           </AppText>
         </View>
         <View style={styles.spacer} />
@@ -192,7 +192,7 @@ export default function OrdersScreen() {
         )}
 
         <AppText variant="caption" color={colors.muted} style={styles.note}>
-          RECEIPTS ARE GENERATED SECURELY BY XCLUB AND INCLUDE VAT. PAYMENTS ARE PROCESSED BY
+          RECEIPTS ARE GENERATED SECURELY BY KICKOFF AND INCLUDE VAT. PAYMENTS ARE PROCESSED BY
           STRIPE.
         </AppText>
       </ScrollView>

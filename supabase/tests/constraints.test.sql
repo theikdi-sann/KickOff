@@ -7,7 +7,7 @@ select col_type_is('public', 'zones', 'price_satang', 'integer', 'prices are int
 
 -- Fixtures.
 insert into auth.users (id, email)
-values ('00000000-0000-0000-0000-0000000000aa', 'tap@xclub.test');
+values ('00000000-0000-0000-0000-0000000000aa', 'tap@kickoff.test');
 
 insert into public.matches (id, opponent, opponent_short, kickoff_at)
 values ('test-match', 'Test FC', 'TST', now() + interval '7 days');

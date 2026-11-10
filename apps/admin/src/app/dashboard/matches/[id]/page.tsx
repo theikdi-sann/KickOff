@@ -43,7 +43,7 @@ import {
   formatMatchTime,
   formatTHB,
   type ZoneDto,
-} from "@xclub/shared";
+} from "@kickoff/shared";
 
 export default function SeatingPage() {
   const params = useParams<{ id: string }>();
@@ -157,7 +157,7 @@ export default function SeatingPage() {
 
       <SectionTitle
         eyebrow="Seating configuration"
-        title={`XClub vs ${match.opponent}`}
+        title={`KickOff vs ${match.opponent}`}
         description="Set zone prices, rows, and seat counts. Changes are written to Supabase instantly."
         action={
           <button type="button" onClick={() => setCreatingZone(true)} className="btn-primary">
@@ -259,7 +259,7 @@ export default function SeatingPage() {
           <div className="relative overflow-hidden rounded-2xl bg-night p-5 text-white">
             <div className="absolute -right-12 -top-16 h-40 w-40 rounded-full border border-white/[0.07]" />
             <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-gold">Stadium preview</p>
-            <div className="relative mt-4 h-44 rounded-xl border border-white/10 bg-[#0B2417] p-3">
+            <div className="relative mt-4 h-44 rounded-xl border border-white/10 bg-pitch-deep p-3">
               <div className="absolute inset-x-12 inset-y-9 rounded-md border border-white/20">
                 <div className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20" />
               </div>

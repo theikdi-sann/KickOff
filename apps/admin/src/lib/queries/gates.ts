@@ -46,7 +46,7 @@ function mapGate(row: GateRow): AdminGate {
     active: row.active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    matchLabel: row.matches ? `XClub vs ${row.matches.opponent}` : null,
+    matchLabel: row.matches ? `KickOff vs ${row.matches.opponent}` : null,
     kickoffAt: row.matches?.kickoff_at ?? null,
     matchStatus: row.matches?.status ?? null,
   };

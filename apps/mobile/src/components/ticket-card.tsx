@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { CalendarDays, MapPin, QrCode } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { formatMatchDate, formatMatchTime, formatTHB, type TicketDto } from '@xclub/shared';
+import { formatMatchDate, formatMatchTime, formatTHB, type TicketDto } from '@kickoff/shared';
 import { AppText, Pill } from '@/components/ui';
 import { colors, radii, shadow } from '@/lib/theme';
 
@@ -20,7 +20,7 @@ export function TicketCard({
       onPress={onPress}
       style={({ pressed }) => [styles.wrap, used && { opacity: 0.72 }, pressed && { opacity: 0.9 }]}>
       <LinearGradient
-        colors={used ? ['#334155', '#1E293B'] : ['#0B6B3A', '#064E2B']}
+        colors={used ? ['#334155', '#1E293B'] : [colors.primary, colors.primaryDark]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.accent}>
@@ -33,12 +33,12 @@ export function TicketCard({
           <View style={styles.teams}>
             <View style={styles.crest}>
               <AppText variant="h3" color="#FFFFFF">
-                XC
+                KO
               </AppText>
             </View>
             <View style={styles.flex}>
               <AppText variant="label" numberOfLines={1}>
-                XClub vs {ticket.opponent}
+                KickOff vs {ticket.opponent}
               </AppText>
               <View style={styles.meta}>
                 <CalendarDays size={11} color={colors.muted} />

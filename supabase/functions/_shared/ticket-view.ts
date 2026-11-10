@@ -66,16 +66,16 @@ export async function loadTicketView(
   const seat = data.seats;
   const row = seat?.row_label ?? "";
   const number = seat?.number ?? 0;
-  const holder = profile?.full_name || profile?.email || "XClub fan";
+  const holder = profile?.full_name || profile?.email || "KickOff fan";
 
   return {
     id: data.id,
     orderId: data.order_id,
     matchId: data.match_id,
-    matchLabel: `XClub vs ${data.matches?.opponent ?? "opponent"}`,
+    matchLabel: `KickOff vs ${data.matches?.opponent ?? "opponent"}`,
     opponent: data.matches?.opponent ?? "",
     kickoffAt: data.matches?.kickoff_at ?? "",
-    venue: data.matches?.venue ?? "XClub Arena",
+    venue: data.matches?.venue ?? "KickOff Arena",
     holder,
     zoneId: "",
     zoneName: seat?.zones?.name ?? "",

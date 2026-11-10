@@ -31,7 +31,7 @@ function setValidEnv(): void {
   Deno.env.set("TICKET_HMAC_KEY", "x".repeat(40));
   Deno.env.set("METRICS_TOKEN", "m".repeat(20));
   Deno.env.set("ADMIN_APP_URL", "http://localhost:3000");
-  Deno.env.set("MOBILE_DEEP_LINK", "xclub://");
+  Deno.env.set("MOBILE_DEEP_LINK", "kickoff://");
   resetEnvCache();
 }
 

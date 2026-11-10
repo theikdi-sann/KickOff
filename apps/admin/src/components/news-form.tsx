@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { newsInputSchema, type NewsCategory, type NewsDto } from "@xclub/shared";
+import { newsInputSchema, type NewsCategory, type NewsDto, brand } from "@kickoff/shared";
 import type { AdminNewsInput } from "@/lib/queries/news";
 
 const CATEGORIES: NewsCategory[] = ["Club News", "Match Report", "Announcement"];
-const DEFAULT_COLORS: [string, string] = ["#0B6B3A", "#022C22"];
+const DEFAULT_COLORS: [string, string] = [brand.primary, brand.primaryDark];
 
 interface NewsFormProps {
   initial?: Partial<NewsDto>;

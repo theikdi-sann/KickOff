@@ -16,6 +16,7 @@ import type {
   SeatRow,
   ZoneRow,
 } from './entities';
+import { brand } from './theme';
 
 function pair(colors: string[] | null, fallback: [string, string]): [string, string] {
   return [colors?.[0] ?? fallback[0], colors?.[1] ?? fallback[1]];
@@ -35,7 +36,7 @@ export function toMatchDto(row: MatchRowLike): MatchDto {
     status: row.status,
     homeScore: row.home_score,
     awayScore: row.away_score,
-    posterColors: pair(row.poster_colors, ['#0B6B3A', '#052E1A']),
+    posterColors: pair(row.poster_colors, [brand.primary, '#052E1A']),
     accent: row.accent,
   };
 }
@@ -78,7 +79,7 @@ export function toNewsDto(row: NewsRowLike): NewsDto {
         : 'Club News',
     publishedAt: row.published_at,
     readMinutes: row.read_minutes,
-    imageColors: pair(row.image_colors, ['#0B6B3A', '#022C22']),
+    imageColors: pair(row.image_colors, [brand.primary, '#022C22']),
   };
 }
 

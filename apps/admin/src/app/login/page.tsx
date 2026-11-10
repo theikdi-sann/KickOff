@@ -63,7 +63,7 @@ export default function LoginPage() {
             <br />
             RUNS ON
             <br />
-            <span className="text-gold">XCLUB.</span>
+            <span className="text-gold">KICKOFF.</span>
           </h1>
           <p className="mt-6 max-w-md text-sm leading-6 text-emerald-50/55">
             Fixtures, seat inventory, news publishing, and gate validation in one operating system
@@ -78,12 +78,12 @@ export default function LoginPage() {
         </div>
 
         <div className="relative z-10 flex items-center justify-between text-[10px] uppercase tracking-[0.14em] text-emerald-50/30">
-          <span>XClub Arena · Bangkok</span>
+          <span>KickOff Arena · Bangkok</span>
           <span>Matchday operations</span>
         </div>
       </div>
 
-      <div className="flex min-h-screen flex-col bg-[#F5F7F6]">
+      <div className="flex min-h-screen flex-col bg-app">
         <div className="flex items-center justify-between px-6 pt-6 lg:hidden">
           <Logo />
           <Badge tone="green">Live</Badge>
@@ -116,7 +116,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   className="h-12 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                  placeholder="admin@xclub.app"
+                  placeholder="admin@kickoff.app"
                   autoComplete="email"
                 />
               </div>
@@ -206,7 +206,7 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-6 text-center text-[9px] uppercase tracking-[0.14em] text-slate-400">
-            XClub operations console · v0.1.0
+            KickOff operations console · v0.1.0
           </p>
         </div>
       </div>

@@ -1,21 +1,35 @@
 @import "tailwindcss";
 
+/*
+ * Brand colours are defined once in `packages/shared/src/theme.ts` and applied
+ * to <html> as `--brand-*` custom properties by `app/layout.tsx`. These `@theme
+ * inline` mappings expose them to Tailwind utilities.
+ */
 @theme inline {
-  --color-pitch: #0b6b3a;
-  --color-pitch-dark: #064e2b;
-  --color-pitch-bright: #16a34a;
-  --color-gold: #f4c430;
-  --color-night: #07130d;
-  --color-night-card: #10231a;
-  --color-ink: #0f172a;
-  --color-muted: #64748b;
+  --color-pitch: var(--brand-primary);
+  --color-pitch-dark: var(--brand-primary-dark);
+  --color-pitch-deep: var(--brand-primary-deep);
+  --color-pitch-bright: var(--brand-primary-bright);
+  --color-gold: var(--brand-accent);
+  --color-gold-deep: var(--brand-accent-deep);
+  --color-gold-ink: var(--brand-gold-ink);
+  --color-night: var(--brand-night);
+  --color-night-mid: var(--brand-night-mid);
+  --color-night-card: var(--brand-night-card);
+  --color-night-muted: var(--brand-night-muted);
+  --color-ink: var(--brand-ink);
+  --color-muted: var(--brand-muted);
+  --color-app: var(--brand-app-background);
+  --color-line: var(--brand-line);
+  --color-soft-green: var(--brand-soft-green);
+  --color-soft-gold: var(--brand-soft-gold);
   --font-sans: var(--font-inter);
   --font-display: var(--font-barlow);
 }
 
 :root {
-  --background: #f5f7f6;
-  --foreground: #0f172a;
+  --background: var(--brand-app-background, #f5f7f6);
+  --foreground: var(--brand-ink, #0f172a);
 }
 
 * {
@@ -33,7 +47,7 @@ body {
 }
 
 ::selection {
-  background: rgba(11, 107, 58, 0.18);
+  background: color-mix(in srgb, var(--brand-primary) 18%, transparent);
 }
 
 @layer components {
@@ -46,7 +60,7 @@ body {
   }
 
   .input {
-    @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10;
+    @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-pitch focus:ring-4 focus:ring-pitch/10;
   }
 
   .btn-primary {

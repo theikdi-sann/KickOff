@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Badge, ConfirmDialog, useToast } from "@/components/ui";
 import { invokeFunction } from "@/lib/functions";
 import { useOrder, useRefund } from "@/lib/queries/orders";
-import { formatFullDate, formatTHB } from "@xclub/shared";
+import { formatFullDate, formatTHB } from "@kickoff/shared";
 
 export default function OrderDetailPage() {
   const params = useParams<{ orderId: string }>();

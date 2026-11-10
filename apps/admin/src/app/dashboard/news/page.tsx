@@ -28,7 +28,7 @@ import {
   type AdminNewsInput,
 } from "@/lib/queries/news";
 import { cn } from "@/lib/utils";
-import { formatFullDate, type NewsCategory, type NewsDto } from "@xclub/shared";
+import { formatFullDate, type NewsCategory, type NewsDto } from "@kickoff/shared";
 
 const categories: NewsCategory[] = ["Club News", "Match Report", "Announcement"];
 
@@ -162,7 +162,7 @@ export default function NewsPage() {
                     background: `linear-gradient(135deg, ${item.imageColors[0]}, ${item.imageColors[1]})`,
                   }}>
                   <Badge tone="dark">{item.category}</Badge>
-                  <span className="display text-[38px] leading-none text-white/20">XC</span>
+                  <span className="display text-[38px] leading-none text-white/20">KO</span>
                   <span className="text-[8px] uppercase tracking-[0.14em] text-white/50">Published</span>
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col p-4">

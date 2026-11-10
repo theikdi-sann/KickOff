@@ -19,7 +19,7 @@ export interface QueuedScan {
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
-const STORAGE_KEY = "xclub.scan.queue.v1";
+const STORAGE_KEY = "kickoff.scan.queue.v1";
 const MAX_ENTRIES = 100;
 
 /** URL-safe key accepted by the Edge Function's `Idempotency-Key` check. */

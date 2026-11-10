@@ -53,10 +53,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (session.status !== "authenticated" || !session.user) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#F5F7F6]">
+      <div className="grid min-h-screen place-items-center bg-app">
         <div className="flex flex-col items-center gap-3">
           <div className="grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-pitch text-xl font-bold text-gold">
-            X
+            K
           </div>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
             {session.status === "mfa_required" ? "Checking two-factor…" : "Loading operations…"}
@@ -154,7 +154,7 @@ function AdminShell({ children, user }: { children: ReactNode; user: User }) {
               <Logo compact />
             </div>
             <div className="hidden min-w-0 flex-1 items-center gap-2 text-xs text-slate-400 md:flex">
-              <span>XClub Arena</span>
+              <span>KickOff Arena</span>
               <ChevronRight size={12} />
               <span className="font-medium text-slate-700">{currentTitle}</span>
             </div>

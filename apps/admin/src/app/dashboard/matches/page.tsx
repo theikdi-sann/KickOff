@@ -38,7 +38,7 @@ import {
   formatMatchTime,
   formatTHB,
   type MatchDto,
-} from "@xclub/shared";
+} from "@kickoff/shared";
 
 type Filter = "all" | "upcoming" | "completed";
 
@@ -76,7 +76,7 @@ export default function MatchesPage() {
     setCreating(false);
     toast({
       title: "Fixture created",
-      description: `XClub vs ${match.opponent} is ready for seating.`,
+      description: `KickOff vs ${match.opponent} is ready for seating.`,
       tone: "green",
     });
     router.push(`/dashboard/matches/${match.id}`);
@@ -95,7 +95,7 @@ export default function MatchesPage() {
       await deleteMatch.mutateAsync(deleting.id);
       toast({
         title: "Fixture deleted",
-        description: `XClub vs ${deleting.opponent} and its zones were removed.`,
+        description: `KickOff vs ${deleting.opponent} and its zones were removed.`,
         tone: "amber",
       });
     } catch (caught) {
@@ -205,7 +205,7 @@ export default function MatchesPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="display truncate text-2xl leading-6 text-slate-900">
-                        XClub vs {match.opponent}
+                        KickOff vs {match.opponent}
                       </h2>
                       <Badge tone={completed ? "muted" : "green"}>{match.status}</Badge>
                     </div>
@@ -297,7 +297,7 @@ export default function MatchesPage() {
         title="Delete fixture?"
         description={
           deleting
-            ? `XClub vs ${deleting.opponent} and every zone under it will be removed. Orders already paid are kept for audit.`
+            ? `KickOff vs ${deleting.opponent} and every zone under it will be removed. Orders already paid are kept for audit.`
             : undefined
         }
         confirmLabel="Delete fixture"

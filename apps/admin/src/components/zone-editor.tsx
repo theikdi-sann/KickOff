@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { adminUpdateZoneSchema, bahtToSatang, type ZoneDto } from "@xclub/shared";
+import { adminUpdateZoneSchema, bahtToSatang, type ZoneDto } from "@kickoff/shared";
 
 interface ZoneEditorProps {
   zone: ZoneDto;

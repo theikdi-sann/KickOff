@@ -41,7 +41,7 @@ describe('QR v2 payload', () => {
     if (!result.ok) expect(result.reason).toMatch(/v1/i);
   });
 
-  it('rejects codes without the XClub prefix', () => {
+  it('rejects codes without the KickOff prefix', () => {
     expect(parseTicketQrPayload('https://example.com/ticket').ok).toBe(false);
   });
 

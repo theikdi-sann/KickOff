@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { toNewsDto } from '@xclub/shared';
+import { toNewsDto } from '@kickoff/shared';
 import { supabase } from '@/lib/supabase';
 
 export function useNews() {

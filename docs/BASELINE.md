@@ -15,23 +15,23 @@ Recorded: 2026-11-09 · branch `master` · commit `8a46ce9`
 ## Repo inventory
 
 ```
-xclub/
+kickoff/
 ├── package.json          root workspace: apps/*, packages/*
 ├── tsconfig.json         UNTRACKED stray stub, extends expo/tsconfig.base (auto-created
 │                         by Expo when started from root). Not referenced by any task; left untracked.
 ├── PLAN.md               v2 single source of truth (247 tasks + MVP gate)
-├── xClubDocs.md          reference docs
+├── KickOffDocs.md          reference docs
 ├── apps/
-│   ├── admin/  @xclub/admin   Next.js 16.4.5 App Router, mock store, TS+ESLint ok
-│   └── mobile/ @xclub/mobile  Expo Router SDK 58, mock store, TS+ESLint ok
+│   ├── admin/  @kickoff/admin   Next.js 16.4.5 App Router, mock store, TS+ESLint ok
+│   └── mobile/ @kickoff/mobile  Expo Router SDK 58, mock store, TS+ESLint ok
 └── packages/
-    └── shared/ @xclub/shared  types/theme/qr/mock (no test script yet)
+    └── shared/ @kickoff/shared  types/theme/qr/mock (no test script yet)
 ```
 
 Workspace scripts:
-- `@xclub/admin`: `dev`, `build`, `start`, `lint` (eslint), `typecheck` (tsc --noEmit)
-- `@xclub/mobile`: `start`, `reset-project` (legacy — G12 removes it), `android`, `ios`, `web`, `lint` (expo lint), `typecheck` (tsc --noEmit)
-- `@xclub/shared`: `typecheck` only (no build/lint/test yet)
+- `@kickoff/admin`: `dev`, `build`, `start`, `lint` (eslint), `typecheck` (tsc --noEmit)
+- `@kickoff/mobile`: `start`, `reset-project` (legacy — G12 removes it), `android`, `ios`, `web`, `lint` (expo lint), `typecheck` (tsc --noEmit)
+- `@kickoff/shared`: `typecheck` only (no build/lint/test yet)
 - Root: `mobile`, `mobile:web`, `admin`, `typecheck`, `build:admin`
 
 ## Baseline command run (2026-11-09)
@@ -41,8 +41,8 @@ Executed per `P0-02`:
 ```
 npm ci → ok
 npm run typecheck → ok (shared, mobile, admin)
-npm run lint --workspace @xclub/admin → ok
-npm run lint --workspace @xclub/mobile → ok
+npm run lint --workspace @kickoff/admin → ok
+npm run lint --workspace @kickoff/mobile → ok
 npm run build:admin → ok (Next.js 16.4.5, Turbopack, 10 routes: /, /_not-found,
   /dashboard, /dashboard/matches, /dashboard/matches/[id], /dashboard/news,
   /dashboard/scan, /dashboard/tickets, /login)

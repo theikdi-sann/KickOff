@@ -1,4 +1,4 @@
-import type { Database } from '@xclub/shared';
+import type { Database } from '@kickoff/shared';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 

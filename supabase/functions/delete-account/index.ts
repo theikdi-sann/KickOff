@@ -30,7 +30,7 @@ async function handler(request: Request): Promise<Response> {
   const { error: profileError } = await db
     .from("profiles")
     .update({
-      email: `deleted+${targetId}@xclub.invalid`,
+      email: `deleted+${targetId}@kickoff.invalid`,
       full_name: "Deleted account",
       phone: null,
       role: "customer",

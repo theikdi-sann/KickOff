@@ -18,7 +18,7 @@ export async function downloadAndShareReceipt(orderId: string): Promise<string> 
     body: { orderId },
   });
 
-  const destination = new File(Paths.cache, `xclub-receipt-${orderId}.pdf`);
+  const destination = new File(Paths.cache, `kickoff-receipt-${orderId}.pdf`);
   const downloaded = await File.downloadFileAsync(receipt.url, destination, {
     idempotent: true,
   });
@@ -26,7 +26,7 @@ export async function downloadAndShareReceipt(orderId: string): Promise<string> 
   if (await Sharing.isAvailableAsync()) {
     await Sharing.shareAsync(downloaded.uri, {
       mimeType: 'application/pdf',
-      dialogTitle: 'XClub receipt',
+      dialogTitle: 'KickOff receipt',
       UTI: 'com.adobe.pdf',
     });
   }

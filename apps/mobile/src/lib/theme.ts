@@ -1,15 +1,17 @@
 import { Platform } from 'react-native';
-import { palette } from '@xclub/shared';
+import { brand } from '@kickoff/shared';
 
+/**
+ * Semantic aliases for the mobile app. All brand colour values come from
+ * `brand` in `@kickoff/shared` — edit that file to re-skin the app.
+ */
 export const colors = {
-  ...palette,
-  bg: '#F5F7F6',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  muted: '#64748B',
-  line: '#E5EAE7',
-  softGreen: '#E7F4EC',
-  softGold: '#FEF7DF',
+  ...brand,
+  bg: brand.appBackground,
+  text: brand.ink,
+  line: brand.line,
+  softGreen: brand.softGreen,
+  softGold: brand.softGold,
 };
 
 export const fonts = {
@@ -22,13 +24,13 @@ export const fonts = {
 
 export const shadow = Platform.select({
   ios: {
-    shadowColor: '#0B2016',
+    shadowColor: brand.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
     shadowRadius: 18,
   },
   android: { elevation: 3 },
-  default: { boxShadow: '0px 8px 24px rgba(11, 32, 22, 0.08)' } as never,
+  default: { boxShadow: `0px 8px 24px ${brand.shadow}14` } as never,
 });
 
 export const radii = {

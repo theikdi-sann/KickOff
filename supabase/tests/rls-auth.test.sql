@@ -3,9 +3,9 @@ begin;
 select plan(5);
 
 insert into auth.users (id, email) values
-  ('00000000-0000-0000-0000-0000000000b1', 'alice@xclub.test'),
-  ('00000000-0000-0000-0000-0000000000b2', 'bob@xclub.test'),
-  ('00000000-0000-0000-0000-0000000000b3', 'root@xclub.test');
+  ('00000000-0000-0000-0000-0000000000b1', 'alice@kickoff.test'),
+  ('00000000-0000-0000-0000-0000000000b2', 'bob@kickoff.test'),
+  ('00000000-0000-0000-0000-0000000000b3', 'root@kickoff.test');
 
 update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000000b3';
 

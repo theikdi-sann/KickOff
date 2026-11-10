@@ -1,4 +1,4 @@
-import { isApiError, type ApiError, type ErrorCode } from '@xclub/shared';
+import { isApiError, type ApiError, type ErrorCode } from '@kickoff/shared';
 import { supabase } from './supabase';
 
 export type { ApiError, ErrorCode };

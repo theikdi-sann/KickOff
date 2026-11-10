@@ -15,7 +15,7 @@ const DOCS: Record<string, LegalDoc> = {
     title: 'Terms of use',
     updated: 'November 2026',
     intro:
-      'These terms cover your use of the XClub member app, match passes, and the club’s gate validation service.',
+      'These terms cover your use of the KickOff member app, match passes, and the club’s gate validation service.',
     sections: [
       {
         heading: 'Match passes',
@@ -39,11 +39,11 @@ const DOCS: Record<string, LegalDoc> = {
     title: 'Privacy policy',
     updated: 'November 2026',
     intro:
-      'XClub collects only the information needed to run your account, sell passes, and keep the stadium safe.',
+      'KickOff collects only the information needed to run your account, sell passes, and keep the stadium safe.',
     sections: [
       {
         heading: 'What we collect',
-        body: 'Your name, email, phone number, order history, seat allocations, and device push tokens. Card details are handled by Stripe and never stored by XClub.',
+        body: 'Your name, email, phone number, order history, seat allocations, and device push tokens. Card details are handled by Stripe and never stored by KickOff.',
       },
       {
         heading: 'How we use it',
@@ -110,7 +110,7 @@ export default function LegalScreen() {
           ))}
         </Card>
         <AppText variant="caption" color={colors.muted} style={styles.footer}>
-          XCLUB ARENA · BANGKOK · THAILAND
+          KICKOFF ARENA · BANGKOK · THAILAND
         </AppText>
       </ScrollView>
     </Screen>

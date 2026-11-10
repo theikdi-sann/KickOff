@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { OrderDto, OrderStatus } from "@xclub/shared";
+import type { OrderDto, OrderStatus } from "@kickoff/shared";
 import { invokeFunction } from "@/lib/functions";
 import { createClient } from "@/lib/supabase/client";
 
@@ -58,7 +58,7 @@ function mapOrder(row: AdminOrderRow, holder?: Holder): AdminOrder {
     id: row.id,
     userId: row.user_id,
     matchId: row.match_id,
-    matchLabel: `XClub vs ${row.matches?.opponent ?? "opponent"}`,
+    matchLabel: `KickOff vs ${row.matches?.opponent ?? "opponent"}`,
     seats: (row.order_seats ?? []).map((seat) => ({
       seatId: seat.seat_id,
       ticketId: seat.ticket_id,

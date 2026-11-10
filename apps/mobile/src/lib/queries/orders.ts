@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
-import type { OrderDto, OrderSeatDto } from '@xclub/shared';
+import type { OrderDto, OrderSeatDto } from '@kickoff/shared';
 import { invokeFunction } from '@/lib/functions';
 import { supabase } from '@/lib/supabase';
 
@@ -42,7 +42,7 @@ function mapOrder(row: OrderJoin): OrderDto {
     id: row.id,
     userId: row.user_id,
     matchId: row.match_id,
-    matchLabel: `XClub vs ${row.matches?.opponent ?? 'opponent'}`,
+    matchLabel: `KickOff vs ${row.matches?.opponent ?? 'opponent'}`,
     seats,
     amountSatang: row.amount_satang,
     status: (STATUSES as readonly string[]).includes(row.status)

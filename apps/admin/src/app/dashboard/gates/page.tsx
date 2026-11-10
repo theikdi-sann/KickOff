@@ -13,7 +13,7 @@ import {
   type AdminGateInput,
 } from "@/lib/queries/gates";
 import { useMatches } from "@/lib/queries/matches";
-import { formatMatchDate, formatMatchTime } from "@xclub/shared";
+import { formatMatchDate, formatMatchTime } from "@kickoff/shared";
 
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,31}$/;
 

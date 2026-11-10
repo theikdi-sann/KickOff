@@ -1,6 +1,6 @@
 "use client";
 
-import type { ScanResultDto } from "@xclub/shared";
+import type { ScanResultDto } from "@kickoff/shared";
 import { invokeFunction } from "@/lib/functions";
 import {
   enqueueScan,

@@ -15,8 +15,8 @@
     "lib": ["es2022"],
     "moduleDetection": "force",
     "paths": {
-      "@xclub/shared": ["./packages/shared/src/index.ts"],
-      "@xclub/shared/*": ["./packages/shared/src/*"]
+      "@kickoff/shared": ["./packages/shared/src/index.ts"],
+      "@kickoff/shared/*": ["./packages/shared/src/*"]
     }
   }
 }

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
-import { formatTHB, formatShortDate } from '@xclub/shared';
+import { formatTHB, formatShortDate } from '@kickoff/shared';
 import { AppText, Card, LiveTag, PageScroll, Pill, Screen } from '@/components/ui';
 import { signOut } from '@/lib/auth';
 import { useOrders } from '@/lib/queries/orders';
@@ -47,7 +47,7 @@ export default function ProfileScreen() {
   return (
     <Screen>
       <PageScroll bottom={118}>
-        <LinearGradient colors={['#0B6B3A', '#064E2B', '#07130D']} style={styles.hero}>
+        <LinearGradient colors={[colors.primary, colors.primaryDark, colors.night]} style={styles.hero}>
           <View style={styles.heroTop}>
             <AppText variant="caption" color="rgba(255,255,255,0.6)" style={styles.heroEyebrow}>
               SUPPORTER ACCOUNT
@@ -57,12 +57,12 @@ export default function ProfileScreen() {
           <View style={styles.identity}>
             <View style={styles.avatar}>
               <AppText variant="display" color="#FFFFFF" style={styles.initials}>
-                {profile?.initials ?? 'XC'}
+                {profile?.initials ?? 'KO'}
               </AppText>
             </View>
             <View style={styles.flex}>
               <AppText variant="h2" color="#FFFFFF">
-                {profile?.fullName ?? 'XClub supporter'}
+                {profile?.fullName ?? 'KickOff supporter'}
               </AppText>
               <AppText variant="small" color={colors.nightMuted}>
                 {profile?.email ?? 'Signed in'}
@@ -123,7 +123,7 @@ export default function ProfileScreen() {
               onPress={() =>
                 Alert.alert(
                   'Payment methods',
-                  'Card details are collected securely by Stripe each time you check out. XClub never stores your card number.',
+                  'Card details are collected securely by Stripe each time you check out. KickOff never stores your card number.',
                 )
               }
             />
@@ -146,7 +146,7 @@ export default function ProfileScreen() {
               detail="Gates, travel, rules"
               onPress={() =>
                 Alert.alert(
-                  'XClub Arena',
+                  'KickOff Arena',
                   'Gates open 2 hours before kick-off and close 2 hours after. Scan your pass at any gate assigned to this fixture.',
                 )
               }
@@ -168,7 +168,7 @@ export default function ProfileScreen() {
           </Pressable>
 
           <AppText variant="caption" color={colors.muted} style={styles.version}>
-            XCLUB MEMBER APP · v0.1.0
+            KICKOFF MEMBER APP · v0.1.0
           </AppText>
         </View>
       </PageScroll>

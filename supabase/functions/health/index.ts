@@ -52,7 +52,7 @@ async function handler(request: Request): Promise<Response> {
   return ok(
     {
       status: "ok",
-      service: "xclub-edge",
+      service: "kickoff-edge",
       projectRef: new URL(env.SUPABASE_URL).hostname.split(".")[0],
       uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
     },

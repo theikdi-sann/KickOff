@@ -23,7 +23,7 @@ import {
   type OrdersFilter,
 } from "@/lib/queries/orders";
 import { useOrderScanUsage, useScanStats } from "@/lib/queries/scan";
-import { formatShortDate, formatTHB } from "@xclub/shared";
+import { formatShortDate, formatTHB } from "@kickoff/shared";
 
 const PAGE_SIZE = 10;
 const STATUS_OPTIONS: Array<OrdersFilter["status"]> = [
@@ -86,7 +86,7 @@ export default function TicketsPage() {
       status: order.status,
       created: order.createdAt,
     }));
-    downloadCsv(`xclub-orders-${status}-p${page}.csv`, toCsv(rows, CSV_COLUMNS));
+    downloadCsv(`kickoff-orders-${status}-p${page}.csv`, toCsv(rows, CSV_COLUMNS));
   };
 
   const handleRefund = async () => {

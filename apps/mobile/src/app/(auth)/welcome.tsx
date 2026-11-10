@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { CLUB_TAGLINE } from '@xclub/shared';
+import { CLUB_TAGLINE } from '@kickoff/shared';
 import { AppText, LiveTag, PrimaryButton } from '@/components/ui';
 import { colors, radii, shadow } from '@/lib/theme';
 
@@ -12,7 +12,7 @@ export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
-    <LinearGradient colors={['#07130D', '#0A2B1B', '#07130D']} locations={[0, 0.55, 1]} style={styles.flex}>
+    <LinearGradient colors={[colors.night, colors.nightMid, colors.night]} locations={[0, 0.55, 1]} style={styles.flex}>
       <StatusBar style="light" />
       <View style={styles.pitchLineOne} />
       <View style={styles.pitchLineTwo} />
@@ -22,12 +22,12 @@ export default function WelcomeScreen() {
           <View style={styles.brandRow}>
             <View style={styles.logo}>
               <AppText variant="h2" color={colors.night}>
-                X
+                K
               </AppText>
             </View>
             <View>
               <AppText variant="h2" color="#FFFFFF" style={styles.brand}>
-                XCLUB
+                KICKOFF
               </AppText>
               <AppText variant="caption" color={colors.nightMuted} style={styles.est}>
                 EST. 2026 · BANGKOK
@@ -62,7 +62,7 @@ export default function WelcomeScreen() {
                   DIGITAL MATCH PASS
                 </AppText>
                 <AppText variant="h3" color="#FFFFFF" style={styles.passTitle}>
-                  XClub vs Bangkok Rovers
+                  KickOff vs Bangkok Rovers
                 </AppText>
               </View>
               <View style={styles.qrBox}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Database, Json } from "@xclub/shared";
+import type { Database, Json } from "@kickoff/shared";
 import { createClient } from "@/lib/supabase/client";
 
 type SettingsRow = Database["public"]["Tables"]["app_settings"]["Row"];
@@ -32,7 +32,7 @@ export interface SettingsPatch {
 }
 
 const DEFAULTS: Omit<ClubSettings, "updatedAt"> = {
-  clubName: "XClub",
+  clubName: "KickOff",
   clubTimezone: "Asia/Bangkok",
   currency: "thb",
   maxSeatsPerOrder: 8,

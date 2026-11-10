@@ -39,7 +39,7 @@ Deno.test({
       });
       assertEquals(qr.status, 200);
       assertEquals(qr.body.data?.version, 2);
-      assertEquals(qr.body.data?.qrPayload.startsWith("XCLUB-V2:"), true);
+      assertEquals(qr.body.data?.qrPayload.startsWith("KICKOFF-V2:"), true);
 
       const receipt = await invoke<{ url: string }>(env, "receipt", {
         token: fan,

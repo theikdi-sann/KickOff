@@ -6,7 +6,7 @@ select plan(3);
 insert into auth.users (id, email, raw_app_meta_data)
 values (
   '00000000-0000-0000-0000-0000000000d2',
-  'scanner@xclub.test',
+  'scanner@kickoff.test',
   '{"role":"admin"}'::jsonb
 )
 on conflict (id) do nothing;

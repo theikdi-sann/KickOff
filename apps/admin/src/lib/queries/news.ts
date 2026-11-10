@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toNewsDto, type NewsCategory } from "@xclub/shared";
+import { toNewsDto, type NewsCategory } from "@kickoff/shared";
 import { createClient } from "@/lib/supabase/client";
 
 export interface AdminNewsInput {

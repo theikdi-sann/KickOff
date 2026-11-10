@@ -2,7 +2,7 @@ import { ChevronRight, ReceiptText, Ticket as TicketIcon } from 'lucide-react-na
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
-import { formatMatchDate, formatTHB } from '@xclub/shared';
+import { formatMatchDate, formatTHB } from '@kickoff/shared';
 import { TicketCard } from '@/components/ticket-card';
 import {
   AppText,

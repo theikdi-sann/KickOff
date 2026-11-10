@@ -10,7 +10,7 @@ import {
   MAX_SEATS_PER_ORDER,
   type SeatDto,
   type ZoneDto,
-} from '@xclub/shared';
+} from '@kickoff/shared';
 import { AppText, EmptyState, Pill, PrimaryButton, Screen, Skeleton } from '@/components/ui';
 import { useCreateHold } from '@/lib/queries/holds';
 import { useMatch } from '@/lib/queries/matches';
@@ -114,7 +114,7 @@ export default function SeatSelectionScreen() {
             <View style={styles.headerCenter}>
               <AppText variant="h3">Choose your seat</AppText>
               <AppText variant="caption" color={colors.muted} style={styles.headerSub}>
-                XCLUB VS {match.opponent.toUpperCase()}
+                KICKOFF VS {match.opponent.toUpperCase()}
               </AppText>
             </View>
             <Pill label="LIVE" tone="green" />
@@ -125,7 +125,7 @@ export default function SeatSelectionScreen() {
               <AppText variant="caption" color={colors.muted} style={styles.stripLabel}>
                 FIXTURE
               </AppText>
-              <AppText variant="label">XClub vs {match.opponent}</AppText>
+              <AppText variant="label">KickOff vs {match.opponent}</AppText>
             </View>
             <View style={styles.stripDivider} />
             <View style={styles.stripItem}>

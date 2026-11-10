@@ -6,7 +6,7 @@
  */
 import { verifyHmac } from "./hmac.ts";
 
-export const QR_V2_PREFIX = "XCLUB-V2:";
+export const QR_V2_PREFIX = "KICKOFF-V2:";
 
 const MAX_RAW_LENGTH = 4096;
 const MAX_FIELD_LENGTH = 256;
@@ -46,7 +46,7 @@ export function parseTicketQr(raw: string): ParsedQr {
   if (value.length === 0) return { ok: false, reason: "Empty ticket payload" };
   if (value.length > MAX_RAW_LENGTH) return { ok: false, reason: "Ticket payload is too large" };
   if (!value.startsWith(QR_V2_PREFIX)) {
-    return { ok: false, reason: "Not an XClub ticket QR code" };
+    return { ok: false, reason: "Not an KickOff ticket QR code" };
   }
 
   let parsed: unknown;

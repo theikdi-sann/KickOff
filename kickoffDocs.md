@@ -1,6 +1,6 @@
-XClub Mobile App Project Proposal
+KickOff Mobile App Project Proposal
 I. Project Title & Overview
-App Name: XClub
+App Name: KickOff
 Tagline: Your digital ticket to match day.
 Problem Statement
 Managing tickets and updates for a football club is often slow and disorganized. Fans have to wait in long cash lines for paper tickets, cannot pick their exact seating zone or seat number, and easily lose paper tickets. They also have to check different places just to see match schedules, news, or buy club gear. At the same time, club admins lack a single web system to manage seating, publish news, and scan tickets at the gate.

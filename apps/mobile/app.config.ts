@@ -1,21 +1,25 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
+import { brand } from '@kickoff/shared/theme';
 
 /**
  * Dynamic Expo config. Keeps the generated native config in sync with the
  * environment while preserving every value that was previously in app.json.
+ *
+ * Native tint colours come from `brand` in `@kickoff/shared` so a palette
+ * change stays a single-file edit.
  */
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'XClub',
-  slug: 'xclub',
+  name: 'KickOff',
+  slug: 'kickoff',
   version: '0.1.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
-  scheme: 'xclub',
+  scheme: 'kickoff',
   userInterfaceStyle: 'light',
   android: {
     adaptiveIcon: {
-      backgroundColor: '#07130D',
+      backgroundColor: brand.night,
       foregroundImage: './assets/images/android-icon-foreground.png',
       backgroundImage: './assets/images/android-icon-background.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
@@ -31,7 +35,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#07130D',
+        backgroundColor: brand.night,
         image: './assets/images/splash-icon.png',
         imageWidth: 76,
       },
@@ -41,7 +45,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-notifications',
       {
-        color: '#0B6B3A',
+        color: brand.primary,
         defaultChannel: 'default',
       },
     ],

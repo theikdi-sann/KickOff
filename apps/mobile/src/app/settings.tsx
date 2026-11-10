@@ -15,7 +15,7 @@ import {
 } from '@/lib/notifications';
 import { colors, radii } from '@/lib/theme';
 
-const LANGUAGE_KEY = 'xclub.language';
+const LANGUAGE_KEY = 'kickoff.language';
 const LANGUAGES = ['English', 'ไทย'] as const;
 
 export default function SettingsScreen() {
@@ -195,7 +195,7 @@ export default function SettingsScreen() {
         </View>
 
         <AppText variant="caption" color={colors.muted} style={styles.version}>
-          XCLUB MEMBER APP · v0.1.0
+          KICKOFF MEMBER APP · v0.1.0
         </AppText>
       </ScrollView>
     </Screen>

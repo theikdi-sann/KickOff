@@ -4,7 +4,7 @@ export function Logo({ dark = false, compact = false }: { dark?: boolean; compac
   return (
     <div className="flex items-center gap-2.5">
       <div className="grid h-9 w-9 place-items-center rounded-xl bg-gold text-lg font-bold text-night shadow-sm">
-        X
+        K
       </div>
       {!compact ? (
         <div>
@@ -14,7 +14,7 @@ export function Logo({ dark = false, compact = false }: { dark?: boolean; compac
               dark ? "text-white" : "text-slate-900",
             )}
           >
-            XCLUB
+            KICKOFF
           </div>
           <div
             className={cn(

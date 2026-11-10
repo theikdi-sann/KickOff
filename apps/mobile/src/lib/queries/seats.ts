@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { toSeatDto, toZoneDto } from '@xclub/shared';
+import { toSeatDto, toZoneDto } from '@kickoff/shared';
 import { supabase } from '@/lib/supabase';
 
 export function useZones(matchId: string | undefined) {

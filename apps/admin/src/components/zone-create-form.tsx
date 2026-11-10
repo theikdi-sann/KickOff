@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { adminUpdateZoneSchema, bahtToSatang } from "@xclub/shared";
+import { adminUpdateZoneSchema, bahtToSatang } from "@kickoff/shared";
 import type { AdminZoneInput } from "@/lib/queries/matches";
 
 interface ZoneCreateFormProps {

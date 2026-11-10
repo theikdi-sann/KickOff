@@ -1,5 +1,5 @@
 {
-  "name": "xclub",
+  "name": "kickoff",
   "version": "0.1.0",
   "private": true,
   "overrides": {
@@ -11,17 +11,17 @@
     "packages/*"
   ],
   "scripts": {
-    "mobile": "npm run start --workspace @xclub/mobile",
-    "mobile:web": "npm run web --workspace @xclub/mobile",
-    "admin": "npm run dev --workspace @xclub/admin",
-    "dev:admin": "npm run dev --workspace @xclub/admin",
-    "dev:mobile": "npm run start --workspace @xclub/mobile",
-    "typecheck": "npm run typecheck --workspace @xclub/shared && npm run typecheck --workspace @xclub/mobile && npm run typecheck --workspace @xclub/admin",
+    "mobile": "npm run start --workspace @kickoff/mobile",
+    "mobile:web": "npm run web --workspace @kickoff/mobile",
+    "admin": "npm run dev --workspace @kickoff/admin",
+    "dev:admin": "npm run dev --workspace @kickoff/admin",
+    "dev:mobile": "npm run start --workspace @kickoff/mobile",
+    "typecheck": "npm run typecheck --workspace @kickoff/shared && npm run typecheck --workspace @kickoff/mobile && npm run typecheck --workspace @kickoff/admin",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "check": "npm run typecheck && npm run lint",
     "check:no-mocks": "bash scripts/check-no-mocks.sh",
-    "build:admin": "npm run build --workspace @xclub/admin",
+    "build:admin": "npm run build --workspace @kickoff/admin",
     "db:start": "npx supabase start",
     "db:stop": "npx supabase stop",
     "db:reset": "npx supabase db reset",
