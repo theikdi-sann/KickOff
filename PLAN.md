@@ -555,7 +555,7 @@ These are the only tasks allowed to touch more than one file in one commit:
 | F-5 | Admin TOTP 2FA is **required in production**, optional in local/dev. |
 | F-6 | Prices are **VAT-inclusive**; receipts show the VAT breakdown, checkout adds nothing. |
 | F-7 | `KICKOFF_LOCK_MINUTES = 15` — no new online sales in the last 15 minutes before kick-off. |
-| F-9 | **Card only for MVP**; PromptPay is a post-MVP config change (Checkout path unchanged). |
+| F-9 | **Card only for MVP**; PromptPay is a post-MVP config change (Checkout path unchanged). Enforced with `allowed_payment_method_types: ["card"]` in `stripe-checkout` (Stripe SDK v23 renamed the old `payment_method_types`). |
 | F-10 | Supabase region: **Singapore (`ap-southeast-1`)** — permanent, set at project creation. |
 | F-11 | Receipts are **server-generated PDFs** stored in the `receipts` bucket. |
 | F-12 | Push uses the **Expo Push Service**. |
