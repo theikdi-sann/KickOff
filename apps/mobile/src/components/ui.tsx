@@ -351,6 +351,42 @@ export function EmptyState({
   );
 }
 
+/**
+ * Failed-query state (risk R-04): explains what broke and offers a retry so a
+ * network error never leaves the screen blank. Distinct from EmptyState, which
+ * means "loaded, nothing to show".
+ */
+export function ErrorState({
+  title = 'Something went wrong',
+  description,
+  icon,
+  onRetry,
+  retryLabel = 'Try again',
+}: {
+  title?: string;
+  description?: string;
+  icon?: ReactNode;
+  onRetry?: () => void;
+  retryLabel?: string;
+}) {
+  return (
+    <View style={styles.emptyState}>
+      {icon ? <View style={styles.errorIcon}>{icon}</View> : null}
+      <AppText variant="h3" style={styles.emptyTitle}>
+        {title}
+      </AppText>
+      {description ? (
+        <AppText variant="small" color={colors.muted} style={styles.emptyDescription}>
+          {description}
+        </AppText>
+      ) : null}
+      {onRetry ? (
+        <PrimaryButton label={retryLabel} onPress={onRetry} style={styles.errorRetry} />
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   button: {
@@ -454,4 +490,14 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { textAlign: 'center' },
   emptyDescription: { textAlign: 'center', maxWidth: 280 },
+  errorIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FEE2E2', // same soft-red as the `Pill` tone above
+    marginBottom: 6,
+  },
+  errorRetry: { marginTop: 10, minWidth: 168 },
 });

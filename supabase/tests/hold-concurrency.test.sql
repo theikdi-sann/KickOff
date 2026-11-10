@@ -37,8 +37,11 @@ declare
   index int;
   conninfo text := case
     when inet_server_addr() is null then format('dbname=%s', current_database())
-    else format('host=%s port=%s dbname=%s user=%s',
-      inet_server_addr(), inet_server_port(), current_database(), current_user)
+    else format('host=%s port=%s dbname=%s user=%s%s', inet_server_addr(),
+      inet_server_port(), current_database(), current_user,
+      -- Local Docker uses trust auth, so this GUC stays unset there. Hosted
+      -- runs set it: set kickoff.dblink_password = '<password>';
+      coalesce(format(' password=%s', current_setting('kickoff.dblink_password', true)), ''))
   end;
 begin
   for index in 1..p_workers loop

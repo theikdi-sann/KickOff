@@ -430,9 +430,9 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 ### Phase 11 — Quality & Polish
 
-- [ ] `P11-01` · `supabase/tests/rls.test.sql` **[N]** — customer A cannot read customer B's orders/tickets; admin can.
-- [ ] `P11-02` · `supabase/tests/order-expiry.test.sql` **[N]** — pending order expires and releases its seats; paid order does not.
-- [ ] `P11-03` · `supabase/tests/scan-concurrency.test.sql` **[N]** — 10 parallel scans → 1 valid.
+- [x] `P11-01` · `supabase/tests/rls.test.sql` **[N]** — customer A cannot read customer B's orders/tickets; admin can.
+- [x] `P11-02` · `supabase/tests/order-expiry.test.sql` **[N]** — pending order expires and releases its seats; paid order does not.
+- [x] `P11-03` · `supabase/tests/scan-concurrency.test.sql` **[N]** — 10 parallel scans → 1 valid.
 - [ ] `P11-04` · `apps/admin/playwright.config.ts` **[N]** — webServer config, base URL.
 - [ ] `P11-05` · `apps/admin/e2e/ops.spec.ts` **[N]** — login → create match → scan demo → export CSV → refund.
 - [ ] `P11-06` · `maestro/flows/buy-ticket.yaml` **[N]** — mobile buy/QR smoke.
@@ -442,9 +442,9 @@ These are the only tasks allowed to touch more than one file in one commit:
 - [ ] `P11-10` · `apps/mobile/src/lib/i18n.ts` **[N]** — locale resolver bound to settings.
 - [ ] `P11-11` · `apps/mobile/src/app/(auth)/welcome.tsx` **[M]** — extract copy to i18n.
 - [ ] `P11-12` · `apps/mobile/src/app/(tabs)/index.tsx` **[M]** — time-aware greeting with `Asia/Bangkok`; test at 00:00/06:00/12:00/18:00 UTC.
-- [ ] `P11-13` · `.github/workflows/ci.yml` **[M]** — add `npm run check:no-mocks` after the mock deletion gate. **DoD:** CI fails if a mock import returns.
+- [x] `P11-13` · `.github/workflows/ci.yml` **[M]** — add `npm run check:no-mocks` after the mock deletion gate. **DoD:** CI fails if a mock import returns.
 - [ ] `P11-14` · `apps/mobile/src/app/(tabs)/_layout.tsx` **[M]** — a11y labels, roles, hit-slop ≥ 44pt.
-- [ ] `P11-15` · `apps/mobile/src/components/ui.tsx` **[M]** — add `Skeleton`, `EmptyState`, `ErrorState`.
+- [x] `P11-15` · `apps/mobile/src/components/ui.tsx` **[M]** — add `Skeleton`, `EmptyState`, `ErrorState`.
 - [ ] `P11-16` · `apps/mobile/src/lib/analytics.ts` **[N]** — PostHog adapter + no-op dev mode.
 - [ ] `P11-17` · `apps/admin/src/lib/analytics.ts` **[N]** — PostHog admin events.
 - [ ] `P11-18` · `supabase/functions/metrics/index.ts` **[N]** — JSON metrics for uptime/alerting (orders, scans, failed scans, hold conflicts); requires `x-metrics-token` matching `METRICS_TOKEN`.
@@ -455,6 +455,41 @@ These are the only tasks allowed to touch more than one file in one commit:
 - [ ] `P11-23` · `apps/mobile/src/app/(tabs)/_layout.tsx` **[M]** — dynamic type + safe-area check.
 - [ ] `P11-24` · `apps/admin/src/app/dashboard/scan/page.tsx` **[M]** — keyboard/ARIA/focus pass for scanner.
 - [ ] `P11-25` · `apps/mobile/src/app/settings.tsx` **[M]** — confirm dialogs + destructive-action audit copy.
+
+#### Stage 0 → 1a → 1b → 1c — complete
+
+**Summary:** the MVP demo flow is now an executable check (`scripts/mvp-gate.mjs`, 15/15 against the hosted project), the pgTAP suite covers RLS row isolation, order expiry and scan concurrency (33 assertions green via `scripts/run-pgtap.sh`), CI fails on a returning mock import, and `ErrorState` joins `Skeleton`/`EmptyState` in the mobile UI kit.
+
+**Errors / Notes**
+
+- **Two pre-existing pgTAP bugs surfaced** (not caused by this cycle, but the suite could not have passed without fixing them): `constraints.test.sql` still called `scan_ticket` with 3 arguments after migration 0027 made `p_idempotency_key` required, and pointed at `gate-1` (a different fixture's gate) with kickoff +7d — outside the ±2h scan window; `rls-auth.test.sql` counted *all* profiles, which breaks once the database holds seeded demo users. Both now scope to their own fixtures.
+- **dblink conninfo now honours an optional `kickoff.dblink_password` GUC** so the concurrency tests can open worker sessions against hosted Postgres. Unset on local Docker (trust auth), so local behaviour is unchanged. `scripts/run-pgtap.sh` sets it for the hosted fallback only.
+- **`scripts/run-pgtap.sh` writes its preamble through `mktemp` + `umask 077`.** The earlier fixed-name `/tmp/pgtap-run.sql` was world-readable and contained the database password; that file has been deleted.
+- **`scripts/mvp-gate.mjs` root cause of the original 7/10:** both post-payment polls queried as `anon`, so RLS hid the fan's own order/tickets and the gate reported "missing" for rows that existed. They now pass the fan token. Fixture creation sits inside the `try` and cleanup uses the service-role key in FK order (`scan_events → tickets → order_seats → orders → gates → seats → zones → matches`), so a failed run no longer orphans rows.
+- **`refund-order` requires `overrideUsedTickets: true`** once a pass has been scanned — the gate exercises this as the documented F-2 admin override path rather than skipping the refund.
+- **`P11-15` needed only `ErrorState`:** `Skeleton` and `EmptyState` were already present from earlier phases, so the test asserts all three exports rather than re-implementing what exists.
+- **No component test runner exists in `apps/mobile`** (its `test` script is a stub; `react-test-renderer` is not installed). `scripts/tests/ui.test.mjs` therefore asserts the source-level contract, matching the pattern already used by `scripts/tests/ci.test.mjs`. A render test should replace it once Phase 11 lands Maestro/`P11-06`.
+- **Verification:** `npm test` 0 (10 workspace + 4 script tests), `bash scripts/run-pgtap.sh` 33/33, `node scripts/mvp-gate.mjs` 15/15, `tsc --noEmit` and `expo lint` green, hosted DB shows zero leftover `gate-*` rows after every run.
+- **`scripts/probe-stripe.mjs`** was a throwaway used to discover the hosted Checkout selectors and has been deleted before commit.
+
+**Files created**
+
+- `scripts/mvp-gate.mjs` — Stage 0 executable MVP gate (replaces the manual `P10c-01` walkthrough).
+- `scripts/run-pgtap.sh` — pgTAP runner: local stack first, linked hosted project as fallback.
+- `scripts/tests/ci.test.mjs` — `P11-13` no-mocks gate test.
+- `scripts/tests/ui.test.mjs` — `P11-15` UI-kit export test.
+- `supabase/tests/rls.test.sql` — `P11-01`, 7 assertions.
+- `supabase/tests/order-expiry.test.sql` — `P11-02`, 7 assertions.
+
+**Files modified**
+
+- `.github/workflows/ci.yml` — `check:no-mocks` + `node --test scripts/tests/` steps.
+- `apps/mobile/src/components/ui.tsx` — added `ErrorState` (with `onRetry`) and its styles.
+- `package.json` — root `test` now also runs `scripts/tests/`.
+- `supabase/tests/constraints.test.sql` — 4-arg `scan_ticket`, own gate, in-window kickoff.
+- `supabase/tests/rls-auth.test.sql` — profile count scoped to fixture IDs.
+- `supabase/tests/scan-concurrency.test.sql`, `supabase/tests/hold-concurrency.test.sql` — optional `kickoff.dblink_password` in conninfo.
+- `PLAN.md` — this section.
 
 ---
 
@@ -679,6 +714,8 @@ $$;
 - [ ] `npm run check`, `npm run db:test`, `npm run functions:check`, `npm run build:admin` are green.
 
 Only after this checklist is green do Phase 11/12 extras proceed.
+
+**Automated as of Stage 0:** `node scripts/mvp-gate.mjs` walks the purchase half of this list end-to-end against the linked hosted project (health → fan login → catalog → fixture → hold → Stripe test card → webhook → QR → double scan → receipt → refund → cleanup) and reports `15/15`. It creates and removes its own `gate-*` fixture. The remaining rows — admin fixture/zone editing, fan sign-up, the THB total display and the `npm run check`/`db:test`/`functions:check`/`build:admin` battery — are still manual or covered by their own task's DoD.
 
 ---
 

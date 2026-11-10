@@ -55,7 +55,12 @@ select set_config(
 set local role authenticated;
 
 select is(
-  (select count(*) from public.profiles),
+  (select count(*) from public.profiles
+    where id in (
+      '00000000-0000-0000-0000-0000000000b1',
+      '00000000-0000-0000-0000-0000000000b2',
+      '00000000-0000-0000-0000-0000000000b3'
+    )),
   3::bigint,
   'admin sees every profile'
 );

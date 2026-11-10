@@ -9,14 +9,21 @@ select col_type_is('public', 'zones', 'price_satang', 'integer', 'prices are int
 insert into auth.users (id, email)
 values ('00000000-0000-0000-0000-0000000000aa', 'tap@kickoff.test');
 
+-- Kick-off inside the ±2h scan window, otherwise the scan is rejected as
+-- "the gates are not open yet".
 insert into public.matches (id, opponent, opponent_short, kickoff_at)
-values ('test-match', 'Test FC', 'TST', now() + interval '7 days');
+values ('test-match', 'Test FC', 'TST', now() + interval '1 hour');
 
 insert into public.zones (id, match_id, name, price_satang, rows, seats_per_row)
 values ('test-zone', 'test-match', 'Test Stand', 35000, array['A']::text[], 2);
 
 insert into public.seats (id, zone_id, row_label, number)
 values ('test-seat', 'test-zone', 'A', 1);
+
+-- The gate must be assigned to this fixture: scan_ticket derives wrong_match
+-- from gates.match_id (F-4).
+insert into public.gates (id, name, match_id, active)
+values ('test-gate', 'Test Gate', 'test-match', true);
 
 select throws_ok(
   $$ insert into public.seats (id, zone_id, row_label, number)
@@ -65,14 +72,18 @@ select set_config(
   true
 );
 
+-- 0027 made p_idempotency_key the 4th (required) argument; each call needs its
+-- own key, otherwise the second call replays the first result.
 select is(
-  (public.scan_ticket('test-ticket', 'gate-1', '00000000-0000-0000-0000-0000000000aa')::jsonb ->> 'code'),
+  (public.scan_ticket('test-ticket', 'test-gate',
+      '00000000-0000-0000-0000-0000000000aa', 'constraints-scan-1')::jsonb ->> 'code'),
   'valid',
   'first scan is accepted'
 );
 
 select is(
-  (public.scan_ticket('test-ticket', 'gate-1', '00000000-0000-0000-0000-0000000000aa')::jsonb ->> 'code'),
+  (public.scan_ticket('test-ticket', 'test-gate',
+      '00000000-0000-0000-0000-0000000000aa', 'constraints-scan-2')::jsonb ->> 'code'),
   'used',
   'second scan reports already used'
 );

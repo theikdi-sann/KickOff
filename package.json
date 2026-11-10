@@ -18,7 +18,7 @@
     "dev:mobile": "npm run start --workspace @kickoff/mobile",
     "typecheck": "npm run typecheck --workspace @kickoff/shared && npm run typecheck --workspace @kickoff/mobile && npm run typecheck --workspace @kickoff/admin",
     "lint": "npm run lint --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present && node --test scripts/tests/",
     "check": "npm run typecheck && npm run lint",
     "check:no-mocks": "bash scripts/check-no-mocks.sh",
     "build:admin": "npm run build --workspace @kickoff/admin",

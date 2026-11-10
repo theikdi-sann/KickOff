@@ -34,8 +34,15 @@ jobs:
       - name: Typecheck + lint
         run: npm run check
 
+      # P11-13: a returning mock import must fail CI (DoD).
+      - name: No mock data imports
+        run: npm run check:no-mocks
+
       - name: Shared unit tests (Vitest)
         run: npm run test --workspace @kickoff/shared
+
+      - name: Repo script tests (node:test)
+        run: node --test scripts/tests/
 
       - name: Start local Supabase stack
         run: npx supabase start
