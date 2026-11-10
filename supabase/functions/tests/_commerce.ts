@@ -98,11 +98,12 @@ export async function createPaidOrder(
   env: Env,
   fanToken: string,
   seatId: string,
+  matchId = "m-bkk",
 ): Promise<{ orderId: string; sessionId: string; eventId: string }> {
   const hold = await rest<{ id: string }>(env, "rpc/create_hold", {
     token: fanToken,
     method: "POST",
-    body: { p_match_id: "m-bkk", p_seat_ids: [seatId] },
+    body: { p_match_id: matchId, p_seat_ids: [seatId] },
   });
 
   const checkout = await invoke<{ orderId: string; sessionId: string; url: string }>(
@@ -159,4 +160,101 @@ export async function cleanup(
     body: { status: "available" },
     prefer: "return=minimal",
   });
+}
+
+export interface IssuedTicket {
+  orderId: string;
+  eventId: string;
+  ticketId: string;
+  qrPayload: string;
+}
+
+/** Creates an order, pays it via a signed webhook, and returns the signed QR. */
+export async function issueTicket(
+  env: Env,
+  fanToken: string,
+  seatId: string,
+  matchId = "m-bkk",
+): Promise<IssuedTicket> {
+  const order = await createPaidOrder(env, fanToken, seatId, matchId);
+  const webhook = await sendCheckoutCompleted(env, order);
+  if (webhook.status !== 200) {
+    throw new Error(`webhook failed: ${webhook.status}`);
+  }
+
+  const tickets = await rest<Array<{ id: string }>>(
+    env,
+    `tickets?order_id=eq.${order.orderId}&select=id`,
+    { token: env.service },
+  );
+  const ticketId = tickets[0]?.id;
+  if (!ticketId) throw new Error("ticket was not issued");
+
+  const qr = await invoke<{ qrPayload: string }>(env, "ticket-qr", {
+    token: fanToken,
+    body: { ticketId },
+  });
+  const qrPayload = qr.body.data?.qrPayload;
+  if (!qrPayload) throw new Error(`ticket-qr failed: ${qr.status}`);
+
+  return { orderId: order.orderId, eventId: order.eventId, ticketId, qrPayload };
+}
+
+export interface ScanResponse {
+  status: number;
+  body: {
+    ok: boolean;
+    data?: {
+      ok: boolean;
+      code: string;
+      title: string;
+      message: string;
+      scanEventId?: string;
+      gateId: string;
+      replayed?: boolean;
+    };
+    error?: { message: string };
+  };
+}
+
+/** Calls `scan-ticket` with an explicit idempotency key. */
+export async function scanTicket(
+  env: Env,
+  token: string,
+  input: { qr: string; gateId: string; idempotencyKey?: string },
+  includeKey = true,
+): Promise<ScanResponse> {
+  const headers: Record<string, string> = {
+    apikey: env.anon,
+    authorization: `Bearer ${token}`,
+    "content-type": "application/json",
+  };
+  if (includeKey && input.idempotencyKey) {
+    headers["idempotency-key"] = input.idempotencyKey;
+  }
+
+  const response = await fetch(`${env.url}/functions/v1/scan-ticket`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ qr: input.qr, gateId: input.gateId }),
+  });
+  return { status: response.status, body: await response.json() };
+}
+
+/** Calls `scan-undo`. */
+export async function scanUndo(
+  env: Env,
+  token: string,
+  input: { scanEventId: string; gateId: string },
+): Promise<{ status: number; body: { ok: boolean; data?: { undone: boolean }; error?: { message: string } } }> {
+  const response = await fetch(`${env.url}/functions/v1/scan-undo`, {
+    method: "POST",
+    headers: {
+      apikey: env.anon,
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+  return { status: response.status, body: await response.json() };
 }
