@@ -76,6 +76,14 @@ values
    'Club News', '2026-10-20T11:15:00+07:00', 3, array['#065F46', '#022C22']::text[])
 on conflict (id) do nothing;
 
+insert into public.gates (id, name, match_id, active)
+values
+  ('gate-1', 'North Gate', 'm-bkk', true),
+  ('gate-2', 'East Gate', 'm-bkk', true),
+  ('gate-3', 'VIP Gate', 'm-bkk', true),
+  ('gate-4', 'Away Gate', 'm-bkk', true)
+on conflict (id) do nothing;
+
 insert into public.app_settings (key, value)
 values
   ('club_name', '"XClub"'::jsonb),
