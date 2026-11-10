@@ -2,7 +2,7 @@ import { AppError, toApiError } from "./errors.ts";
 
 const DEFAULT_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"];
 const ALLOWED_METHODS = "GET, POST, PATCH, DELETE, OPTIONS";
-const ALLOWED_HEADERS = "authorization, apikey, content-type, x-request-id";
+const ALLOWED_HEADERS = "authorization, apikey, content-type, x-request-id, idempotency-key";
 
 /** CORS allowlist from env (comma separated) with sensible local defaults. */
 export function allowedOrigins(): string[] {

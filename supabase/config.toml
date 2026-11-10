@@ -480,3 +480,18 @@ import_map = "./functions/deno.json"
 enabled = true
 verify_jwt = true
 import_map = "./functions/deno.json"
+
+[functions.scan-ticket]
+enabled = true
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.scan-undo]
+enabled = true
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.scan-demo]
+enabled = true
+verify_jwt = true
+import_map = "./functions/deno.json"
