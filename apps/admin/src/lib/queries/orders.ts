@@ -14,7 +14,6 @@ interface AdminOrderRow {
   created_at: string;
   paid_at: string | null;
   payment_ref: string | null;
-  profiles: { email: string; full_name: string } | null;
   matches: { opponent: string } | null;
   order_seats: Array<{
     seat_id: string;
@@ -33,9 +32,28 @@ export interface AdminOrder extends OrderDto {
 
 const STATUSES: readonly OrderStatus[] = ["pending", "paid", "failed", "cancelled", "refunded"];
 const SELECT =
-  "*, profiles!orders_user_id_fkey(email,full_name), matches(opponent), order_seats(seat_id,ticket_id,zone_name,row_label,number,price_satang)";
+  "*, matches(opponent), order_seats(seat_id,ticket_id,zone_name,row_label,number,price_satang)";
 
-function mapOrder(row: AdminOrderRow): AdminOrder {
+interface Holder {
+  full_name: string;
+  email: string;
+}
+
+// profiles.id references auth.users (not orders), so PostgREST cannot embed it.
+async function loadHolders(userIds: string[]): Promise<Record<string, Holder>> {
+  const unique = [...new Set(userIds.filter(Boolean))];
+  if (unique.length === 0) return {};
+  const { data, error } = await createClient()
+    .from("profiles")
+    .select("id,full_name,email")
+    .in("id", unique);
+  if (error) throw new Error(error.message);
+  return Object.fromEntries(
+    ((data ?? []) as Array<{ id: string } & Holder>).map((profile) => [profile.id, profile]),
+  );
+}
+
+function mapOrder(row: AdminOrderRow, holder?: Holder): AdminOrder {
   return {
     id: row.id,
     userId: row.user_id,
@@ -57,8 +75,8 @@ function mapOrder(row: AdminOrderRow): AdminOrder {
     createdAt: row.created_at,
     paidAt: row.paid_at,
     paymentRef: row.payment_ref,
-    holderName: row.profiles?.full_name ?? "",
-    holderEmail: row.profiles?.email ?? "",
+    holderName: holder?.full_name ?? "",
+    holderEmail: holder?.email ?? "",
   };
 }
 
@@ -88,8 +106,10 @@ export function useOrders(filter: OrdersFilter) {
 
       const { data, count, error } = await query;
       if (error) throw new Error(error.message);
+      const rows = (data ?? []) as unknown as AdminOrderRow[];
+      const holders = await loadHolders(rows.map((row) => row.user_id));
       return {
-        items: ((data ?? []) as unknown as AdminOrderRow[]).map(mapOrder),
+        items: rows.map((row) => mapOrder(row, holders[row.user_id])),
         total: count ?? 0,
       };
     },
@@ -107,7 +127,9 @@ export function useOrder(id: string | undefined) {
         .eq("id", id!)
         .single();
       if (error) throw new Error(error.message);
-      return mapOrder(data as unknown as AdminOrderRow);
+      const row = data as unknown as AdminOrderRow;
+      const holders = await loadHolders([row.user_id]);
+      return mapOrder(row, holders[row.user_id]);
     },
   });
 }
@@ -151,24 +173,6 @@ export function useOrdersAggregate(range?: { from: string; to: string }) {
   });
 }
 
-export function useScanStats(range?: { from: string; to: string }) {
-  return useQuery({
-    queryKey: ["scan-stats", range],
-    queryFn: async () => {
-      const client = createClient();
-      let query = client.from("scan_events").select("result");
-      if (range) query = query.gte("created_at", range.from).lte("created_at", range.to);
-      const { data, error } = await query;
-      if (error) throw new Error(error.message);
-      const counts = { total: 0, valid: 0, used: 0, invalid: 0, wrongMatch: 0 };
-      for (const row of data ?? []) {
-        counts.total += 1;
-        if (row.result === "valid") counts.valid += 1;
-        else if (row.result === "used") counts.used += 1;
-        else if (row.result === "wrong_match") counts.wrongMatch += 1;
-        else counts.invalid += 1;
-      }
-      return counts;
-    },
-  });
-}
+// Scan stats moved to `./scan.ts` (P8-06); re-exported for existing callers.
+export { useScanStats } from "./scan";
+export type { ScanStats } from "./scan";
