@@ -1,87 +1,179 @@
-# KickOff — UI-first prototype
+# KickOff — matchday platform
 
 **Your digital ticket to match day.**
 
-A two-app prototype for a single football club:
+KickOff is the operations and supporter platform for a single football club:
+a customer mobile app, a staff admin console, and the Supabase + Stripe backend
+they share. Fixtures, seating, payments, passes and gate admissions are real —
+nothing runs on a mock data layer.
 
-- **Customer mobile app** (Expo / React Native) — fixtures, news, exact-seat booking, mock Stripe checkout, digital QR match pass, order receipts.
-- **Admin web dashboard** (Next.js) — fixture management, seating zones and prices, news publishing, gate QR validation, orders and passes.
-
-This is **Phase A**: the full experience runs on a deterministic mock data layer with local persistence. Payments and QR validation are simulated. The data layer is designed to be swapped for Supabase + Stripe in Phase B/C.
+- **Mobile app** (Expo / React Native) — fixtures and news, exact-seat booking,
+  Stripe Checkout, digital QR match passes, order history and PDF receipts,
+  profile, settings and push notifications.
+- **Admin console** (Next.js 16) — fixtures and seating inventory, gates,
+  scanner, orders, refunds, CSV export, news, users, settings and TOTP.
+- **Backend** (Supabase) — Postgres with row-level security, 15 Edge Functions,
+  Stripe webhooks, signed QR passes, audit logs, scheduled reminders and a
+  token-guarded metrics endpoint.
 
 ---
 
-## Quick start
+## Architecture
+
+```text
+apps/mobile  ──┐
+               ├── @kickoff/shared (types, schemas, formatting, theme, QR contract)
+apps/admin   ──┘
+               │
+               ▼
+        Supabase Postgres (RLS) + Edge Functions ── Stripe (test mode)
+               │                                   └─ Expo Push Service
+               └─ storage: receipts (private), news-images (public)
+```
+
+Clients talk to Postgres through RLS-scoped reads. Anything that moves money,
+issues a pass, or admits a supporter at a gate runs in an Edge Function or a
+`security definer` SQL function — never in the browser or app bundle.
+
+---
+
+## Feature matrix
+
+| Area | Mobile | Admin |
+|---|---|---|
+| Accounts | Sign up, sign in, reset password, profile edit, delete account | Sign in, TOTP MFA, user roles, settings |
+| Fixtures | Home feed, match detail, zones & availability | Create/edit/delete fixtures, zones, rows, seats and prices |
+| Commerce | Exact seat selection, 10-minute holds, Stripe Checkout, order history | Orders, filters, CSV export, refunds, receipt lookup |
+| Passes | Signed QR pass, payment-confirmation screen | Pass registry, scan history, undo within 60s |
+| Gates | — | Gate registry, per-fixture assignment, camera + manual scan, offline queue |
+| Content | News feed and article pages, legal pages | Publish/edit news |
+| Notifications | Expo push opt-in, kickoff reminders | — |
+| Ops | — | Revenue/scan snapshot, gate log, club settings |
+
+---
+
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Mobile | Expo SDK 58, React Native 0.88, React 19, Expo Router, TanStack Query |
+| Admin | Next.js 16.4 (App Router), Tailwind 4, TanStack Query |
+| Shared | TypeScript, Zod schemas and DTO mappers |
+| Backend | Supabase Postgres 17, RLS, Edge Functions (Deno 2), Storage |
+| Payments | Stripe Hosted Checkout — **test mode**, card only, THB |
+| Push | Expo Push Service + `pg_cron` reminders |
+| Quality | Vitest, `node:test`, pgTAP, Deno test, Playwright, Maestro |
+
+Prerequisites: **Node 22 LTS** (`.nvmrc`, `nvm use`), npm 10+, Docker for the
+local Supabase stack (or a hosted Supabase project), and the Supabase CLI
+(`npx supabase`). Stripe CLI is optional, only for forwarding webhooks locally.
+
+---
+
+## Getting started
+
+### 1. Install
 
 ```bash
 npm install
 ```
 
-Run the admin dashboard:
+### 2. Configure the environment
+
+Copy the templates and fill in real values. Secrets never go in client bundles.
+
+| File | Purpose |
+|---|---|
+| `.env` | Root: Supabase URL/keys, Stripe **test** keys, `TICKET_HMAC_KEY`, `METRICS_TOKEN`, demo credentials |
+| `apps/admin/.env.local` | `NEXT_PUBLIC_SUPABASE_*`, optional demo login, optional PostHog |
+| `apps/mobile/.env` | `EXPO_PUBLIC_SUPABASE_*`, `EXPO_PUBLIC_FUNCTIONS_URL`, optional demo login and PostHog |
+| `supabase/.env` | Edge Function secrets (service role, Stripe, HMAC, metrics token) — template: `supabase/.env.example` |
+
+Guardrails: `SUPABASE_SERVICE_ROLE_KEY` and `STRIPE_SECRET_KEY` must never
+appear in `NEXT_PUBLIC_*` / `EXPO_PUBLIC_*`. Edge Functions refuse any Stripe key
+that does not start with `sk_test_` — this build is Stripe test mode only.
+
+### 3. Database
+
+Local (Docker):
 
 ```bash
-npm run admin
-# http://localhost:3000
+npm run db:start      # start the local Supabase stack
+npm run db:reset      # apply migrations + seed
+npm run db:seed-demo  # demo accounts, fixtures, orders and passes
+npm run db:types      # regenerate packages/shared/src/database.types.ts
 ```
 
-Run the mobile app:
+Hosted project: link it (`npx supabase link --project-ref <ref>`), push
+migrations (`npx supabase db push`), then run `npm run db:seed-demo`.
+
+`db:reset` also loads `supabase/seed.sql` (gates and baseline content), while
+`db:seed-demo` is the idempotent seeder used for both local and hosted demos.
+
+### 4. Edge Functions
 
 ```bash
-npm run mobile
-# then press w for web, or scan the QR with Expo Go
+npm run functions:serve    # local serve
+npm run functions:check    # deno check every function
 ```
 
-Or run the mobile app directly in a browser:
+Deploy (the import map is required when Docker is unavailable):
 
 ```bash
-npm run mobile:web
+npx supabase functions deploy \
+  --import-map supabase/functions/deno.json \
+  --yes --remote=<project-ref>
+```
+
+Required function secrets: `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+`TICKET_HMAC_KEY`, `METRICS_TOKEN`, `ADMIN_APP_URL`, `MOBILE_DEEP_LINK`.
+Set them with `npx supabase secrets set --env-file supabase/.env` before
+deploying. Forward Stripe events locally with
+`stripe listen --forward-to http://127.0.0.1:54321/functions/v1/stripe-webhook`.
+
+### 5. Run
+
+```bash
+npm run admin        # http://localhost:3000
+npm run mobile       # Expo — press w for web, or scan with Expo Go
+npm run mobile:web   # mobile app directly in a browser
 ```
 
 ### Demo credentials
 
-Any email + password works in mock mode.
-
 | Role | Email | Password |
-| --- | --- | --- |
+|---|---|---|
 | Admin (web) | `admin@kickoff.app` | `kickoffadmin` |
-| Fan (mobile) | `fan@kickoff.app` | `kickoffdemo` |
+| Fan (mobile) | `demoFan@kickoff.test` | `demo@Password` |
 
-The mobile login also has a **Continue with demo fan account** button. The demo account starts with one active pass and one used pass.
-
-### Toolchain
-
-Node 22 LTS is the supported runtime for this repo (see `.nvmrc` — with nvm, run `nvm use`).
-Development on the school Wi-Fi network additionally requires the tunnel dev server:
-`cd apps/mobile && npx expo start --tunnel` (fresh QR code on every restart).
+The mobile login also shows **Continue with demo fan account** when
+`EXPO_PUBLIC_DEMO_EMAIL` / `EXPO_PUBLIC_DEMO_PASSWORD` are set. The demo fan
+owns one valid pass and one used pass. (Without env overrides, `seed-demo`
+falls back to `fan@kickoff.app` / `kickoffdemo`.)
 
 ---
 
 ## Demo script (5 minutes)
 
-1. **Admin** — sign in, open **Matches & seating**, create a fixture, adjust a zone price.
-2. **Fan** — sign in on mobile, open the next fixture, choose a stand, select exact seats.
-3. **Fan** — continue to checkout, confirm the mock card, pay. The digital pass appears with a QR code.
-4. **Admin** — open **Gate validation**, start the camera and scan the pass, or paste the payload.
-5. **Admin** — the pass is approved and marked used. Scanning it again returns **Already scanned**.
-6. **Fan** — open **Orders & receipts** and download a PDF receipt.
+1. **Admin** — sign in, **Matches & seating** → **New fixture**. The fixture
+   opens its seating page; add a zone with rows, seats and a price.
+2. **Fan** — sign in on mobile, open the next fixture, choose a stand and exact
+   seats. The seats are held for **10 minutes** while you check out.
+3. **Fan** — **Continue** → **Checkout** → **Pay**. Stripe Checkout opens in a
+   browser; use the test card `4242 4242 4242 4242`, any future expiry and CVC.
+   The webhook issues the pass and the app shows the signed QR.
+4. **Admin** — **Gate scan**: pick the gate assigned to that fixture, then scan
+   the pass or press **Validate demo pass now**. A pass is only accepted inside
+   **kick-off −2h … +2h**; outside that window the gate answers “Rejected”.
+5. **Admin** — a second scan returns **Already scanned**. An accepted scan can
+   be undone for **60 seconds** from the result panel.
+6. **Admin** — **Orders & passes**: filter, **Export CSV**, or **Refund** a paid
+   order (used passes require the explicit override on the order page).
+7. **Fan** — **Orders** → open the order → download/share the **PDF receipt**.
 
-The admin **Gate validation** screen includes a sample QR code and a **Validate demo pass now** button, so the flow can be demonstrated without a second device.
-
----
-
-## What is mocked
-
-| Area | Phase A behaviour | Production target |
-| --- | --- | --- |
-| Authentication | Local demo profiles | Supabase Auth + role claims |
-| Data | Shared TypeScript seed + localStorage | Postgres + RLS |
-| Payment | Simulated success after 1.7s | Stripe Hosted Checkout (test mode, THB) |
-| Ticket issuing | Locally generated ticket + mock QR payload | Webhook-issued tickets with signed tokens |
-| QR validation | Payload decoding + local used-ticket registry | Server-side HMAC validation RPC |
-| Receipts | Generated from mock orders | Stripe/customer receipt + server record |
-| Push notifications, wallet, merch, chat | Not included | Post-MVP |
-
-Prices are stored in **satang** and formatted as **THB** (`฿450`).
+Sales close **15 minutes before kick-off**; unpaid orders expire after
+**15 minutes** and release their seats.
 
 ---
 
@@ -90,108 +182,158 @@ Prices are stored in **satang** and formatted as **THB** (`฿450`).
 ```text
 .
 ├── apps/
-│   ├── mobile/                 # Expo + React Native + Expo Router
+│   ├── mobile/                  # Expo + React Native + Expo Router
 │   │   └── src/
-│   │       ├── app/            # Routes: auth, tabs, match, seats, checkout, ticket, news, orders
-│   │       ├── components/     # UI kit, match cards, ticket cards
-│   │       └── lib/            # Mock store, theme
-│   └── admin/                  # Next.js 16 + Tailwind 4
+│   │       ├── app/             # Routes: auth, tabs, match, seats, checkout,
+│   │       │                    #   ticket, orders, news, settings, legal
+│   │       ├── components/      # UI kit, match cards, ticket cards
+│   │       └── lib/             # Supabase client, queries, auth, notifications,
+│   │                            #   receipts, secure storage, analytics
+│   └── admin/                   # Next.js 16 + Tailwind 4
+│       ├── e2e/                 # Playwright: auth + operations walkthrough
 │       └── src/
-│           ├── app/
-│           │   ├── login/
-│           │   └── dashboard/  # Overview, matches, seating, news, scan, tickets
-│           ├── components/     # Shell, logo, modal, badges
-│           └── lib/            # Mock admin store
+│           ├── app/             # login, MFA, dashboard/*
+│           ├── components/      # shell, forms, modal, badges, toasts
+│           └── lib/             # Supabase clients, queries, scan API,
+│                                #   offline queue, CSV export, analytics
 ├── packages/
-│   └── shared/                 # Types, theme tokens, seed data, QR codec
+│   └── shared/                  # Zod schemas, DTOs/mappers, DB types, money and
+│                                #   date formatting, theme tokens, QR contract,
+│                                #   English string table, Bangkok greeting
+├── supabase/
+│   ├── migrations/              # 33 migrations: schema, RLS, RPCs, cron, seeds
+│   ├── functions/               # 15 Edge Functions + _shared helpers
+│   ├── tests/                   # pgTAP suites (RLS, expiry, concurrency)
+│   └── seed.sql
+├── scripts/                     # seed-demo, pgTAP runner, MVP gate, tests
+├── docs/                        # BRAND, SECURITY, TESTING, BASELINE
+├── maestro/flows/               # buy/QR mobile smoke
+├── PLAN.md                      # delivery plan and decisions (SSOT)
 └── README.md
 ```
 
-### Shared contracts
-
-`packages/shared` is the single source of truth for:
-
-- data types (`Match`, `Zone`, `Seat`, `Ticket`, `Order`, `NewsItem`)
-- THB/date formatting
-- demo fixtures, zones, news, orders, tickets
-- mock QR encoding/decoding
-
-Both apps import this package, so the mock will not drift from the eventual Supabase schema.
-
 ---
 
-## Mobile app routes
+## Mobile routes
 
 | Route | Screen |
-| --- | --- |
+|---|---|
 | `/welcome` | Branded onboarding |
-| `/login`, `/register` | Mock authentication |
-| `/` | Home: next match, fixtures, news, results |
-| `/match/[id]` | Match detail and seating zones |
-| `/seats/[matchId]` | Exact seat grid with availability |
-| `/checkout` | Mock payment and order summary |
-| `/ticket/[id]` | Digital QR pass |
-| `/tickets` | Active and past passes |
-| `/orders` | Order history + PDF receipt |
+| `/login`, `/register` | Sign in, create account |
+| `/forgot-password`, `/reset-password` | Password recovery |
+| `/(tabs)` | Home: next match, fixtures, news, results |
+| `/(tabs)/tickets` | Active and past passes |
+| `/(tabs)/profile` | Supporter account |
+| `/match/[id]` | Match detail, zones and availability |
+| `/seats/[matchId]` | Exact seat grid with live availability |
+| `/checkout` | Hold summary, Stripe payment |
+| `/ticket/[id]` | Signed QR pass |
+| `/orders`, `/orders/[id]` | Order history and PDF receipt |
 | `/news/[id]` | Article |
-| `/profile` | Supporter account |
+| `/profile/edit` | Edit name and phone |
+| `/settings` | Notifications, language, legal, sign out, delete account |
+| `/legal/[doc]` | Terms, privacy and refund policy |
 
 ## Admin routes
 
 | Route | Screen |
-| --- | --- |
-| `/login` | Admin authentication |
-| `/dashboard` | Overview, revenue pulse, gate status |
+|---|---|
+| `/login`, `/login/mfa` | Staff sign-in and TOTP challenge |
+| `/dashboard` | Overview: revenue, passes sold, scan pulse, recent orders |
 | `/dashboard/matches` | Fixture list, create/edit/delete |
-| `/dashboard/matches/[id]` | Zone, price, row and seat configuration |
+| `/dashboard/matches/[id]` | Zones, prices, rows and seats |
+| `/dashboard/gates` | Gate registry and per-fixture assignment |
+| `/dashboard/scan` | Camera scanner, manual payload, demo pass, offline queue |
+| `/dashboard/tickets` | Orders, filters, CSV export, refunds |
+| `/dashboard/tickets/[orderId]` | Seats, payment reference, refund and receipt |
 | `/dashboard/news` | Article publishing and editing |
-| `/dashboard/scan` | Camera scanner + manual payload + demo QR |
-| `/dashboard/tickets` | Orders, pass registry, CSV export, reset demo |
+| `/dashboard/users` | Roles, accounts |
+| `/dashboard/settings`, `/dashboard/settings/mfa` | Club settings, security |
 
 ---
 
-## Design system
+## How it works
 
-Club identity: **KickOff** (stadium `KickOff Arena`), green/gold palette:
+**Booking and holds.** `create_hold` reserves seats for 10 minutes under a
+unique-active-seat index; expired holds are released automatically.
+`create_order_from_hold` turns a hold into a pending order (15-minute TTL) and
+locks sales 15 minutes before kick-off.
 
-- Pitch green `#0B6B3A`
-- Gold `#F4C430`
-- Night `#07130D`
-- Ink `#0F172A`
-- Barlow Condensed for display type, Inter for body
+**Payments.** `stripe-checkout` calculates the amount from the database (never
+from the client), creates a Hosted Checkout session in THB with **card only**,
+and returns the URL. `stripe-webhook` verifies `stripe-signature`, records each
+event idempotently in `stripe_events`, and issues tickets exactly once.
+Refunds run through `refund-order` (admin JWT required, audit-logged, used
+passes need an explicit override).
 
-**`packages/shared/src/theme.ts` is the single source of truth** for brand
-colour; the mobile theme derives from it in `apps/mobile/src/lib/theme.ts`
-and the admin console receives it as CSS variables from
-`apps/admin/src/app/layout.tsx` → `apps/admin/src/app/globals.css`. Re-skinning
-means editing one file. See [`docs/BRAND.md`](docs/BRAND.md).
+**Passes and gates.** `ticket-qr` signs `KICKOFF-V2:{…}` with HMAC over
+`ticket|match|order|nonce`, so a modified or stale payload is rejected.
+`scan-ticket` checks the gate's assigned fixture, the pass status, and the
+**−2h/+2h** window, then marks the pass used and writes a `scan_events` row.
+`Idempotency-Key` makes offline replays safe; `scan-undo` restores a pass within
+60 seconds. `scan-demo` issues a real signed pass for staff demonstrations.
+
+**Accounts, push and audit.** Supabase Auth with `app_metadata.role` claims
+drives admin access (`is_admin()` in RLS). Device tokens power Expo push; two
+hourly `pg_cron` jobs send the 24-hour and 2-hour kickoff reminders
+(`send-kickoff-reminders`, guarded by a scheduler secret). Account deletion,
+refunds and settings changes are written to `audit_logs`.
+
+**Metrics.** `GET /functions/v1/metrics` returns order totals, 24h scan results,
+failed scans and hold contention. It requires `x-metrics-token: $METRICS_TOKEN`
+(constant-time compare), so it is one of the few endpoints that bypasses the
+platform JWT check (`verify_jwt = false` in `supabase/config.toml`).
+
+**Analytics (optional).** PostHog adapters exist for both apps; they are a
+no-op in development and whenever the project key is unset.
+
+## Security
+
+Row-level security is enabled on every table: supporters read only their own
+orders, passes and holds; catalogue data is public-read/admin-write; scan
+events, audit logs and Stripe events are admin-only; `rate_limits` is
+service-role only. Edge Functions validate JWTs, rate-limit checkout, scanning,
+undo, device registration and reminders, and fail closed on errors. Full detail:
+[`docs/SECURITY.md`](docs/SECURITY.md).
 
 ---
 
-## Phase B/C roadmap
-
-**Phase B — real data**
-
-- Supabase schema: profiles, matches, zones, seats, orders, order_seats, seat_holds, tickets, news.
-- Admin/customer auth with role-based access and RLS.
-- Transactional seat holds with expiry and unique constraints.
-- Replace `MockDataSource` reads/writes with Supabase queries.
-
-**Phase C — real payment and gate validation**
-
-- Stripe Hosted Checkout session created by an Edge Function using DB-calculated THB amounts.
-- `checkout.session.completed` webhook issues tickets idempotently.
-- Signed, opaque ticket tokens validated server-side and marked used atomically.
-- Offline ticket cache; gate validation still requires connectivity.
-- EAS build / deployment.
-
----
-
-## Quality checks
+## Testing and quality gates
 
 ```bash
-npm run typecheck
-npm run build:admin
+npm test                         # Vitest (shared) + admin + repo script tests
+npm run check                    # typecheck all workspaces + lint
+bash scripts/run-pgtap.sh        # RLS, expiry, scan concurrency
+npm run functions:check          # deno check every Edge Function
+cd supabase/functions && deno test --allow-env --allow-net tests/
+npm run test:e2e --workspace @kickoff/admin   # Playwright auth + ops walkthrough
+maestro test maestro/flows/buy-ticket.yaml    # mobile buy/QR smoke
+node scripts/mvp-gate.mjs        # 15-step end-to-end launch gate
+npm run check:no-mocks           # mock layer cannot return
+npm run build:admin              # production build (/dashboard is dynamic)
 ```
 
-Both workspaces are TypeScript strict and the admin app passes a production build.
+Commands, environment variables and skip conditions are documented in
+[`docs/TESTING.md`](docs/TESTING.md). CI runs the deterministic layers on every
+push and the Playwright suites when E2E secrets are configured.
+
+## Brand and design
+
+Club **KickOff**, stadium **KickOff Arena**, deep link `kickoff://`. Palette:
+pitch green `#0B6B3A`, trophy gold `#F4C430`, night `#07130D`, ink `#0F172A`.
+Barlow Condensed for display, Inter for body. `packages/shared/src/theme.ts` is
+the single source of truth; see [`docs/BRAND.md`](docs/BRAND.md).
+
+## Post-MVP
+
+Thai localisation (the typed English table ships now; `P11-08`–`P11-11` are
+deferred past v1), PromptPay alongside cards, wallet passes, merch and chat, live
+Stripe mode, and store deployment via EAS.
+
+## Documentation
+
+- [`PLAN.md`](PLAN.md) — delivery plan, decisions and phase status (SSOT)
+- [`docs/SECURITY.md`](docs/SECURITY.md) — RLS matrix, secrets, payments, QR
+- [`docs/TESTING.md`](docs/TESTING.md) — every test layer and command
+- [`docs/BRAND.md`](docs/BRAND.md) — brand tokens and usage
+- [`docs/BASELINE.md`](docs/BASELINE.md) — recorded baseline environment
