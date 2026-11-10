@@ -79,14 +79,14 @@ export default function LoginPage() {
 
         <div className="relative z-10 flex items-center justify-between text-[10px] uppercase tracking-[0.14em] text-emerald-50/30">
           <span>XClub Arena · Bangkok</span>
-          <span>UI-first prototype</span>
+          <span>Matchday operations</span>
         </div>
       </div>
 
       <div className="flex min-h-screen flex-col bg-[#F5F7F6]">
         <div className="flex items-center justify-between px-6 pt-6 lg:hidden">
           <Logo />
-          <Badge tone="gold">Mock</Badge>
+          <Badge tone="green">Live</Badge>
         </div>
 
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-10">
@@ -130,7 +130,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   className="text-[10px] font-semibold text-pitch"
-                  onClick={() => setError("Password recovery is not part of the mock build.")}>
+                  onClick={() => setError("Password reset is handled by an administrator.")}>
                   Forgot password?
                 </button>
               </div>
@@ -206,7 +206,7 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-6 text-center text-[9px] uppercase tracking-[0.14em] text-slate-400">
-            XClub operations console · mock build v0.1.0
+            XClub operations console · v0.1.0
           </p>
         </div>
       </div>

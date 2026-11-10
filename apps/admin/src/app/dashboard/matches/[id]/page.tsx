@@ -15,27 +15,76 @@ import {
   Wallet,
 } from "lucide-react";
 import { useState } from "react";
-import { Badge, SectionTitle } from "@/components/ui";
-import { useAdmin } from "@/lib/store";
+import { MatchForm } from "@/components/match-form";
+import {
+  Badge,
+  ConfirmDialog,
+  EmptyState,
+  Modal,
+  SectionTitle,
+  Skeleton,
+  useToast,
+} from "@/components/ui";
+import { ZoneCreateForm } from "@/components/zone-create-form";
+import { ZoneEditor } from "@/components/zone-editor";
+import {
+  useAddZone,
+  useDeleteZone,
+  useMatch,
+  useMatchSalesSummaries,
+  useUpdateMatch,
+  useUpdateZone,
+  useZones,
+  type AdminMatchInput,
+  type AdminZoneInput,
+} from "@/lib/queries/matches";
 import {
   formatMatchDate,
   formatMatchTime,
   formatTHB,
-  zoneAvailability,
-  type Zone,
+  type ZoneDto,
 } from "@xclub/shared";
 
 export default function SeatingPage() {
   const params = useParams<{ id: string }>();
-  const { matches, zones, addZone, updateZone, deleteZone } = useAdmin();
-  const match = matches.find((item) => item.id === params.id);
-  const matchZones = zones.filter((zone) => zone.matchId === params.id);
+  const matchId = params.id;
+  const { toast } = useToast();
 
-  if (!match) {
+  const matchQuery = useMatch(matchId);
+  const zonesQuery = useZones(matchId);
+  const salesQuery = useMatchSalesSummaries();
+  const addZone = useAddZone();
+  const updateZone = useUpdateZone();
+  const deleteZone = useDeleteZone();
+  const updateMatch = useUpdateMatch();
+
+  const [creatingZone, setCreatingZone] = useState(false);
+  const [deletingZone, setDeletingZone] = useState<ZoneDto | null>(null);
+  const [editingFixture, setEditingFixture] = useState(false);
+
+  if (matchQuery.isLoading || zonesQuery.isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[0, 1, 2, 3].map((index) => (
+            <Skeleton key={index} className="h-16" />
+          ))}
+        </div>
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
+
+  if (matchQuery.error || !matchQuery.data) {
     return (
       <div className="panel p-10 text-center">
         <h1 className="display text-3xl text-slate-900">Fixture not found</h1>
-        <p className="mt-2 text-sm text-slate-500">It may have been deleted or reset.</p>
+        <p className="mt-2 text-sm text-slate-500">
+          {matchQuery.error instanceof Error
+            ? matchQuery.error.message
+            : "It may have been deleted or reset."}
+        </p>
         <Link href="/dashboard/matches" className="btn-primary mt-5 inline-flex">
           Back to matches
         </Link>
@@ -43,10 +92,59 @@ export default function SeatingPage() {
     );
   }
 
+  const match = matchQuery.data;
+  const matchZones = zonesQuery.data ?? [];
   const capacity = matchZones.reduce((sum, zone) => sum + zone.rows.length * zone.seatsPerRow, 0);
-  const available = matchZones.reduce((sum, zone) => sum + zoneAvailability(zone).available, 0);
-  const sold = capacity - available;
-  const potential = matchZones.reduce((sum, zone) => sum + zone.priceSatang * zone.rows.length * zone.seatsPerRow, 0);
+  const sold = Math.min(capacity, salesQuery.data?.[match.id]?.ticketsSold ?? 0);
+  const available = Math.max(0, capacity - sold);
+  const potential = matchZones.reduce(
+    (sum, zone) => sum + zone.priceSatang * zone.rows.length * zone.seatsPerRow,
+    0,
+  );
+
+  const handleAddZone = async (input: AdminZoneInput) => {
+    await addZone.mutateAsync({ ...input, matchId: match.id });
+    setCreatingZone(false);
+    toast({
+      title: "Zone created",
+      description: `${input.name} and its seats are ready for sale.`,
+      tone: "green",
+    });
+  };
+
+  const handleUpdateZone = async (
+    zone: ZoneDto,
+    patch: { name: string; description: string; priceSatang: number; color: string },
+  ) => {
+    await updateZone.mutateAsync({ id: zone.id, matchId: zone.matchId, patch });
+    toast({ title: "Zone updated", description: `${patch.name} saved.`, tone: "green" });
+  };
+
+  const handleDeleteZone = async () => {
+    if (!deletingZone) return;
+    try {
+      await deleteZone.mutateAsync({ id: deletingZone.id, matchId: deletingZone.matchId });
+      toast({
+        title: "Zone deleted",
+        description: `${deletingZone.name} was removed from this fixture.`,
+        tone: "amber",
+      });
+    } catch (caught) {
+      toast({
+        title: "Could not delete zone",
+        description: caught instanceof Error ? caught.message : "Try again in a moment.",
+        tone: "red",
+      });
+    } finally {
+      setDeletingZone(null);
+    }
+  };
+
+  const handleUpdateFixture = async (input: AdminMatchInput) => {
+    await updateMatch.mutateAsync({ id: match.id, patch: input });
+    setEditingFixture(false);
+    toast({ title: "Fixture updated", description: "Match details saved.", tone: "green" });
+  };
 
   return (
     <div>
@@ -60,9 +158,9 @@ export default function SeatingPage() {
       <SectionTitle
         eyebrow="Seating configuration"
         title={`XClub vs ${match.opponent}`}
-        description="Set zone prices, rows, and seat counts. Changes are saved to the mock store instantly."
+        description="Set zone prices, rows, and seat counts. Changes are written to Supabase instantly."
         action={
-          <button type="button" onClick={() => addZone(match.id)} className="btn-primary">
+          <button type="button" onClick={() => setCreatingZone(true)} className="btn-primary">
             <Plus size={16} />
             Add zone
           </button>
@@ -71,7 +169,11 @@ export default function SeatingPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MiniStat icon={<Users size={16} />} label="Capacity" value={String(capacity)} />
-        <MiniStat icon={<CalendarDays size={16} />} label="Sold" value={`${sold} · ${capacity ? Math.round((sold / capacity) * 100) : 0}%`} />
+        <MiniStat
+          icon={<CalendarDays size={16} />}
+          label="Sold"
+          value={`${sold} · ${capacity ? Math.round((sold / capacity) * 100) : 0}%`}
+        />
         <MiniStat icon={<Wallet size={16} />} label="Available" value={String(available)} />
         <MiniStat icon={<CircleDollarSign size={16} />} label="Gate potential" value={formatTHB(potential)} />
       </div>
@@ -79,29 +181,52 @@ export default function SeatingPage() {
       <div className="mt-4 grid gap-4 xl:grid-cols-[1.55fr_1fr]">
         <div className="space-y-3">
           {matchZones.map((zone, index) => (
-            <ZoneEditor
-              key={zone.id}
-              zone={zone}
-              index={index}
-              onChange={(patch) => updateZone(zone.id, patch)}
-              onDelete={() => {
-                if (window.confirm(`Delete ${zone.name}?`)) deleteZone(zone.id);
-              }}
-            />
+            <div key={zone.id} className="panel overflow-hidden">
+              <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
+                <div
+                  className="grid h-8 w-8 place-items-center rounded-lg text-[10px] font-bold text-white"
+                  style={{ backgroundColor: zone.color }}>
+                  {index + 1}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-semibold text-slate-800">{zone.name}</p>
+                  <p className="text-[10px] text-slate-400">
+                    {zone.rows.length} rows · {zone.seatsPerRow} seats per row ·{" "}
+                    {zone.rows.length * zone.seatsPerRow} seats
+                  </p>
+                </div>
+                <Badge tone="green">{formatTHB(zone.priceSatang)}</Badge>
+                <button
+                  type="button"
+                  onClick={() => setDeletingZone(zone)}
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                  aria-label={`Delete ${zone.name}`}>
+                  <Trash2 size={13} />
+                </button>
+              </div>
+              <div className="p-4">
+                <ZoneEditor
+                  key={`${zone.id}-${zone.priceSatang}-${zone.name}`}
+                  zone={zone}
+                  submitting={updateZone.isPending}
+                  onSubmit={(patch) => handleUpdateZone(zone, patch)}
+                />
+              </div>
+            </div>
           ))}
 
           {matchZones.length === 0 ? (
-            <div className="panel flex flex-col items-center justify-center px-6 py-14 text-center">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-pitch">
-                <Plus size={20} />
-              </div>
-              <h2 className="display mt-4 text-2xl text-slate-900">No zones yet</h2>
-              <p className="mt-1 max-w-xs text-xs leading-5 text-slate-500">
-                Add a stand to start selling seats for this fixture.
-              </p>
-              <button type="button" onClick={() => addZone(match.id)} className="btn-primary mt-4">
-                Add first zone
-              </button>
+            <div className="panel">
+              <EmptyState
+                icon={<Plus size={20} />}
+                title="No zones yet"
+                description="Add a stand to start selling seats for this fixture."
+                action={
+                  <button type="button" onClick={() => setCreatingZone(true)} className="btn-primary">
+                    Add first zone
+                  </button>
+                }
+              />
             </div>
           ) : null}
         </div>
@@ -122,10 +247,13 @@ export default function SeatingPage() {
               </span>
               <Badge tone={match.status === "upcoming" ? "green" : "muted"}>{match.status}</Badge>
             </div>
-            <Link href="/dashboard/matches" className="btn-ghost mt-3 w-full">
+            <button
+              type="button"
+              onClick={() => setEditingFixture(true)}
+              className="btn-ghost mt-3 w-full">
               Edit fixture details
               <ChevronRight size={14} />
-            </Link>
+            </button>
           </div>
 
           <div className="relative overflow-hidden rounded-2xl bg-night p-5 text-white">
@@ -165,12 +293,48 @@ export default function SeatingPage() {
           </div>
 
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[11px] leading-5 text-amber-800/80">
-            <span className="font-semibold text-amber-800">Prototype rule:</span> seat inventory is
-            generated from rows × seats per row. Real holds and double-booking protection arrive with
-            the Supabase transaction layer.
+            <span className="font-semibold text-amber-800">Inventory note:</span> seat rows and seat
+            counts are locked once a zone exists, so paid orders keep their snapshot. Add a new zone
+            for a different layout.
           </div>
         </div>
       </div>
+
+      <Modal
+        open={creatingZone}
+        onClose={() => setCreatingZone(false)}
+        title="Add zone"
+        description="Choose the layout and price. Seats are generated when the zone is created."
+        wide>
+        <ZoneCreateForm submitting={addZone.isPending} onSubmit={handleAddZone} />
+      </Modal>
+
+      <Modal
+        open={editingFixture}
+        onClose={() => setEditingFixture(false)}
+        title="Edit fixture"
+        description="Update match details. Seating zones are managed separately."
+        wide>
+        <MatchForm
+          initial={match}
+          submitting={updateMatch.isPending}
+          onSubmit={handleUpdateFixture}
+        />
+      </Modal>
+
+      <ConfirmDialog
+        open={deletingZone !== null}
+        title="Delete zone?"
+        description={
+          deletingZone
+            ? `${deletingZone.name} will be removed from this fixture. Seats with paid tickets cannot be deleted.`
+            : undefined
+        }
+        confirmLabel="Delete zone"
+        busy={deleteZone.isPending}
+        onConfirm={() => void handleDeleteZone()}
+        onClose={() => setDeletingZone(null)}
+      />
     </div>
   );
 }
@@ -195,152 +359,6 @@ function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: strin
         {label}
       </span>
       <span className="text-right font-semibold text-slate-800">{value}</span>
-    </div>
-  );
-}
-
-function ZoneEditor({
-  zone,
-  index,
-  onChange,
-  onDelete,
-}: {
-  zone: Zone;
-  index: number;
-  onChange: (patch: Partial<Zone>) => void;
-  onDelete: () => void;
-}) {
-  const [name, setName] = useState(zone.name);
-  const [description, setDescription] = useState(zone.description);
-  const [price, setPrice] = useState(String(zone.priceSatang / 100));
-  const [rowCount, setRowCount] = useState(String(zone.rows.length));
-  const [seatsPerRow, setSeatsPerRow] = useState(String(zone.seatsPerRow));
-  const availability = zoneAvailability(zone);
-  const capacity = zone.rows.length * zone.seatsPerRow;
-
-  const applyRows = (next: string) => {
-    setRowCount(next);
-    const count = Math.max(1, Math.min(10, Number(next) || 1));
-    onChange({
-      rows: Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i)),
-    });
-  };
-
-  const applySeats = (next: string) => {
-    setSeatsPerRow(next);
-    const count = Math.max(1, Math.min(24, Number(next) || 1));
-    onChange({ seatsPerRow: count });
-  };
-
-  return (
-    <div className="panel overflow-hidden">
-      <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
-        <div className="grid h-8 w-8 place-items-center rounded-lg text-[10px] font-bold text-white" style={{ backgroundColor: zone.color }}>
-          {index + 1}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold text-slate-800">{zone.name}</p>
-          <p className="text-[10px] text-slate-400">
-            {zone.rows.length} rows · {zone.seatsPerRow} seats per row · {capacity} seats
-          </p>
-        </div>
-        <Badge tone="green">{availability.available} free</Badge>
-        <button
-          type="button"
-          onClick={onDelete}
-          className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-          aria-label={`Delete ${zone.name}`}>
-          <Trash2 size={13} />
-        </button>
-      </div>
-
-      <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="sm:col-span-2 lg:col-span-1">
-          <label className="label mb-1 block">Zone name</label>
-          <input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            onBlur={() => onChange({ name: name.trim() || zone.name })}
-            className="input"
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <label className="label mb-1 block">Description</label>
-          <input
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            onBlur={() => onChange({ description })}
-            className="input"
-          />
-        </div>
-        <div>
-          <label className="label mb-1 block">Price (THB)</label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
-              ฿
-            </span>
-            <input
-              type="number"
-              min={0}
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              onBlur={() => onChange({ priceSatang: Math.max(0, Math.round(Number(price || 0) * 100)) })}
-              className="input pl-6"
-            />
-          </div>
-        </div>
-        <div>
-          <label className="label mb-1 block">Rows</label>
-          <input
-            type="number"
-            min={1}
-            max={10}
-            value={rowCount}
-            onChange={(event) => applyRows(event.target.value)}
-            className="input"
-          />
-        </div>
-        <div>
-          <label className="label mb-1 block">Seats / row</label>
-          <input
-            type="number"
-            min={1}
-            max={24}
-            value={seatsPerRow}
-            onChange={(event) => applySeats(event.target.value)}
-            className="input"
-          />
-        </div>
-        <div>
-          <label className="label mb-1 block">Zone colour</label>
-          <input
-            type="color"
-            value={zone.color}
-            onChange={(event) => onChange({ color: event.target.value })}
-            className="h-[42px] w-full cursor-pointer rounded-xl border border-slate-200 bg-white p-1"
-          />
-        </div>
-      </div>
-
-      <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-3">
-        <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.1em] text-slate-400">
-          <span>Seat map preview</span>
-          <span>{availability.available} available · {availability.total - availability.available} sold</span>
-        </div>
-        <div className="mt-2 flex flex-wrap gap-1">
-          {Array.from({ length: Math.min(capacity, 96) }, (_, i) => {
-            const soldSeat = (i * 7) % 11 === 0 || (i * 13) % 17 === 0;
-            return (
-              <span
-                key={i}
-                className="h-2.5 w-2.5 rounded-[2px]"
-                style={{ backgroundColor: soldSeat ? "#DDE3DF" : zone.color, opacity: soldSeat ? 1 : 0.65 }}
-              />
-            );
-          })}
-          {capacity > 96 ? <span className="ml-1 text-[9px] text-slate-400">+{capacity - 96}</span> : null}
-        </div>
-      </div>
     </div>
   );
 }

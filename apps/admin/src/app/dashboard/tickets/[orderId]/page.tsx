@@ -4,7 +4,7 @@ import { ArrowLeft, Download, Loader2, ReceiptText, RotateCcw } from "lucide-rea
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { Badge } from "@/components/ui";
+import { Badge, ConfirmDialog, useToast } from "@/components/ui";
 import { invokeFunction } from "@/lib/functions";
 import { useOrder, useRefund } from "@/lib/queries/orders";
 import { formatFullDate, formatTHB } from "@xclub/shared";
@@ -14,15 +14,16 @@ export default function OrderDetailPage() {
   const orderId = params.orderId;
   const { data: order, isLoading, error } = useOrder(orderId);
   const refund = useRefund();
+  const { toast } = useToast();
 
   const [reason, setReason] = useState("");
   const [override, setOverride] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [receiptBusy, setReceiptBusy] = useState(false);
+  const [confirmingRefund, setConfirmingRefund] = useState(false);
 
   const handleRefund = async () => {
     if (!order) return;
-    if (!window.confirm(`Refund ${formatTHB(order.amountSatang)} for ${order.id}?`)) return;
     setActionError(null);
     try {
       await refund.mutateAsync({
@@ -30,8 +31,15 @@ export default function OrderDetailPage() {
         reason: reason.trim() || undefined,
         overrideUsedTickets: override,
       });
+      toast({
+        title: "Refund issued",
+        description: `${formatTHB(order.amountSatang)} refunded for ${order.id}.`,
+        tone: "green",
+      });
     } catch (caught) {
       setActionError(caught instanceof Error ? caught.message : "Refund failed.");
+    } finally {
+      setConfirmingRefund(false);
     }
   };
 
@@ -160,7 +168,7 @@ export default function OrderDetailPage() {
             </label>
             <button
               type="button"
-              onClick={handleRefund}
+              onClick={() => setConfirmingRefund(true)}
               disabled={refund.isPending || order.status !== "paid"}
               className="btn-primary mt-3 h-10 w-full disabled:opacity-50">
               {refund.isPending ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
@@ -175,6 +183,20 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmingRefund}
+        title="Refund this order?"
+        description={`${formatTHB(order.amountSatang)} will be refunded through Stripe for ${order.id}. ${
+          override
+            ? "The used-ticket override is enabled and will be audited."
+            : "Used tickets are non-refundable unless you enable the override."
+        }`}
+        confirmLabel="Refund order"
+        busy={refund.isPending}
+        onConfirm={() => void handleRefund()}
+        onClose={() => setConfirmingRefund(false)}
+      />
     </div>
   );
 }

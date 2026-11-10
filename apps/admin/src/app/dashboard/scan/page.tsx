@@ -138,6 +138,9 @@ export default function ScanPage() {
   };
 
   const chooseGate = (id: string) => {
+    // The camera callback closes over the gate that was selected when the
+    // stream started, so stop it before changing the active gate.
+    stopCamera();
     setGateId(id);
     setResult(null);
     setNotice(null);

@@ -17,7 +17,12 @@ function toLocalInput(iso: string | undefined): string {
   if (!iso) return "";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toISOString().slice(0, 16);
+  // `<input type="datetime-local">` expects wall-clock time. Using
+  // `toISOString()` would render UTC and shift the kickoff on save.
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+    date.getHours(),
+  )}:${pad(date.getMinutes())}`;
 }
 
 export function MatchForm({ initial, submitting = false, onSubmit }: MatchFormProps) {

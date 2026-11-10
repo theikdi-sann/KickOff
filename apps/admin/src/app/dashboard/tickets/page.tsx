@@ -1,18 +1,28 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Download, Loader2, QrCode, Search, Ticket, Wallet } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Loader2,
+  QrCode,
+  RotateCcw,
+  Search,
+  Ticket,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { Badge, SectionTitle } from "@/components/ui";
+import { Badge, ConfirmDialog, SectionTitle, useToast } from "@/components/ui";
 import { downloadCsv, toCsv, type CsvColumn } from "@/lib/export";
 import {
   useOrders,
   useOrdersAggregate,
-  useScanStats,
+  useRefund,
   type AdminOrder,
   type OrdersFilter,
 } from "@/lib/queries/orders";
-import { useOrderScanUsage } from "@/lib/queries/scan";
+import { useOrderScanUsage, useScanStats } from "@/lib/queries/scan";
 import { formatShortDate, formatTHB } from "@xclub/shared";
 
 const PAGE_SIZE = 10;
@@ -44,9 +54,11 @@ function toneFor(status: string): "green" | "red" | "gold" | "muted" {
 }
 
 export default function TicketsPage() {
+  const { toast } = useToast();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<OrdersFilter["status"]>("all");
   const [page, setPage] = useState(1);
+  const [refunding, setRefunding] = useState<AdminOrder | null>(null);
 
   const { data, isLoading, error } = useOrders({
     search: query,
@@ -56,6 +68,7 @@ export default function TicketsPage() {
   });
   const aggregate = useOrdersAggregate();
   const scans = useScanStats();
+  const refund = useRefund();
 
   const orders = data?.items ?? [];
   const usage = useOrderScanUsage(orders.map((order) => order.id));
@@ -74,6 +87,29 @@ export default function TicketsPage() {
       created: order.createdAt,
     }));
     downloadCsv(`xclub-orders-${status}-p${page}.csv`, toCsv(rows, CSV_COLUMNS));
+  };
+
+  const handleRefund = async () => {
+    if (!refunding) return;
+    try {
+      await refund.mutateAsync({
+        orderId: refunding.id,
+        reason: "Refunded from orders list",
+      });
+      toast({
+        title: "Refund issued",
+        description: `${refunding.id} was refunded through Stripe.`,
+        tone: "green",
+      });
+    } catch (caught) {
+      toast({
+        title: "Refund failed",
+        description: caught instanceof Error ? caught.message : "Try again from the order detail page.",
+        tone: "red",
+      });
+    } finally {
+      setRefunding(null);
+    }
   };
 
   return (
@@ -150,6 +186,7 @@ export default function TicketsPage() {
                   <th className="px-4 py-3 font-semibold">Amount</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
                   <th className="px-5 py-3 font-semibold">Created</th>
+                  <th className="px-5 py-3 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -179,6 +216,16 @@ export default function TicketsPage() {
                       <Badge tone={toneFor(order.status)}>{order.status.toUpperCase()}</Badge>
                     </td>
                     <td className="px-5 py-3.5 text-xs text-slate-500">{formatShortDate(order.createdAt)}</td>
+                    <td className="px-5 py-3.5 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setRefunding(order)}
+                        disabled={order.status !== "paid"}
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
+                        <RotateCcw size={11} />
+                        Refund
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -208,6 +255,20 @@ export default function TicketsPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={refunding !== null}
+        title="Refund this order?"
+        description={
+          refunding
+            ? `${formatTHB(refunding.amountSatang)} will be refunded through Stripe for ${refunding.id}. Used tickets are non-refundable; use the order detail page to override with an audit reason.`
+            : undefined
+        }
+        confirmLabel="Refund order"
+        busy={refund.isPending}
+        onConfirm={() => void handleRefund()}
+        onClose={() => setRefunding(null)}
+      />
     </div>
   );
 }

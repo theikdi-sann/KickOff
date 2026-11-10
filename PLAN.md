@@ -336,35 +336,52 @@ These are the only tasks allowed to touch more than one file in one commit:
 
 ### Phase 9 — Admin Console
 
+**Status: complete.** Migrated every admin surface off the local mock store onto Supabase query hooks, added shared providers/UI primitives, settings and error boundaries, and removed all `useAdmin`/mock references.
+
 #### 9a — Providers, hooks, shared UI
 
-- [ ] `P9a-01` · `apps/admin/src/components/providers.tsx` **[N]** — `"use client"` `QueryClientProvider` + `ToastProvider`. **Do NOT** include `AdminProvider`.
-- [ ] `P9a-02` · `apps/admin/src/app/layout.tsx` **[M]** — wrap children in `<ClientProviders>` from `P9a-01`; keep `<html className>` byte-identical; no `"use client"`.
-- [ ] `P9a-03` · `apps/admin/src/components/ui.tsx` **[M]** — add `Table`, `EmptyState`, `Skeleton`, `ConfirmDialog`, `Toast`, `Tone.amber`.
-- [ ] `P9a-04` · `apps/admin/src/app/globals.css` **[M]** — add `.btn-danger`, table/skeleton utilities; no raw red classes in migrated actions.
-- [ ] `P9a-05` · `apps/admin/src/lib/queries/settings.ts` **[N]** — `useSettings`, `useUpdateSettings`.
-- [ ] `P9a-06` · `apps/admin/src/app/dashboard/settings/page.tsx` **[N]** — club profile, gate count, notification toggle, read-only QR key version, link to key-rotation runbook.
-- [ ] `P9a-08` · `apps/admin/src/app/dashboard/error.tsx` **[N]** — dashboard error boundary.
-- [ ] `P9a-09` · `apps/admin/src/app/dashboard/scan/error.tsx` **[N]** — scanner error boundary.
+- [x] `P9a-01` · `apps/admin/src/components/providers.tsx` **[N]** — `"use client"` `QueryClientProvider` + `ToastProvider`. **Do NOT** include `AdminProvider`.
+- [x] `P9a-02` · `apps/admin/src/app/layout.tsx` **[M]** — wrap children in `<ClientProviders>` from `P9a-01`; keep `<html className>` byte-identical; no `"use client"`.
+- [x] `P9a-03` · `apps/admin/src/components/ui.tsx` **[M]** — add `Table`, `EmptyState`, `Skeleton`, `ConfirmDialog`, `Toast`, `Tone.amber`.
+- [x] `P9a-04` · `apps/admin/src/app/globals.css` **[M]** — add `.btn-danger`, table/skeleton utilities; no raw red classes in migrated actions.
+- [x] `P9a-05` · `apps/admin/src/lib/queries/settings.ts` **[N]** — `useSettings`, `useUpdateSettings`.
+- [x] `P9a-06` · `apps/admin/src/app/dashboard/settings/page.tsx` **[N]** — club profile, gate count, notification toggle, read-only QR key version, link to key-rotation runbook.
+- [x] `P9a-08` · `apps/admin/src/app/dashboard/error.tsx` **[N]** — dashboard error boundary.
+- [x] `P9a-09` · `apps/admin/src/app/dashboard/scan/error.tsx` **[N]** — scanner error boundary.
 
 #### 9b — Migrate each surface
 
-- [ ] `P9b-01` · `apps/admin/src/app/dashboard/layout.tsx` **[M]** — nav/header against real session; keep UI; a11y `aria-current`, skip link.
-- [ ] `P9b-02` · `apps/admin/src/app/dashboard/page.tsx` **[M]** — aggregate + scan stats; skeleton/empty states.
-- [ ] `P9b-03` · `apps/admin/src/app/dashboard/matches/page.tsx` **[M]** — `useMatches` + delete; keep filter tabs/search.
-- [ ] `P9b-04` · `apps/admin/src/app/dashboard/matches/[id]/page.tsx` **[M]** — `useMatch` + `useZones`; mount `<ZoneEditor>` / `<ZoneCreateForm>`.
-- [ ] `P9b-05` · `apps/admin/src/app/dashboard/news/page.tsx` **[M]** — `useNews` + mutations; mount `<NewsForm>`.
-- [ ] `P9b-06` · `apps/admin/src/app/dashboard/tickets/page.tsx` **[M]** — finish migration (pagination, search, CSV, refund actions).
-- [ ] `P9b-07` · `apps/admin/src/app/dashboard/tickets/[orderId]/page.tsx` **[M]** — finish migration.
-- [ ] `P9b-08` · `apps/admin/src/app/dashboard/users/page.tsx` **[M]** — finish migration.
-- [ ] `P9b-09` · `apps/admin/src/app/dashboard/settings/page.tsx` **[M]** — finish migration.
-- [ ] `P9b-10` · `apps/admin/src/app/dashboard/scan/page.tsx` **[M]** — finish migration (undo, stats, events).
+- [x] `P9b-01` · `apps/admin/src/app/dashboard/layout.tsx` **[M]** — nav/header against real session; keep UI; a11y `aria-current`, skip link.
+- [x] `P9b-02` · `apps/admin/src/app/dashboard/page.tsx` **[M]** — aggregate + scan stats; skeleton/empty states.
+- [x] `P9b-03` · `apps/admin/src/app/dashboard/matches/page.tsx` **[M]** — `useMatches` + delete; keep filter tabs/search.
+- [x] `P9b-04` · `apps/admin/src/app/dashboard/matches/[id]/page.tsx` **[M]** — `useMatch` + `useZones`; mount `<ZoneEditor>` / `<ZoneCreateForm>`.
+- [x] `P9b-05` · `apps/admin/src/app/dashboard/news/page.tsx` **[M]** — `useNews` + mutations; mount `<NewsForm>`.
+- [x] `P9b-06` · `apps/admin/src/app/dashboard/tickets/page.tsx` **[M]** — finish migration (pagination, search, CSV, refund actions).
+- [x] `P9b-07` · `apps/admin/src/app/dashboard/tickets/[orderId]/page.tsx` **[M]** — finish migration.
+- [x] `P9b-08` · `apps/admin/src/app/dashboard/users/page.tsx` **[M]** — finish migration.
+- [x] `P9b-09` · `apps/admin/src/app/dashboard/settings/page.tsx` **[M]** — finish migration.
+- [x] `P9b-10` · `apps/admin/src/app/dashboard/scan/page.tsx` **[M]** — finish migration (undo, stats, events).
 
 #### 9c — Delete legacy
 
-- [ ] `P9c-01` · `apps/admin/src/lib/store.tsx` — **delete** when `rg "useAdmin"` = 0. **DoD:** `npm run build:admin` green.
-- [ ] `P9c-02` · `apps/admin/src/app/layout.tsx` **[M]** — remove `AdminProvider` mount. **DoD:** `rg "AdminProvider"` = 0; `<html className>` unchanged; `next build` green.
-- [ ] `P9c-03` · `apps/admin/package.json` **[M]** — remove unused mock-only deps. **DoD:** build green.
+- [x] `P9c-01` · `apps/admin/src/lib/store.tsx` — **delete** when `rg "useAdmin"` = 0. **DoD:** `npm run build:admin` green.
+- [x] `P9c-02` · `apps/admin/src/app/layout.tsx` **[M]** — remove `AdminProvider` mount. **DoD:** `rg "AdminProvider"` = 0; `<html className>` unchanged; `next build` green.
+- [x] `P9c-03` · `apps/admin/package.json` **[M]** — remove unused mock-only deps. **DoD:** build green.
+
+#### Phase 9 files
+
+- **Created:** `apps/admin/src/components/providers.tsx`, `apps/admin/src/lib/queries/settings.ts`, `apps/admin/src/app/dashboard/settings/page.tsx`, `apps/admin/src/app/dashboard/error.tsx`, `apps/admin/src/app/dashboard/scan/error.tsx`, `apps/admin/tests/phase9.test.mjs`.
+- **Modified:** `apps/admin/src/app/layout.tsx`, `apps/admin/src/components/ui.tsx`, `apps/admin/src/app/globals.css`, `apps/admin/src/app/login/page.tsx` (removed mock copy), `apps/admin/src/app/dashboard/layout.tsx`, `apps/admin/src/app/dashboard/page.tsx`, `apps/admin/src/app/dashboard/matches/page.tsx`, `apps/admin/src/app/dashboard/matches/[id]/page.tsx`, `apps/admin/src/app/dashboard/news/page.tsx`, `apps/admin/src/app/dashboard/tickets/page.tsx`, `apps/admin/src/app/dashboard/tickets/[orderId]/page.tsx`, `apps/admin/src/lib/queries/matches.ts`, `apps/admin/package.json`, `PLAN.md`.
+- **Deleted:** `apps/admin/src/lib/store.tsx` (legacy mock store), `apps/admin/src/lib/query-provider.tsx` (superseded by `ClientProviders`).
+
+#### Errors / Notes
+
+- **Verification:** `npm run test -w @xclub/admin` 10/10, `npm run typecheck`, `npm run lint`, `npm run build:admin` all green after `store.tsx` was removed.
+- **Removed dead provider:** `apps/admin/src/lib/query-provider.tsx` was superseded by `components/providers.tsx` and unreferenced; deleted.
+- **Login copy:** removed the last “Mock”/“mock build” strings; the badge now reads “Live” and password reset points to an administrator.
+- **`posthog-js` retained:** reserved for `P11-17`; not a mock-only dependency.
+- **Runbook link:** the settings page links to the Supabase secrets guide until `docs/RUNBOOK.md` lands in `P12-07`.
+- **Review fixes:** gate switching now stops the camera (stale-closure scans could be attributed to the previous gate); the settings copy no longer claims RPC enforcement (values are stored, server limits still apply until Phase 10 wires them); a failed seat fan-out rolls back the zone; `ConfirmDialog` closes on Escape; the skip link target is focusable; fixture kickoff round-trips through the browser timezone instead of UTC.
 
 ---
 

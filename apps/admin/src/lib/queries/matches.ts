@@ -54,6 +54,48 @@ export function useMatch(id: string | undefined) {
   });
 }
 
+export function useAllZones() {
+  return useQuery({
+    queryKey: ["admin-zones-all"],
+    queryFn: async () => {
+      const { data, error } = await client()
+        .from("zones")
+        .select("*")
+        .order("price_satang", { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data ?? []).map(toZoneDto);
+    },
+  });
+}
+
+export interface MatchSalesSummary {
+  matchId: string;
+  ordersPaid: number;
+  revenueSatang: number;
+  ticketsSold: number;
+}
+
+export function useMatchSalesSummaries() {
+  return useQuery({
+    queryKey: ["admin-match-sales"],
+    queryFn: async (): Promise<Record<string, MatchSalesSummary>> => {
+      const { data, error } = await client().from("match_sales_summary").select("*");
+      if (error) throw new Error(error.message);
+      return Object.fromEntries(
+        (data ?? []).map((row) => [
+          row.match_id,
+          {
+            matchId: row.match_id,
+            ordersPaid: row.orders_paid ?? 0,
+            revenueSatang: row.revenue_satang ?? 0,
+            ticketsSold: row.tickets_sold ?? 0,
+          },
+        ]),
+      );
+    },
+  });
+}
+
 export function useZones(matchId: string | undefined) {
   return useQuery({
     queryKey: ["admin-zones", matchId],
@@ -72,6 +114,8 @@ export function useZones(matchId: string | undefined) {
 
 function invalidateMatchData(queryClient: ReturnType<typeof useQueryClient>, matchId?: string) {
   void queryClient.invalidateQueries({ queryKey: ["admin-matches"] });
+  void queryClient.invalidateQueries({ queryKey: ["admin-zones-all"] });
+  void queryClient.invalidateQueries({ queryKey: ["admin-match-sales"] });
   if (matchId) {
     void queryClient.invalidateQueries({ queryKey: ["admin-match", matchId] });
     void queryClient.invalidateQueries({ queryKey: ["admin-zones", matchId] });
@@ -204,8 +248,21 @@ export function useAddZone() {
           number: index + 1,
         })),
       );
+
+      // PostgREST rejects an empty bulk insert, and a zone without seats would
+      // still appear sellable in the UI. Roll the zone back on either failure.
+      if (seats.length === 0) {
+        await client().from("zones").delete().eq("id", zone.id);
+        throw new Error("Add at least one row with one seat per row.");
+      }
+
       const { error: seatError } = await client().from("seats").insert(seats);
-      if (seatError) throw new Error(seatError.message);
+      if (seatError) {
+        await client().from("zones").delete().eq("id", zone.id);
+        throw new Error(
+          `The zone could not be completed and was removed: ${seatError.message}`,
+        );
+      }
 
       return toZoneDto(zone);
     },

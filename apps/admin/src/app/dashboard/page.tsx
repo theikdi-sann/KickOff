@@ -14,40 +14,101 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { Badge, SectionTitle } from "@/components/ui";
-import { useOrdersAggregate, useScanStats } from "@/lib/queries/orders";
-import { useAdmin } from "@/lib/store";
+import { Badge, EmptyState, SectionTitle, Skeleton } from "@/components/ui";
+import { useMatches, useAllZones, useMatchSalesSummaries } from "@/lib/queries/matches";
+import { useNews } from "@/lib/queries/news";
+import { useOrders, useOrdersAggregate } from "@/lib/queries/orders";
+import { useScanStats } from "@/lib/queries/scan";
 import { cn } from "@/lib/utils";
-import { formatMatchDate, formatMatchTime, formatTHB, zoneAvailability } from "@xclub/shared";
+import { formatMatchDate, formatMatchTime, formatTHB } from "@xclub/shared";
 
 export default function DashboardPage() {
-  const { matches, zones, orders, news } = useAdmin();
+  const matchesQuery = useMatches();
+  const zonesQuery = useAllZones();
+  const salesQuery = useMatchSalesSummaries();
+  const newsQuery = useNews();
+  const ordersQuery = useOrders({ page: 1, perPage: 4, status: "all" });
   const aggregate = useOrdersAggregate();
   const scans = useScanStats();
+
   const now = new Date();
+  const matches = matchesQuery.data ?? [];
+  const zones = zonesQuery.data ?? [];
+  const news = newsQuery.data ?? [];
+  const sales = salesQuery.data ?? {};
+  const recentOrders = ordersQuery.data?.items ?? [];
+
   const upcoming = matches
     .filter((match) => match.status === "upcoming")
     .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
   const next = upcoming[0];
   const nextZones = zones.filter((zone) => zone.matchId === next?.id);
   const capacity = nextZones.reduce((sum, zone) => sum + zone.rows.length * zone.seatsPerRow, 0);
-  const available = nextZones.reduce((sum, zone) => sum + zoneAvailability(zone).available, 0);
-  const sold = capacity - available;
+  const sold = Math.min(capacity, next ? (sales[next.id]?.ticketsSold ?? 0) : 0);
+  const available = Math.max(0, capacity - sold);
   const sellThrough = capacity ? Math.round((sold / capacity) * 100) : 0;
   const revenue = aggregate.data?.revenueSatang ?? 0;
   const ticketsSold = aggregate.data?.ticketsSold ?? 0;
-  const recentOrders = [...orders]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 4);
+  const pulse = [
+    { label: "Paid", value: aggregate.data?.ordersPaid ?? 0 },
+    { label: "Tickets", value: ticketsSold },
+    { label: "Scans", value: scans.data?.total ?? 0 },
+    { label: "Valid", value: scans.data?.valid ?? 0 },
+  ];
+  const pulseMax = Math.max(1, ...pulse.map((item) => item.value));
 
   const daysToMatch = next
     ? Math.max(0, Math.ceil((new Date(next.kickoffAt).getTime() - now.getTime()) / 86_400_000))
     : 0;
 
+  const isLoading = matchesQuery.isLoading || zonesQuery.isLoading;
+  const loadError =
+    matchesQuery.error ??
+    zonesQuery.error ??
+    salesQuery.error ??
+    newsQuery.error ??
+    ordersQuery.error ??
+    aggregate.error ??
+    scans.error;
+
+  if (isLoading) {
+    return (
+      <div>
+        <Skeleton className="mb-5 h-14 w-80" />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[0, 1, 2, 3].map((index) => (
+            <Skeleton key={index} className="h-28" />
+          ))}
+        </div>
+        <div className="mt-4 grid gap-4 xl:grid-cols-[1.6fr_1fr]">
+          <Skeleton className="h-80" />
+          <Skeleton className="h-80" />
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="panel p-8 text-center">
+        <h1 className="display text-3xl text-slate-900">Overview unavailable</h1>
+        <p className="mt-2 text-sm text-slate-500">
+          {loadError instanceof Error ? loadError.message : "Could not load the matchday overview."}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <SectionTitle
-        eyebrow="Thursday, 5 November 2026"
+        eyebrow={now.toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+          timeZone: "Asia/Bangkok",
+        })}
         title="Matchday overview"
         description="Everything the club needs to run the next home fixture."
         action={
@@ -77,7 +138,7 @@ export default function DashboardPage() {
           icon={<CalendarDays size={17} />}
           label="Upcoming fixtures"
           value={String(upcoming.length)}
-          note={`Next in ${daysToMatch} days`}
+          note={next ? `Next in ${daysToMatch} days` : "No fixture scheduled"}
           tone="blue"
         />
         <StatCard
@@ -142,48 +203,57 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="panel">
+              <EmptyState
+                icon={<CalendarDays size={22} />}
+                title="No upcoming fixture"
+                description="Create a fixture to start configuring zones and selling seats."
+                action={
+                  <Link href="/dashboard/matches" className="btn-primary">
+                    <CalendarDays size={15} />
+                    Create fixture
+                  </Link>
+                }
+              />
+            </div>
+          )}
 
           <div className="panel p-5">
             <div className="mb-5 flex items-start justify-between">
               <div>
-                <p className="label text-pitch">Revenue pulse</p>
-                <h2 className="display mt-0.5 text-2xl text-slate-900">Last 7 days</h2>
+                <p className="label text-pitch">Operations pulse</p>
+                <h2 className="display mt-0.5 text-2xl text-slate-900">Last 30 days</h2>
               </div>
               <Badge tone="green">
                 <TrendingUp size={10} />
-                +12.6%
+                Live
               </Badge>
             </div>
             <div className="flex h-40 items-end gap-2 sm:gap-4">
-              {[
-                { day: "Mon", value: 42 },
-                { day: "Tue", value: 58 },
-                { day: "Wed", value: 50 },
-                { day: "Thu", value: 74 },
-                { day: "Fri", value: 88 },
-                { day: "Sat", value: 100 },
-                { day: "Sun", value: 66 },
-              ].map((bar, index) => (
-                <div key={bar.day} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
+              {pulse.map((bar, index) => (
+                <div key={bar.label} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
+                  <span className="text-[10px] font-semibold text-slate-500">{bar.value}</span>
                   <div className="flex w-full flex-1 items-end">
                     <div
                       className={cn(
                         "w-full rounded-t-md transition-all",
-                        index === 5 ? "bg-pitch" : "bg-emerald-100",
+                        index === 0 ? "bg-pitch" : "bg-emerald-100",
                       )}
-                      style={{ height: `${bar.value}%` }}
+                      style={{
+                        height: `${Math.max(4, Math.round((bar.value / pulseMax) * 100))}%`,
+                      }}
                     />
                   </div>
                   <span className="text-[9px] font-medium uppercase tracking-[0.08em] text-slate-400">
-                    {bar.day}
+                    {bar.label}
                   </span>
                 </div>
               ))}
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-[10px] text-slate-400">
-              <span>Peak: Saturday · {formatTHB(1285000)}</span>
-              <span>Updated 2 min ago</span>
+              <span>Paid orders · tickets · gate scans · valid entries</span>
+              <span>Live from Supabase</span>
             </div>
           </div>
         </div>
@@ -242,14 +312,14 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
             <div className="flex items-start gap-3">
-              <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-amber-600" />
+              <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600" />
               <div>
-                <p className="text-xs font-semibold text-amber-800">UI-first prototype</p>
-                <p className="mt-1 text-[11px] leading-5 text-amber-700/75">
-                  Every write is stored in this browser. Supabase auth, RLS, and Stripe test mode
-                  land in Phase B/C.
+                <p className="text-xs font-semibold text-emerald-800">Live Supabase data</p>
+                <p className="mt-1 text-[11px] leading-5 text-emerald-700/75">
+                  Fixtures, orders, tickets and scans are served by Supabase. Checkout and gate
+                  admission are enforced by database RPCs.
                 </p>
               </div>
             </div>
@@ -268,24 +338,37 @@ export default function DashboardPage() {
               View all
             </Link>
           </div>
-          <div className="divide-y divide-slate-100">
-            {recentOrders.map((order) => (
-              <div key={order.id} className="flex items-center gap-3 px-5 py-3.5">
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-[10px] font-bold text-pitch">
-                  {order.seats.length}×
+          {ordersQuery.isLoading ? (
+            <div className="space-y-3 p-5">
+              {[0, 1, 2].map((index) => (
+                <Skeleton key={index} className="h-12" />
+              ))}
+            </div>
+          ) : recentOrders.length === 0 ? (
+            <EmptyState
+              title="No orders yet"
+              description="Orders appear here as soon as supporters complete checkout."
+            />
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {recentOrders.map((order) => (
+                <div key={order.id} className="flex items-center gap-3 px-5 py-3.5">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-[10px] font-bold text-pitch">
+                    {order.seats.length}×
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-semibold text-slate-800">{order.matchLabel}</p>
+                    <p className="mt-0.5 text-[10px] text-slate-400">
+                      {order.id.slice(-6).toUpperCase()} · {order.seats[0]?.zoneName} ·{" "}
+                      {formatMatchDate(order.createdAt)}
+                    </p>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-800">{formatTHB(order.amountSatang)}</p>
+                  <Badge tone={order.status === "paid" ? "green" : "muted"}>{order.status}</Badge>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-semibold text-slate-800">{order.matchLabel}</p>
-                  <p className="mt-0.5 text-[10px] text-slate-400">
-                    {order.id.slice(-6).toUpperCase()} · {order.seats[0]?.zoneName} ·{" "}
-                    {formatMatchDate(order.createdAt)}
-                  </p>
-                </div>
-                <p className="text-xs font-semibold text-slate-800">{formatTHB(order.amountSatang)}</p>
-                <Badge tone={order.status === "paid" ? "green" : "muted"}>{order.status}</Badge>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="panel overflow-hidden">
@@ -298,26 +381,39 @@ export default function DashboardPage() {
               Manage
             </Link>
           </div>
-          <div className="divide-y divide-slate-100">
-            {news.slice(0, 3).map((article) => (
-              <Link
-                key={article.id}
-                href="/dashboard/news"
-                className="flex items-center gap-3 px-5 py-3.5 transition hover:bg-slate-50">
-                <div
-                  className="h-10 w-10 shrink-0 rounded-xl"
-                  style={{ background: `linear-gradient(135deg, ${article.imageColors[0]}, ${article.imageColors[1]})` }}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-semibold text-slate-800">{article.title}</p>
-                  <p className="mt-0.5 text-[10px] text-slate-400">
-                    {article.category} · {formatMatchDate(article.publishedAt)}
-                  </p>
-                </div>
-                <ChevronRight size={14} className="text-slate-300" />
-              </Link>
-            ))}
-          </div>
+          {newsQuery.isLoading ? (
+            <div className="space-y-3 p-5">
+              {[0, 1, 2].map((index) => (
+                <Skeleton key={index} className="h-12" />
+              ))}
+            </div>
+          ) : news.length === 0 ? (
+            <EmptyState
+              title="No articles yet"
+              description="Publish a club update to fill the supporter feed."
+            />
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {news.slice(0, 3).map((article) => (
+                <Link
+                  key={article.id}
+                  href="/dashboard/news"
+                  className="flex items-center gap-3 px-5 py-3.5 transition hover:bg-slate-50">
+                  <div
+                    className="h-10 w-10 shrink-0 rounded-xl"
+                    style={{ background: `linear-gradient(135deg, ${article.imageColors[0]}, ${article.imageColors[1]})` }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-semibold text-slate-800">{article.title}</p>
+                    <p className="mt-0.5 text-[10px] text-slate-400">
+                      {article.category} · {formatMatchDate(article.publishedAt)}
+                    </p>
+                  </div>
+                  <ChevronRight size={14} className="text-slate-300" />
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

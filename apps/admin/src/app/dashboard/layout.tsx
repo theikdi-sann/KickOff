@@ -11,6 +11,7 @@ import {
   Megaphone,
   QrCode,
   Search,
+  Settings,
   ShieldCheck,
   Ticket,
   Users,
@@ -31,6 +32,7 @@ const navItems = [
   { href: "/dashboard/scan", label: "Gate scan", icon: QrCode },
   { href: "/dashboard/tickets", label: "Orders & passes", icon: Ticket },
   { href: "/dashboard/users", label: "Users", icon: Users },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings, exact: true },
   { href: "/dashboard/settings/mfa", label: "Security", icon: ShieldCheck },
 ];
 
@@ -42,6 +44,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard/scan": "Gate validation",
   "/dashboard/tickets": "Orders & passes",
   "/dashboard/users": "Users",
+  "/dashboard/settings": "Settings",
   "/dashboard/settings/mfa": "Security",
 };
 
@@ -79,6 +82,11 @@ function AdminShell({ children, user }: { children: ReactNode; user: User }) {
 
   return (
     <div className="min-h-screen bg-[#F5F7F6]">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-pitch focus:shadow-lg">
+        Skip to main content
+      </a>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col bg-night px-4 py-5 lg:flex">
         <div className="px-2">
           <Logo dark />
@@ -99,6 +107,7 @@ function AdminShell({ children, user }: { children: ReactNode; user: User }) {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition",
                   active
@@ -133,7 +142,7 @@ function AdminShell({ children, user }: { children: ReactNode; user: User }) {
         </div>
 
         <div className="mt-4 flex items-center justify-between px-2 pb-1">
-          <Badge tone="dark">Mock data</Badge>
+          <Badge tone="dark">Live data</Badge>
           <span className="text-[9px] text-emerald-100/30">v0.1.0</span>
         </div>
       </aside>
@@ -185,6 +194,7 @@ function AdminShell({ children, user }: { children: ReactNode; user: User }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium",
                     active
@@ -199,7 +209,10 @@ function AdminShell({ children, user }: { children: ReactNode; user: User }) {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="mx-auto w-full max-w-[1440px] px-4 py-5 outline-none sm:px-6 lg:px-8 lg:py-7">
           {children}
         </main>
       </div>
