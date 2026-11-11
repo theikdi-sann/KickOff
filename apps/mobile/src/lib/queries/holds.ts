@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import type { HoldDto } from '@kickoff/shared';
 import { supabase } from '@/lib/supabase';
 
@@ -48,9 +48,15 @@ export interface MyActiveHold {
  * to the owner). The seat map uses these to show "Reserved by you" instead of
  * letting the owner re-tap a seat they already hold.
  */
-export function useMyActiveHolds() {
+export function useMyActiveHolds(
+  options: {
+    /** Poll alongside the seat map so holds expire out of view promptly. */
+    refetchInterval?: UseQueryOptions<MyActiveHold[]>['refetchInterval'];
+  } = {},
+) {
   return useQuery({
     queryKey: ['my-holds'],
+    refetchInterval: options.refetchInterval ?? false,
     queryFn: async (): Promise<MyActiveHold[]> => {
       const { data, error } = await supabase
         .from('seat_holds')

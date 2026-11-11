@@ -674,6 +674,44 @@ untouched).
 
 ---
 
+### Phase B — Walkthrough Fixes: remaining punch list
+
+Staged work for the original 13-item punch list. `PB-01` is complete; the rest
+follow in the order the walkthrough recorded them.
+
+#### `PB-01` — 3-second seat-map polling — complete
+
+The seat map refreshed only on mount/invalidation (`staleTime: 60_000`,
+`refetchOnWindowFocus: false`), so availability changes made by other buyers
+never appeared while a fan was choosing. Constraints from the walkthrough:
+**no server changes** (no RPC/migration/SQL), polling must never clear or
+overwrite the selection, server seats stay separate from `selectedSeats`, freed
+seats must become instantly selectable again, and background polls must show no
+flicker or loading UI (initial mount only).
+
+- [x] `PB-01a` · `apps/mobile/src/lib/queries/{seats,holds,orders}.ts` **[M]** — `useSeatMap`, `useMyActiveHolds` and `usePendingOrderSeats` each accept an optional `refetchInterval` (default `false`, so other call sites are unchanged).
+- [x] `PB-01b` · `apps/mobile/src/app/seats/[matchId].tsx` **[M]** — `POLL_INTERVAL_MS = 3000` wires all three queries; React Query owns the interval (cleared on unmount, paused when the app is backgrounded) — no hand-rolled `setInterval`. Server seats live only in the query cache; `selected` is ids-only and is written solely by taps, zone switch and Continue failure. Cross-reference at render: a selected seat still available stays selected; one someone else took becomes a **conflict** — kept selected, red outline, banner *"A selected seat is no longer available — tap it to deselect."*, still tappable to deselect, and **Continue is disabled** while any conflict exists (`flag it, block Continue`). "Mine" seats (own hold / pending order) resolve through their resume/release alerts instead of flagging. Loading UI keys off `matchQuery.isLoading` (initial mount only) — polls never render a spinner.
+- [x] `PB-01c` · `scripts/tests/phaseb.test.mjs` **[N]** — 4 source-level contracts: (PB1-1) 3 000 ms `refetchInterval` on the seat map and both overlays + option plumbing in all three hooks; (PB1-2) selection never written by any fetch path, only 2 `setSelected([])` sites (zone switch, Continue failure); (PB1-3) no `setInterval`, no `isFetching`/`isRefetching`-driven UI, initial skeleton retained; (PB1-4) conflict flag + tappable deselect + blocked Continue.
+
+**Verification:** TDD — PB1-1/PB1-4 red first, PB1-2/PB1-3 locked existing behavior; then all 4 green. Full `npm test` green (workspaces + `scripts/tests`, incl. updated `phaseb0` PB0-4 contract that now accepts the polling options), `npm run check`, `npm run check:no-mocks` clean. No migration, no function, no deno/pgTAP changes — server model untouched.
+
+**Errors / Notes**
+- The two "reserved by you" overlays must poll too: without `useMyActiveHolds`/`usePendingOrderSeats` on the same cadence a freed seat would keep its gold "Reserved by you" paint even after the seat row flipped back to `available`.
+- React Query (not a hand-rolled interval) is the deliberate choice for unmount cleanup and background pausing; `refetchOnWindowFocus: false` stays as-is (polling already covers resume-from-background within 3 s).
+- Walkthrough decision recorded: conflict behavior is **flag it, block Continue** (not auto-deselect) — the fan always sees what happened and stays in control of the selection.
+
+#### Remaining punch-list items (staged)
+
+- #1 LAN — `mobile:lan` script + ufw 8081 docs (admin LAN half done in `6651921`).
+- #2 signup — link-only "Check your email" screen.
+- #3 redirects — post-auth deep-link handling.
+- #4 see-all — full list screens for truncated feeds.
+- #5+#6 share — minimal shareable pass image (wallet dropped in favour of share).
+- #7 README — setup/run docs + `ALLOWED_ORIGINS` unset reminder (hosted still set for the demo).
+- #10–#13 admin/ops items — incl. #12 proper venues/stadiums schema and #13 reschedule rules (never past/inside lock window, never earlier, cap 10 days, reason always required).
+
+---
+
 ## §D Sequencing Locks
 
 1. **`P1-15` / `P1-16` / `P1-17` before Phase 2** — dependencies first.

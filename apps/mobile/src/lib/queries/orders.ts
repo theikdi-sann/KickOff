@@ -136,10 +136,17 @@ export interface PendingOrderSeat {
  * per seat (RLS scopes `orders` to the owner). The seat map renders these as
  * "Reserved by you" with resume/cancel actions instead of a cryptic refusal.
  */
-export function usePendingOrderSeats(matchId: string | undefined) {
+export function usePendingOrderSeats(
+  matchId: string | undefined,
+  options: {
+    /** Poll alongside the seat map so freed seats lose their gold overlay. */
+    refetchInterval?: UseQueryOptions<PendingOrderSeat[]>['refetchInterval'];
+  } = {},
+) {
   return useQuery({
     queryKey: ['orders', 'pending-seats', matchId],
     enabled: Boolean(matchId),
+    refetchInterval: options.refetchInterval ?? false,
     queryFn: async (): Promise<PendingOrderSeat[]> => {
       const { data, error } = await supabase
         .from('orders')

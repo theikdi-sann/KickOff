@@ -79,10 +79,14 @@ test('PB0-3 orders screen surfaces auto-cancel failures with a retry', () => {
 test('PB0-4 seat map tells the truth about reserved seats', () => {
   const source = read('apps/mobile/src/app/seats/[matchId].tsx');
 
-  assert.match(source, /useMyActiveHolds\(\)/, 'own raw holds must be visible to their owner');
   assert.match(
     source,
-    /usePendingOrderSeats\(matchId\)/,
+    /useMyActiveHolds\((\s*\{\s*refetchInterval: POLL_INTERVAL_MS\s*\})?\)/,
+    'own raw holds must be visible to their owner',
+  );
+  assert.match(
+    source,
+    /usePendingOrderSeats\(matchId,(\s*\{\s*refetchInterval: POLL_INTERVAL_MS\s*\})?\)/,
     'own pending-order seats must be known to the seat map',
   );
   assert.match(source, /Reserved by you/, 'own reserved seats need a distinct state');

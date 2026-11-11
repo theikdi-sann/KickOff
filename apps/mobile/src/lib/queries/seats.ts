@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { toSeatDto, toZoneDto } from '@kickoff/shared';
+import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
+import { toSeatDto, toZoneDto, type SeatDto } from '@kickoff/shared';
 import { supabase } from '@/lib/supabase';
 
 export function useZones(matchId: string | undefined) {
@@ -18,10 +18,17 @@ export function useZones(matchId: string | undefined) {
   });
 }
 
-export function useSeatMap(zoneId: string | undefined) {
+export function useSeatMap(
+  zoneId: string | undefined,
+  options: {
+    /** Poll while the seat map is open so availability stays live. */
+    refetchInterval?: UseQueryOptions<SeatDto[]>['refetchInterval'];
+  } = {},
+) {
   return useQuery({
     queryKey: ['seats', zoneId],
     enabled: Boolean(zoneId),
+    refetchInterval: options.refetchInterval ?? false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('seats')

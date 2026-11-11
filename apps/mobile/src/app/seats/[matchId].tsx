@@ -20,6 +20,9 @@ import { useCancelOrder, usePendingOrderSeats } from '@/lib/queries/orders';
 import { useSeatMap, useZones } from '@/lib/queries/seats';
 import { colors, radii, shadow } from '@/lib/theme';
 
+/** Poll cadence for live seat availability — silent background refetches. */
+const POLL_INTERVAL_MS = 3000;
+
 export default function SeatSelectionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -35,15 +38,15 @@ export default function SeatSelectionScreen() {
   const match = matchQuery.data;
   const zones = zonesQuery.data ?? [];
   const zone: ZoneDto | undefined = zones.find((item) => item.id === zoneId) ?? zones[0];
-  const seatsQuery = useSeatMap(zone?.id);
+  const seatsQuery = useSeatMap(zone?.id, { refetchInterval: POLL_INTERVAL_MS });
   const seats = useMemo(() => seatsQuery.data ?? [], [seatsQuery.data]);
   const rows = zone?.rows ?? [];
   const selectedSeats = seats.filter((seat) => selected.includes(seat.id));
   const total = (zone?.priceSatang ?? 0) * selected.length;
 
   // Truth about "my" seats: own raw holds (pre-payment) and own pending orders.
-  const myHoldsQuery = useMyActiveHolds();
-  const pendingSeatsQuery = usePendingOrderSeats(matchId);
+  const myHoldsQuery = useMyActiveHolds({ refetchInterval: POLL_INTERVAL_MS });
+  const pendingSeatsQuery = usePendingOrderSeats(matchId, { refetchInterval: POLL_INTERVAL_MS });
   const releaseHold = useReleaseHold();
   const cancelOrder = useCancelOrder();
   const holdsBySeat = useMemo(
@@ -54,6 +57,18 @@ export default function SeatSelectionScreen() {
     () => new Map((pendingSeatsQuery.data ?? []).map((seat) => [seat.seatId, seat])),
     [pendingSeatsQuery.data],
   );
+  const seatById = useMemo(() => new Map(seats.map((seat) => [seat.id, seat])), [seats]);
+  // Merge logic: polling refreshes serverSeats but never writes `selected`.
+  // Cross-reference the selection with the latest data — a selected seat that
+  // is still available simply stays selected; one someone else took becomes a
+  // flagged conflict (kept selected, blocked at Continue, tappable to remove).
+  const selectedConflictIds = selected.filter((id) => {
+    const seat = seatById.get(id);
+    if (!seat) return true;
+    // "Mine" seats resolve through their own resume/release alerts instead.
+    const mine = holdsBySeat.has(id) || pendingBySeat.has(id);
+    return seat.status !== 'available' && !mine;
+  });
   const freeCount = seats.filter(
     (seat) => seat.status === 'available' && !holdsBySeat.has(seat.id),
   ).length;
@@ -148,10 +163,16 @@ export default function SeatSelectionScreen() {
       showOrderAlert(seat, mineOrder);
       return;
     }
+    // Deselect works even when polling just revealed the seat was taken —
+    // polling itself never removes a selection.
+    if (selected.includes(seat.id)) {
+      setHoldError(null);
+      setSelected((current) => current.filter((id) => id !== seat.id));
+      return;
+    }
     if (seat.status !== 'available') return;
     setHoldError(null);
     setSelected((current) => {
-      if (current.includes(seat.id)) return current.filter((id) => id !== seat.id);
       if (current.length >= MAX_SEATS_PER_ORDER) return current;
       return [...current, seat.id];
     });
@@ -319,28 +340,35 @@ export default function SeatSelectionScreen() {
                         const isMine = holdsBySeat.has(seat.id) || pendingBySeat.has(seat.id);
                         const isTaken = !isMine && seat.status !== 'available';
                         const isSelected = selected.includes(seat.id);
+                        const isConflict = isSelected && selectedConflictIds.includes(seat.id);
                         const stateLabel = isMine
                           ? ' reserved by you'
-                          : isSelected
-                            ? ' selected'
-                            : seat.status === 'sold'
-                              ? ' sold'
-                              : isTaken
-                                ? ' reserved by another buyer'
-                                : '';
+                          : isConflict
+                            ? ' selected, no longer available'
+                            : isSelected
+                              ? ' selected'
+                              : seat.status === 'sold'
+                                ? ' sold'
+                                : isTaken
+                                  ? ' reserved by another buyer'
+                                  : '';
                         return (
                           <Pressable
                             key={seat.id}
                             onPress={() => toggleSeat(seat)}
-                            disabled={isTaken}
+                            disabled={isTaken && !isSelected}
                             accessibilityRole="button"
                             accessibilityLabel={`Seat ${seat.label}${stateLabel}`}
-                            accessibilityState={{ disabled: isTaken, selected: isSelected }}
+                            accessibilityState={{
+                              disabled: isTaken && !isSelected,
+                              selected: isSelected,
+                            }}
                             style={[
                               styles.seat,
                               isTaken && styles.seatSold,
                               isMine && styles.seatMine,
                               isSelected && styles.seatSelected,
+                              isConflict && styles.seatConflict,
                             ]}>
                             <AppText
                               variant="caption"
@@ -386,6 +414,15 @@ export default function SeatSelectionScreen() {
               </AppText>
             </View>
           ) : null}
+          {selectedConflictIds.length > 0 ? (
+            <View style={styles.conflictNote}>
+              <AppText variant="small" color={colors.danger} style={styles.noteText}>
+                {selectedConflictIds.length === 1
+                  ? 'A selected seat is no longer available — tap it to deselect.'
+                  : `${selectedConflictIds.length} selected seats are no longer available — tap them to deselect.`}
+              </AppText>
+            </View>
+          ) : null}
         </ScrollView>
 
         <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
@@ -400,7 +437,7 @@ export default function SeatSelectionScreen() {
           <PrimaryButton
             label={selected.length ? 'Continue' : 'Select a seat'}
             onPress={() => void continueToCheckout()}
-            disabled={selected.length === 0}
+            disabled={selected.length === 0 || selectedConflictIds.length > 0}
             loading={createHold.isPending}
             style={styles.barButton}
           />
@@ -522,6 +559,7 @@ const styles = StyleSheet.create({
   seatSold: { backgroundColor: '#DDE3DF', borderColor: '#DDE3DF' },
   seatMine: { backgroundColor: colors.softGold, borderColor: colors.accent },
   seatSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  seatConflict: { borderColor: colors.danger, borderWidth: 2 },
   seatText: { fontSize: 8, letterSpacing: 0 },
   legend: { flexDirection: 'row', gap: 16, marginTop: 18, justifyContent: 'center' },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -549,6 +587,17 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
   },
   noticeText: { flex: 1, fontSize: 10, lineHeight: 15 },
+  conflictNote: {
+    flexDirection: 'row',
+    gap: 8,
+    marginHorizontal: 20,
+    marginTop: 12,
+    padding: 13,
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FECACA',
+    borderWidth: 1,
+    borderRadius: radii.md,
+  },
   bar: {
     position: 'absolute',
     left: 0,
