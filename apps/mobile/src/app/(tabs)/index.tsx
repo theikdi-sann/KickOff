@@ -3,7 +3,6 @@ import {
   ArrowUpRight,
   Bell,
   CalendarDays,
-  ChevronRight,
   Clock3,
   MapPin,
   Ticket as TicketIcon,
@@ -15,9 +14,9 @@ import {
   formatMatchDate,
   formatMatchTime,
   formatTHB,
-  type NewsDto,
 } from '@kickoff/shared';
 import { MatchCard, ResultRow } from '@/components/match-card';
+import { NewsRow } from '@/components/news-row';
 import {
   AppText,
   Card,
@@ -249,7 +248,7 @@ export default function HomeScreen() {
           <SectionHeading
             title="Upcoming fixtures"
             action={upcoming.length > 0 ? 'See all' : undefined}
-            onAction={() => router.push('/(tabs)/tickets')}
+            onAction={() => router.push('/fixtures')}
           />
           {matchesQuery.isLoading ? (
             <Skeleton height={232} radius={22} />
@@ -272,7 +271,11 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeading title="Latest news" />
+          <SectionHeading
+            title="Latest news"
+            action={news.length > 1 ? 'See all' : undefined}
+            onAction={() => router.push('/news')}
+          />
           {newsQuery.isLoading ? (
             <Skeleton height={300} radius={22} />
           ) : !featured ? (
@@ -378,32 +381,6 @@ function Stat({ value, label, icon }: { value: string; label: string; icon: Reac
         </AppText>
       </View>
     </View>
-  );
-}
-
-function NewsRow({ item, last, onPress }: { item: NewsDto; last: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.newsRow, last && { borderBottomWidth: 0 }, pressed && { opacity: 0.7 }]}>
-      <LinearGradient colors={item.imageColors} style={styles.newsThumb}>
-        <AppText variant="caption" color="rgba(255,255,255,0.8)" style={styles.thumbText}>
-          {item.category === 'Match Report' ? 'FT' : 'KO'}
-        </AppText>
-      </LinearGradient>
-      <View style={styles.newsInfo}>
-        <AppText variant="caption" color={colors.primary} style={styles.newsCategory}>
-          {item.category.toUpperCase()}
-        </AppText>
-        <AppText variant="label" numberOfLines={2} style={styles.newsTitle}>
-          {item.title}
-        </AppText>
-        <AppText variant="caption" color={colors.muted} style={styles.newsMetaText}>
-          {formatMatchDate(item.publishedAt).toUpperCase()} · {item.readMinutes} MIN
-        </AppText>
-      </View>
-      <ChevronRight size={17} color={colors.muted} />
-    </Pressable>
   );
 }
 
@@ -567,25 +544,6 @@ const styles = StyleSheet.create({
   newsMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   newsMetaText: { fontSize: 9, letterSpacing: 0.35 },
   newsList: { marginRight: 20, paddingHorizontal: 14, marginTop: 12 },
-  newsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 11,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-  },
-  newsThumb: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  thumbText: { fontSize: 10, letterSpacing: 0.8 },
-  newsInfo: { flex: 1, gap: 2 },
-  newsCategory: { fontSize: 8, letterSpacing: 0.8 },
-  newsTitle: { fontSize: 12, lineHeight: 17 },
   resultsCard: { marginRight: 20, paddingHorizontal: 14 },
   footerNote: { paddingHorizontal: 20, marginTop: 26 },
   footerText: { fontSize: 8, letterSpacing: 0.7, textAlign: 'center' },

@@ -252,11 +252,12 @@ Sales close **15 minutes before kick-off**; unpaid orders expire after
 | `/(tabs)/tickets` | Active and past passes |
 | `/(tabs)/profile` | Supporter account |
 | `/match/[id]` | Match detail, zones and availability |
+| `/fixtures` | Full fixture list: upcoming and results |
 | `/seats/[matchId]` | Exact seat grid with live availability |
 | `/checkout` | Hold summary, Stripe payment |
 | `/ticket/[id]` | Signed QR pass |
 | `/orders`, `/orders/[id]` | Order history and PDF receipt |
-| `/news/[id]` | Article |
+| `/news`, `/news/[id]` | Full news feed and article |
 | `/profile/edit` | Edit name and phone |
 | `/settings` | Notifications, language, legal, sign out, delete account |
 | `/legal/[doc]` | Terms, privacy and refund policy |

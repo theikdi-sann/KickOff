@@ -743,12 +743,27 @@ tokens — instead of dead-ending in a browser pointed at `localhost:3000`
 
 **Verification:** TDD — 3 contracts red first, then green. `npm test` (37 node tests), `npm run check`, `check:no-mocks` clean. Hosted config probed: `kickoff://auth/callback` and `kickoff://reset-password` are already allow-listed on `cvebikawynavfyfbjnzu` (a control URL falls back to `localhost:3000`), and `supabase/config.toml` `additional_redirect_urls` carries both locally — no hosted/local config change needed.
 
+#### `PB-SEEALL` — punch list #4: "See all" reaches full list screens — complete
+
+The home feed teased truncated content with no full screen behind it: the
+fixtures "See all" wrongly opened the tickets tab (passes, not fixtures),
+and news showed featured + `slice(1, 4)` with no action at all.
+
+- [x] `PB-SEEALL-a` · `apps/mobile/src/app/fixtures.tsx` **[N]** — full fixture list: every upcoming fixture as a tappable row (crest, date/time, venue, competition → match detail) plus a Recent results card; loading skeletons, empty states, pull-to-refresh, back affordance. No `.slice(` anywhere.
+- [x] `PB-SEEALL-b` · `apps/mobile/src/app/news.tsx` **[N]** — full news feed: every published article as a row → article screen; skeletons/empty/refresh/back. No `.slice(` anywhere.
+- [x] `PB-SEEALL-c` · `apps/mobile/src/components/news-row.tsx` **[N]** — the home feed's local `NewsRow` extracted to a shared component so home and the list render identical rows (home keeps featured card + top-3 tease).
+- [x] `PB-SEEALL-d` · `apps/mobile/src/app/(tabs)/index.tsx` **[M]** — fixtures "See all" → `/fixtures` (was `/(tabs)/tickets`); "Latest news" gains a "See all" action → `/news` when there is more than the featured article.
+- [x] `PB-SEEALL-e` · `README.md` **[M]** — mobile routes table documents `/fixtures` and `/news`.
+- [x] `PB-SEEALL-f` · `scripts/tests/seeall.test.mjs` **[N]** — 4 contracts: fixtures See all target (and not the tickets tab), news See all action, fixtures list uncut, news list uncut + README routes.
+
+**Verification:** TDD — 4 contracts red first, then green. `npm test` (41 node tests), `npm run check`, `check:no-mocks` clean. Typed routes regenerated via `expo start` (`.expo/types/router.d.ts`). No server changes.
+
 #### Remaining punch-list items (staged)
 
 - ~~#1 LAN~~ — **done** (see `PB-LAN` below).
 - ~~#2 signup~~ — **done** (see `PB-SIGNUP` below).
 - ~~#3 redirects~~ — **done** (see `PB-REDIRECT` below).
-- #4 see-all — full list screens for truncated feeds.
+- ~~#4 see-all~~ — **done** (see `PB-SEEALL` below).
 - #5+#6 share — minimal shareable pass image (wallet dropped in favour of share).
 - #7 README — setup/run docs + `ALLOWED_ORIGINS` unset reminder (hosted still set for the demo).
 - #10–#13 admin/ops items — incl. #12 proper venues/stadiums schema and #13 reschedule rules (never past/inside lock window, never earlier, cap 10 days, reason always required).
