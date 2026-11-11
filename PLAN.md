@@ -729,12 +729,25 @@ created successfully.
 **Errors / Notes**
 - The deep link the confirmation email carries still lands wherever the Supabase email template points — wiring that target into the app (open the link → confirmed session → straight in) is punch list #3 (redirects), deliberately not folded in here.
 
+#### `PB-REDIRECT` — punch list #3: post-auth deep links — complete
+
+The confirmation email now opens the app: `signUp`/`resend` target an
+allow-listed deep link and a dedicated route consumes the implicit-flow
+tokens — instead of dead-ending in a browser pointed at `localhost:3000`
+(hosted's `site_url`).
+
+- [x] `PB-REDIRECT-a` · `apps/mobile/src/lib/auth.ts` **[M]** — `signUp` and `resendConfirmation` both pass `emailRedirectTo: 'kickoff://auth/callback'` (auth-js maps it to the `redirect_to` query param); password recovery keeps `kickoff://reset-password`. The shared token-apply helper is renamed `applyRecoverySession` → `applyLinkSession` (it now serves both deep links).
+- [x] `PB-REDIRECT-b` · `apps/mobile/src/app/(auth)/auth/callback.tsx` **[N]** — consumes `kickoff://auth/callback`: `Linking.getInitialURL` (cold start) + `url` listener (warm open, removed on unmount), reads `access_token`/`refresh_token` from hash or query, `applyLinkSession` then `<Redirect href="/" />` — signed-in at the app root. GoTrue's `#error`/`error_description` payload renders as a "LINK EXPIRED" screen with the explanation and **Back to sign in**; no code/OTP/password field and no password sign-in.
+- [x] `PB-REDIRECT-c` · `apps/mobile/src/app/(auth)/reset-password.tsx` **[M]** — imports the renamed `applyLinkSession` (behavior unchanged).
+- [x] `PB-REDIRECT-d` · `scripts/tests/redirects.test.mjs` **[N]** — 3 contracts: both emailed links target the allow-listed deep link (recovery untouched), the callback applies the session and lands on `/` (initial URL + listener + cleanup), broken links explain themselves and stay link-only (`config.toml` keeps both targets allow-listed).
+
+**Verification:** TDD — 3 contracts red first, then green. `npm test` (37 node tests), `npm run check`, `check:no-mocks` clean. Hosted config probed: `kickoff://auth/callback` and `kickoff://reset-password` are already allow-listed on `cvebikawynavfyfbjnzu` (a control URL falls back to `localhost:3000`), and `supabase/config.toml` `additional_redirect_urls` carries both locally — no hosted/local config change needed.
+
 #### Remaining punch-list items (staged)
 
 - ~~#1 LAN~~ — **done** (see `PB-LAN` below).
 - ~~#2 signup~~ — **done** (see `PB-SIGNUP` below).
-- #3 redirects — post-auth deep-link handling.
-- #3 redirects — post-auth deep-link handling.
+- ~~#3 redirects~~ — **done** (see `PB-REDIRECT` below).
 - #4 see-all — full list screens for truncated feeds.
 - #5+#6 share — minimal shareable pass image (wallet dropped in favour of share).
 - #7 README — setup/run docs + `ALLOWED_ORIGINS` unset reminder (hosted still set for the demo).

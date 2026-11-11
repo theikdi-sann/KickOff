@@ -84,7 +84,12 @@ export async function signUp(
   const { data, error } = await supabase.auth.signUp({
     email: email.trim(),
     password,
-    options: { data: { full_name: fullName.trim() } },
+    options: {
+      data: { full_name: fullName.trim() },
+      // The confirmation email must open the app, not a browser pointed at
+      // localhost. Hosted and local both allow-list this target.
+      emailRedirectTo: 'kickoff://auth/callback',
+    },
   });
   if (error) throw new Error(error.message);
 
@@ -102,7 +107,11 @@ export async function signUp(
 
 /** Resends the signup confirmation link (link-only flow). */
 export async function resendConfirmation(email: string): Promise<void> {
-  const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: email.trim(),
+    options: { emailRedirectTo: 'kickoff://auth/callback' },
+  });
   if (error) throw new Error(error.message);
 }
 
@@ -123,7 +132,11 @@ export async function requestPasswordReset(email: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-export async function applyRecoverySession(
+/**
+ * Applies an emailed-link session (confirmation or recovery) to the client.
+ * Shared by the reset-password and auth/callback deep-link routes.
+ */
+export async function applyLinkSession(
   accessToken: string,
   refreshToken: string,
 ): Promise<void> {

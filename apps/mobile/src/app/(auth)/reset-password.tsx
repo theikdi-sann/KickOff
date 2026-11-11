@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { AppText, PrimaryButton } from '@/components/ui';
-import { applyRecoverySession, updatePassword } from '@/lib/auth';
+import { applyLinkSession, updatePassword } from '@/lib/auth';
 import { colors, fonts, radii } from '@/lib/theme';
 
 function readRecoveryTokens(url: string): { access?: string; refresh?: string } {
@@ -47,7 +47,7 @@ export default function ResetPasswordScreen() {
       const { access, refresh } = readRecoveryTokens(url);
       if (!access || !refresh) return;
       try {
-        await applyRecoverySession(access, refresh);
+        await applyLinkSession(access, refresh);
       } catch (caught) {
         if (active) {
           setTokenError(caught instanceof Error ? caught.message : 'This reset link is invalid.');
