@@ -772,6 +772,21 @@ pass instead.
 
 **Verification:** TDD — 3 contracts red first, then green. `npm test` (44 node tests), `npm run check`, `check:no-mocks` clean. No server changes.
 
+#### `PB-README` — punch list #7: README setup/run docs + ALLOWED_ORIGINS reminder — complete
+
+The setup/run flow (install → env → db → functions → run → LAN) was
+already documented — #1 added the LAN half. What remained: the demo
+hosted project still carries `ALLOWED_ORIGINS=http(s)://192.168.88.64:3000`
+from the LAN walkthrough and nothing recorded the unset step.
+
+- [x] `PB-README-a` · `README.md` **[M]** — §4 Edge Functions now documents `ALLOWED_ORIGINS` (CORS allowlist, `ADMIN_APP_URL` always allowed, localhost fallback from `allowedOrigins()` in `_shared/http.ts`) and carries an explicit **unset reminder** naming the demo project and the exact command: `npx supabase secrets unset ALLOWED_ORIGINS --remote=cvebikawynavfyfbjnzu --yes`.
+- [x] `PB-README-b` · `scripts/tests/readme.test.mjs` **[N]** — 3 contracts: variable + fallback documented, exact unset command + LAN value present, setup/run flow headings stay intact.
+
+**Verification:** TDD — 2 contracts red first (DO-3 already green from #1), then all green. `npm test` (47 node tests), `npm run check`, `check:no-mocks` clean. No server changes.
+
+**Errors / Notes**
+- The actual `secrets unset` on hosted is deliberately **not** run yet — it stays until the walkthrough re-test is finished (the LAN origin is what the demo laptop uses); then run the command above.
+
 #### Remaining punch-list items (staged)
 
 - ~~#1 LAN~~ — **done** (see `PB-LAN` below).
@@ -779,7 +794,7 @@ pass instead.
 - ~~#3 redirects~~ — **done** (see `PB-REDIRECT` below).
 - ~~#4 see-all~~ — **done** (see `PB-SEEALL` below).
 - ~~#5+#6 share~~ — **done** (see `PB-SHARE` below) — wallet dropped in favour of a shareable pass image.
-- #7 README — setup/run docs + `ALLOWED_ORIGINS` unset reminder (hosted still set for the demo).
+- ~~#7 README~~ — **done** (see `PB-README` below).
 - #10–#13 admin/ops items — incl. #12 proper venues/stadiums schema and #13 reschedule rules (never past/inside lock window, never earlier, cap 10 days, reason always required).
 
 ---

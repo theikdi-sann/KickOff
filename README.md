@@ -132,6 +132,23 @@ Set them with `npx supabase secrets set --env-file supabase/.env` before
 deploying. Forward Stripe events locally with
 `stripe listen --forward-to http://127.0.0.1:54321/functions/v1/stripe-webhook`.
 
+`ALLOWED_ORIGINS` (optional, comma-separated) is the CORS allowlist for
+browser origins; `ADMIN_APP_URL` is always allowed. When neither matches a
+request, the functions fall back to `http://localhost:3000` /
+`http://127.0.0.1:3000` — see `allowedOrigins()` in
+`supabase/functions/_shared/http.ts`.
+
+> **Unset reminder — demo hosted project:** the demo project
+> (`cvebikawynavfyfbjnzu`) still carries
+> `ALLOWED_ORIGINS=http(s)://192.168.88.64:3000` from the LAN walkthrough.
+> That value lets a laptop on the demo LAN reach the API, but it is not a
+> production origin. Unset it when the walkthrough is over (CORS then falls
+> back to the localhost defaults until a real origin is configured):
+>
+> ```bash
+> npx supabase secrets unset ALLOWED_ORIGINS --remote=cvebikawynavfyfbjnzu --yes
+> ```
+
 ### 5. Run
 
 ```bash
