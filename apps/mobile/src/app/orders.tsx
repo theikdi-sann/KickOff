@@ -3,7 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { formatTHB, formatShortDate, type OrderDto } from '@kickoff/shared';
+import { formatMatchTime, formatTHB, formatShortDate, type OrderDto } from '@kickoff/shared';
 import { AppText, Card, EmptyState, Pill, Screen, Skeleton } from '@/components/ui';
 import { errorMessage } from '@/lib/api';
 import { useCancelOrder, useOrders } from '@/lib/queries/orders';
@@ -26,12 +26,20 @@ export default function OrdersScreen() {
   const profileQuery = useProfile();
   const cancelOrder = useCancelOrder();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [autoCancelError, setAutoCancelError] = useState<string | null>(null);
+
+  // A failure here strands the seat in "held" until the cron frees it, so it
+  // must be visible with a retry instead of vanishing into a silent catch.
+  const runAutoCancel = (id: string) => {
+    cancelOrder
+      .mutateAsync(id)
+      .then(() => setAutoCancelError(null))
+      .catch((error) => setAutoCancelError(errorMessage(error)));
+  };
 
   // When returning from a cancelled Stripe session, free the seats immediately.
   useEffect(() => {
-    if (checkout === 'cancelled' && order_id) {
-      void cancelOrder.mutateAsync(order_id).catch(() => undefined);
-    }
+    if (checkout === 'cancelled' && order_id) runAutoCancel(order_id);
   }, [checkout, order_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const orders = ordersQuery.data ?? [];
@@ -84,12 +92,30 @@ export default function OrdersScreen() {
           </Card>
         ) : null}
         {checkout === 'cancelled' ? (
-          <Card style={styles.banner}>
-            <ReceiptText size={18} color={colors.warning} />
-            <AppText variant="small" color={colors.warning} style={styles.bannerText}>
-              Payment was cancelled. You were not charged.
-            </AppText>
-          </Card>
+          autoCancelError ? (
+            <Card style={[styles.banner, styles.bannerError]}>
+              <ReceiptText size={18} color={colors.danger} />
+              <AppText variant="small" color={colors.danger} style={styles.bannerText}>
+                Payment was cancelled, but your seats could not be released yet:{' '}
+                {autoCancelError}
+              </AppText>
+              <Pressable
+                onPress={() => order_id && runAutoCancel(order_id)}
+                disabled={cancelOrder.isPending}
+                style={({ pressed }) => [styles.retry, pressed && { opacity: 0.7 }]}>
+                <AppText variant="label" color={colors.danger}>
+                  {cancelOrder.isPending ? 'Retrying…' : 'Retry'}
+                </AppText>
+              </Pressable>
+            </Card>
+          ) : (
+            <Card style={styles.banner}>
+              <ReceiptText size={18} color={colors.warning} />
+              <AppText variant="small" color={colors.warning} style={styles.bannerText}>
+                Payment was cancelled. You were not charged.
+              </AppText>
+            </Card>
+          )
         ) : null}
 
         <Card style={styles.summary}>
@@ -132,6 +158,11 @@ export default function OrdersScreen() {
                     Placed {formatShortDate(order.createdAt)} · {order.seats.length}{' '}
                     {order.seats.length === 1 ? 'ticket' : 'tickets'}
                   </AppText>
+                  {order.status === 'pending' && order.expiresAt ? (
+                    <AppText variant="caption" color={colors.warning} style={styles.reserved}>
+                      Reserved until {formatMatchTime(order.expiresAt)} · pay or cancel to release
+                    </AppText>
+                  ) : null}
                 </View>
                 <Pill
                   label={order.status.toUpperCase()}
@@ -267,6 +298,14 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
   bannerText: { flex: 1, lineHeight: 16 },
+  bannerError: { backgroundColor: '#FEE2E2', borderColor: '#FECACA' },
+  retry: {
+    minHeight: 44,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reserved: { fontSize: 8, letterSpacing: 0.6, marginTop: 4 },
   summary: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15, marginBottom: 14 },
   summaryIcon: {
     width: 46,

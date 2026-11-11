@@ -647,6 +647,33 @@ share the seat-reservation lifecycle.
 
 ---
 
+### Phase B0 — Walkthrough Fixes: checkout & seat-state hardening — complete
+
+Raised by the follow-up walkthrough — three checkout complaints: a cancelled
+seat stayed blocked for other accounts, a ~2-minute spinner after Stripe, and
+swipe-down → "seat already held". The server model from Phase A was correct,
+but the app layer lied about it — a silent cancel path, a blind 90-second
+spinner, a stale seat map and no "reserved by you" state. Fixed as one unit;
+**no server changes** (the seat-reservation lifecycle is proven and stays
+untouched).
+
+- [x] `PB0-01` · `apps/mobile/src/app/checkout.tsx` **[M]** — **one unified exit.** The X button dispatches a plain `router.back()` and `usePreventRemove` funnels every removal gesture (X, header back, modal swipe-down, Android back, edge swipe) through a single `runExit()` handler: pre-payment it `release_hold`s so the seat is instantly free for any account; with a pending order it keeps the reservation (auto-freed at the 30-min expiry) and the seat map shows it as "Reserved by you". An unmount safety net retries the release if a native dismiss bypasses the interceptor, so no hold can ever be stranded.
+- [x] `PB0-02` · `apps/mobile/src/app/checkout.tsx` **[M]** — **the 90 s blind spinner is gone.** `VERIFY_TIMEOUT_MS`/`verifying` removed; when the Stripe browser returns (success, cancel or dismiss) the screen immediately renders the pending-order panel: *Payment pending · Reserved until HH:MM* with **Resume payment** and **Cancel order** buttons; cancel failures surface inline (no silent catch), cancel success returns to a refetched seat map. Webhook polling remains only for the success path (paid → ticket screen).
+- [x] `PB0-03` · `apps/mobile/src/app/orders.tsx` **[M]** — the Stripe-cancel auto-cancel no longer swallows errors: failures render a red banner with the message and a **Retry** button; pending orders show *Reserved until HH:MM · pay or cancel to release*.
+- [x] `PB0-04` · `apps/mobile/src/app/seats/[matchId].tsx` **[M]** — the seat map tells the truth: own raw holds and own pending-order seats render gold as **"Reserved by you"** (legend entry + live notice banner with the deadline); tapping one opens **Resume checkout / Release seat** or **Resume payment / Cancel order** instead of a cryptic refusal; the FREE counter excludes own holds; seat-conflict refusals are rewritten to *"That seat was just taken by someone else. The map has refreshed — please pick another seat."*; accessibility labels distinguish *sold* / *reserved by another buyer* / *reserved by you*.
+- [x] `PB0-05` · `apps/mobile/src/lib/queries/{orders,holds}.ts` **[M]** — cache truth: `useCreateOrder` now invalidates `['seats']`, `['my-holds']` and `['zone-availability']` (the root cause of the stale "available" render was `staleTime: 60_000` with no seat invalidation after order create); new `useMyActiveHolds()` (own unreleased holds, RLS-scoped) and `usePendingOrderSeats(matchId)` (own pending orders flattened per seat) power the seat map; `useReleaseHold`/`useCreateHold` invalidate `['my-holds']`; `useCancelOrder` also invalidates `['zone-availability']`.
+- [x] `PB0-06` · `scripts/tests/phaseb0.test.mjs` **[N]** — 5 source-level contract tests (mobile has no component runner): unified-exit funnel, no blind spinner + pending panel with surfaced cancel errors, no silent auto-cancel catch + Retry, seat-map truth (reserved-by-you state + honest conflict copy), and query invalidations across the order lifecycle.
+
+**Verification:** TDD — the 5 contracts were written first and failed, then went green. `npm test` (all workspaces + `scripts/tests`, 33 node tests incl. the 5 PB0 contracts), `npm run check` (typecheck + `expo lint`/workspaces), `check:no-mocks`, `functions:check`, `build:admin` all green. No pgTAP/deno changes (no migration, no function edits). Server model untouched.
+
+**Errors / Notes**
+- Root causes found during diagnosis: (1) `staleTime: 60_000` + no `['seats']` invalidation on order create made the seat map render cached "available" seats, so Continue hit the server's correct refusal with no explanation; (2) the Pay button entered a blind 90-second `verifying` state whenever an order existed and was `pending` — exactly the state a cancelled return leaves you in; (3) only the X button released the hold — swipe-down/back dispatched nothing, and the auto-cancel had a silent `.catch(() => undefined)`.
+- A *raw* hold (created at Continue, before Pay) never changes `seats.status` — only a pending order does — so other buyers' pre-payment holds are invisible to clients (`seat_holds` RLS is own-only). Unchanged by design: the refusal copy now explains it, and the unified exit guarantees your own stray holds are released. Server visibility for foreign raw holds would need a new view/migration — deliberately not done here.
+- iOS sheet swipe-down is intercepted via the navigator's removal prevention; if a native dismiss ever bypasses it, the unmount safety net releases the hold anyway — both paths are the X button's behaviour.
+- Second-walkthrough checkout complaints (cancelled seat stayed blocked / ~2-minute spinner / swipe-down → "seat already held") are closed here; the original 13-item punch list still has #1 LAN script, #2 signup, #3 redirects, #4 see-all, #5+#6 share/wallet, #7 README and #10–#13 staged for Phase B.
+
+---
+
 ## §D Sequencing Locks
 
 1. **`P1-15` / `P1-16` / `P1-17` before Phase 2** — dependencies first.

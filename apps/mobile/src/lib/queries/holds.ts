@@ -31,7 +31,38 @@ export function useCreateHold() {
     },
     onSuccess: (hold) => {
       void queryClient.invalidateQueries({ queryKey: ['seats'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-holds'] });
       queryClient.setQueryData(['hold', hold.id], hold);
+    },
+  });
+}
+
+export interface MyActiveHold {
+  holdGroupId: string;
+  seatId: string;
+  expiresAt: string;
+}
+
+/**
+ * The signed-in fan's own unreleased, unexpired holds (RLS scopes `seat_holds`
+ * to the owner). The seat map uses these to show "Reserved by you" instead of
+ * letting the owner re-tap a seat they already hold.
+ */
+export function useMyActiveHolds() {
+  return useQuery({
+    queryKey: ['my-holds'],
+    queryFn: async (): Promise<MyActiveHold[]> => {
+      const { data, error } = await supabase
+        .from('seat_holds')
+        .select('hold_group_id, seat_id, expires_at')
+        .is('released_at', null)
+        .gt('expires_at', new Date().toISOString());
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => ({
+        holdGroupId: row.hold_group_id,
+        seatId: row.seat_id,
+        expiresAt: row.expires_at,
+      }));
     },
   });
 }
@@ -89,6 +120,7 @@ export function useReleaseHold() {
     onSuccess: (_count, holdId) => {
       queryClient.removeQueries({ queryKey: ['hold', holdId] });
       void queryClient.invalidateQueries({ queryKey: ['seats'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-holds'] });
     },
   });
 }

@@ -1,7 +1,8 @@
 import { ChevronLeft, ShieldCheck } from 'lucide-react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, type AlertButton, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   formatMatchDate,
@@ -12,8 +13,10 @@ import {
   type ZoneDto,
 } from '@kickoff/shared';
 import { AppText, EmptyState, Pill, PrimaryButton, Screen, Skeleton } from '@/components/ui';
-import { useCreateHold } from '@/lib/queries/holds';
+import { errorMessage } from '@/lib/api';
+import { useCreateHold, useMyActiveHolds, useReleaseHold } from '@/lib/queries/holds';
 import { useMatch } from '@/lib/queries/matches';
+import { useCancelOrder, usePendingOrderSeats } from '@/lib/queries/orders';
 import { useSeatMap, useZones } from '@/lib/queries/seats';
 import { colors, radii, shadow } from '@/lib/theme';
 
@@ -37,7 +40,38 @@ export default function SeatSelectionScreen() {
   const rows = zone?.rows ?? [];
   const selectedSeats = seats.filter((seat) => selected.includes(seat.id));
   const total = (zone?.priceSatang ?? 0) * selected.length;
-  const soldCount = seats.filter((seat) => seat.status !== 'available').length;
+
+  // Truth about "my" seats: own raw holds (pre-payment) and own pending orders.
+  const myHoldsQuery = useMyActiveHolds();
+  const pendingSeatsQuery = usePendingOrderSeats(matchId);
+  const releaseHold = useReleaseHold();
+  const cancelOrder = useCancelOrder();
+  const holdsBySeat = useMemo(
+    () => new Map((myHoldsQuery.data ?? []).map((hold) => [hold.seatId, hold])),
+    [myHoldsQuery.data],
+  );
+  const pendingBySeat = useMemo(
+    () => new Map((pendingSeatsQuery.data ?? []).map((seat) => [seat.seatId, seat])),
+    [pendingSeatsQuery.data],
+  );
+  const freeCount = seats.filter(
+    (seat) => seat.status === 'available' && !holdsBySeat.has(seat.id),
+  ).length;
+  const zoneHoldCount = seats.filter((seat) => holdsBySeat.has(seat.id)).length;
+  const pendingCount = seats.filter((seat) => pendingBySeat.has(seat.id)).length;
+  const pendingExpiryMs = seats.reduce((max, seat) => {
+    const info = pendingBySeat.get(seat.id);
+    return Math.max(max, info?.expiresAt ? Date.parse(info.expiresAt) : 0);
+  }, 0);
+  const reservedNotice = pendingCount
+    ? `${pendingCount} ${pendingCount === 1 ? 'seat is' : 'seats are'} reserved for you${
+        pendingExpiryMs
+          ? ` until ${formatMatchTime(new Date(pendingExpiryMs).toISOString())}`
+          : ''
+      } — tap a gold seat to resume payment or cancel.`
+    : zoneHoldCount
+      ? `${zoneHoldCount} ${zoneHoldCount === 1 ? 'seat is' : 'seats are'} held by you — tap a gold seat to resume checkout or release ${zoneHoldCount === 1 ? 'it' : 'them'}.`
+      : null;
 
   const chooseZone = (next: ZoneDto) => {
     setZoneId(next.id);
@@ -45,7 +79,75 @@ export default function SeatSelectionScreen() {
     setHoldError(null);
   };
 
+  const showHoldAlert = (seat: SeatDto, hold: { holdGroupId: string; expiresAt: string }) => {
+    const buttons: AlertButton[] = [
+      {
+        text: 'Resume checkout',
+        onPress: () =>
+          router.push({
+            pathname: '/checkout',
+            params: { holdId: hold.holdGroupId, matchId, zoneId: seat.zoneId },
+          }),
+      },
+      {
+        text: 'Release seat',
+        style: 'destructive',
+        onPress: () =>
+          void releaseHold.mutateAsync(hold.holdGroupId).catch((error) =>
+            Alert.alert('Could not release the seat', errorMessage(error)),
+          ),
+      },
+      { text: 'Close', style: 'cancel' },
+    ];
+    Alert.alert(
+      `Seat ${seat.label} is held by you`,
+      `Your hold runs until ${formatMatchTime(hold.expiresAt)}.`,
+      buttons,
+    );
+  };
+
+  const showOrderAlert = (
+    seat: SeatDto,
+    order: { orderId: string; expiresAt: string | null; checkoutUrl: string | null },
+  ) => {
+    const buttons: AlertButton[] = [];
+    if (order.checkoutUrl) {
+      buttons.push({
+        text: 'Resume payment',
+        onPress: () => void WebBrowser.openBrowserAsync(order.checkoutUrl!),
+      });
+    }
+    buttons.push(
+      {
+        text: 'Cancel order',
+        style: 'destructive',
+        onPress: () =>
+          void cancelOrder
+            .mutateAsync(order.orderId)
+            .catch((error) => Alert.alert('Could not cancel the order', errorMessage(error))),
+      },
+      { text: 'Close', style: 'cancel' },
+    );
+    Alert.alert(
+      `Seat ${seat.label} is reserved for you`,
+      order.expiresAt
+        ? `Reserved until ${formatMatchTime(order.expiresAt)} while you finish payment.`
+        : 'Your pending order still holds this seat.',
+      buttons,
+    );
+  };
+
   const toggleSeat = (seat: SeatDto) => {
+    const mineHold = holdsBySeat.get(seat.id);
+    if (mineHold) {
+      showHoldAlert(seat, mineHold);
+      return;
+    }
+    const mineOrder = pendingBySeat.get(seat.id);
+    if (mineOrder) {
+      showOrderAlert(seat, mineOrder);
+      return;
+    }
     if (seat.status !== 'available') return;
     setHoldError(null);
     setSelected((current) => {
@@ -70,7 +172,7 @@ export default function SeatSelectionScreen() {
         },
       });
     } catch (error) {
-      setHoldError(error instanceof Error ? error.message : 'Those seats are no longer available.');
+      setHoldError(readableHoldError(error));
       void seatsQuery.refetch();
       setSelected([]);
     }
@@ -138,6 +240,15 @@ export default function SeatSelectionScreen() {
             </View>
           </View>
 
+          {reservedNotice ? (
+            <View style={styles.notice}>
+              <ShieldCheck size={15} color={colors.accentDeep} />
+              <AppText variant="small" color={colors.accentDeep} style={styles.noticeText}>
+                {reservedNotice}
+              </AppText>
+            </View>
+          ) : null}
+
           <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
             SELECT STAND
           </AppText>
@@ -179,7 +290,7 @@ export default function SeatSelectionScreen() {
               </View>
               <View style={styles.availBox}>
                 <AppText variant="h3" color={colors.primary}>
-                  {seats.length - soldCount}
+                  {freeCount}
                 </AppText>
                 <AppText variant="caption" color={colors.muted} style={styles.availLabel}>
                   FREE
@@ -205,24 +316,43 @@ export default function SeatSelectionScreen() {
                     {seats
                       .filter((seat) => seat.row === row)
                       .map((seat) => {
-                        const isSold = seat.status !== 'available';
+                        const isMine = holdsBySeat.has(seat.id) || pendingBySeat.has(seat.id);
+                        const isTaken = !isMine && seat.status !== 'available';
                         const isSelected = selected.includes(seat.id);
+                        const stateLabel = isMine
+                          ? ' reserved by you'
+                          : isSelected
+                            ? ' selected'
+                            : seat.status === 'sold'
+                              ? ' sold'
+                              : isTaken
+                                ? ' reserved by another buyer'
+                                : '';
                         return (
                           <Pressable
                             key={seat.id}
                             onPress={() => toggleSeat(seat)}
-                            disabled={isSold}
+                            disabled={isTaken}
                             accessibilityRole="button"
-                            accessibilityLabel={`Seat ${seat.label}${isSold ? ' unavailable' : isSelected ? ' selected' : ''}`}
-                            accessibilityState={{ disabled: isSold, selected: isSelected }}
+                            accessibilityLabel={`Seat ${seat.label}${stateLabel}`}
+                            accessibilityState={{ disabled: isTaken, selected: isSelected }}
                             style={[
                               styles.seat,
-                              isSold && styles.seatSold,
+                              isTaken && styles.seatSold,
+                              isMine && styles.seatMine,
                               isSelected && styles.seatSelected,
                             ]}>
                             <AppText
                               variant="caption"
-                              color={isSelected ? '#FFFFFF' : isSold ? '#A8B3AD' : colors.muted}
+                              color={
+                                isSelected
+                                  ? '#FFFFFF'
+                                  : isTaken
+                                    ? '#A8B3AD'
+                                    : isMine
+                                      ? colors.accentDeep
+                                      : colors.muted
+                              }
                               style={styles.seatText}>
                               {seat.number}
                             </AppText>
@@ -237,6 +367,7 @@ export default function SeatSelectionScreen() {
             <View style={styles.legend}>
               <Legend color="#FFFFFF" border={colors.line} label="Available" />
               <Legend color={colors.primary} label="Selected" />
+              <Legend color={colors.accent} border={colors.accentSoft} label="Reserved by you" />
               <Legend color="#DDE3DF" label="Unavailable" />
             </View>
           </View>
@@ -277,6 +408,18 @@ export default function SeatSelectionScreen() {
       </View>
     </Screen>
   );
+}
+
+/** Explain a server seat-conflict refusal in terms the buyer can act on. */
+function readableHoldError(error: unknown): string {
+  const message = errorMessage(error);
+  if (/already held|unavailable|no longer available/i.test(message)) {
+    return 'That seat was just taken by someone else. The map has refreshed — please pick another seat.';
+  }
+  if (/expired/i.test(message)) {
+    return 'Your seat hold expired. Select your seats again to continue.';
+  }
+  return message;
 }
 
 function Legend({ color, border, label }: { color: string; border?: string; label: string }) {
@@ -377,6 +520,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   seatSold: { backgroundColor: '#DDE3DF', borderColor: '#DDE3DF' },
+  seatMine: { backgroundColor: colors.softGold, borderColor: colors.accent },
   seatSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   seatText: { fontSize: 8, letterSpacing: 0 },
   legend: { flexDirection: 'row', gap: 16, marginTop: 18, justifyContent: 'center' },
@@ -393,6 +537,18 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
   },
   noteText: { flex: 1, fontSize: 10, lineHeight: 15 },
+  notice: {
+    flexDirection: 'row',
+    gap: 8,
+    marginHorizontal: 20,
+    marginTop: 12,
+    padding: 13,
+    backgroundColor: colors.softGold,
+    borderColor: colors.accentSoft,
+    borderWidth: 1,
+    borderRadius: radii.md,
+  },
+  noticeText: { flex: 1, fontSize: 10, lineHeight: 15 },
   bar: {
     position: 'absolute',
     left: 0,

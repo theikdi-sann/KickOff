@@ -114,6 +114,53 @@ export function useCreateOrder() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['orders'] });
       void queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      // create_order_from_hold flips the seats to 'held' and releases the raw
+      // hold rows — the seat map (staleTime 60s) must not keep showing
+      // "available" for seats this fan just reserved.
+      void queryClient.invalidateQueries({ queryKey: ['seats'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-holds'] });
+      void queryClient.invalidateQueries({ queryKey: ['zone-availability'] });
+    },
+  });
+}
+
+export interface PendingOrderSeat {
+  seatId: string;
+  orderId: string;
+  expiresAt: string | null;
+  checkoutUrl: string | null;
+}
+
+/**
+ * The signed-in fan's own pending orders for a fixture, flattened to one entry
+ * per seat (RLS scopes `orders` to the owner). The seat map renders these as
+ * "Reserved by you" with resume/cancel actions instead of a cryptic refusal.
+ */
+export function usePendingOrderSeats(matchId: string | undefined) {
+  return useQuery({
+    queryKey: ['orders', 'pending-seats', matchId],
+    enabled: Boolean(matchId),
+    queryFn: async (): Promise<PendingOrderSeat[]> => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('id, expires_at, checkout_url, order_seats(seat_id)')
+        .eq('match_id', matchId!)
+        .eq('status', 'pending');
+      if (error) throw new Error(error.message);
+      const rows = (data ?? []) as unknown as {
+        id: string;
+        expires_at: string | null;
+        checkout_url: string | null;
+        order_seats: { seat_id: string }[] | null;
+      }[];
+      return rows.flatMap((order) =>
+        (order.order_seats ?? []).map((seat) => ({
+          seatId: seat.seat_id,
+          orderId: order.id,
+          expiresAt: order.expires_at,
+          checkoutUrl: order.checkout_url,
+        })),
+      );
     },
   });
 }
@@ -131,6 +178,7 @@ export function useCancelOrder() {
       void queryClient.invalidateQueries({ queryKey: ['orders'] });
       void queryClient.invalidateQueries({ queryKey: ['seats'] });
       void queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      void queryClient.invalidateQueries({ queryKey: ['zone-availability'] });
     },
   });
 }
