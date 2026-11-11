@@ -1,11 +1,12 @@
 import { ChevronLeft, Download, ReceiptText } from 'lucide-react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { formatTHB, formatShortDate, type OrderDto } from '@kickoff/shared';
 import { AppText, Card, EmptyState, Pill, Screen, Skeleton } from '@/components/ui';
 import { errorMessage } from '@/lib/api';
-import { useOrders } from '@/lib/queries/orders';
+import { useCancelOrder, useOrders } from '@/lib/queries/orders';
 import { useProfile } from '@/lib/queries/profile';
 import { downloadAndShareReceipt } from '@/lib/receipt';
 import { colors, radii } from '@/lib/theme';
@@ -14,7 +15,7 @@ const POLL_INTERVAL_MS = 2500;
 
 export default function OrdersScreen() {
   const router = useRouter();
-  const { checkout } = useLocalSearchParams<{ checkout?: string }>();
+  const { checkout, order_id } = useLocalSearchParams<{ checkout?: string; order_id?: string }>();
   const ordersQuery = useOrders({
     // Keep polling only until Stripe's webhook has settled every pending order.
     refetchInterval: (query) =>
@@ -23,7 +24,15 @@ export default function OrdersScreen() {
         : false,
   });
   const profileQuery = useProfile();
+  const cancelOrder = useCancelOrder();
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  // When returning from a cancelled Stripe session, free the seats immediately.
+  useEffect(() => {
+    if (checkout === 'cancelled' && order_id) {
+      void cancelOrder.mutateAsync(order_id).catch(() => undefined);
+    }
+  }, [checkout, order_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const orders = ordersQuery.data ?? [];
   const paidOrders = orders.filter((order) => order.status === 'paid');
@@ -177,6 +186,31 @@ export default function OrdersScreen() {
                     </AppText>
                   </View>
                 )}
+                {order.status === 'pending' && order.checkoutUrl ? (
+                  <Pressable
+                    onPress={() => void WebBrowser.openBrowserAsync(order.checkoutUrl!)}
+                    style={styles.viewTickets}>
+                    <AppText variant="label" color={colors.primary}>
+                      Resume payment
+                    </AppText>
+                  </Pressable>
+                ) : null}
+                {order.status === 'pending' ? (
+                  <Pressable
+                    onPress={() => {
+                      setBusyId(order.id);
+                      void cancelOrder
+                        .mutateAsync(order.id)
+                        .catch((e) => Alert.alert('Could not cancel', errorMessage(e)))
+                        .finally(() => setBusyId(null));
+                    }}
+                    disabled={busyId === order.id || cancelOrder.isPending}
+                    style={styles.viewTickets}>
+                    <AppText variant="label" color={colors.warning}>
+                      {busyId === order.id ? 'Cancelling…' : 'Cancel order'}
+                    </AppText>
+                  </Pressable>
+                ) : null}
                 <Pressable
                   onPress={() =>
                     router.push({ pathname: '/orders/[id]', params: { id: order.id } })

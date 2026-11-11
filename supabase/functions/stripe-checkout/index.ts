@@ -68,6 +68,7 @@ async function handler(request: Request): Promise<Response> {
   }
 
   try {
+    const sessionExpiresAt = Math.floor(Date.now() / 1000) + 30 * 60;
     const session = await createCheckoutSession({
       mode: "payment",
       // F-9: card-only MVP. Without this, Stripe enables every method switched
@@ -91,20 +92,29 @@ async function handler(request: Request): Promise<Response> {
         metadata: { order_id: order.id, user_id: order.user_id },
       },
       success_url: `${env.MOBILE_DEEP_LINK}orders?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${env.MOBILE_DEEP_LINK}orders?checkout=cancelled`,
-      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+      cancel_url: `${env.MOBILE_DEEP_LINK}orders?checkout=cancelled&order_id=${order.id}`,
+      expires_at: sessionExpiresAt,
     });
 
     const { error: updateError } = await db
       .from("orders")
-      .update({ stripe_session_id: session.id, payment_ref: session.id })
+      .update({
+        stripe_session_id: session.id,
+        payment_ref: session.id,
+        checkout_url: session.url ?? null,
+        expires_at: new Date(sessionExpiresAt * 1000).toISOString(),
+      })
       .eq("id", order.id);
     if (updateError) throw updateError;
 
     return ok({ url: session.url, orderId: order.id, sessionId: session.id }, request);
   } catch (error) {
     // Don't leave a pending order blocking seats if Stripe rejects the session.
-    await db.from("orders").update({ status: "cancelled" }).eq("id", order.id);
+    try {
+      await db.rpc("cancel_order_internal", { p_order_id: order.id });
+    } catch {
+      // best-effort cleanup
+    }
     throw error;
   }
 }

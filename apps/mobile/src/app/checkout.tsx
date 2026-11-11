@@ -30,15 +30,14 @@ const VERIFY_TIMEOUT_MS = 90_000;
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const {
-    holdId,
-    matchId: matchParam,
-    zoneId: zoneParam,
-  } = useLocalSearchParams<{
+  const params = useLocalSearchParams<{
     holdId?: string;
     matchId?: string;
     zoneId?: string;
+    checkout?: string;
+    order_id?: string;
   }>();
+  const { holdId, matchId: matchParam, zoneId: zoneParam } = params;
   const insets = useSafeAreaInsets();
   const [orderId, setOrderId] = useState<string>();
   const [payError, setPayError] = useState<string | null>(null);
@@ -55,6 +54,7 @@ export default function CheckoutScreen() {
   const profileQuery = useProfile();
   const releaseHold = useReleaseHold();
   const createOrder = useCreateOrder();
+
   const orderQuery = useOrder(orderId, {
     // Stop polling as soon as the webhook gives the order a final status.
     refetchInterval: (query) => (query.state.data?.status === 'pending' ? POLL_INTERVAL_MS : false),

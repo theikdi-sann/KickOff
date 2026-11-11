@@ -88,6 +88,8 @@ export interface OrderDto {
   createdAt: IsoTimestamp;
   paidAt?: IsoTimestamp | null;
   paymentRef?: string | null;
+  checkoutUrl?: string | null;
+  expiresAt?: IsoTimestamp | null;
 }
 
 export interface TicketDto {

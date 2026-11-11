@@ -111,6 +111,8 @@ export const orderDtoSchema = z.object({
   createdAt: isoTimestampSchema,
   paidAt: isoTimestampSchema.nullable().optional(),
   paymentRef: z.string().max(128).nullable().optional(),
+  checkoutUrl: z.string().max(2048).nullable().optional(),
+  expiresAt: isoTimestampSchema.nullable().optional(),
 });
 
 export const ticketDtoSchema = z.object({

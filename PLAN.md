@@ -624,6 +624,28 @@ behind `x-metrics-token`; the admin console ships full metadata, a non-indexed
 
 ---
 
+### Phase A — Walkthrough Fixes: commerce integrity — complete
+
+Raised by the live walkthrough (issues #8/#9); fixed as one unit because both
+share the seat-reservation lifecycle.
+
+- [x] `PA-01` · `supabase/migrations/0034_phase_a_seat_integrity.sql` **[N]** — a pending order now *reserves* its seats (`seats.status = 'held'`, seats locked `FOR UPDATE`) instead of releasing the hold and leaving them `available`; `create_hold`/`create_order_from_hold` accept only `available` seats; `mark_order_paid` requires the seat `held` by this order (else `P0001` → webhook auto-refund); new `cancel_order` / `cancel_order_internal` / `free_seats_for_order` RPCs; `orders.expires_at` + `checkout_url` columns; `expire_pending_orders` cancels on `coalesce(expires_at, created_at + 15 minutes)` and frees seats; hold TTL + kickoff lock read `app_settings` instead of hard-coded literals.
+- [x] `PA-02` · `supabase/functions/cancel-order/index.ts` **[N]** — user-owned cancel; frees seats immediately when the buyer backs out of Stripe (no more waiting for the cron).
+- [x] `PA-03` · `supabase/functions/stripe-checkout/index.ts` **[M]** — stores `checkout_url` + session expiry on the order (enables *Resume payment*), `cancel_url` carries `order_id`, Stripe errors free seats through `cancel_order_internal`.
+- [x] `PA-04` · `supabase/functions/stripe-webhook/index.ts` **[M]** — `checkout.session.expired` and `checkout.session.async_payment_failed` cancel + free seats; `charge.refunded` frees seats.
+- [x] `PA-05` · `supabase/functions/refund-order/index.ts` **[M]** — refunds free seats unless the used-ticket override applies.
+- [x] `PA-06` · `apps/mobile/src/{app/orders.tsx,app/checkout.tsx,lib/queries/orders.ts}` **[M]** — `useCancelOrder`, auto-cancel on Stripe-cancel return, *Cancel order* + *Resume payment* on pending orders; `OrderDto` gains `checkoutUrl`/`expiresAt`.
+- [x] `PA-07` · `supabase/tests/seat-reservation.test.sql` **[N]** — 16 pgTAP assertions replaying the double-sell scenario end-to-end (reserve → second buyer refused → cancel frees → expiry frees → payment flips held→sold → conflicting payment refused).
+
+**Verification:** pgTAP all 8 files green on a local PostgreSQL 18 stack (Supabase shims; Docker unavailable on this machine), then green again on hosted after `db push`; deno unit 36 + `RUN_INTEGRATION=1` 45/45 against hosted; `npm test`, `npm run check`, `build:admin`, `functions:check`, `mvp-gate` 15/15, `check:no-mocks`; Playwright 3 passed / 1 flaky (retry-green, CI parity) / 1 skipped (MFA off). Live hosted proof: buyer A parked on the Stripe page → buyer B refused → A cancels → seat returns to `available` → B can hold.
+
+**Errors / Notes**
+- Two defects surfaced by the existing suite during Phase A and fixed in-migration: `expire_pending_orders` returned a stale `GET DIAGNOSTICS` count when nothing was eligible (false positives), and the expiry fallback was `created_at + 30 min` for session-less orders instead of the documented 15-minute rule (`P11-02`).
+- The ops Playwright walkthrough intermittently loses its session on the first attempt when run in parallel with the refund test (transient hosted-auth blip); it passes on retry and in isolation — no app-code change made for it.
+- Phase A issue list is the walkthrough punch list (13 items); #8/#9 closed here, the remaining UX/docs/admin items are staged for the next phase.
+
+---
+
 ## §D Sequencing Locks
 
 1. **`P1-15` / `P1-16` / `P1-17` before Phase 2** — dependencies first.

@@ -21,6 +21,8 @@ interface OrderJoin {
   created_at: string;
   paid_at: string | null;
   payment_ref: string | null;
+  checkout_url: string | null;
+  expires_at: string | null;
   order_seats: OrderSeatRow[];
   matches: { opponent: string } | null;
 }
@@ -51,6 +53,8 @@ function mapOrder(row: OrderJoin): OrderDto {
     createdAt: row.created_at,
     paidAt: row.paid_at,
     paymentRef: row.payment_ref,
+    checkoutUrl: row.checkout_url,
+    expiresAt: row.expires_at,
   };
 }
 
@@ -109,6 +113,23 @@ export function useCreateOrder() {
       invokeFunction<CheckoutResult>('stripe-checkout', { method: 'POST', body: { holdId } }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['orders'] });
+      void queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    },
+  });
+}
+
+export function useCancelOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (orderId: string) =>
+      invokeFunction<{ cancelled: boolean; orderId: string; status: string }>('cancel-order', {
+        method: 'POST',
+        body: { orderId },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['orders'] });
+      void queryClient.invalidateQueries({ queryKey: ['seats'] });
       void queryClient.invalidateQueries({ queryKey: ['tickets'] });
     },
   });

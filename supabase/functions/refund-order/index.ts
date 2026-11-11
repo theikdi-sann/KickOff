@@ -82,6 +82,11 @@ async function handler(request: Request): Promise<Response> {
     .eq("order_id", order.id);
   if (voidError) throw voidError;
 
+  // Free the seats unless used tickets were overridden (those seats stay sold).
+  if (!body.overrideUsedTickets) {
+    await db.rpc("free_seats_for_order", { p_order_id: order.id });
+  }
+
   await writeAudit({
     actorId: context.user.id,
     action: "order.refund",

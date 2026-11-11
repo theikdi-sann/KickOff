@@ -67,12 +67,15 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
     const session = event.data.object as Stripe.Checkout.Session;
     const orderId = session.metadata?.order_id;
     if (!orderId) return;
-    const { error } = await db
-      .from("orders")
-      .update({ status: "cancelled" })
-      .eq("id", orderId)
-      .eq("status", "pending");
-    if (error) throw error;
+    await db.rpc("cancel_order_internal", { p_order_id: orderId });
+    return;
+  }
+
+  if (event.type === "checkout.session.async_payment_failed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const orderId = session.metadata?.order_id;
+    if (!orderId) return;
+    await db.rpc("cancel_order_internal", { p_order_id: orderId });
     return;
   }
 
@@ -103,6 +106,9 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       .update({ status: "void" })
       .eq("order_id", order.id);
     if (ticketError) throw ticketError;
+
+    // Free the seats so they can be re-sold (only those still held/sold).
+    await db.rpc("free_seats_for_order", { p_order_id: order.id });
 
     await writeAudit({
       action: "stripe.charge_refunded",
