@@ -711,10 +711,29 @@ Admin LAN already landed in `6651921` (`allowedDevOrigins` hostname-only +
 
 **Verification:** TDD — 3 contracts red first, then green. `npm test` (30 node tests), `npm run check`, `check:no-mocks` clean. No server changes.
 
+#### `PB-SIGNUP` — punch list #2: link-only "Check your email" screen — complete
+
+With email confirmation enabled, `supabase.auth.signUp` returns no session; the
+old code then called `signIn(email, password)` immediately, which could only
+fail with *"Email not confirmed"* — dead-ending an account that had just been
+created successfully.
+
+- [x] `PB-SIGNUP-a` · `apps/mobile/src/lib/auth.ts` **[M]** — `signUp` now returns a discriminated `SignUpResult`: `{ status: 'confirmation-required', email }` when no session came back (never a doomed password sign-in), `{ status: 'signed-in', profile }` otherwise (local/dev with confirmations off still auto-logs-in). New `resendConfirmation(email)` (`auth.resend`, type `signup`).
+- [x] `PB-SIGNUP-b` · `apps/mobile/src/lib/store.tsx` **[M]** — context `signUp` returns the result and sets `profile` only for `signed-in` — a pending confirmation leaves the user signed out.
+- [x] `PB-SIGNUP-c` · `apps/mobile/src/app/(auth)/register.tsx` **[M]** — `confirmation-required` → `router.replace({ pathname: '/check-email', params: { email } })`; signed-in → `/` as before.
+- [x] `PB-SIGNUP-d` · `apps/mobile/src/app/(auth)/check-email.tsx` **[N]** — link-only screen: shows the address it mailed, "One link, no code" explainer, **Resend email** (inline error + sent confirmation), **Back to sign in**. No code/OTP field and no sign-in attempt — the emailed link is the only way in.
+- [x] `PB-SIGNUP-e` · `scripts/tests/signup.test.mjs` **[N]** — 4 contracts: no post-signUp password sign-in, profile only on signed-in, register routing with the address passed along, link-only screen (no `TextInput`, no `signIn(`, resend + way back).
+
+**Verification:** TDD — 4 contracts red first, then green. `npm test` (34 node tests), `npm run check`, `check:no-mocks` clean. No server changes (email-confirmation config stays as the project has it).
+
+**Errors / Notes**
+- The deep link the confirmation email carries still lands wherever the Supabase email template points — wiring that target into the app (open the link → confirmed session → straight in) is punch list #3 (redirects), deliberately not folded in here.
+
 #### Remaining punch-list items (staged)
 
 - ~~#1 LAN~~ — **done** (see `PB-LAN` below).
-- #2 signup — link-only "Check your email" screen.
+- ~~#2 signup~~ — **done** (see `PB-SIGNUP` below).
+- #3 redirects — post-auth deep-link handling.
 - #3 redirects — post-auth deep-link handling.
 - #4 see-all — full list screens for truncated feeds.
 - #5+#6 share — minimal shareable pass image (wallet dropped in favour of share).

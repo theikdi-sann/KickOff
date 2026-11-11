@@ -5,6 +5,7 @@ import {
   signOut as authSignOut,
   signUp as authSignUp,
   type AppProfile,
+  type SignUpResult,
 } from './auth';
 import { supabase } from './supabase';
 
@@ -13,7 +14,7 @@ interface AppContextValue {
   profile: AppProfile | null;
   signIn: (email: string, password: string) => Promise<void>;
   signInDemo: () => Promise<void>;
-  signUp: (fullName: string, email: string, password: string) => Promise<void>;
+  signUp: (fullName: string, email: string, password: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
 }
 
@@ -69,7 +70,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = useCallback(async (fullName: string, email: string, password: string) => {
-    setProfile(await authSignUp(fullName, email, password));
+    const result = await authSignUp(fullName, email, password);
+    // Only a returned session establishes the profile; a pending email
+    // confirmation must leave the user signed out to verify via the link.
+    if (result.status === 'signed-in') setProfile(result.profile);
+    return result;
   }, []);
 
   const signOut = useCallback(async () => {

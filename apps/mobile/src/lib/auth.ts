@@ -71,11 +71,16 @@ export async function signIn(email: string, password: string): Promise<AppProfil
   return loadProfile(data.user);
 }
 
+/** Result of a sign-up attempt — never a silent dead-end. */
+export type SignUpResult =
+  | { status: 'signed-in'; profile: AppProfile }
+  | { status: 'confirmation-required'; email: string };
+
 export async function signUp(
   fullName: string,
   email: string,
   password: string,
-): Promise<AppProfile> {
+): Promise<SignUpResult> {
   const { data, error } = await supabase.auth.signUp({
     email: email.trim(),
     password,
@@ -83,13 +88,22 @@ export async function signUp(
   });
   if (error) throw new Error(error.message);
 
-  // Projects with email confirmation enabled return no session; sign in now
-  // so local/dev (confirmations off) can auto-login as the plan requires.
+  // Email confirmation enabled → no session yet: the caller shows the
+  // link-only "check your email" screen. Never attempt a password sign-in
+  // here — "Email not confirmed" would dead-end an account that was just
+  // created successfully. Confirmation disabled (local/dev) → session is
+  // returned → auto-login as before.
   if (!data.session) {
-    return signIn(email, password);
+    return { status: 'confirmation-required', email: email.trim() };
   }
   if (!data.user) throw new Error('Sign-up returned no user');
-  return loadProfile(data.user);
+  return { status: 'signed-in', profile: await loadProfile(data.user) };
+}
+
+/** Resends the signup confirmation link (link-only flow). */
+export async function resendConfirmation(email: string): Promise<void> {
+  const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
+  if (error) throw new Error(error.message);
 }
 
 export async function signOut(): Promise<void> {

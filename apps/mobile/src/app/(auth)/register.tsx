@@ -40,8 +40,14 @@ export default function RegisterScreen() {
     setError(null);
     setLoading(true);
     try {
-      await signUp(fullName.trim(), email.trim(), password);
-      router.replace('/');
+      const result = await signUp(fullName.trim(), email.trim(), password);
+      if (result.status === 'confirmation-required') {
+        // Link-only flow: the account exists but the email must be confirmed
+        // from the link before any sign-in can succeed.
+        router.replace({ pathname: '/check-email', params: { email: result.email } });
+      } else {
+        router.replace('/');
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not create your account.');
     } finally {
