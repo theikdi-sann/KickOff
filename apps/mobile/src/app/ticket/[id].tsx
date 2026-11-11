@@ -8,14 +8,23 @@ import {
   QrCode as QrIcon,
   Share2,
   ShieldCheck,
-  Smartphone,
   Ticket as TicketIcon,
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useKeepAwake } from 'expo-keep-awake';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  View,
+} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
+import { useRef, useState } from 'react';
 import { formatFullDate, formatMatchTime, formatTHB } from '@kickoff/shared';
 import { AppText, Pill, Screen, Skeleton } from '@/components/ui';
 import { useTicket, useTicketQr } from '@/lib/queries/tickets';
@@ -35,6 +44,9 @@ export default function TicketDetailScreen() {
   const ticket = ticketQuery.data;
   const qrPayload = qrQuery.data?.qrPayload ?? '';
   const used = ticket?.status === 'used';
+  // The pass card itself is captured to a PNG for sharing.
+  const passRef = useRef<LinearGradient>(null);
+  const [sharing, setSharing] = useState(false);
 
   if (ticketQuery.isLoading) {
     return (
@@ -70,10 +82,30 @@ export default function TicketDetailScreen() {
     );
   }
 
+  const passText = `KickOff match pass\n${ticket.matchLabel}\n${formatFullDate(ticket.kickoffAt)} · ${formatMatchTime(ticket.kickoffAt)}\n${ticket.zoneName} · Row ${ticket.row} · Seat ${ticket.number}\nHolder: ${ticket.holder}\n\nThe QR is signed and checked live at the gate.`;
+
+  // Share the pass as an image: capture the rendered card to a PNG and hand
+  // it to the OS share sheet. Falls back to plain text when capture or
+  // sharing is unavailable (e.g. web), so sharing never dead-ends.
   const sharePass = async () => {
-    await Share.share({
-      message: `KickOff match pass\n${ticket.matchLabel}\n${formatFullDate(ticket.kickoffAt)} · ${formatMatchTime(ticket.kickoffAt)}\n${ticket.zoneName} · Row ${ticket.row} · Seat ${ticket.number}\nHolder: ${ticket.holder}\n\nThe QR is signed and checked live at the gate.`,
-    }).catch(() => undefined);
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const uri = await captureRef(passRef, { format: 'png', quality: 1, result: 'tmpfile' });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/png',
+          dialogTitle: 'KickOff match pass',
+          UTI: 'public.png',
+        });
+      } else {
+        await Share.share({ message: passText });
+      }
+    } catch {
+      await Share.share({ message: passText }).catch(() => undefined);
+    } finally {
+      setSharing(false);
+    }
   };
 
   return (
@@ -116,6 +148,7 @@ export default function TicketDetailScreen() {
         ) : null}
 
         <LinearGradient
+          ref={passRef}
           colors={used ? ['#263238', '#121A16'] : [colors.primaryBright, colors.primaryDark, colors.night]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -240,16 +273,16 @@ export default function TicketDetailScreen() {
 
         <View style={styles.actions}>
           <Pressable
-            onPress={() =>
-              Alert.alert(
-                'Wallet pass unavailable',
-                'Apple Wallet passes are not part of this release. Use the in-app pass at the gate.',
-              )
-            }
+            onPress={() => void sharePass()}
+            disabled={sharing}
             style={({ pressed }) => [styles.actionButton, pressed && { opacity: 0.7 }]}>
-            <Smartphone size={17} color="#FFFFFF" />
+            {sharing ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Share2 size={17} color="#FFFFFF" />
+            )}
             <AppText variant="label" color="#FFFFFF">
-              Add to wallet
+              {sharing ? 'Preparing image…' : 'Share pass'}
             </AppText>
           </Pressable>
           <Pressable

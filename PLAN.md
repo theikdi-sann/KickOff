@@ -758,13 +758,27 @@ and news showed featured + `slice(1, 4)` with no action at all.
 
 **Verification:** TDD — 4 contracts red first, then green. `npm test` (41 node tests), `npm run check`, `check:no-mocks` clean. Typed routes regenerated via `expo start` (`.expo/types/router.d.ts`). No server changes.
 
+#### `PB-SHARE` — punch list #5+#6: shareable pass image (wallet dropped) — complete
+
+The pass screen's share sent plain text, and **Add to wallet** was a
+dead-end alert ("Apple Wallet passes are not part of this release").
+Walkthrough decision: drop the wallet button, share a real image of the
+pass instead.
+
+- [x] `PB-SHARE-a` · `apps/mobile/package.json` **[M]** — `react-native-view-shot@6.1.1` via `npx expo install` (Expo Go includes it — no dev build needed).
+- [x] `PB-SHARE-b` · `apps/mobile/src/app/ticket/[id].tsx` **[M]** — `sharePass` now captures the rendered pass card to a PNG (`captureRef(passRef, …)` on the `LinearGradient`) and hands it to the OS share sheet (`Sharing.shareAsync`, `mimeType: 'image/png'`); plain-text `Share.share` remains as the fallback when capture or sharing is unavailable (web), so sharing never dead-ends. A `sharing` state guards double-taps with a spinner ("Preparing image…").
+- [x] `PB-SHARE-c` · `apps/mobile/src/app/ticket/[id].tsx` **[M]** — **Add to wallet** + its unavailable alert are gone; the actions row leads with **Share pass** (same image handler as the header share icon).
+- [x] `PB-SHARE-d` · `scripts/tests/share.test.mjs` **[N]** — 3 contracts: dependency installed, capture → PNG → share sheet (with text fallback), wallet dead-end removed.
+
+**Verification:** TDD — 3 contracts red first, then green. `npm test` (44 node tests), `npm run check`, `check:no-mocks` clean. No server changes.
+
 #### Remaining punch-list items (staged)
 
 - ~~#1 LAN~~ — **done** (see `PB-LAN` below).
 - ~~#2 signup~~ — **done** (see `PB-SIGNUP` below).
 - ~~#3 redirects~~ — **done** (see `PB-REDIRECT` below).
 - ~~#4 see-all~~ — **done** (see `PB-SEEALL` below).
-- #5+#6 share — minimal shareable pass image (wallet dropped in favour of share).
+- ~~#5+#6 share~~ — **done** (see `PB-SHARE` below) — wallet dropped in favour of a shareable pass image.
 - #7 README — setup/run docs + `ALLOWED_ORIGINS` unset reminder (hosted still set for the demo).
 - #10–#13 admin/ops items — incl. #12 proper venues/stadiums schema and #13 reschedule rules (never past/inside lock window, never earlier, cap 10 days, reason always required).
 
