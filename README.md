@@ -140,6 +140,33 @@ npm run mobile       # Expo — press w for web, or scan with Expo Go
 npm run mobile:web   # mobile app directly in a browser
 ```
 
+#### Run on a phone over the LAN
+
+Same Wi-Fi, no tunnel — the Expo dev server binds to your machine's LAN IP:
+
+```bash
+npm run mobile:lan   # Expo bound to the LAN; scan the QR with Expo Go
+npm run admin        # admin dev server (add --experimental-https for tablets)
+```
+
+Open the firewall for the two dev ports once:
+
+```bash
+sudo ufw allow 8081/tcp   # Metro bundler — Expo Go on a phone
+sudo ufw allow 3000/tcp   # admin dev server — gate-scanner tablets (HTTPS)
+```
+
+Notes:
+
+- The phone and the machine must be on the same network; client-isolated
+  Wi-Fi (some school/corporate networks) blocks this — fall back to
+  `npx expo start --tunnel` from `apps/mobile`.
+- Admin over LAN uses `cd apps/admin && npx next dev --experimental-https`
+  (self-signed cert; accept the browser warning once). The LAN hostname is
+  allowlisted in `apps/admin/next.config.ts` (`allowedDevOrigins`) —
+  hostname only, no `https://` prefix.
+- LAN config is dev-only; production builds are unaffected.
+
 ### Demo credentials
 
 | Role | Email | Password |

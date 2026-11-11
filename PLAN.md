@@ -700,9 +700,20 @@ flicker or loading UI (initial mount only).
 - React Query (not a hand-rolled interval) is the deliberate choice for unmount cleanup and background pausing; `refetchOnWindowFocus: false` stays as-is (polling already covers resume-from-background within 3 s).
 - Walkthrough decision recorded: conflict behavior is **flag it, block Continue** (not auto-deselect) — the fan always sees what happened and stays in control of the selection.
 
+#### `PB-LAN` — punch list #1: LAN dev for phones — complete
+
+Admin LAN already landed in `6651921` (`allowedDevOrigins` hostname-only +
+`certificates/` gitignore). This closes the mobile half and the firewall docs.
+
+- [x] `PB-LAN-a` · `package.json`, `apps/mobile/package.json` **[M]** — `npm run mobile:lan` → `expo start --lan` (dev server binds the LAN IP instead of localhost; tunnel stays the fallback for client-isolated Wi-Fi).
+- [x] `PB-LAN-b` · `README.md` **[M]** — "Run on a phone over the LAN" under §5: the two commands, one-time `sudo ufw allow 8081/tcp` (Metro for Expo Go) and `ufw allow 3000/tcp` (admin HTTPS dev for tablets), plus notes on client-isolated Wi-Fi → `--tunnel`, the `--experimental-https` admin flow, and dev-only scope.
+- [x] `PB-LAN-c` · `scripts/tests/lan.test.mjs` **[N]** — 3 contracts: `mobile:lan` script wiring, README workflow docs, ufw port docs.
+
+**Verification:** TDD — 3 contracts red first, then green. `npm test` (30 node tests), `npm run check`, `check:no-mocks` clean. No server changes.
+
 #### Remaining punch-list items (staged)
 
-- #1 LAN — `mobile:lan` script + ufw 8081 docs (admin LAN half done in `6651921`).
+- ~~#1 LAN~~ — **done** (see `PB-LAN` below).
 - #2 signup — link-only "Check your email" screen.
 - #3 redirects — post-auth deep-link handling.
 - #4 see-all — full list screens for truncated feeds.

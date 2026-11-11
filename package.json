@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "mobile": "npm run start --workspace @kickoff/mobile",
+    "mobile:lan": "npm run start:lan --workspace @kickoff/mobile",
     "mobile:web": "npm run web --workspace @kickoff/mobile",
     "admin": "npm run dev --workspace @kickoff/admin",
     "dev:admin": "npm run dev --workspace @kickoff/admin",
