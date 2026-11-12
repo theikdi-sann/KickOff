@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toMatchDto, toZoneDto } from "@kickoff/shared";
-import { recordReschedule } from "@/lib/audit";
+import { AUDIT_ACTIONS, changedFields, recordAudit, recordReschedule } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/client";
 
 export interface AdminMatchInput {
@@ -182,6 +182,19 @@ export function useCreateMatch() {
         .select("*, venues(name)")
         .single();
       if (error) throw new Error(error.message);
+
+      await recordAudit({
+        action: AUDIT_ACTIONS.matchCreate,
+        entity: "matches",
+        entityId: data.id,
+        metadata: {
+          opponent: input.opponent,
+          competition: input.competition,
+          kickoff_at: input.kickoffAt,
+          venue_id: venueId,
+        },
+      });
+
       return toMatchDto(data);
     },
     onSuccess: () => invalidateMatchData(queryClient),
@@ -234,6 +247,14 @@ export function useUpdateMatch() {
         .single();
       if (error) throw new Error(error.message);
 
+      // Every privileged change is recorded: what changed, on which fixture.
+      await recordAudit({
+        action: AUDIT_ACTIONS.matchUpdate,
+        entity: "matches",
+        entityId: input.id,
+        metadata: { fields: changedFields(patch) },
+      });
+
       if (rescheduled) {
         // The kickoff moved: store {from, to, reason} in audit_logs (RS-8).
         await recordReschedule({
@@ -255,6 +276,13 @@ export function useDeleteMatch() {
     mutationFn: async (id: string) => {
       const { error } = await client().from("matches").delete().eq("id", id);
       if (error) throw new Error(error.message);
+
+      await recordAudit({
+        action: AUDIT_ACTIONS.matchDelete,
+        entity: "matches",
+        entityId: id,
+      });
+
       return id;
     },
     onSuccess: () => invalidateMatchData(queryClient),
@@ -282,6 +310,14 @@ export function useUpdateZone() {
         .select("*")
         .single();
       if (error) throw new Error(error.message);
+
+      await recordAudit({
+        action: AUDIT_ACTIONS.zoneUpdate,
+        entity: "zones",
+        entityId: input.id,
+        metadata: { fields: changedFields(patch), match_id: input.matchId },
+      });
+
       return toZoneDto(data);
     },
     onSuccess: (zone) => invalidateMatchData(queryClient, zone.matchId),
@@ -318,22 +354,52 @@ export function useAddZone() {
       // PostgREST rejects an empty bulk insert, and a zone without seats would
       // still appear sellable in the UI. Roll the zone back on either failure.
       if (seats.length === 0) {
-        await client().from("zones").delete().eq("id", zone.id);
+        await rollbackZone(zone.id);
         throw new Error("Add at least one row with one seat per row.");
       }
 
       const { error: seatError } = await client().from("seats").insert(seats);
       if (seatError) {
-        await client().from("zones").delete().eq("id", zone.id);
+        await rollbackZone(zone.id);
         throw new Error(
           `The zone could not be completed and was removed: ${seatError.message}`,
         );
       }
 
+      await recordAudit({
+        action: AUDIT_ACTIONS.zoneCreate,
+        entity: "zones",
+        entityId: zone.id,
+        metadata: {
+          match_id: input.matchId,
+          name: input.name,
+          price_satang: input.priceSatang,
+          rows: input.rows.length,
+          seats_per_row: input.seatsPerRow,
+          seats_created: seats.length,
+        },
+      });
+
       return toZoneDto(zone);
     },
     onSuccess: (zone) => invalidateMatchData(queryClient, zone.matchId),
   });
+}
+
+/**
+ * Removes a zone that could not be completed.
+ *
+ * The delete error is checked on purpose: an unchecked rollback leaves an
+ * orphan zone that still looks sellable, while the operator was told it was
+ * removed.
+ */
+async function rollbackZone(zoneId: string): Promise<void> {
+  const { error } = await client().from("zones").delete().eq("id", zoneId);
+  if (error) {
+    throw new Error(
+      `The zone could not be completed and could not be removed: ${error.message}. Ask an administrator to delete zone ${zoneId}.`,
+    );
+  }
 }
 
 export function useDeleteZone() {
@@ -342,6 +408,14 @@ export function useDeleteZone() {
     mutationFn: async (input: { id: string; matchId: string }) => {
       const { error } = await client().from("zones").delete().eq("id", input.id);
       if (error) throw new Error(error.message);
+
+      await recordAudit({
+        action: AUDIT_ACTIONS.zoneDelete,
+        entity: "zones",
+        entityId: input.id,
+        metadata: { match_id: input.matchId },
+      });
+
       return input;
     },
     onSuccess: (input) => invalidateMatchData(queryClient, input.matchId),

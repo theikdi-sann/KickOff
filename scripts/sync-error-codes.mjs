@@ -10,7 +10,7 @@
 // Usage: node scripts/sync-error-codes.mjs [--check]
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCE = resolve(root, 'packages/shared/src/error-codes.ts');
@@ -48,22 +48,42 @@ ${union};
 `;
 }
 
-const source = readFileSync(SOURCE, 'utf8');
-const expected = generate(source);
+/**
+ * Runs the generator as a command.
+ *
+ * Importing this module must not touch the filesystem: the hygiene contract
+ * imports `generate` to compare the deployed copy, and a write on import would
+ * let a test mutate the repository — and could be observed half-written by a
+ * concurrent reader.
+ */
+function runAsCommand() {
+  const source = readFileSync(SOURCE, 'utf8');
+  const expected = generate(source);
 
-if (process.argv.includes('--check')) {
-  let current = '';
-  try {
-    current = readFileSync(TARGET, 'utf8');
-  } catch {
-    current = '';
+  if (process.argv.includes('--check')) {
+    let current = '';
+    try {
+      current = readFileSync(TARGET, 'utf8');
+    } catch {
+      current = '';
+    }
+    if (current !== expected) {
+      console.error(
+        'supabase/functions/_shared/error-codes.ts is stale — run: node scripts/sync-error-codes.mjs',
+      );
+      process.exit(1);
+    }
+    console.log('error codes are in sync');
+    return;
   }
-  if (current !== expected) {
-    console.error('supabase/functions/_shared/error-codes.ts is stale — run: node scripts/sync-error-codes.mjs');
-    process.exit(1);
-  }
-  console.log('error codes are in sync');
-} else {
+
   writeFileSync(TARGET, expected);
   console.log(`wrote ${TARGET.replace(`${root}/`, '')}`);
+}
+
+const invokedDirectly =
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+
+if (invokedDirectly) {
+  runAsCommand();
 }

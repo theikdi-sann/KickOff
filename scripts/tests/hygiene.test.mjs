@@ -18,8 +18,10 @@
 //   HYG-7  every query module is imported by something.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const root = resolve(import.meta.dirname, '..', '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
@@ -185,6 +187,36 @@ test('HYG-3 the error codes have one source and the function copy is generated',
     'the Edge Function must import the error-code union, not redeclare it',
   );
   assert.match(errors, /from "\.\/error-codes\.ts"/, 'the Edge Function must import the generated union');
+});
+
+test('HYG-3b importing the generator does not write to the repository', () => {
+  const target = resolve(root, 'supabase/functions/_shared/error-codes.ts');
+  const before = readFileSync(target, 'utf8');
+  const beforeStamp = statSync(target).mtimeMs;
+
+  // The hygiene contract imports `generate` from this module. A write on
+  // import would let a test mutate the repository, and a concurrent reader
+  // could observe the file half-written.
+  //
+  // The import runs in a child process: this module is already cached here,
+  // so importing it again would not execute anything.
+  const script = `await import(${JSON.stringify(pathToFileURL(resolve(root, 'scripts/sync-error-codes.mjs')).href)});`;
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', script], {
+    cwd: root,
+    encoding: 'utf8',
+  });
+
+  assert.equal(child.status, 0, `importing the generator failed: ${child.stderr}`);
+  assert.equal(
+    readFileSync(target, 'utf8'),
+    before,
+    'importing the generator must not rewrite the file',
+  );
+  assert.equal(
+    statSync(target).mtimeMs,
+    beforeStamp,
+    'importing the generator must not touch the file',
+  );
 });
 
 test('HYG-4 the business constants match the database they mirror', () => {

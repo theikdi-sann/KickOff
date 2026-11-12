@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { Badge, ConfirmDialog, SectionTitle, useToast } from "@/components/ui";
+import { AUDIT_ACTIONS, recordAudit } from "@/lib/audit";
 import { track } from "@/lib/analytics";
 import { downloadCsv, toCsv, type CsvColumn } from "@/lib/export";
 import {
@@ -88,6 +89,23 @@ export default function TicketsPage() {
       created: order.createdAt,
     }));
     downloadCsv(`kickoff-orders-${status}-p${page}.csv`, toCsv(rows, CSV_COLUMNS));
+
+    // The export leaves the browser with supporter names and e-mail addresses.
+    // Record it: who took the data out, and how much of it. If the row cannot
+    // be written the operator must know — the data left the building.
+    void recordAudit({
+      action: AUDIT_ACTIONS.ordersExport,
+      entity: "orders",
+      metadata: { rows: rows.length, status, page },
+    }).then((recorded) => {
+      if (!recorded) {
+        toast({
+          title: "Export not recorded",
+          description: "The audit trail could not be written for this export.",
+          tone: "red",
+        });
+      }
+    });
   };
 
   const handleRefund = async () => {

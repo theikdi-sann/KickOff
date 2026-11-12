@@ -75,7 +75,18 @@ test('RS-8 the update mutation records the reschedule reason in audit_logs', () 
   const matches = read('apps/admin/src/lib/queries/matches.ts');
 
   assert.match(audit, /recordReschedule/, 'an audit writer for reschedules must exist');
-  assert.match(audit, /action:\s*["']reschedule["']/, 'the audit action must be reschedule');
+  // The action may be written literally or taken from the shared audit
+  // vocabulary — what matters is the value that lands in `audit_logs`.
+  assert.match(
+    audit,
+    /action:\s*(["']reschedule["']|AUDIT_ACTIONS\.reschedule)/,
+    'the audit action must be reschedule',
+  );
+  assert.match(
+    audit,
+    /reschedule:\s*["']reschedule["']/,
+    'the shared vocabulary must map the reschedule action to "reschedule"',
+  );
   assert.match(audit, /entity:\s*["']match["']/, 'the audit entity must be the match');
   assert.match(
     audit,

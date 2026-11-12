@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AUDIT_ACTIONS, changedFields, recordAudit } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/client";
 
 export interface AdminGate {
@@ -78,6 +79,14 @@ export function useCreateGate() {
         .select(SELECT)
         .single();
       if (error) throw new Error(error.message);
+
+      await recordAudit({
+        action: AUDIT_ACTIONS.gateCreate,
+        entity: "gates",
+        entityId: input.id,
+        metadata: { name: input.name, match_id: input.matchId, active: input.active },
+      });
+
       return mapGate(data as unknown as GateRow);
     },
     onSuccess: () => {
@@ -102,6 +111,14 @@ export function useUpdateGate() {
         .select(SELECT)
         .single();
       if (error) throw new Error(error.message);
+
+      await recordAudit({
+        action: AUDIT_ACTIONS.gateUpdate,
+        entity: "gates",
+        entityId: input.id,
+        metadata: { fields: changedFields(patch) },
+      });
+
       return mapGate(data as unknown as GateRow);
     },
     onSuccess: () => {
@@ -124,6 +141,13 @@ export function useDeleteGate() {
         }
         throw new Error(error.message);
       }
+
+      await recordAudit({
+        action: AUDIT_ACTIONS.gateDelete,
+        entity: "gates",
+        entityId: id,
+      });
+
       return id;
     },
     onSuccess: () => {

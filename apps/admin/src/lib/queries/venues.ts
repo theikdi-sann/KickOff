@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AUDIT_ACTIONS, recordAudit } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/client";
 
 export interface AdminVenueInput {
@@ -42,6 +43,14 @@ export function useCreateVenue() {
         .select("*")
         .single();
       if (error) throw new Error(error.message);
+
+      await recordAudit({
+        action: AUDIT_ACTIONS.venueCreate,
+        entity: "venues",
+        entityId: data.id,
+        metadata: { name: input.name.trim(), city: input.city?.trim() || null },
+      });
+
       return data;
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-venues"] }),
@@ -56,6 +65,13 @@ export function useDeleteVenue() {
       // and the page surfaces that message instead of silently failing.
       const { error } = await client().from("venues").delete().eq("id", id);
       if (error) throw new Error(error.message);
+
+      await recordAudit({
+        action: AUDIT_ACTIONS.venueDelete,
+        entity: "venues",
+        entityId: id,
+      });
+
       return id;
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-venues"] }),

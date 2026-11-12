@@ -13,6 +13,7 @@ import {
   type Database,
   type Json,
 } from "@kickoff/shared";
+import { AUDIT_ACTIONS, recordAudit } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/client";
 
 type SettingsRow = Database["public"]["Tables"]["app_settings"]["Row"];
@@ -158,6 +159,15 @@ export function useUpdateSettings() {
           { onConflict: "key" },
         );
       if (error) throw new Error(error.message);
+
+      // The settings screen claims that changes are recorded with the admin
+      // actor — this is that record. Only the changed keys are stored: the
+      // values themselves do not belong in an audit row.
+      await recordAudit({
+        action: AUDIT_ACTIONS.settingsUpdate,
+        entity: "app_settings",
+        metadata: { keys: rows.map((row) => row.key).sort() },
+      });
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["admin-settings"] });
