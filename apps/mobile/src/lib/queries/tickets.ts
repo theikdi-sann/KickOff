@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { toTicketDto, type TicketJoinRow } from '@kickoff/shared';
+import { requireDefined, toTicketDto, type TicketJoinRow } from '@kickoff/shared';
 import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
@@ -35,7 +35,7 @@ export function useTicket(id: string | undefined) {
     queryFn: async () => {
       const [holder, result] = await Promise.all([
         holderName(),
-        supabase.from('tickets').select(SELECT).eq('id', id!).single(),
+        supabase.from('tickets').select(SELECT).eq('id', requireDefined(id, 'ticket id')).single(),
       ]);
       if (result.error) throw new Error(result.error.message);
       return toTicketDto(result.data as unknown as TicketJoinRow, holder);
@@ -58,6 +58,9 @@ export function useTicketQr(id: string | undefined) {
     queryKey: ['ticket-qr', id],
     enabled: Boolean(id),
     staleTime: 60_000,
-    queryFn: () => api.post<TicketQrPayload>('ticket-qr', { ticketId: id! }),
+    queryFn: () =>
+      api.post<TicketQrPayload>('ticket-qr', {
+        ticketId: requireDefined(id, 'ticket id'),
+      }),
   });
 }

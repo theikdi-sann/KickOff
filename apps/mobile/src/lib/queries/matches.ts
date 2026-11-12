@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { toMatchDto } from '@kickoff/shared';
+import { requireDefined, toMatchDto } from '@kickoff/shared';
 import { supabase } from '@/lib/supabase';
 
 export function useMatches() {
@@ -24,7 +24,7 @@ export function useMatch(id: string | undefined) {
       const { data, error } = await supabase
         .from('matches')
         .select('*, venues(name)')
-        .eq('id', id!)
+        .eq('id', requireDefined(id, 'match id'))
         .single();
       if (error) throw new Error(error.message);
       return toMatchDto(data);

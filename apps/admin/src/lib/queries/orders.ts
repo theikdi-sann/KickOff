@@ -1,7 +1,13 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toOrderDto, type OrderDto, type OrderJoinRow, type OrderStatus } from "@kickoff/shared";
+import {
+  requireDefined,
+  toOrderDto,
+  type OrderDto,
+  type OrderJoinRow,
+  type OrderStatus,
+} from "@kickoff/shared";
 import { invokeFunction } from "@/lib/functions";
 import { sanitizeSearchTerm } from "@/lib/search";
 import { createClient } from "@/lib/supabase/client";
@@ -91,7 +97,7 @@ export function useOrder(id: string | undefined) {
       const { data, error } = await createClient()
         .from("orders")
         .select(SELECT)
-        .eq("id", id!)
+        .eq("id", requireDefined(id, "order id"))
         .single();
       if (error) throw new Error(error.message);
       const row = data as unknown as OrderJoinRow;

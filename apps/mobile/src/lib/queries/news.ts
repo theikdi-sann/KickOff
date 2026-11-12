@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { toNewsDto } from '@kickoff/shared';
+import { requireDefined, toNewsDto } from '@kickoff/shared';
 import { supabase } from '@/lib/supabase';
 
 export function useNews() {
@@ -22,7 +22,11 @@ export function useNewsItem(id: string | undefined) {
     queryKey: ['news', id],
     enabled: Boolean(id),
     queryFn: async () => {
-      const { data, error } = await supabase.from('news_items').select('*').eq('id', id!).single();
+      const { data, error } = await supabase
+          .from('news_items')
+          .select('*')
+          .eq('id', requireDefined(id, 'news item id'))
+          .single();
       if (error) throw new Error(error.message);
       return toNewsDto(data);
     },

@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertExists } from "@std/assert";
 
 import {
   RUN,
@@ -31,11 +31,13 @@ Deno.test({
         { token: env.service },
       );
       assertEquals(tickets.length, 1);
-      assertEquals(tickets[0]!.status, "valid");
+      const [ticket] = tickets;
+      assertExists(ticket);
+      assertEquals(ticket.status, "valid");
 
       const qr = await invoke<{ qrPayload: string; version: number }>(env, "ticket-qr", {
         token: fan,
-        body: { ticketId: tickets[0]!.id },
+        body: { ticketId: ticket.id },
       });
       assertEquals(qr.status, 200);
       assertEquals(qr.body.data?.version, 2);
@@ -47,7 +49,8 @@ Deno.test({
       });
       assertEquals(receipt.status, 200);
 
-      const pdf = await fetch(receipt.body.data!.url);
+      assertExists(receipt.body.data);
+      const pdf = await fetch(receipt.body.data.url);
       assertEquals(pdf.status, 200);
       const bytes = new Uint8Array(await pdf.arrayBuffer());
       assertEquals(new TextDecoder().decode(bytes.slice(0, 5)), "%PDF-");

@@ -55,7 +55,8 @@ async function readKickoff(env: ReturnType<typeof requireEnv>): Promise<string> 
     "matches?id=eq.m-bkk&select=kickoff_at",
     { token: env.service },
   );
-  return match!.kickoff_at;
+  assertExists(match);
+  return match.kickoff_at;
 }
 
 async function setKickoff(env: ReturnType<typeof requireEnv>, iso: string): Promise<void> {
@@ -123,7 +124,9 @@ Deno.test({
       });
       assertEquals(first.status, 200);
       assertEquals(first.body.data?.code, "valid");
-      assertExists(first.body.data?.scanEventId);
+      assertExists(first.body.data);
+      const scanEventId = first.body.data.scanEventId;
+      assertExists(scanEventId);
 
       const replay = await scanTicket(env, admin, {
         qr: ticket.qrPayload,
@@ -142,14 +145,14 @@ Deno.test({
       assertEquals(duplicate.body.data?.code, "used");
 
       const undone = await scanUndo(env, admin, {
-        scanEventId: first.body.data!.scanEventId!,
+        scanEventId,
         gateId: GATE,
       });
       assertEquals(undone.status, 200);
       assertEquals(undone.body.data?.undone, true);
 
       const secondUndo = await scanUndo(env, admin, {
-        scanEventId: first.body.data!.scanEventId!,
+        scanEventId,
         gateId: GATE,
       });
       assertEquals(secondUndo.status, 409);
@@ -234,6 +237,7 @@ Deno.test({
       "matches?id=eq.m-bkk&select=kickoff_at",
       { token: env.service },
     );
+    assertExists(match);
 
     try {
       await assignGate(env, "m-bkk");
@@ -256,7 +260,7 @@ Deno.test({
       await rest(env, "matches?id=eq.m-bkk", {
         token: env.service,
         method: "PATCH",
-        body: { kickoff_at: match!.kickoff_at },
+        body: { kickoff_at: match.kickoff_at },
         prefer: "return=minimal",
       });
       await cleanup(env, { orderId: ticket.orderId, eventId: ticket.eventId, seatId: seat });

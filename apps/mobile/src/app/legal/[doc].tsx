@@ -88,7 +88,8 @@ const DOCS: Record<string, LegalDoc> = {
 export default function LegalScreen() {
   const router = useRouter();
   const { doc } = useLocalSearchParams<{ doc: string }>();
-  const selected = DOCS[doc ?? ''] ?? DOCS.terms!;
+  // An unknown document falls back to the terms — the route is user-supplied.
+  const selected = DOCS[doc ?? ''] ?? DOCS.terms;
 
   return (
     <Screen>

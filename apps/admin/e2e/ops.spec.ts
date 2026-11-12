@@ -232,7 +232,8 @@ test.describe("admin operations", () => {
         expect(download.suggestedFilename()).toBe("kickoff-orders-all-p1.csv");
         const path = await download.path();
         expect(path).toBeTruthy();
-        const csv = (await readFile(path!, "utf8")).replace(/^\uFEFF/, "");
+        if (!path) throw new Error("the download produced no file");
+        const csv = (await readFile(path, "utf8")).replace(/^\uFEFF/, "");
         expect(csv.split("\r\n")[0]).toBe(
           "Order,Holder,Email,Match,Seats,Amount THB,Status,Created",
         );

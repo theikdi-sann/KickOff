@@ -650,7 +650,7 @@ export default function ScanPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => void handleCode(demo.data!.payload)}
+                      onClick={() => void handleCode(demoPayload)}
                       disabled={scan.isPending}
                       className="btn-gold mt-3 w-full">
                       <ShieldCheck size={14} />

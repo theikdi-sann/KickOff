@@ -7,6 +7,8 @@ module.exports = defineConfig([
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
+      // ARCHITECTURE.md §6.1: narrow explicitly, never assert.
+      '@typescript-eslint/no-non-null-assertion': 'error',
       'no-console': ['error', { allow: ['warn', 'error'] }],
       'import/order': [
         'error',

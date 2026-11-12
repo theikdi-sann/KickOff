@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
-import type { HoldDto } from '@kickoff/shared';
+import { requireDefined, type HoldDto } from '@kickoff/shared';
 import { supabase } from '@/lib/supabase';
 
 interface RpcHold {
@@ -81,7 +81,7 @@ export function useHold(holdId: string | undefined) {
       const { data, error } = await supabase
         .from('seat_holds')
         .select('hold_group_id,seat_id,expires_at,released_at,created_at')
-        .eq('hold_group_id', holdId!)
+        .eq('hold_group_id', requireDefined(holdId, 'hold id'))
         .is('released_at', null)
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
@@ -101,7 +101,7 @@ export function useHold(holdId: string | undefined) {
         .in('id', zoneIds);
       if (zoneError) throw new Error(zoneError.message);
 
-      const first = data[0]!;
+      const first = requireDefined(data[0], 'seat hold row');
       return {
         id: first.hold_group_id,
         matchId: zones?.[0]?.match_id ?? '',

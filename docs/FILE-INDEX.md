@@ -212,6 +212,7 @@ before the suite is green again.
 | `packages/shared/src/index.ts` | source | reviewed | shared contract |
 | `packages/shared/src/mappers.ts` | source | reviewed | shared contract |
 | `packages/shared/src/money.ts` | source | reviewed | shared contract |
+| `packages/shared/src/require.ts` | source | reviewed | narrowing helper — no non-null assertions |
 | `packages/shared/src/schemas.ts` | source | reviewed | shared contract |
 | `packages/shared/src/theme.ts` | source | reviewed | shared contract |
 | `packages/shared/tsconfig.json` | config | reviewed | shared TypeScript config |
@@ -245,6 +246,7 @@ before the suite is green again.
 | `scripts/tests/signup.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/staff-roles.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/sweep-fixes.test.mjs` | test | reviewed | repo contract test — fails when the repository drifts |
+| `scripts/tests/type-safety.test.mjs` | test | covered | contract test — no non-null assertion may return |
 | `scripts/tests/ui.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/venues.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `supabase/.env.example` | config | reviewed | Edge Function secrets template |

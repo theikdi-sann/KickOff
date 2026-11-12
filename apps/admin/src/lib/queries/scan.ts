@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
-import type { ScanResultCode } from "@kickoff/shared";
+import { requireDefined, type ScanResultCode } from "@kickoff/shared";
 import { readQueue, type QueueState } from "@/lib/offline-queue";
 import {
   getDemoPass,
@@ -107,7 +107,7 @@ export function useScanDemo(gateId: string | undefined) {
     enabled: Boolean(gateId),
     staleTime: 0,
     retry: false,
-    queryFn: () => getDemoPass(gateId!),
+    queryFn: () => getDemoPass(requireDefined(gateId, "gate id")),
   });
 }
 

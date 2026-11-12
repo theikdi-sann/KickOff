@@ -13,7 +13,7 @@ const bodySchema = z
     all: z.boolean().optional(),
   })
   .refine(
-    (value) => value.all === true || (Boolean(value.token) && value.token!.length > 0),
+    (value) => value.all === true || (typeof value.token === "string" && value.token.length > 0),
     "Provide a token or all=true",
   );
 

@@ -130,7 +130,7 @@ export default function SeatSelectionScreen() {
     if (order.checkoutUrl) {
       buttons.push({
         text: 'Resume payment',
-        onPress: () => void WebBrowser.openBrowserAsync(order.checkoutUrl!),
+        onPress: () => void WebBrowser.openBrowserAsync(String(order.checkoutUrl)),
       });
     }
     buttons.push(

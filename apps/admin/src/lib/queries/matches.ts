@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toMatchDto, toZoneDto } from "@kickoff/shared";
+import { requireDefined, toMatchDto, toZoneDto } from "@kickoff/shared";
 import { AUDIT_ACTIONS, changedFields, recordAudit, recordReschedule } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/client";
 
@@ -86,7 +86,7 @@ export function useMatch(id: string | undefined) {
       const { data, error } = await client()
         .from("matches")
         .select("*, venues(name)")
-        .eq("id", id!)
+        .eq("id", requireDefined(id, "match id"))
         .single();
       if (error) throw new Error(error.message);
       return toMatchDto(data);
@@ -144,7 +144,7 @@ export function useZones(matchId: string | undefined) {
       const { data, error } = await client()
         .from("zones")
         .select("*")
-        .eq("match_id", matchId!)
+        .eq("match_id", requireDefined(matchId, "match id"))
         .order("price_satang", { ascending: true });
       if (error) throw new Error(error.message);
       return (data ?? []).map(toZoneDto);
@@ -259,9 +259,9 @@ export function useUpdateMatch() {
         // The kickoff moved: store {from, to, reason} in audit_logs (RS-8).
         await recordReschedule({
           matchId: input.id,
-          from: previousKickoffAt ?? input.patch.kickoffAt!,
-          to: input.patch.kickoffAt!,
-          reason: rescheduleReason!,
+          from: previousKickoffAt ?? requireDefined(input.patch.kickoffAt, "kickoff time"),
+          to: requireDefined(input.patch.kickoffAt, "kickoff time"),
+          reason: requireDefined(rescheduleReason, "reschedule reason"),
         });
       }
       return toMatchDto(data);

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
-import { toOrderDto, type OrderDto, type OrderJoinRow } from '@kickoff/shared';
+import { requireDefined, toOrderDto, type OrderDto, type OrderJoinRow } from '@kickoff/shared';
 import { invokeFunction } from '@/lib/functions';
 import { supabase } from '@/lib/supabase';
 
@@ -37,7 +37,11 @@ export function useOrder(
     enabled: Boolean(id),
     refetchInterval: options.refetchInterval ?? false,
     queryFn: async () => {
-      const { data, error } = await supabase.from('orders').select(SELECT).eq('id', id!).single();
+      const { data, error } = await supabase
+        .from('orders')
+        .select(SELECT)
+        .eq('id', requireDefined(id, 'order id'))
+        .single();
       if (error) throw new Error(error.message);
       return toOrderDto(data as unknown as OrderJoinRow);
     },
@@ -96,7 +100,7 @@ export function usePendingOrderSeats(
       const { data, error } = await supabase
         .from('orders')
         .select('id, expires_at, checkout_url, order_seats(seat_id)')
-        .eq('match_id', matchId!)
+        .eq('match_id', requireDefined(matchId, 'match id'))
         .eq('status', 'pending');
       if (error) throw new Error(error.message);
       const rows = (data ?? []) as unknown as {

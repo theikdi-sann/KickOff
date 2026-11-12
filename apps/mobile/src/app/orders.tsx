@@ -219,7 +219,7 @@ export default function OrdersScreen() {
                 )}
                 {order.status === 'pending' && order.checkoutUrl ? (
                   <Pressable
-                    onPress={() => void WebBrowser.openBrowserAsync(order.checkoutUrl!)}
+                    onPress={() => void WebBrowser.openBrowserAsync(String(order.checkoutUrl))}
                     style={styles.viewTickets}>
                     <AppText variant="label" color={colors.primary}>
                       Resume payment

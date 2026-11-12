@@ -1,5 +1,5 @@
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
-import { toSeatDto, toZoneDto, type SeatDto } from '@kickoff/shared';
+import { requireDefined, toSeatDto, toZoneDto, type SeatDto } from '@kickoff/shared';
 import { supabase } from '@/lib/supabase';
 
 export function useZones(matchId: string | undefined) {
@@ -10,7 +10,7 @@ export function useZones(matchId: string | undefined) {
       const { data, error } = await supabase
         .from('zones')
         .select('*')
-        .eq('match_id', matchId!)
+        .eq('match_id', requireDefined(matchId, 'match id'))
         .order('price_satang', { ascending: true });
       if (error) throw new Error(error.message);
       return (data ?? []).map(toZoneDto);
@@ -33,7 +33,7 @@ export function useSeatMap(
       const { data, error } = await supabase
         .from('seats')
         .select('*')
-        .eq('zone_id', zoneId!)
+        .eq('zone_id', requireDefined(zoneId, 'zone id'))
         .order('row_label', { ascending: true })
         .order('number', { ascending: true });
       if (error) throw new Error(error.message);
@@ -56,7 +56,7 @@ export function useZoneAvailability(matchId: string | undefined) {
       const { data: zones, error } = await supabase
         .from('zones')
         .select('id')
-        .eq('match_id', matchId!);
+        .eq('match_id', requireDefined(matchId, 'match id'));
       if (error) throw new Error(error.message);
 
       const ids = (zones ?? []).map((zone) => zone.id);
