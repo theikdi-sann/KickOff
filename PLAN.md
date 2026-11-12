@@ -36,7 +36,7 @@ capability the business model requires.
 | **C1 — Documentation baseline** | Merge proposal + brainstorm into `REQUIREMENTS.md`; add `ARCHITECTURE.md`; delete stale/duplicate docs; make doc drift a failing test | ✅ complete |
 | **C2 — Code hygiene & single source of truth** | Delete the dead contract cluster in `packages/shared`; one implementation of the QR contract, the error envelope and business constants; remove redundant files | ✅ complete |
 | **C3 — Flow-by-flow audit** | 29 user flows × 6 questions (entry, trust boundary, validation, failure path, audit, test proof) → findings table in [`docs/FLOW-AUDIT.md`](docs/FLOW-AUDIT.md), fixes as separate cycles | 🔄 in progress — audit done (F-01…F-17), fixes in progress |
-| **C4 — Clean-code standard** | Stricter compiler flags (`noUncheckedIndexedAccess`), lint rules, logging conventions, dead-code guard, dependency hygiene | ⬜ queued |
+| **C4 — Clean-code standard** | Stricter compiler flags (`noUncheckedIndexedAccess`), lint rules, logging conventions, dead-code guard, dependency hygiene | 🔄 in progress — the repository sweep (C4.1–C4.2) is done; the compiler and lint work remains |
 | **C5 — B2B readiness** | Multi-tenancy, staff roles, observability, locale/currency (see below) | ⬜ queued |
 
 ### Phase C delivery log
@@ -56,6 +56,8 @@ One line per cycle, newest last. The detail lives in the commit history and in
 | **C3.7** | **F-05, F-06, F-08, F-16** — every privileged admin change (fixture, zone, seat, venue, gate, news, settings, CSV export) is recorded in `audit_logs` from one shared vocabulary, and the zone rollback no longer hides a failed delete. | `apps/admin/src/lib/audit.ts`, `apps/admin/src/lib/queries/{matches,venues,gates,news,settings}.ts`, `apps/admin/src/app/dashboard/{tickets,settings}/page.tsx`, `scripts/tests/audit-coverage.test.mjs` |
 | **C3.8** | **F-09** — the staff console is gated server-side: the proxy refuses a signed-in non-admin, the layout never renders the console shell for one, and the operator is told why. | `apps/admin/src/proxy.ts`, `apps/admin/src/app/dashboard/layout.tsx`, `apps/admin/src/app/login/page.tsx`, `scripts/tests/admin-access.test.mjs`, `docs/SECURITY.md` |
 | **C3.9** | **F-13** — the scan statistics have one source: the aggregate counts its window server-side, the browser no longer pulls the scan history, and every label states the window it covers. | `supabase/functions/orders-aggregate/index.ts`, `apps/admin/src/lib/queries/scan.ts`, `apps/admin/src/lib/queries/orders.ts`, `apps/admin/src/app/dashboard/overview.tsx`, `apps/admin/src/app/dashboard/scan/page.tsx`, `apps/admin/src/app/dashboard/tickets/page.tsx`, `scripts/tests/scan-stats.test.mjs` |
+| **C4.1** | **File coverage for the whole repository** — every tracked file now carries a verdict (kind, verdict, note) in `docs/FILE-INDEX.md`, and a new file must be reviewed before the suite is green again. | `docs/FILE-INDEX.md`, `scripts/build-file-index.mjs`, `scripts/tests/file-coverage.test.mjs` |
+| **C4.2** | **F-18 … F-23** — the sweep's six real bugs are fixed: the unauthenticated Stripe probe, the dead analytics module, the template leftovers, the undocumented env variable, the misclassified `TypeError` and the PostgREST filter injection. | `supabase/functions/health/index.ts`, `supabase/functions/_shared/probe.ts`, `apps/mobile/src/lib/analytics.ts` (deleted), `apps/admin/public/*.svg` (deleted), `apps/mobile/LICENSE` (deleted), `apps/admin/src/lib/scan-api.ts`, `apps/admin/src/lib/search.ts`, `apps/admin/src/lib/queries/orders.ts`, `apps/admin/.env.local.example`, `apps/mobile/.env.example`, `scripts/tests/sweep-fixes.test.mjs` |
 
 ## Open work
 
@@ -121,6 +123,9 @@ here is silently dropped.
 | The pgTAP gate could not be re-run in this cycle: Docker is unavailable locally, and the hosted project needs explicit consent for a production mutation. | No SQL changed in this cycle, so the database gate is unaffected — the last verified run was 61/61 pgTAP assertions across 10 suites on the hosted project with migrations 0035–0037 applied. It must be re-run before the next SQL change. |
 | The flow audit (C3) found **17 findings** — F-01…F-17 in [`docs/FLOW-AUDIT.md`](docs/FLOW-AUDIT.md). F-01…F-06, F-08, F-09, F-10, F-12, F-13 and F-16 are fixed so far. | Each finding is fixed as its own TDD cycle in severity order. The findings table is the tracking record; nothing is dropped silently. |
 | The admin audit trail is written **from the browser**, like the reschedule row before it. | A crash between the mutation and the audit row leaves an unlogged change, and an admin JWT could skip the call. The tamper-proof version (a database trigger or server-side function) belongs to the GAP-03/GAP-04 hardening track. |
+| The file index (`docs/FILE-INDEX.md`) is a **snapshot**: it lists what was true when it was written, and the contract only proves that every tracked file has a verdict. | The verdicts are review outcomes, not facts that can be re-derived — a machine cannot tell whether a file was actually read. The contract keeps the *coverage* honest (nothing unreviewed, no stale entries); the honesty of a verdict stays a reviewer's responsibility. |
+| The `check:no-mocks` gate test used to write its probe into `apps/mobile/src`, which raced every other test reading the tree. | Fixed in C4.2: the gate now accepts an extra scan directory (`CHECK_NO_MOCKS_EXTRA_DIR`) and the test probes a temporary directory, so a test never mutates the source tree. |
+| The pgTAP gate could not be re-run in this cycle (Docker unavailable; the hosted project needs consent for a production mutation). | No SQL changed in these cycles, so the database gate is unaffected — the last verified run was 61/61 pgTAP assertions across 10 suites on the hosted project with migrations 0035–0037 applied. |
 | After a role change the new claim reaches the account **at the next token refresh** (or sign-in). A demoted staff member keeps their old access until then. | Inherent to JWTs: the claim travels in the access token. `admin-users` now says so in the UI. A server-side role check (reading `profiles.role` inside `is_admin()`) removes the window — it belongs to the GAP-03 staff-role work, because it changes the authorisation model. |
 
 ## Working method
@@ -155,7 +160,7 @@ Where to look for what — the map that replaces reading the 1,100-line history.
 | Edge functions | `supabase/functions/_shared/*`, `supabase/functions/<name>/index.ts` |
 | Gates | `scripts/check-functions.sh`, `scripts/check-no-mocks.sh`, `scripts/run-pgtap.sh`, `scripts/mvp-gate.mjs` |
 | Tests | `packages/shared/src/__tests__/` · `scripts/tests/` · `supabase/tests/` · `supabase/functions/tests/` · `apps/admin/e2e/` · `maestro/flows/` |
-| Docs | `README.md` (front door) · `docs/REQUIREMENTS.md` · `docs/ARCHITECTURE.md` · `docs/FLOW-AUDIT.md` · `docs/SECURITY.md` · `docs/TESTING.md` · `docs/BRAND.md` |
+| Docs | `README.md` (front door) · `docs/REQUIREMENTS.md` · `docs/ARCHITECTURE.md` · `docs/FLOW-AUDIT.md` · `docs/FILE-INDEX.md` · `docs/SECURITY.md` · `docs/TESTING.md` · `docs/BRAND.md` |
 
 ## Archive
 

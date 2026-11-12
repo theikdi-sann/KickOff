@@ -443,6 +443,7 @@ Stripe mode, and store deployment via EAS.
 | [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | what the product must do, traceability, known gaps |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | how it is built: layers, data model, flows, standards |
 | [`docs/FLOW-AUDIT.md`](docs/FLOW-AUDIT.md) | the flow-by-flow audit: 29 flows, findings and severities |
+| [`docs/FILE-INDEX.md`](docs/FILE-INDEX.md) | every file in the repository and the verdict on it |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | RLS matrix, secrets, payments, QR, audit, ops |
 | [`docs/TESTING.md`](docs/TESTING.md) | every test layer, command and skip condition |
 | [`docs/BRAND.md`](docs/BRAND.md) | brand tokens and usage |

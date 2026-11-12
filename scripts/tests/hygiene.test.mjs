@@ -48,6 +48,19 @@ const walk = (dir, out = []) => {
   return out;
 };
 
+/**
+ * Reads a file that may vanish while the suite runs. A file that disappears
+ * is not production code.
+ */
+const readIfPresent = (file) => {
+  try {
+    return readFileSync(file, 'utf8');
+  } catch (caught) {
+    if (caught && caught.code === 'ENOENT') return '';
+    throw caught;
+  }
+};
+
 test('HYG-1 the dead shared modules stay deleted', () => {
   for (const dead of [
     'packages/shared/src/types.ts',
@@ -75,20 +88,6 @@ test('HYG-1b every shared module is reachable from production code', () => {
     ...walk(resolve(root, 'apps')),
     ...walk(resolve(root, 'supabase/functions')),
   ].filter((file) => /\.(ts|tsx)$/.test(file) && !file.includes('/node_modules/'));
-
-  /**
-   * Reads a file that may vanish while the suite runs (another test writes a
-   * temporary probe into the tree). A file that disappears is simply not
-   * production code.
-   */
-  const readIfPresent = (file) => {
-    try {
-      return readFileSync(file, 'utf8');
-    } catch (caught) {
-      if (caught && caught.code === 'ENOENT') return '';
-      throw caught;
-    }
-  };
 
   const importsOf = (file) => {
     const source = readIfPresent(file);
@@ -148,9 +147,7 @@ test('HYG-2 the QR contract has exactly one implementation', () => {
     ...walk(resolve(root, 'supabase/functions')),
   ].filter((file) => /\.(ts|tsx)$/.test(file) && !file.includes('/tests/') && !file.endsWith('.test.ts'));
 
-  const formatCarriers = sources.filter((file) =>
-    readFileSync(file, 'utf8').includes('KICKOFF-V2:'),
-  );
+  const formatCarriers = sources.filter((file) => readIfPresent(file).includes('KICKOFF-V2:'));
   assert.deepEqual(
     formatCarriers.map((f) => f.replace(`${root}/`, '')),
     ['supabase/functions/_shared/qr.ts'],

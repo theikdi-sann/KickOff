@@ -110,6 +110,21 @@ client-side redirect fires (F-09).
 | **F-16** | Low | A10 | The CSV export writes holder names and e-mail addresses to the operator's disk with no record of the export. | ✅ **fixed** — the export is recorded with the row count |
 | **F-17** | Low | A2 | Sell-through is computed in the browser from the zone layout while the authoritative `zone_availability` view exists. | ⬜ open — C5 cycle |
 
+### Findings from the repository sweep (Phase C4)
+
+The file-index sweep read the layers the flow audit never touched (config,
+assets, environment templates, the unaudited Edge Functions). Six real defects
+came out of it — all fixed, all now enforced by a contract.
+
+| ID | Sev | Where | Finding | Status |
+|---|---|---|---|---|
+| **F-18** | High | `health` | The probe is reachable without a user JWT, and its readiness path called the **live Stripe API**. Anyone who knew the URL could spend the account's API budget and hit the rate limit that checkout depends on. | ✅ **fixed** — the deep checks run only for a caller with the metrics token; the public path is a cheap database check (`scripts/tests/sweep-fixes.test.mjs`, `supabase/functions/tests/probe.test.ts`) |
+| **F-19** | Medium | mobile app | `lib/analytics.ts` had **no importer at all** — a whole module, the `posthog-react-native` dependency and two documented env variables for a feature that never ran. | ✅ **fixed** — module, dependency and template variables removed |
+| **F-20** | Low | admin app | Five unreferenced Next.js template SVGs and Expo's template licence were still in the repository. | ✅ **fixed** — deleted; unreferenced assets now fail the contract |
+| **F-21** | Medium | admin env | The admin env template did not document `ADMIN_APP_URL`, which the admin layout reads — a silent fallback to `localhost`. | ✅ **fixed** — documented; the template now has to cover every variable the app reads |
+| **F-22** | Medium | gate scanner | Every `TypeError` was treated as a network failure, so a **programming bug** was reported to the operator as "saved offline" and the scan was queued instead of surfacing the error. | ✅ **fixed** — only a real fetch failure counts as offline |
+| **F-23** | Medium | order search | The search term was interpolated into a PostgREST `or=(...)` filter with only `%` and `,` stripped — parentheses and other filter metacharacters survived. | ✅ **fixed** — a named sanitiser strips every metacharacter (`apps/admin/tests/search.test.ts`) |
+
 ### Fix order
 
 1. **F-10** (done) — the only Critical finding; it broke a headline B2B feature.
@@ -117,8 +132,11 @@ client-side redirect fires (F-09).
    the supporter is told nothing when something goes wrong.
 3. **F-05, F-06, F-16** (done) — the audit trail NFR-05 promises.
 4. **F-09, F-13** (done) — the trust boundary and the numbers the console shows.
-5. **F-07, F-11** — atomicity and the shared validation contracts.
-6. **F-14, F-15, F-17** — test coverage, standards and polish.
+5. **F-18 … F-23** (done) — the repository sweep: the unauthenticated Stripe
+   probe, the dead analytics module, the template leftovers, the undocumented
+   env variable, the misclassified TypeError and the filter injection.
+6. **F-07, F-11** — atomicity and the shared validation contracts.
+7. **F-14, F-15, F-17** — test coverage, standards and polish.
 
 > **Known limitation of the audit trail.** The staff console writes the audit
 > rows from the browser (the same pattern the reschedule flow already used,

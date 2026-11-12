@@ -7,11 +7,12 @@
 // shared, deno test for Edge Functions, playwright --list for e2e specs).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..', '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
+const exists = (path) => existsSync(resolve(root, path));
 
 test('P11-04 playwright.config.ts provides a webServer and baseURL', () => {
   const source = read('apps/admin/playwright.config.ts');
@@ -122,17 +123,31 @@ test('P11-18 metrics function guards x-metrics-token and reports ops counts', ()
   );
 });
 
-test('P11-16 mobile analytics is a PostHog adapter with a dev no-op', () => {
-  const source = read('apps/mobile/src/lib/analytics.ts');
+test('P11-16 the supporter app ships no analytics client', () => {
+  // Phase C4: the PostHog adapter had no importer at all — a whole module,
+  // a dependency and two documented env variables for a feature that never
+  // ran. The supporter app therefore ships no analytics client; the staff
+  // console keeps its own (P11-17). If analytics are wanted in the app, they
+  // must be wired up first, not left as dead code.
+  assert.equal(
+    exists('apps/mobile/src/lib/analytics.ts'),
+    false,
+    'the dead analytics module must not come back',
+  );
 
-  assert.match(source, /from ['"]posthog-react-native['"]/, 'must use the React Native SDK');
-  assert.match(source, /EXPO_PUBLIC_POSTHOG_KEY/, 'must read the public project token');
-  assert.match(source, /__DEV__/, 'dev builds must be detected');
-  assert.match(source, /new PostHog\(/, 'must construct the client lazily');
-  assert.match(source, /export function track/, 'must expose track()');
-  assert.match(source, /export function identify/, 'must expose identify()');
-  assert.match(source, /export function reset/, 'must expose reset()');
-  assert.match(source, /if \(!analyticsEnabled\) return/, 'tracking must short-circuit when disabled');
+  const envTemplate = read('apps/mobile/.env.example');
+  assert.doesNotMatch(
+    envTemplate,
+    /POSTHOG/,
+    'the env template must not document an analytics client that does not exist',
+  );
+
+  const manifest = read('apps/mobile/package.json');
+  assert.doesNotMatch(
+    manifest,
+    /posthog/,
+    'the app must not depend on an analytics SDK it never uses',
+  );
 });
 
 test('P11-17 admin analytics is a PostHog client guarded for SSR', () => {

@@ -36,14 +36,21 @@ export interface DemoPass {
   ticket: ScanResultDto["ticket"];
 }
 
+/**
+ * Whether a failure is a connectivity problem.
+ *
+ * A browser reports an offline request as a `TypeError` ("Failed to fetch") —
+ * but so does a programming error. Treating every TypeError as "offline"
+ * would queue the scan and tell the operator it was saved, hiding the bug.
+ * Only an actual fetch failure counts.
+ */
 function isNetworkError(error: unknown): boolean {
   if ((error as { network?: boolean } | null)?.network === true) return true;
   const name = (error as { name?: string } | null)?.name;
-  return (
-    name === "FunctionsFetchError" ||
-    name === "FunctionsRelayError" ||
-    name === "TypeError"
-  );
+  if (name === "FunctionsFetchError" || name === "FunctionsRelayError") return true;
+  if (name !== "TypeError") return false;
+  const message = error instanceof Error ? error.message : String(error);
+  return /failed to fetch|networkerror|load failed|fetch failed/i.test(message);
 }
 
 function queuedOutcome(gateId: string): QueuedScanResult {

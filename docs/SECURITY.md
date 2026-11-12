@@ -70,6 +70,12 @@ by every admin policy, so a role change is applied everywhere at once.
 - `metrics` is the only machine endpoint. It requires
   `x-metrics-token: <METRICS_TOKEN>` and compares in constant time
   (`_shared/metrics.ts`); it is `GET` only and returns aggregates, never rows.
+- `health` is the only unauthenticated endpoint (a load balancer cannot
+  present a user JWT). Its public readiness path runs a **cheap database check
+  only** — the live Stripe API call is a *deep* check and runs only for a
+  caller that presents `x-metrics-token` (`_shared/probe.ts`). An anonymous
+  caller therefore cannot spend the Stripe API budget or hit the rate limit
+  that checkout depends on.
 - Errors are normalised by `toApiError` (`_shared/errors.ts`): database error
   codes are mapped to `conflict`/`not_found`/`validation` without leaking
   Postgres messages to clients.

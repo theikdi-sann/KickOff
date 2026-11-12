@@ -14,6 +14,12 @@ search_paths=(
   "$repo_root/apps/admin/src"
 )
 
+# An extra directory to scan. The gate test uses a temporary directory so a
+# test never has to write into the source tree while other tests read it.
+if [ -n "${CHECK_NO_MOCKS_EXTRA_DIR:-}" ] && [ -d "$CHECK_NO_MOCKS_EXTRA_DIR" ]; then
+  search_paths+=("$CHECK_NO_MOCKS_EXTRA_DIR")
+fi
+
 matches=0
 if command -v rg >/dev/null 2>&1; then
   for dir in "${search_paths[@]}"; do

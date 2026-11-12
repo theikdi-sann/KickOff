@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toOrderDto, type OrderDto, type OrderJoinRow, type OrderStatus } from "@kickoff/shared";
 import { invokeFunction } from "@/lib/functions";
+import { sanitizeSearchTerm } from "@/lib/search";
 import { createClient } from "@/lib/supabase/client";
 
 export interface AdminOrder extends OrderDto {
@@ -64,8 +65,10 @@ export function useOrders(filter: OrdersFilter) {
 
       if (filter.status && filter.status !== "all") query = query.eq("status", filter.status);
       if (filter.search && filter.search.trim().length > 0) {
-        const term = filter.search.trim().replace(/[%,]/g, "");
-        query = query.or(`id.ilike.%${term}%,payment_ref.ilike.%${term}%`);
+        const term = sanitizeSearchTerm(filter.search);
+        if (term.length > 0) {
+          query = query.or(`id.ilike.%${term}%,payment_ref.ilike.%${term}%`);
+        }
       }
 
       const { data, count, error } = await query;

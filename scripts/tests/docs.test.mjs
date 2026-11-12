@@ -199,31 +199,37 @@ test('DOC-9 PLAN.md points only at files that exist', () => {
   const plan = read('PLAN.md');
   const missing = [];
 
-  for (const match of plan.matchAll(/`([^`\n]+)`/g)) {
-    const span = match[1];
-    if (!span.includes('/')) continue;
-    // A prose path with a trailing word is not a path.
-    if (/\s/.test(span)) continue;
+  for (const line of plan.split('\n')) {
+    // A deleted file may be named in the record, but it has to be marked as
+    // deleted — otherwise the plan points at something that is not there.
+    const marksDeletion = line.includes('(deleted)');
 
-    for (const candidate of expandBraces(span)) {
-      // `<name>` marks a placeholder, not a real path.
-      if (candidate.includes('<')) continue;
+    for (const match of line.matchAll(/`([^`\n]+)`/g)) {
+      const span = match[1];
+      if (!span.includes('/')) continue;
+      // A prose path with a trailing word is not a path.
+      if (/\s/.test(span)) continue;
 
-      const path = candidate.replace(/\/$/, '');
-      if (path.includes('*')) {
-        // A glob must match at least one entry under its directory.
-        const dir = path.slice(0, path.lastIndexOf('/'));
-        const pattern = path.slice(path.lastIndexOf('/') + 1).replace(/\*/g, '');
-        if (!existsSync(resolve(root, dir))) {
-          missing.push(candidate);
+      for (const candidate of expandBraces(span)) {
+        // `<name>` marks a placeholder, not a real path.
+        if (candidate.includes('<')) continue;
+
+        const path = candidate.replace(/\/$/, '');
+        if (path.includes('*')) {
+          // A glob must match at least one entry under its directory.
+          const dir = path.slice(0, path.lastIndexOf('/'));
+          const pattern = path.slice(path.lastIndexOf('/') + 1).replace(/\*/g, '');
+          if (!existsSync(resolve(root, dir))) {
+            if (!marksDeletion) missing.push(candidate);
+            continue;
+          }
+          const hits = readdirSync(resolve(root, dir)).filter((f) => f.includes(pattern));
+          if (hits.length === 0 && !marksDeletion) missing.push(candidate);
           continue;
         }
-        const hits = readdirSync(resolve(root, dir)).filter((f) => f.includes(pattern));
-        if (hits.length === 0) missing.push(candidate);
-        continue;
-      }
 
-      if (!existsSync(resolve(root, path))) missing.push(candidate);
+        if (!existsSync(resolve(root, path)) && !marksDeletion) missing.push(candidate);
+      }
     }
   }
 
