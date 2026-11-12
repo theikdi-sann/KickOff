@@ -39,7 +39,16 @@ export default function ProfileScreen() {
       {
         text: 'Sign out',
         style: 'destructive',
-        onPress: () => void signOut().catch(() => undefined),
+        onPress: () => {
+          // A failed sign-out must be reported: the supporter would otherwise
+          // stay signed in and believe the session ended.
+          void signOut().catch((error: unknown) => {
+            Alert.alert(
+              'Sign out failed',
+              error instanceof Error ? error.message : 'Please try again in a moment.',
+            );
+          });
+        },
       },
     ]);
   };

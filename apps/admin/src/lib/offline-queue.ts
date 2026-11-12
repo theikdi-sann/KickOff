@@ -20,7 +20,30 @@ export interface QueuedScan {
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
 const STORAGE_KEY = "kickoff.scan.queue.v1";
+/** Where an unreadable payload is kept so it can be recovered, never dropped. */
+const CORRUPT_KEY = "kickoff.scan.queue.corrupt";
 const MAX_ENTRIES = 100;
+
+/**
+ * The state of the offline queue.
+ *
+ * `corrupted` means part of the stored queue could not be read. The operator
+ * must be told: a scan that was persisted and then lost is a pass that was
+ * never admitted.
+ */
+export interface QueueState {
+  /** The scans that could be read. */
+  entries: QueuedScan[];
+  /** True when part of the stored queue could not be read. */
+  corrupted: boolean;
+  /** How many individual entries could not be read. */
+  quarantined: number;
+  /**
+   * True when the whole payload was unreadable — how many scans it held is
+   * unknown, so the count must not be guessed.
+   */
+  payloadUnreadable: boolean;
+}
 
 /** URL-safe key accepted by the Edge Function's `Idempotency-Key` check. */
 export function makeIdempotencyKey(): string {
@@ -55,21 +78,74 @@ function isQueuedScan(value: unknown): value is QueuedScan {
   );
 }
 
-export function listQueue(storage?: StorageLike): QueuedScan[] {
+/**
+ * Reads the offline queue and reports what could not be read.
+ *
+ * An unreadable payload is **quarantined**, never deleted: the operator has to
+ * know that a scan may have been lost, and support has to be able to recover
+ * it. Reading therefore repairs the storage — the unreadable payload is moved
+ * aside before anything can overwrite it.
+ */
+export function readQueue(storage?: StorageLike): QueueState {
   const store = storageOrNull(storage);
-  if (!store) return [];
+  if (!store) return { entries: [], corrupted: false, quarantined: 0, payloadUnreadable: false };
 
+  let raw: string | null;
   try {
-    const raw = store.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter(isQueuedScan)
-      .map((entry) => ({ ...entry, attempts: entry.attempts ?? 0 }));
+    raw = store.getItem(STORAGE_KEY);
   } catch {
-    return [];
+    // Storage is blocked (private mode) — there is nothing stored to lose.
+    return { entries: [], corrupted: false, quarantined: 0, payloadUnreadable: false };
   }
+  if (!raw) return { entries: [], corrupted: false, quarantined: 0, payloadUnreadable: false };
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    quarantine(store, raw);
+    return { entries: [], corrupted: true, quarantined: 0, payloadUnreadable: true };
+  }
+  if (!Array.isArray(parsed)) {
+    quarantine(store, raw);
+    return { entries: [], corrupted: true, quarantined: 0, payloadUnreadable: true };
+  }
+
+  const entries: QueuedScan[] = [];
+  const unreadable: unknown[] = [];
+  for (const candidate of parsed) {
+    if (isQueuedScan(candidate)) {
+      entries.push({ ...candidate, attempts: candidate.attempts ?? 0 });
+    } else {
+      unreadable.push(candidate);
+    }
+  }
+
+  if (unreadable.length > 0) {
+    quarantine(store, JSON.stringify(unreadable));
+    return {
+      entries,
+      corrupted: true,
+      quarantined: unreadable.length,
+      payloadUnreadable: false,
+    };
+  }
+
+  return { entries, corrupted: false, quarantined: 0, payloadUnreadable: false };
+}
+
+/** Keeps an unreadable payload for recovery instead of discarding it. */
+function quarantine(store: StorageLike, payload: string): void {
+  try {
+    store.setItem(CORRUPT_KEY, payload);
+  } catch {
+    // Quarantine is best-effort: the caller still reports the corruption.
+  }
+}
+
+/** The scans that could be read. Prefer `readQueue` when corruption matters. */
+export function listQueue(storage?: StorageLike): QueuedScan[] {
+  return readQueue(storage).entries;
 }
 
 function persist(entries: QueuedScan[], storage?: StorageLike): boolean {

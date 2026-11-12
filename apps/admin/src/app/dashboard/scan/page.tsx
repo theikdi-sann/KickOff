@@ -289,6 +289,21 @@ export default function ScanPage() {
         }
       />
 
+      {queue.corrupted ? (
+        <div className="panel border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <strong className="block font-semibold">The offline queue could not be read.</strong>
+          {queue.payloadUnreadable ? (
+            <>Its contents were kept for recovery. Re-scan any pass that was not admitted.</>
+          ) : (
+            <>
+              {queue.quarantined} queued scan{queue.quarantined === 1 ? " was" : "s were"}{" "}
+              unreadable and kept for recovery. Re-scan
+              {queue.quarantined === 1 ? " the pass" : " the passes"} if they were not admitted.
+            </>
+          )}
+        </div>
+      ) : null}
+
       {gatesLoading ? (
         <div className="panel flex items-center justify-center gap-2 py-16 text-sm text-slate-500">
           <Loader2 size={16} className="animate-spin" /> Loading gates…

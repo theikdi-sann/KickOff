@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import type { ScanResultCode } from "@kickoff/shared";
-import { listQueue, type QueuedScan } from "@/lib/offline-queue";
+import { readQueue, type QueueState } from "@/lib/offline-queue";
 import {
   getDemoPass,
   scanTicket,
@@ -220,20 +220,22 @@ export function useOrderScanUsage(orderIds: string[]) {
 
 /** Offline queue size plus a manual replay trigger. */
 export function useOfflineQueue() {
-  const [queue, setQueue] = useState<QueuedScan[]>(() =>
-    typeof window === "undefined" ? [] : listQueue(),
+  const [state, setState] = useState<QueueState>(() =>
+    typeof window === "undefined"
+      ? { entries: [], corrupted: false, quarantined: 0, payloadUnreadable: false }
+      : readQueue(),
   );
   const [syncing, setSyncing] = useState(false);
 
   const refresh = useCallback(() => {
-    setQueue(listQueue());
+    setState(readQueue());
   }, []);
 
   const sync = useCallback(async (): Promise<ReplayReport> => {
     setSyncing(true);
     try {
       const report = await syncQueuedScans();
-      setQueue(listQueue());
+      setState(readQueue());
       return report;
     } finally {
       setSyncing(false);
@@ -246,5 +248,17 @@ export function useOfflineQueue() {
     return () => window.removeEventListener("storage", onStorage);
   }, [refresh]);
 
-  return { queue, count: queue.length, syncing, sync, refresh };
+  return {
+    queue: state.entries,
+    count: state.entries.length,
+    /** True when part of the stored queue could not be read. */
+    corrupted: state.corrupted,
+    /** How many individual entries could not be read. */
+    quarantined: state.quarantined,
+    /** True when the whole payload was unreadable — the count is unknown. */
+    payloadUnreadable: state.payloadUnreadable,
+    syncing,
+    sync,
+    refresh,
+  };
 }

@@ -218,8 +218,10 @@ export default function TicketDetailScreen() {
               ) : (
                 <View style={styles.qrLoading}>
                   {qrQuery.error ? (
-                    <AppText variant="small" color={colors.muted} style={styles.qrError}>
-                      Tap to reload your QR
+                    <AppText variant="small" color={colors.danger} style={styles.qrError}>
+                      {qrQuery.error instanceof Error
+                        ? qrQuery.error.message
+                        : 'Your pass could not be loaded. Tap to try again.'}
                     </AppText>
                   ) : (
                     <ActivityIndicator color={colors.primary} />

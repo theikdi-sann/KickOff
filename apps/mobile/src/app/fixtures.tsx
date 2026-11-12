@@ -1,9 +1,9 @@
-import { ChevronLeft, ChevronRight, Clock3, MapPin } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Clock3, CloudOff, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { formatMatchDate, formatMatchTime, type MatchDto } from '@kickoff/shared';
 import { ResultRow } from '@/components/match-card';
-import { AppText, Card, Crest, EmptyState, LiveTag, Screen, SectionHeading, Skeleton } from '@/components/ui';
+import { AppText, Card, Crest, EmptyState, LiveTag, PrimaryButton, Screen, SectionHeading, Skeleton } from '@/components/ui';
 import { useMatches } from '@/lib/queries/matches';
 import { colors, radii } from '@/lib/theme';
 
@@ -51,6 +51,21 @@ export default function FixturesScreen() {
             <Skeleton height={172} radius={18} />
             <Skeleton height={172} radius={18} />
           </View>
+        ) : matchesQuery.error ? (
+          <Card style={styles.empty}>
+            <EmptyState
+              title="Could not load the fixtures"
+              description={
+                matchesQuery.error instanceof Error
+                  ? matchesQuery.error.message
+                  : 'Check your connection and try again.'
+              }
+              icon={<CloudOff size={26} color={colors.muted} />}
+            />
+            <View style={styles.retry}>
+              <PrimaryButton label="Try again" onPress={refresh} />
+            </View>
+          </Card>
         ) : (
           <>
             <SectionHeading title="Upcoming" />
@@ -164,5 +179,6 @@ const styles = StyleSheet.create({
   rowMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   rowMetaText: { fontSize: 9, letterSpacing: 0.4 },
   empty: { padding: 8 },
+  retry: { marginTop: 12 },
   resultsCard: { paddingHorizontal: 14 },
 });

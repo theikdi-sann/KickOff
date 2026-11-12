@@ -1,8 +1,8 @@
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, CloudOff } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { NewsRow } from '@/components/news-row';
-import { AppText, Card, EmptyState, Screen, Skeleton } from '@/components/ui';
+import { AppText, Card, EmptyState, PrimaryButton, Screen, Skeleton } from '@/components/ui';
 import { useNews } from '@/lib/queries/news';
 import { colors } from '@/lib/theme';
 
@@ -48,6 +48,21 @@ export default function NewsScreen() {
             <Skeleton height={88} radius={16} />
             <Skeleton height={88} radius={16} />
           </View>
+        ) : newsQuery.error ? (
+          <Card style={styles.empty}>
+            <EmptyState
+              title="Could not load the news"
+              description={
+                newsQuery.error instanceof Error
+                  ? newsQuery.error.message
+                  : 'Check your connection and try again.'
+              }
+              icon={<CloudOff size={26} color={colors.muted} />}
+            />
+            <View style={styles.retry}>
+              <PrimaryButton label="Try again" onPress={refresh} />
+            </View>
+          </Card>
         ) : news.length === 0 ? (
           <Card style={styles.empty}>
             <EmptyState title="No news yet" description="Club updates will land here." />
@@ -94,5 +109,6 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingBottom: 40 },
   skeletons: { gap: 12 },
   empty: { padding: 8 },
+  retry: { marginTop: 12 },
   list: { paddingHorizontal: 14 },
 });
