@@ -119,8 +119,15 @@ by every admin policy, so a role change is applied everywhere at once.
 - `Idempotency-Key` (8–64 URL-safe characters) makes offline replays safe: the
   same key returns the original outcome instead of admitting twice.
 - `audit_logs` records privileged actions (refunds, account deletion, admin
-  user changes, settings writes). The admin console is read-only over audit
-  data.
+  user changes, settings writes, and every privileged change the staff console
+  makes — fixtures, zones, venues, gates, news, settings and CSV exports).
+  The admin console is read-only over audit data.
+- The staff console is gated **server-side** by the Next proxy: a request to
+  `/dashboard/*` must carry a session whose JWT claim `app_metadata.role` is
+  `admin`; a signed-in non-admin is redirected to the sign-in form with the
+  reason. The dashboard layout repeats the check, so the console shell never
+  renders for an account without the claim. The database remains the final
+  authority — every write is filtered by RLS `public.is_admin()`.
 - The admin console ships `robots: { index: false, follow: false }` and
   `nocache: true` (P11-19) so staff screens are not indexed or cached.
 

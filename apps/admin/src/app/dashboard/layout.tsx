@@ -68,6 +68,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // The console shell must never render for an account without the admin
+  // claim — the proxy already refuses it, and this keeps the boundary in the
+  // client too (a cached page must not flash the console either).
+  if (!session.isAdmin) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-app px-6">
+        <div className="max-w-md text-center">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-pitch text-xl font-bold text-gold">
+            K
+          </div>
+          <h1 className="display mt-5 text-3xl text-slate-900">Admin access required</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            This account does not have admin access. Ask a club administrator to grant it.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return <AdminShell user={session.user}>{children}</AdminShell>;
 }
 

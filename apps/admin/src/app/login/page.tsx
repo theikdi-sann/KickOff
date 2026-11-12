@@ -1,8 +1,8 @@
 "use client";
 
 import { ArrowRight, Eye, EyeOff, Lock, Mail, QrCode, ShieldCheck, Ticket } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { Logo } from "@/components/logo";
 import { Badge } from "@/components/ui";
 import { isAdminUser, needsMfa, signIn } from "@/lib/auth";
@@ -11,13 +11,33 @@ import { createClient } from "@/lib/supabase/client";
 const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_EMAIL ?? "";
 const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "";
 
+/** Why the console refused the account — the proxy sends the reason. */
+const REFUSAL_MESSAGES: Record<string, string> = {
+  "not-admin": "This account does not have admin access. Ask a club administrator to grant it.",
+};
+
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // The refusal reason travels in the query string, so the operator is told
+  // why the console sent them back instead of showing an empty form.
+  const refusal = searchParams.get("error");
+  const [error, setError] = useState<string | null>(
+    refusal && REFUSAL_MESSAGES[refusal] ? REFUSAL_MESSAGES[refusal] : null,
+  );
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
