@@ -670,13 +670,13 @@ untouched).
 - Root causes found during diagnosis: (1) `staleTime: 60_000` + no `['seats']` invalidation on order create made the seat map render cached "available" seats, so Continue hit the server's correct refusal with no explanation; (2) the Pay button entered a blind 90-second `verifying` state whenever an order existed and was `pending` — exactly the state a cancelled return leaves you in; (3) only the X button released the hold — swipe-down/back dispatched nothing, and the auto-cancel had a silent `.catch(() => undefined)`.
 - A *raw* hold (created at Continue, before Pay) never changes `seats.status` — only a pending order does — so other buyers' pre-payment holds are invisible to clients (`seat_holds` RLS is own-only). Unchanged by design: the refusal copy now explains it, and the unified exit guarantees your own stray holds are released. Server visibility for foreign raw holds would need a new view/migration — deliberately not done here.
 - iOS sheet swipe-down is intercepted via the navigator's removal prevention; if a native dismiss ever bypasses it, the unmount safety net releases the hold anyway — both paths are the X button's behaviour.
-- Second-walkthrough checkout complaints (cancelled seat stayed blocked / ~2-minute spinner / swipe-down → "seat already held") are closed here; the original 13-item punch list still had #1 LAN script, #2 signup, #3 redirects, #4 see-all, #5+#6 share/wallet, #7 README and #10–#13 staged for Phase B — all of them are now closed there except #10 (blocked, see `PB-PUSH`).
+- Second-walkthrough checkout complaints (cancelled seat stayed blocked / ~2-minute spinner / swipe-down → "seat already held") are closed here; the original 13-item punch list still had #1 LAN script, #2 signup, #3 redirects, #4 see-all, #5+#6 share/wallet, #7 README and #10–#13 staged for Phase B — all of them are now closed there, #10 in its own later cycle (see `PB-PUSH`).
 
 ---
 
 ### Phase B — Walkthrough Fixes: remaining punch list — complete
 
-**One-line summary:** every walkthrough punch-list item except #10 is shipped and verified — #1–#7 and #11–#13 went through a strict per-behavior TDD cycle (red → green) with the full gate sweep, hosted migrations and 10 pgTAP suites green; #10 (EAS push dev build) stays **blocked** on Expo account credentials only the maintainer can provide.
+**One-line summary:** every walkthrough punch-list item — #1–#7 and #10–#13 — is shipped and verified; each went through a strict per-behavior TDD cycle (red → green) with the full gate sweep, hosted migrations and 10 pgTAP suites green, and #10 (EAS push dev build) closed its own `PUSH-x` cycle once the maintainer's Expo credentials landed.
 
 #### `PB-01` — 3-second seat-map polling — complete
 
@@ -845,11 +845,33 @@ authenticated-admin `INSERT`; the client writes the row next to the update).
 - The rules are enforced in shared Zod + admin UI only: a direct PostgREST write could still move a kickoff — accepted per the walkthrough decision (Option 3).
 - `RS-7b` exists because the `<input type="datetime-local">` value drops seconds: comparing raw strings would let a seconds-bearing kickoff be rewritten with no reason; the form now compares ISO instants.
 
-#### `PB-PUSH` — punch list #10: push notifications via an EAS dev build — blocked
+#### `PB-PUSH` — punch list #10: push notifications via an EAS dev build — complete
 
-- [ ] `PB-PUSH-*` · Expo credentials required — **blocked on the maintainer**, not on code: `npx eas login` + `npx eas init` must be run in a terminal (Expo account), which writes `EAS_PROJECT_ID` into `.env`. Only then can the `PUSH-x` contract suite (`scripts/tests/push.test.mjs`) start its red→green cycle with expo-dev-client, an `eas.json` dev profile, the Expo-Go capability guard in `notifications.ts` and the README dev-build docs; builds run on EAS cloud (no local Android SDK available).
+Blocked until the maintainer supplied Expo credentials; `npx eas-cli login` +
+`npx eas-cli init` now yield `EAS_PROJECT_ID=6f1ad5f2-435e-4d40-ae54-50772a22bdcb`
+(verified: `npx expo config --type public` resolves it under
+`extra.eas.projectId`, `eas whoami` = `theikdisann`). The cycle then ran to
+green with 9 `PUSH-x` contracts.
 
-#### Remaining punch-list items (staged)
+- [x] `PB-PUSH-a` · `scripts/tests/push.test.mjs` **[N]** — 9 contracts: `PUSH-1` env→`extra.eas.projectId` + `.env.example` doc, `PUSH-2` dev profile shape, `PUSH-2b` internally-distributed profiles must produce an installable artifact, `PUSH-3` `expo-dev-client` dependency, `PUSH-4` Expo-Go guard before permissions/token, `PUSH-5` three distinct actionable messages, `PUSH-6` Settings renders the reason and disables the switch for exactly those reasons, `PUSH-7` token still registered with the existing `devices` endpoint (no server change), `PUSH-8` README dev-build flow.
+- [x] `PB-PUSH-b` · `apps/mobile/eas.json` **[N]** — `cli.version >= 27.9.0`; `development` (`developmentClient: true`, `distribution: internal`), `preview` (`distribution: internal` + `android.buildType: apk`), `production` (`autoIncrement`), `submit.production`.
+- [x] `PB-PUSH-c` · `apps/mobile/package.json` **[M]** · `package-lock.json` **[M]** — `expo-dev-client@~58.0.19` installed with `npx expo install` (SDK-aligned).
+- [x] `PB-PUSH-d` · `apps/mobile/src/lib/notifications.ts` **[M]** — `pushUnavailableReason()` returns one of three distinct messages (no device / Expo Go → use a development build / `EAS_PROJECT_ID` missing) with `isRunningInExpoGo()` from `expo` checked **before** the permission prompt and token fetch; `registerPushToken` throws that reason.
+- [x] `PB-PUSH-e` · `apps/mobile/src/app/settings.tsx` **[M]** — the switch is disabled exactly when `pushUnavailableReason()` is non-null and the hint renders that value (single source of truth, no duplicated copy).
+- [x] `PB-PUSH-f` · `apps/mobile/.env.example` **[M]** — documents `EAS_PROJECT_ID` as required for push.
+- [x] `PB-PUSH-g` · `README.md` **[M]** — "Push notifications — development build" section: `eas-cli login` → `eas-cli init` → UUID into `.env` → `eas-cli build --profile development --platform android`, why Expo Go cannot receive push, and the note that EAS embeds the project id into the binary.
+
+**Verification:** TDD — `PUSH-1..8` red first (**7/9 failing**, `PUSH-7` locked existing behaviour and was not forced to fail), then green; `PUSH-2b` written red during review (the `preview` profile produced a `.aab`, which cannot be installed from an internal-distribution URL) and fixed in `eas.json`. Final `node --test scripts/tests/push.test.mjs` → **9/9 pass**. AGENTS.md gates: `npx tsc --noEmit` and `npx expo lint` clean in `apps/mobile`. No migration, no edge function, no server change (`PUSH-7`).
+
+**Errors / Notes**
+- **`expo-doctor` reports 1 pre-existing failure** (17 packages one patch behind the SDK's expectation, e.g. `expo-notifications ~58.1.9` vs `58.1.8`). Verified **not** caused by this cycle: the `package.json` diff adds only `expo-dev-client` and the lockfile only adds the dev-client packages. Fixing it means `npx expo install --check` (17 patch bumps across unrelated deps) — deliberately deferred as separate churn.
+- Two contract *mechanics* were corrected mid-cycle rather than left sloppy: the `PUSH-5` message matcher used `[^']`, which stitches neighbouring statements together across newlines (now line-bounded literals — a stricter, correct check), and `PUSH-6`'s 400-char proximity window was replaced by capturing the bound variable and asserting the hint interpolates it, plus two new assertions (switch disabled for exactly those reasons; no duplicated copy in `settings.tsx`). Its `/development build/i` clause was dropped because that copy belongs to `notifications.ts` only — asserted by the new `doesNotMatch` instead.
+- **Expo Go is blocked on both platforms**, although `expo-notifications` hard-fails only on Android and iOS may still mint a token. Deliberate: one consistent message, and the SDK 58 docs state a development build is required for push.
+- **The cloud build itself was not run in this cycle** — `eas build --profile development` needs interactive FCM credential setup and a physical phone. README documents the exact command; on-device token round-trip remains a manual follow-up (`expo.dev/notifications` is the verification tool).
+- `Constants.easConfig.projectId` is the runtime fallback for EAS-built binaries (local `.env` files are not available to remote build jobs — per the Expo env-var docs), so the id resolves both under local Metro and inside the built dev client.
+- Importing `isRunningInExpoGo` from `expo` adds no new bundle surface: `expo-notifications`' own `index.js` already imports it at module scope.
+
+#### Punch-list items — all closed
 
 - ~~#1 LAN~~ — **done** (see `PB-LAN` below).
 - ~~#2 signup~~ — **done** (see `PB-SIGNUP` below).
@@ -857,7 +879,7 @@ authenticated-admin `INSERT`; the client writes the row next to the update).
 - ~~#4 see-all~~ — **done** (see `PB-SEEALL` below).
 - ~~#5+#6 share~~ — **done** (see `PB-SHARE` below) — wallet dropped in favour of a shareable pass image.
 - ~~#7 README~~ — **done** (see `PB-README` below).
-- #10 push notifications (EAS dev build) — **blocked**, see `PB-PUSH` below: needs `npx eas login` + `npx eas init` run by the maintainer.
+- ~~#10 push notifications (EAS dev build)~~ — **done** (see `PB-PUSH`) — Expo-Go guard with three distinct actionable messages, `eas.json` dev profile, `expo-dev-client`, README dev-build flow.
 - ~~#11 language~~ — **done** (see `PB-LANG` below).
 - ~~#12 venues/stadiums schema~~ — **done** (see `PB-VENUES` below) — normalized `venues` table + admin venue management page.
 - ~~#13 reschedule rules~~ — **done** (see `PB-RESCHEDULE` below) — never past/inside lock window, never earlier, cap 10 days, reason always required, reason stored in `audit_logs`.

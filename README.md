@@ -184,6 +184,53 @@ Notes:
   hostname only, no `https://` prefix.
 - LAN config is dev-only; production builds are unaffected.
 
+#### Push notifications — development build
+
+Remote push is **unavailable in Expo Go** (removed from Expo Go at SDK 53, and
+this app is on SDK 58), so notification tokens require a development build
+built once on EAS and installed on the phone. Expo Go still runs everything
+else; the Settings screen tells you why the notifications switch is disabled
+there.
+
+```bash
+cd apps/mobile
+npx eas-cli@latest login      # Expo account (free tier is enough)
+npx eas-cli@latest init       # creates + links the project, prints the UUID
+```
+
+Put the printed UUID in `apps/mobile/.env`:
+
+```bash
+echo 'EAS_PROJECT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' >> .env
+npx expo config --type public | grep -i projectid   # must show the same id
+```
+
+Then build and install the dev client on a physical device:
+
+```bash
+npx eas-cli@latest build --profile development --platform android
+```
+
+Install the resulting APK on the phone (the build URL is printed, and the
+`development` profile in `eas.json` is `distribution: internal`, so it is
+installed directly), start the dev server with `npm run mobile`, and the app
+runs inside the dev client instead of Expo Go. Notifications then register
+against `EAS_PROJECT_ID` (the id flows into `extra.eas.projectId` via
+`app.config.ts`).
+
+Notes:
+
+- `EAS_PROJECT_ID` is a public identifier, not a secret — it is safe to share
+  with a clone; it is still gitignored like the rest of `.env`. It matters for
+  local Metro runs (`app.config.ts` reads it); EAS builds also embed the
+  project id into the binary automatically, and the runtime falls back to
+  `Constants.easConfig.projectId` for that case.
+- iOS needs an Apple Developer account to build and a device to install, so
+  Android is the demo path.
+- No push server exists in this repo beyond the Expo Push Service: kickoff
+  reminders are sent by the `send-kickoff-reminders` Edge Function through
+  `https://exp.host/--/api/v2/push/send`.
+
 ### Demo credentials
 
 | Role | Email | Password |

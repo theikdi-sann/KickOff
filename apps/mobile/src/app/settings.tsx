@@ -9,6 +9,7 @@ import { resetLocalSession, signOut } from '@/lib/auth';
 import {
   listDeviceRegistrations,
   pushSupported,
+  pushUnavailableReason,
   registerPushToken,
   unregisterPushToken,
 } from '@/lib/notifications';
@@ -25,6 +26,9 @@ export default function SettingsScreen() {
     enabled: pushSupported(),
   });
   const notificationsOn = (devicesQuery.data?.length ?? 0) > 0;
+  // Why the switch may be off-limits (no device, running in Expo Go, or no
+  // EAS project id). One source of truth — the screen only renders it.
+  const unavailable = pushUnavailableReason();
 
   const toggleNotifications = async (next: boolean) => {
     setBusy('notifications');
@@ -102,14 +106,14 @@ export default function SettingsScreen() {
             <Switch
               value={notificationsOn}
               onValueChange={(next) => void toggleNotifications(next)}
-              disabled={busy !== null || !pushSupported() || devicesQuery.isLoading}
+              disabled={busy !== null || unavailable !== null || devicesQuery.isLoading}
               trackColor={{ false: colors.line, true: colors.primary }}
               thumbColor="#FFFFFF"
             />
           </View>
-          {!pushSupported() ? (
+          {unavailable ? (
             <AppText variant="caption" color={colors.muted} style={styles.hint}>
-              Push notifications need a physical iOS or Android build.
+              {unavailable}
             </AppText>
           ) : null}
         </Card>
