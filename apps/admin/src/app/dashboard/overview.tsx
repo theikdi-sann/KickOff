@@ -15,16 +15,17 @@ import {
   Users,
 } from "lucide-react";
 import { Badge, EmptyState, SectionTitle, Skeleton } from "@/components/ui";
-import { useMatches, useAllZones, useMatchSalesSummaries } from "@/lib/queries/matches";
+import { useMatches, useAllZones, useMatchSalesSummaries, useZoneAvailability } from "@/lib/queries/matches";
 import { useNews } from "@/lib/queries/news";
 import { useOrders, useOrdersAggregate } from "@/lib/queries/orders";
 import { cn } from "@/lib/utils";
-import { formatMatchDate, formatMatchTime, formatTHB } from "@kickoff/shared";
+import { formatMatchDate, formatMatchTime, formatTHB, sellThroughPercent, summariseAvailability } from "@kickoff/shared";
 
 export function DashboardOverview() {
   const matchesQuery = useMatches();
   const zonesQuery = useAllZones();
   const salesQuery = useMatchSalesSummaries();
+  const availabilityQuery = useZoneAvailability();
   const newsQuery = useNews();
   const ordersQuery = useOrders({ page: 1, perPage: 4, status: "all" });
   const aggregate = useOrdersAggregate();
@@ -44,10 +45,15 @@ export function DashboardOverview() {
     .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
   const next = upcoming[0];
   const nextZones = zones.filter((zone) => zone.matchId === next?.id);
-  const capacity = nextZones.reduce((sum, zone) => sum + zone.rows.length * zone.seatsPerRow, 0);
+  // The capacity and the free seats come from the database's own count, not
+  // from the zone layout: a seat reserved by a pending order is not available,
+  // and the browser cannot know that.
+  const availability = summariseAvailability(availabilityQuery.data ?? []);
+  const nextAvailability = next ? availability[next.id] : undefined;
+  const capacity = nextAvailability?.capacity ?? 0;
   const sold = Math.min(capacity, next ? (sales[next.id]?.ticketsSold ?? 0) : 0);
-  const available = Math.max(0, capacity - sold);
-  const sellThrough = capacity ? Math.round((sold / capacity) * 100) : 0;
+  const available = nextAvailability?.available ?? 0;
+  const sellThrough = sellThroughPercent(sold, capacity);
   const revenue = aggregate.data?.revenueSatang ?? 0;
   const ticketsSold = aggregate.data?.ticketsSold ?? 0;
   const pulse = [
@@ -62,10 +68,12 @@ export function DashboardOverview() {
     ? Math.max(0, Math.ceil((new Date(next.kickoffAt).getTime() - now.getTime()) / 86_400_000))
     : 0;
 
-  const isLoading = matchesQuery.isLoading || zonesQuery.isLoading;
+  const isLoading =
+    matchesQuery.isLoading || zonesQuery.isLoading || availabilityQuery.isLoading;
   const loadError =
     matchesQuery.error ??
     zonesQuery.error ??
+    availabilityQuery.error ??
     salesQuery.error ??
     newsQuery.error ??
     ordersQuery.error ??

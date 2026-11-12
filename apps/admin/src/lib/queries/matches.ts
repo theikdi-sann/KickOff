@@ -1,7 +1,13 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { requireDefined, toMatchDto, toZoneDto } from "@kickoff/shared";
+import {
+  requireDefined,
+  toMatchDto,
+  toZoneAvailabilityDto,
+  toZoneDto,
+  type ZoneAvailabilityDto,
+} from "@kickoff/shared";
 import { AUDIT_ACTIONS, changedFields, recordAudit, recordReschedule } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/client";
 
@@ -108,6 +114,38 @@ export function useAllZones() {
   });
 }
 
+/**
+ * The availability of every zone, from the authoritative view.
+ *
+ * `public.zone_availability` counts the seats that exist and the ones that
+ * are free right now — a seat reserved by a pending order is not available.
+ * The zone layout (`rows.length * seatsPerRow`) is what the club asked for,
+ * so computing sell-through from it in the browser could disagree with the
+ * database.
+ */
+export function useZoneAvailability() {
+  return useQuery({
+    queryKey: ["admin-zone-availability"],
+    queryFn: async (): Promise<ZoneAvailabilityDto[]> => {
+      const { data, error } = await client()
+        .from("zone_availability")
+        .select("zone_id,total_seats,available_seats,zones(match_id)");
+      if (error) throw new Error(error.message);
+
+      return (data ?? [])
+        .map((row) =>
+          toZoneAvailabilityDto({
+            zone_id: row.zone_id,
+            total_seats: row.total_seats,
+            available_seats: row.available_seats,
+            zones: row.zones,
+          }),
+        )
+        .filter((zone): zone is ZoneAvailabilityDto => zone !== null);
+    },
+  });
+}
+
 export interface MatchSalesSummary {
   matchId: string;
   ordersPaid: number;
@@ -156,6 +194,8 @@ function invalidateMatchData(queryClient: ReturnType<typeof useQueryClient>, mat
   void queryClient.invalidateQueries({ queryKey: ["admin-matches"] });
   void queryClient.invalidateQueries({ queryKey: ["admin-zones-all"] });
   void queryClient.invalidateQueries({ queryKey: ["admin-match-sales"] });
+  // A zone change moves the seats, so the availability counts move with it.
+  void queryClient.invalidateQueries({ queryKey: ["admin-zone-availability"] });
   if (matchId) {
     void queryClient.invalidateQueries({ queryKey: ["admin-match", matchId] });
     void queryClient.invalidateQueries({ queryKey: ["admin-zones", matchId] });

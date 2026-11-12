@@ -1,5 +1,12 @@
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
-import { requireDefined, toSeatDto, toZoneDto, type SeatDto } from '@kickoff/shared';
+import {
+  requireDefined,
+  toSeatDto,
+  toZoneAvailabilityDto,
+  toZoneDto,
+  type SeatDto,
+  type ZoneAvailabilityDto,
+} from '@kickoff/shared';
 import { supabase } from '@/lib/supabase';
 
 export function useZones(matchId: string | undefined) {
@@ -42,17 +49,19 @@ export function useSeatMap(
   });
 }
 
-export interface ZoneAvailability {
-  total: number;
-  available: number;
-}
-
-/** Per-zone capacity and live availability from the `zone_availability` view. */
+/**
+ * Per-zone capacity and live availability from the `zone_availability` view.
+ *
+ * The view is the only place that knows how many seats are free right now —
+ * a seat reserved by a pending order is not available. The mapping is owned
+ * by the shared package, so the app and the staff console read the same
+ * numbers the same way.
+ */
 export function useZoneAvailability(matchId: string | undefined) {
   return useQuery({
     queryKey: ['zone-availability', matchId],
     enabled: Boolean(matchId),
-    queryFn: async (): Promise<Record<string, ZoneAvailability>> => {
+    queryFn: async (): Promise<Record<string, ZoneAvailabilityDto>> => {
       const { data: zones, error } = await supabase
         .from('zones')
         .select('id')
@@ -69,10 +78,15 @@ export function useZoneAvailability(matchId: string | undefined) {
       if (availabilityError) throw new Error(availabilityError.message);
 
       return Object.fromEntries(
-        (data ?? []).map((row) => [
-          row.zone_id,
-          { total: row.total_seats ?? 0, available: row.available_seats ?? 0 },
-        ]),
+        (data ?? []).flatMap((row) => {
+          const zone = toZoneAvailabilityDto({
+            zone_id: row.zone_id,
+            total_seats: row.total_seats,
+            available_seats: row.available_seats,
+            zones: { match_id: requireDefined(matchId, 'match id') },
+          });
+          return zone ? [[zone.zoneId, zone] as const] : [];
+        }),
       );
     },
   });

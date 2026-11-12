@@ -108,7 +108,7 @@ client-side redirect fires (F-09).
 | **F-14** | Medium | mobile | The supporter app has **no unit tests at all** (`apps/mobile/package.json` `test` script is a placeholder). | ⬜ open — C4 cycle |
 | **F-15** | Low | both apps | Non-null assertions (`!`) remained across the apps, an Edge Function and the E2E spec, against the standard in `ARCHITECTURE.md` §6.1. The audit's count of 15 was an over-count — **24** assertions were in the repository, 12 of them in the apps. | ✅ **fixed** — every assertion is replaced by an explicit narrowing (`requireDefined`), and the lint rule `no-non-null-assertion` now forbids the return (`scripts/tests/type-safety.test.mjs`) |
 | **F-16** | Low | A10 | The CSV export writes holder names and e-mail addresses to the operator's disk with no record of the export. | ✅ **fixed** — the export is recorded with the row count |
-| **F-17** | Low | A2 | Sell-through is computed in the browser from the zone layout while the authoritative `zone_availability` view exists. | ⬜ open — C4 cycle |
+| **F-17** | Low | A2 | Sell-through is computed in the browser from the zone layout while the authoritative `zone_availability` view exists. | ✅ **fixed** — capacity, free seats and sell-through come from the view through the shared package; the browser-side layout arithmetic is gone from both apps (`scripts/tests/availability.test.mjs`) |
 
 ### Findings from the repository sweep (Phase C4)
 
@@ -137,7 +137,8 @@ came out of it — all fixed, all now enforced by a contract.
    env variable, the misclassified TypeError and the filter injection.
 6. **F-07, F-11** — atomicity and the shared validation contracts.
 7. **F-15** (done) — the type-safety standard, now enforced by lint and a contract.
-8. **F-14, F-17** — test coverage and the authoritative availability view.
+8. **F-14** — the mobile test harness.
+9. **F-17** (done) — the authoritative availability view.
 
 > **Known limitation of the audit trail.** The staff console writes the audit
 > rows from the browser (the same pattern the reschedule flow already used,

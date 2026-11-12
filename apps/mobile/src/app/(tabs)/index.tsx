@@ -31,7 +31,7 @@ import {
 import { useMatches } from '@/lib/queries/matches';
 import { useNews } from '@/lib/queries/news';
 import { useProfile } from '@/lib/queries/profile';
-import { useZones } from '@/lib/queries/seats';
+import { useZones, useZoneAvailability } from '@/lib/queries/seats';
 import { useTickets } from '@/lib/queries/tickets';
 import { colors, radii, shadow } from '@/lib/theme';
 
@@ -50,25 +50,35 @@ export default function HomeScreen() {
   const nextMatch = upcoming[0];
   const zonesQuery = useZones(nextMatch?.id);
   const zones = zonesQuery.data ?? [];
+  // The seats on sale come from the database's own count — a seat reserved by
+  // a pending order is not on sale, and the browser cannot know that.
+  const availabilityQuery = useZoneAvailability(nextMatch?.id);
+  const seatsOnSale = Object.values(availabilityQuery.data ?? {}).reduce(
+    (total, zone) => total + zone.availableSeats,
+    0,
+  );
 
+  const minPrice = zones.length ? Math.min(...zones.map((zone) => zone.priceSatang)) : undefined;
   const profile = profileQuery.data;
   const firstName = (profile?.fullName ?? 'there').split(' ')[0];
   const validTickets = tickets.filter((ticket) => ticket.status === 'valid');
-  const minPrice = zones.length ? Math.min(...zones.map((zone) => zone.priceSatang)) : undefined;
-  const seatsLeft = zones.reduce(
-    (total, zone) => total + zone.rows.length * zone.seatsPerRow,
-    0,
-  );
   const featured = news[0];
 
-  const loading = matchesQuery.isLoading || newsQuery.isLoading;
+  const loading =
+    matchesQuery.isLoading || newsQuery.isLoading || availabilityQuery.isLoading;
   const refreshing =
-    matchesQuery.isRefetching || newsQuery.isRefetching || ticketsQuery.isRefetching;
+    matchesQuery.isRefetching ||
+    newsQuery.isRefetching ||
+    ticketsQuery.isRefetching ||
+    zonesQuery.isRefetching ||
+    availabilityQuery.isRefetching;
 
   const refresh = () => {
     void matchesQuery.refetch();
     void newsQuery.refetch();
     void ticketsQuery.refetch();
+    void zonesQuery.refetch();
+    void availabilityQuery.refetch();
   };
 
   return (
@@ -238,7 +248,7 @@ export default function HomeScreen() {
             icon={<CalendarDays size={15} color={colors.primary} />}
           />
           <Stat
-            value={String(seatsLeft)}
+            value={availabilityQuery.error ? '—' : String(seatsOnSale)}
             label="Seats on sale"
             icon={<MapPin size={15} color={colors.primary} />}
           />

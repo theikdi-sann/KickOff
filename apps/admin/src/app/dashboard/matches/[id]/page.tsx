@@ -34,6 +34,7 @@ import {
   useMatchSalesSummaries,
   useUpdateMatch,
   useUpdateZone,
+  useZoneAvailability,
   useZones,
   type AdminMatchInput,
   type AdminZoneInput,
@@ -42,6 +43,8 @@ import {
   formatMatchDate,
   formatMatchTime,
   formatTHB,
+  potentialRevenueSatang,
+  summariseAvailability,
   type ZoneDto,
 } from "@kickoff/shared";
 
@@ -53,6 +56,7 @@ export default function SeatingPage() {
   const matchQuery = useMatch(matchId);
   const zonesQuery = useZones(matchId);
   const salesQuery = useMatchSalesSummaries();
+  const availabilityQuery = useZoneAvailability();
   const addZone = useAddZone();
   const updateZone = useUpdateZone();
   const deleteZone = useDeleteZone();
@@ -62,7 +66,7 @@ export default function SeatingPage() {
   const [deletingZone, setDeletingZone] = useState<ZoneDto | null>(null);
   const [editingFixture, setEditingFixture] = useState(false);
 
-  if (matchQuery.isLoading || zonesQuery.isLoading) {
+  if (matchQuery.isLoading || zonesQuery.isLoading || availabilityQuery.isLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-10 w-64" />
@@ -76,14 +80,19 @@ export default function SeatingPage() {
     );
   }
 
-  if (matchQuery.error || !matchQuery.data) {
+  if (matchQuery.error || availabilityQuery.error || !matchQuery.data) {
+    const fixtureMissing = Boolean(matchQuery.error) || !matchQuery.data;
     return (
       <div className="panel p-10 text-center">
-        <h1 className="display text-3xl text-slate-900">Fixture not found</h1>
+        <h1 className="display text-3xl text-slate-900">
+          {fixtureMissing ? "Fixture not found" : "Seating unavailable"}
+        </h1>
         <p className="mt-2 text-sm text-slate-500">
           {matchQuery.error instanceof Error
             ? matchQuery.error.message
-            : "It may have been deleted or reset."}
+            : availabilityQuery.error instanceof Error
+              ? availabilityQuery.error.message
+              : "It may have been deleted or reset."}
         </p>
         <Link href="/dashboard/matches" className="btn-primary mt-5 inline-flex">
           Back to matches
@@ -94,12 +103,16 @@ export default function SeatingPage() {
 
   const match = matchQuery.data;
   const matchZones = zonesQuery.data ?? [];
-  const capacity = matchZones.reduce((sum, zone) => sum + zone.rows.length * zone.seatsPerRow, 0);
+  // The capacity, the free seats and the potential revenue all come from the
+  // database's own seat count — the zone layout is what the club asked for,
+  // and it is not what the club has.
+  const matchAvailability = summariseAvailability(availabilityQuery.data ?? [])[match.id];
+  const capacity = matchAvailability?.capacity ?? 0;
   const sold = Math.min(capacity, salesQuery.data?.[match.id]?.ticketsSold ?? 0);
-  const available = Math.max(0, capacity - sold);
-  const potential = matchZones.reduce(
-    (sum, zone) => sum + zone.priceSatang * zone.rows.length * zone.seatsPerRow,
-    0,
+  const available = matchAvailability?.available ?? 0;
+  const potential = potentialRevenueSatang(matchZones, availabilityQuery.data ?? []);
+  const availabilityByZone = new Map(
+    (availabilityQuery.data ?? []).map((zone) => [zone.zoneId, zone]),
   );
 
   const handleAddZone = async (input: AdminZoneInput) => {
@@ -192,7 +205,7 @@ export default function SeatingPage() {
                   <p className="truncate text-xs font-semibold text-slate-800">{zone.name}</p>
                   <p className="text-[10px] text-slate-400">
                     {zone.rows.length} rows · {zone.seatsPerRow} seats per row ·{" "}
-                    {zone.rows.length * zone.seatsPerRow} seats
+                    {availabilityByZone.get(zone.id)?.totalSeats ?? 0} seats
                   </p>
                 </div>
                 <Badge tone="green">{formatTHB(zone.priceSatang)}</Badge>

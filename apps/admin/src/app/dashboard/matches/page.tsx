@@ -31,6 +31,7 @@ import {
   useMatchSalesSummaries,
   useMatches,
   useUpdateMatch,
+  useZoneAvailability,
   type AdminMatchInput,
 } from "@/lib/queries/matches";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,8 @@ import {
   formatMatchDate,
   formatMatchTime,
   formatTHB,
+  sellThroughPercent,
+  summariseAvailability,
   type MatchDto,
 } from "@kickoff/shared";
 
@@ -49,6 +52,8 @@ export default function MatchesPage() {
   const { data: matches, isLoading, error } = useMatches();
   const { data: zones } = useAllZones();
   const { data: sales } = useMatchSalesSummaries();
+  const availabilityQuery = useZoneAvailability();
+  const availabilityRows = availabilityQuery.data;
   const createMatch = useCreateMatch();
   const updateMatch = useUpdateMatch();
   const deleteMatch = useDeleteMatch();
@@ -61,6 +66,10 @@ export default function MatchesPage() {
 
   const allMatches = useMemo(() => matches ?? [], [matches]);
   const allZones = useMemo(() => zones ?? [], [zones]);
+  const availability = useMemo(
+    () => summariseAvailability(availabilityRows ?? []),
+    [availabilityRows],
+  );
 
   const filtered = useMemo(() => {
     return [...allMatches]
@@ -156,15 +165,19 @@ export default function MatchesPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading || availabilityQuery.isLoading ? (
         <div className="space-y-2.5">
           {[0, 1, 2].map((index) => (
             <Skeleton key={index} className="h-28" />
           ))}
         </div>
-      ) : error ? (
+      ) : error || availabilityQuery.error ? (
         <div className="panel p-8 text-center text-sm text-red-600">
-          {error instanceof Error ? error.message : "Could not load fixtures."}
+          {error instanceof Error
+            ? error.message
+            : availabilityQuery.error instanceof Error
+              ? availabilityQuery.error.message
+              : "Could not load fixtures."}
         </div>
       ) : filtered.length === 0 ? (
         <div className="panel">
@@ -184,7 +197,9 @@ export default function MatchesPage() {
         <div className="space-y-2.5">
           {filtered.map((match) => {
             const matchZones = allZones.filter((zone) => zone.matchId === match.id);
-            const capacity = matchZones.reduce((sum, zone) => sum + zone.rows.length * zone.seatsPerRow, 0);
+            // The capacity is the number of seats the club has, as the database
+            // counts them — not the layout the club asked for.
+            const capacity = availability[match.id]?.capacity ?? 0;
             const sold = Math.min(capacity, sales?.[match.id]?.ticketsSold ?? 0);
             const minPrice = matchZones.length
               ? Math.min(...matchZones.map((zone) => zone.priceSatang))
@@ -256,7 +271,7 @@ export default function MatchesPage() {
                   <div className="h-1 bg-slate-100">
                     <div
                       className="h-full bg-pitch"
-                      style={{ width: `${capacity ? Math.round((sold / capacity) * 100) : 0}%` }}
+                      style={{ width: `${sellThroughPercent(sold, capacity)}%` }}
                     />
                   </div>
                 ) : null}

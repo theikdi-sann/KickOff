@@ -16,6 +16,7 @@ import {
   formatMatchTime,
   formatTHB,
   type MatchDto,
+  type ZoneAvailabilityDto,
   type ZoneDto,
 } from '@kickoff/shared';
 import {
@@ -101,6 +102,20 @@ export default function MatchDetailScreen() {
                 This fixture has ended. Match report is available in the club feed.
               </AppText>
             </Card>
+          ) : zonesQuery.error || availabilityQuery.error ? (
+            <Card style={styles.notOnSaleCard}>
+              <View style={styles.notOnSaleIcon}>
+                <TicketIcon size={22} color={colors.muted} />
+              </View>
+              <AppText variant="h3">Seating unavailable</AppText>
+              <AppText variant="small" color={colors.muted} style={styles.centerText}>
+                The seat count could not be loaded. Check your connection and try again.
+              </AppText>
+            </Card>
+          ) : zonesQuery.isLoading || availabilityQuery.isLoading ? (
+            <Card style={styles.notOnSaleCard}>
+              <Skeleton height={96} radius={16} />
+            </Card>
           ) : zones.length === 0 ? (
             <Card style={styles.notOnSaleCard}>
               <View style={styles.notOnSaleIcon}>
@@ -131,8 +146,10 @@ export default function MatchDetailScreen() {
                     zone={zone}
                     availability={
                       availability[zone.id] ?? {
-                        total: zone.rows.length * zone.seatsPerRow,
-                        available: zone.rows.length * zone.seatsPerRow,
+                        zoneId: zone.id,
+                        matchId: match.id,
+                        totalSeats: 0,
+                        availableSeats: 0,
                       }
                     }
                     onPress={() =>
@@ -335,10 +352,10 @@ function ZoneRow({
   onPress,
 }: {
   zone: ZoneDto;
-  availability: { total: number; available: number };
+  availability: ZoneAvailabilityDto;
   onPress: () => void;
 }) {
-  const soldOut = availability.available === 0;
+  const soldOut = availability.availableSeats === 0;
   return (
     <Pressable
       onPress={onPress}
@@ -348,7 +365,7 @@ function ZoneRow({
       <View style={styles.flex}>
         <View style={styles.zoneNameRow}>
           <AppText variant="label">{zone.name}</AppText>
-          <Pill label={soldOut ? 'SOLD OUT' : `${availability.available} LEFT`} tone={soldOut ? 'red' : 'green'} />
+          <Pill label={soldOut ? 'SOLD OUT' : `${availability.availableSeats} LEFT`} tone={soldOut ? 'red' : 'green'} />
         </View>
         <AppText variant="small" color={colors.muted} style={styles.zoneDesc}>
           {zone.description}
@@ -359,7 +376,7 @@ function ZoneRow({
           </AppText>
           <View style={styles.zoneDot} />
           <AppText variant="caption" color={colors.muted} style={styles.zoneMetaText}>
-            {availability.total} SEATS
+            {availability.totalSeats} SEATS
           </AppText>
         </View>
       </View>
