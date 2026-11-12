@@ -94,7 +94,7 @@ apps/admin/src/
                        tickets, news, users, settings)
   app/login/*          sign-in + TOTP MFA challenge
   lib/queries/*        React Query hooks, one file per domain
-  lib/audit.ts         privileged audit writes (reschedule, settings)
+  lib/audit.ts         privileged audit writes (fixture fields, settings)
   lib/offline-queue.ts gate scans recorded without connectivity
   lib/scan-api.ts      scan/undo transport
   lib/export.ts        CSV export
@@ -140,7 +140,7 @@ supabase/
 | A pass is accepted only within kickoff −2h…+2h | `scan-ticket` | `scan.test.sql` |
 | A scan can be undone for 60 s | `scan-undo` | `scan.test.sql` |
 | Nothing but admins reads `audit_logs` / `scan_events` | RLS policies | `rls.test.sql` |
-| Only admins write `audit_logs` | `0037` grant + policy | `reschedule-audit.test.sql` |
+| Only admins write `audit_logs` | `0037` grant + policy; `0038` RPCs write their own rows atomically | `reschedule-audit.test.sql` + `atomicity.test.sql` |
 
 ## 4. The flows that matter
 
@@ -176,16 +176,21 @@ the gate's assigned fixture → ticket is `valid` → kickoff window → mark us
 
 ### 4.3 Refund
 
-`refund-order` (admin JWT) → Stripe refund → order `refunded` → seats
-released → audit row. A used pass requires an explicit override.
+`refund-order` (admin JWT) → Stripe refund (**idempotent per order**) →
+`mark_order_refunded()` — **one transaction**: order `refunded`, tickets
+voided, seats released, audit row. A used pass requires an explicit
+override. If the database half fails, the retry returns the same Stripe
+refund instead of creating a second one.
 
 ### 4.4 Reschedule a kickoff
 
 The rules live in the **shared Zod schema** (`adminRescheduleSchema`), enforced
-in the admin UI — deliberately **no database trigger or RPC** (walkthrough
-decision). Upcoming-only, future, outside the lock window, never earlier, at
-most +10 days, reason required. The reason is written to `audit_logs` by the
-client next to the update.
+in the admin UI — no database trigger enforces them (walkthrough decision).
+Upcoming-only, future, outside the lock window, never earlier, at most +10
+days, reason required. Since migration `0038` the *write* goes through
+`admin_update_match()`: the kickoff change and its `{from, to, reason}` audit
+row are one transaction, and the database itself refuses a kickoff move
+without a reason.
 
 > Known limitation (documented, not hidden): because the rules are client-side,
 > a direct PostgREST write could still move a kickoff. Recorded in

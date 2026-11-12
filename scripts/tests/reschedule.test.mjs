@@ -1,14 +1,17 @@
-// Phase B — punch list #13: reschedule rules wired through the admin UI and
-// stored as an audit reason (Option 3: migration grants authenticated-admin
-// INSERT on audit_logs; the client writes the row alongside the update —
-// deliberately NO DB trigger or RPC).
+// Phase B — punch list #13, closed out by F-07: the reschedule rules are
+// validated in the shared schema (Option 3) and the reason lands in
+// `audit_logs` — but since migration 0038 the kickoff change and its
+// reschedule row are written by ONE database call, because the old
+// browser-side sequence (update, then audit) could lose the reason.
+// Rules themselves still live in shared Zod + the admin UI: no DB trigger
+// enforces them (D-06).
 //
 // Schema behaviour (RS-1..RS-6) lives in packages/shared/src/__tests__/
 // reschedule.test.ts; these contracts lock the wiring:
 //   7. the match form validates kickoff changes through the shared schema
 //      and only demands a reason when the kickoff actually changed,
-//   8. an audit writer records {from, to, reason} and the update mutation
-//      calls it,
+//   8. the console reschedules through the atomic RPC and the migration
+//      writes {from, to, reason} in the same transaction,
 //   9. the migration grants admin INSERT + policy, with no trigger/function,
 //  10. a pgTAP suite proves the grant (admin can, others cannot).
 import test from 'node:test';
@@ -70,33 +73,44 @@ test('RS-7b the form compares kickoff instants, not raw local strings', () => {
   );
 });
 
-test('RS-8 the update mutation records the reschedule reason in audit_logs', () => {
+test('RS-8 the reschedule and its audit row are written in one database call', () => {
   const audit = read('apps/admin/src/lib/audit.ts');
   const matches = read('apps/admin/src/lib/queries/matches.ts');
+  const migration = read('supabase/migrations/0038_atomic_reschedule_refund.sql');
 
-  assert.match(audit, /recordReschedule/, 'an audit writer for reschedules must exist');
-  // The action may be written literally or taken from the shared audit
-  // vocabulary — what matters is the value that lands in `audit_logs`.
+  // The console no longer writes the reschedule row itself: the kickoff
+  // change and the {from, to, reason} row are one transaction (F-07).
   assert.match(
-    audit,
-    /action:\s*(["']reschedule["']|AUDIT_ACTIONS\.reschedule)/,
-    'the audit action must be reschedule',
+    matches,
+    /rpc\("admin_update_match"/,
+    'useUpdateMatch must reschedule through the atomic RPC',
   );
+  assert.doesNotMatch(
+    matches,
+    /recordReschedule/,
+    'the browser must not write the reschedule row after the fact',
+  );
+  assert.match(
+    migration,
+    /insert into public\.audit_logs[\s\S]{0,200}?'reschedule'/,
+    'the RPC must write the reschedule row in the update transaction',
+  );
+  assert.match(
+    migration,
+    /metadata[\s\S]{0,160}?'from'[\s\S]{0,80}?'to'[\s\S]{0,80}?'reason'/,
+    'the row must carry from, to and reason',
+  );
+  assert.match(
+    migration,
+    /entity_id/,
+    'the row must identify the fixture it moved',
+  );
+
+  // The vocabulary still owns the action name, so the trail stays readable.
   assert.match(
     audit,
     /reschedule:\s*["']reschedule["']/,
     'the shared vocabulary must map the reschedule action to "reschedule"',
-  );
-  assert.match(audit, /entity:\s*["']match["']/, 'the audit entity must be the match');
-  assert.match(
-    audit,
-    /from[\s\S]{0,80}to[\s\S]{0,80}reason|reason[\s\S]{0,120}metadata|metadata/,
-    'metadata must carry from, to and reason',
-  );
-  assert.match(
-    matches,
-    /recordReschedule/,
-    'useUpdateMatch must write the audit row when a reschedule reason is present',
   );
 });
 

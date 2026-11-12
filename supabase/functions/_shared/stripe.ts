@@ -27,8 +27,14 @@ export function retrieveCheckoutSession(
   return stripeClient().checkout.sessions.retrieve(sessionId);
 }
 
-export function createRefund(params: Stripe.RefundCreateParams): Promise<Stripe.Refund> {
-  return stripeClient().refunds.create(params);
+export function createRefund(
+  params: Stripe.RefundCreateParams,
+  options?: { idempotencyKey?: string },
+): Promise<Stripe.Refund> {
+  return stripeClient().refunds.create(
+    params,
+    options?.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : undefined,
+  );
 }
 
 /** Verifies the `stripe-signature` header and returns the typed event. */

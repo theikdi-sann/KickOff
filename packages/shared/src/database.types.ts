@@ -2,11 +2,7 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.18'
-  }
+  
   "graphql_public": {
           Tables: {
             [_ in never]: never
@@ -517,6 +513,9 @@ isOneToOne: false
 "_todo":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"admin_update_match":
+{ Args: { "p_match_id": string,"p_patch": Json,"p_reason"?: string }; Returns: Json
+                           },
 "cancel_order":
 { Args: { "p_actor_id"?: string,"p_order_id": string }; Returns: Json
                            },
@@ -652,6 +651,9 @@ isOneToOne: false
                            },
 "mark_order_paid":
 { Args: { "p_order_id": string,"p_payment_intent_id": string,"p_session_id": string }; Returns: Json
+                           },
+"mark_order_refunded":
+{ Args: { "p_actor_id": string,"p_order_id": string,"p_override_used_tickets"?: boolean,"p_reason"?: string,"p_refund_id": string }; Returns: Json
                            },
 "no_plan":
 { Args: Record<PropertyKey, never>; Returns: boolean[]

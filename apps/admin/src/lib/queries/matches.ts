@@ -6,9 +6,10 @@ import {
   toMatchDto,
   toZoneAvailabilityDto,
   toZoneDto,
+  type MatchRow,
   type ZoneAvailabilityDto,
 } from "@kickoff/shared";
-import { AUDIT_ACTIONS, changedFields, recordAudit, recordReschedule } from "@/lib/audit";
+import { AUDIT_ACTIONS, changedFields, recordAudit } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/client";
 
 export interface AdminMatchInput {
@@ -245,21 +246,6 @@ export function useUpdateMatch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { id: string; patch: Partial<AdminMatchInput> }) => {
-      // RS-8: a reason rides along only when the kickoff changed (the form
-      // guarantees it) — read the old kickoff first so the audit row has `from`.
-      const rescheduleReason = input.patch.reason;
-      const rescheduled = rescheduleReason !== undefined && input.patch.kickoffAt !== undefined;
-      let previousKickoffAt: string | null = null;
-      if (rescheduled) {
-        const { data: before, error: beforeError } = await client()
-          .from("matches")
-          .select("kickoff_at")
-          .eq("id", input.id)
-          .single();
-        if (beforeError) throw new Error(beforeError.message);
-        previousKickoffAt = before.kickoff_at;
-      }
-
       const patch: {
         opponent?: string;
         opponent_short?: string;
@@ -279,15 +265,19 @@ export function useUpdateMatch() {
       if (input.patch.posterColors !== undefined) patch.poster_colors = input.patch.posterColors;
       if (input.patch.accent !== undefined) patch.accent = input.patch.accent;
 
-      const { data, error } = await client()
-        .from("matches")
-        .update(patch)
-        .eq("id", input.id)
-        .select("*, venues(name)")
-        .single();
+      // F-07: the kickoff change and its {from, to, reason} audit row are
+      // written by ONE database call, so a failure can no longer leave a
+      // moved fixture with no record of why. A reason is required by the
+      // database itself when the kickoff moves (the form demands it too).
+      const { data, error } = await client().rpc("admin_update_match", {
+        p_match_id: input.id,
+        p_patch: patch,
+        p_reason: input.patch.reason ?? undefined,
+      });
       if (error) throw new Error(error.message);
 
-      // Every privileged change is recorded: what changed, on which fixture.
+      // The fields row is written from the console like every other
+      // privileged change (documented limitation — GAP-04).
       await recordAudit({
         action: AUDIT_ACTIONS.matchUpdate,
         entity: "matches",
@@ -295,16 +285,15 @@ export function useUpdateMatch() {
         metadata: { fields: changedFields(patch) },
       });
 
-      if (rescheduled) {
-        // The kickoff moved: store {from, to, reason} in audit_logs (RS-8).
-        await recordReschedule({
-          matchId: input.id,
-          from: previousKickoffAt ?? requireDefined(input.patch.kickoffAt, "kickoff time"),
-          to: requireDefined(input.patch.kickoffAt, "kickoff time"),
-          reason: requireDefined(rescheduleReason, "reschedule reason"),
-        });
-      }
-      return toMatchDto(data);
+      const result = requireDefined(data, "updated fixture") as unknown as {
+        row: MatchRow;
+        venue_name: string;
+        rescheduled: boolean;
+      };
+      return toMatchDto({
+        ...result.row,
+        venues: { name: result.venue_name },
+      });
     },
     onSuccess: (match) => invalidateMatchData(queryClient, match.id),
   });

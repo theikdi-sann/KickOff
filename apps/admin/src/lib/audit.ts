@@ -43,16 +43,6 @@ export interface AuditEntry {
   metadata?: Json;
 }
 
-export interface RescheduleAudit {
-  matchId: string;
-  /** Kick-off before the reschedule (ISO). */
-  from: string;
-  /** Kick-off after the reschedule (ISO). */
-  to: string;
-  /** Admin-supplied justification — required by the shared schema. */
-  reason: string;
-}
-
 /**
  * Records a privileged change in `audit_logs`.
  *
@@ -104,23 +94,4 @@ export async function recordAudit(entry: AuditEntry): Promise<boolean> {
  */
 export function changedFields(patch: Record<string, unknown>): string[] {
   return Object.keys(patch).sort();
-}
-
-/**
- * Punch list #13: write the reschedule reason to audit_logs. Called by
- * `useUpdateMatch` right after a kickoff change — the row carries who moved
- * what, when, and why. Rules live in shared Zod; this only stores the proof.
- */
-export async function recordReschedule({
-  matchId,
-  from,
-  to,
-  reason,
-}: RescheduleAudit): Promise<boolean> {
-  return recordAudit({
-    action: AUDIT_ACTIONS.reschedule,
-    entity: 'match',
-    entityId: matchId,
-    metadata: { from, to, reason },
-  });
 }

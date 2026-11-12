@@ -12,7 +12,7 @@
 //   AC-4  no action is defined but never used (no dead vocabulary).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..', '..');
@@ -94,7 +94,7 @@ test('AC-3 the audit rows carry the entity and what changed', () => {
 
 test('AC-4 no action is defined but never used', () => {
   const vocabulary = [...auditSource.matchAll(/^\s{2}(\w+): '([a-z.]+)',$/gm)].map(
-    (match) => match[1],
+    (match) => ({ key: match[1], value: match[2] }),
   );
   assert.ok(vocabulary.length >= 15, `expected the full vocabulary, found ${vocabulary.length}`);
 
@@ -110,11 +110,19 @@ test('AC-4 no action is defined but never used', () => {
     .map((file) => read(file))
     .join('\n');
 
-  for (const action of vocabulary) {
-    assert.match(
-      consumers,
-      new RegExp(`AUDIT_ACTIONS\\.${action}\\b`),
-      `AUDIT_ACTIONS.${action} is defined but never used — remove it`,
+  // Since F-07 one action is written by the database itself, in the same
+  // transaction as the change it records. A value counts as used when the
+  // console records it through the vocabulary *or* a migration writes it.
+  const databaseWriters = ['supabase/migrations/0038_atomic_reschedule_refund.sql']
+    .map((file) => (existsSync(resolve(root, file)) ? read(file) : ''))
+    .join('\n');
+
+  for (const { key, value } of vocabulary) {
+    const usedInConsole = new RegExp(`AUDIT_ACTIONS\\.${key}\\b`).test(consumers);
+    const usedInDatabase = new RegExp(`'${value}'`).test(databaseWriters);
+    assert.ok(
+      usedInConsole || usedInDatabase,
+      `AUDIT_ACTIONS.${key} ('${value}') is defined but never used — remove it or record it in the database`,
     );
   }
 });

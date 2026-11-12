@@ -1,4 +1,3 @@
-import { writeAudit } from "../_shared/audit.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
@@ -11,8 +10,6 @@ interface OrderRow {
   id: string;
   status: string;
   payment_intent_id: string | null;
-  amount_satang: number;
-  user_id: string;
 }
 
 async function handler(request: Request): Promise<Response> {
@@ -22,7 +19,7 @@ async function handler(request: Request): Promise<Response> {
 
   const { data: order, error: orderError } = await db
     .from("orders")
-    .select("id,status,payment_intent_id,amount_satang,user_id")
+    .select("id,status,payment_intent_id")
     .eq("id", body.orderId)
     .maybeSingle<OrderRow>();
   if (orderError || !order) throw orderError ?? new AppError("not_found", "Order not found");
@@ -52,49 +49,44 @@ async function handler(request: Request): Promise<Response> {
     throw new AppError("conflict", "Order has no Stripe payment intent");
   }
 
-  const refund = await createRefund({
-    payment_intent: order.payment_intent_id,
-    reason: "requested_by_customer",
-    metadata: {
-      order_id: order.id,
-      admin_id: context.user.id,
-      reason: body.reason ?? "",
-      override_used_tickets: String(body.overrideUsedTickets),
+  // The money moves first, with an order-scoped idempotency key: if the
+  // database half below fails, the admin's retry returns this same refund
+  // from Stripe instead of creating a second one (F-07).
+  const refund = await createRefund(
+    {
+      payment_intent: order.payment_intent_id,
+      reason: "requested_by_customer",
+      metadata: {
+        order_id: order.id,
+        admin_id: context.user.id,
+        reason: body.reason ?? "",
+        override_used_tickets: String(body.overrideUsedTickets),
+      },
     },
+    { idempotencyKey: `refund_${order.id}` },
+  );
+
+  // One call flips the order, voids the tickets, releases the seats and
+  // writes the audit row — all in one transaction. A failure here raises,
+  // the client is told the truth, and the retry converges.
+  const { data: state, error: stateError } = await db.rpc("mark_order_refunded", {
+    p_order_id: order.id,
+    p_actor_id: context.user.id,
+    p_refund_id: refund.id,
+    p_reason: body.reason ?? undefined,
+    p_override_used_tickets: body.overrideUsedTickets,
   });
-
-  const { error: updateError } = await db
-    .from("orders")
-    .update({ status: "refunded" })
-    .eq("id", order.id);
-  if (updateError) throw updateError;
-
-  const { error: voidError } = await db
-    .from("tickets")
-    .update({ status: "void" })
-    .eq("order_id", order.id);
-  if (voidError) throw voidError;
-
-  // Free the seats unless used tickets were overridden (those seats stay sold).
-  if (!body.overrideUsedTickets) {
-    await db.rpc("free_seats_for_order", { p_order_id: order.id });
+  if (stateError || !state) {
+    throw new AppError(
+      "internal",
+      `Refund saved in Stripe but not in the database: ${stateError?.message ?? "no result"}`,
+    );
   }
 
-  await writeAudit({
-    actorId: context.user.id,
-    action: "order.refund",
-    entity: "orders",
-    entityId: order.id,
-    metadata: {
-      refund_id: refund.id,
-      amount_satang: order.amount_satang,
-      reason: body.reason ?? null,
-      override_used_tickets: body.overrideUsedTickets,
-      used_tickets: usedTickets.length,
-    },
-  });
+  const alreadyRefunded =
+    (state as { alreadyRefunded?: boolean }).alreadyRefunded === true;
 
-  return ok({ refunded: true, refundId: refund.id, alreadyRefunded: false }, request);
+  return ok({ refunded: true, refundId: refund.id, alreadyRefunded }, request);
 }
 
 Deno.serve(serveJson(handler, ["POST"]));

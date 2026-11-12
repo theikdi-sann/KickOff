@@ -74,11 +74,11 @@ display-only.
 | A8 Undo scan | `dashboard/scan/page.tsx` | Edge `scan-undo` — `requireAdmin` + RPC | Zod (function-local) | surfaced | `audit_logs` (`scan.undo`) | function test + Playwright |
 | A9 Offline scan queue | `lib/offline-queue.ts` | localStorage → replayed through `scan-ticket` | hand-written guard | **silent discard** (F-04) | on replay | **none** |
 | A10 Orders + CSV export | `dashboard/tickets/**` | RLS + Edge `orders-aggregate`; export is browser-only | ad-hoc | surfaced | **none** for the export (F-05) | Playwright (header only) |
-| A11 Refund order | `dashboard/tickets/**` | Edge `refund-order` — `requireAdmin` | Zod (function-local; duplicate of the shared schema) | surfaced | `audit_logs` (`order.refund`) | Playwright, **skipped** without keys |
+| A11 Refund order | `dashboard/tickets/**` | Edge `refund-order` — `requireAdmin` → atomic `mark_order_refunded` RPC | Zod (shared `refundOrderSchema`, generated Edge copy) | surfaced | `audit_logs` (`order.refund`, same transaction) | pgTAP `atomicity.test.sql`; Playwright, **skipped** without keys |
 | A12 Publish news | `dashboard/news/page.tsx` | direct PostgREST write, RLS | Zod (shared) | surfaced | **none** (F-05) | schema only |
 | A13 Manage users / roles | `dashboard/users/page.tsx` | Edge `admin-users` — `requireAdmin` | Zod (function-local) | surfaced | `audit_logs` (`admin.user.update`) | **none** |
 | A14 Club settings | `dashboard/settings/page.tsx` | direct PostgREST upsert, RLS | ad-hoc (`clampInt` silently coerces) | surfaced | **none** — but the page claims otherwise (F-06) | source-text assertions only |
-| A15 Reschedule kickoff | `components/match-form.tsx` | direct PostgREST write + client-side audit insert | Zod (shared `adminRescheduleSchema`) | surfaced; **not atomic** (F-07) | `audit_logs` (`reschedule`) | unit + contract + pgTAP |
+| A15 Reschedule kickoff | `components/match-form.tsx` | atomic RPC `admin_update_match` (`0038`) | Zod (shared `adminRescheduleSchema`) | surfaced; **atomic** — the database refuses a move without a reason | `audit_logs` (`reschedule`, same transaction) | unit + contract + pgTAP `atomicity.test.sql` |
 
 **Effective authorisation** for every admin mutation is RLS `public.is_admin()`
 (JWT claim `app_metadata.role`) or `requireAdmin` in the Edge Function. The
@@ -99,7 +99,7 @@ client-side redirect fires (F-09).
 | **F-02** | Medium | M9 | The pass screen replaces the server error with a fixed "Tap to reload your QR" — the actual reason is never shown. | ✅ **fixed** — the server message is rendered |
 | **F-03** | Medium | M13 | Sign-out from the profile screen swallows the failure (`catch(() => undefined)`): the operator is left signed in with no message. | ✅ **fixed** — the failure is reported |
 | **F-06** | Medium | A14 | The settings page states that changes are "recorded with the admin actor", but no `audit_logs` row is written — only `app_settings.updated_by`. The copy is false. | ✅ **fixed** — the row is written, and the copy now describes what is actually recorded |
-| **F-07** | Medium | A15, A11 | Neither the reschedule nor the refund is atomic: the mutation lands before the audit row (reschedule) or before the DB state update (refund, where the Stripe refund happens first). A failure in between leaves a moved kickoff without an audit row, or a refunded Stripe order still marked `paid`. | ⬜ open — C4 cycle |
+| **F-07** | Medium | A15, A11 | Neither the reschedule nor the refund is atomic: the mutation lands before the audit row (reschedule) or before the DB state update (refund, where the Stripe refund happens first). A failure in between leaves a moved kickoff without an audit row, or a refunded Stripe order still marked `paid`. | ✅ **fixed** — `admin_update_match()` writes the kickoff change and its reason row in one transaction (and refuses a move with no reason), `mark_order_refunded()` flips order/tickets/seats/audit in one transaction, and the Stripe refund carries an order-scoped idempotency key so a retry converges instead of double-refunding (`supabase/tests/atomicity.test.sql`, 30 assertions) |
 | **F-08** | Medium | A4 | The zone rollback deletes the new zone **without checking the delete error**, so a failed rollback leaves an orphan zone while the operator is told it was removed. | ✅ **fixed** — the rollback error is checked and reported with the zone id |
 | **F-09** | Medium | all admin | `proxy.ts` performs no admin-role check and the dashboard layout renders `AdminShell` before the client-side redirect fires. RLS still protects the data, but the console is reachable by any signed-in account. | ✅ **fixed** — the proxy refuses a non-admin server-side and the layout never renders the console shell (`scripts/tests/admin-access.test.mjs`) |
 | **F-11** | Medium | all | The shared Zod schemas (`signInSchema`, `settingsUpdateSchema`, `refundOrderSchema`, `paginationSchema`, …) are **not used by the apps**; both consoles validate ad-hoc, and `refund-order` re-defines a copy of the shared schema. | ✅ **fixed** — the mobile auth and profile screens parse through the shared schemas, the admin pager through `paginationSchema`, and `refund-order` consumes a generated copy of the canonical refund schema; unused schemas were deleted (`scripts/tests/schema-usage.test.mjs`) |
@@ -136,17 +136,19 @@ came out of it — all fixed, all now enforced by a contract.
    probe, the dead analytics module, the template leftovers, the undocumented
    env variable, the misclassified TypeError and the filter injection.
 6. **F-11** (done) — the shared validation contracts, wired into every consumer.
-7. **F-07** — atomicity of the reschedule and the refund.
+7. **F-07** (done) — atomicity of the reschedule and the refund.
 8. **F-15** (done) — the type-safety standard, now enforced by lint and a contract.
 9. **F-14** (done) — the mobile test harness, now run by CI.
 10. **F-17** (done) — the authoritative availability view.
 
-> **Known limitation of the audit trail.** The staff console writes the audit
-> rows from the browser (the same pattern the reschedule flow already used,
-> D-06). A crash between the mutation and the audit row therefore leaves an
-> unlogged change, and a client with an admin JWT could skip the call. The
-> tamper-proof version — a database trigger or a server-side function — is
-> part of the GAP-03/GAP-04 hardening track, not a console patch.
+> **Known limitation of the audit trail.** The reschedule row and the refund
+> row are now written by the database itself (migration `0038`, F-07), but
+> every other audit row — fixture fields, zones, venues, gates, news,
+> settings — is still written from the browser (D-06). A crash between the
+> mutation and the audit row therefore leaves an unlogged change, and a
+> client with an admin JWT could skip the call. Moving the remaining rows
+> server-side is part of the GAP-03/GAP-04 hardening track, not a console
+> patch.
 
 ---
 

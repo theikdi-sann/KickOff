@@ -233,6 +233,7 @@ before the suite is green again.
 | `scripts/sync-edge-schemas.mjs` | source | reviewed | generates the Edge copy of a shared Zod contract; drift fails CI |
 | `scripts/sync-error-codes.mjs` | source | reviewed | tool or gate script |
 | `scripts/tests/admin-access.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/atomicity.test.mjs` | test | covered | contract test — the atomic RPCs are wired and service-role only |
 | `scripts/tests/audit-coverage.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/availability.test.mjs` | test | covered | contract test — availability comes from the view, not the layout |
 | `scripts/tests/ci.test.mjs` | test | covered | contract test — fails when the repository drifts |
@@ -349,7 +350,9 @@ before the suite is green again.
 | `supabase/migrations/0035_venues.sql` | data | reviewed | 0035_venues — proper venues/stadiums schema (punch list #12). |
 | `supabase/migrations/0036_venue_views.sql` | data | reviewed | 0036_venue_views — recreate order_receipt_view against venues. |
 | `supabase/migrations/0037_reschedule_audit.sql` | data | reviewed | 0037_reschedule_audit — punch list #13: where the reschedule reason lives. |
+| `supabase/migrations/0038_atomic_reschedule_refund.sql` | source | reviewed | migration — atomic reschedule + refund RPCs (F-07) |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
+| `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/hold-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/hold-ttl.test.sql` | data | covered | pgTAP suite — asserts the database contract |
