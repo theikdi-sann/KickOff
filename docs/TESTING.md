@@ -9,7 +9,7 @@ gate locally it will break the build.
 |---|---|---|
 | Workspace unit tests | `npm test` | shared schemas/format/i18n/greeting (Vitest), admin node tests, repo script tests, mobile stub |
 | Typecheck + lint | `npm run check` | TypeScript across shared/mobile/admin, ESLint |
-| Database (pgTAP) | `bash scripts/run-pgtap.sh` | RLS matrix, order expiry, scan hardening (33 assertions) |
+| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency (61 assertions, 10 suites) |
 | Edge Functions (unit) | `cd supabase/functions && deno test --allow-env --allow-net tests/` | HMAC, config, error mapping, metrics helpers |
 | Edge Functions (integration) | `RUN_INTEGRATION=1 deno test --allow-env --allow-net tests/` | real checkout → webhook → ticket → receipt, scan/undo |
 | Functions typecheck | `npm run functions:check` | `deno check` on every `supabase/functions/*/index.ts` |
@@ -48,12 +48,32 @@ Playwright selector type fails the build.
 ## 3. Database — pgTAP
 
 ```bash
-bash scripts/run-pgtap.sh
+npm run db:test          # or: bash scripts/run-pgtap.sh
 ```
 
 The script prefers a local Supabase/Docker instance and falls back to running
 the same SQL against the hosted project when Docker is unavailable. It applies
 the `supabase/tests/*.sql` suites and reports pass/fail per assertion.
+
+**61 assertions across 10 suites**, verified against the local stack on
+2026-11-13: constraints, hold concurrency, hold TTL, order expiry, reschedule
+audit, RLS (auth + anonymous), scan concurrency, seat reservation and venues.
+
+**Why the runner exists.** The two concurrency suites open their worker
+sessions through `dblink`, which reconnects over the network. Both the local
+stack and the hosted project map that path to `scram-sha-256`, so the workers
+need a password; without one every worker is refused with *"password or
+GSSAPI delegated credentials required"* and the suites fail before their
+first assertion. The runner therefore sets `kickoff.dblink_password`, which
+the suites read. Locally the password comes from the stack's own `DB_URL`; on
+the hosted project from `SUPABASE_DB_PASSWORD`. It is read at runtime and is
+never committed.
+
+**How the password is handled.** It never reaches a SQL literal, a file or
+the command line: the runner keeps it in the environment, `psql` reads it
+itself (`\getenv`) and quotes it (`:'name'`), and the connection string the
+runner hands to `psql` carries no password at all. A password containing a
+quote therefore cannot break the statement.
 
 ## 4. Edge Functions
 
@@ -140,8 +160,9 @@ npm run functions:check         # every Edge Function typechecks
 ## 8. CI
 
 `.github/workflows/ci.yml` runs, in order: install → typecheck/lint → workspace
-and script tests → pgTAP (hosted fallback) → Deno function checks → admin build
-→ Playwright (`auth` and `ops`) when the `E2E_ADMIN_*` secrets exist → MVP gate.
+and script tests → local Supabase stack → DB lint → pgTAP → Deno function checks
+→ admin build → Playwright (`auth` and `ops`) when the `E2E_ADMIN_*` secrets
+exist → MVP gate.
 
 E2E and integration suites skip themselves when their secrets are absent, so
 pull requests without secrets still pass the deterministic layers.
@@ -154,5 +175,6 @@ pull requests without secrets still pass the deterministic layers.
 | `ops.spec.ts` refund test skipped | `SUPABASE_SERVICE_ROLE_KEY` / `STRIPE_SECRET_KEY` not exported |
 | Scan E2E shows “gate window has closed” | expected outside kick-off ±2h; the spec accepts it |
 | pgTAP falls back to hosted | Docker/podman not running — the fallback is the supported path here |
+| pgTAP: “password or GSSAPI delegated credentials required” | the runner could not set `kickoff.dblink_password` — check that the stack is up and `SUPABASE_DB_PASSWORD` is exported on the hosted path |
 | Deno integration tests ignored | set `RUN_INTEGRATION=1` plus the Supabase/Stripe/demo env vars |
 | `functions deploy` fails with `Relative import path "zod" not prefixed` | Docker is absent, so the API bundler needs the import map: `npx supabase functions deploy --import-map supabase/functions/deno.json --yes --remote=<ref>` |

@@ -408,7 +408,7 @@ undo, device registration and reminders, and fail closed on errors. Full detail:
 ```bash
 npm test                         # Vitest (shared) + admin + repo script tests
 npm run check                    # typecheck all workspaces + lint
-bash scripts/run-pgtap.sh        # RLS, expiry, scan concurrency
+npm run db:test                  # pgTAP: RLS, expiry, seat holds, scan concurrency
 npm run functions:check          # deno check every Edge Function
 cd supabase/functions && deno test --allow-env --allow-net tests/
 npm run test:e2e --workspace @kickoff/admin   # Playwright auth + ops walkthrough

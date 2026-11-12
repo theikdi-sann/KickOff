@@ -221,12 +221,14 @@ before the suite is green again.
 | `scripts/check-functions.sh` | config | reviewed | configuration |
 | `scripts/check-no-mocks.sh` | config | reviewed | configuration |
 | `scripts/mvp-gate.mjs` | source | reviewed | tool or gate script |
+| `scripts/pg-url-parts.mjs` | source | covered | splits a DB URL so the password stays out of the command line |
 | `scripts/run-pgtap.sh` | config | reviewed | configuration |
 | `scripts/seed-demo.mjs` | source | reviewed | tool or gate script |
 | `scripts/sync-error-codes.mjs` | source | reviewed | tool or gate script |
 | `scripts/tests/admin-access.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/audit-coverage.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/ci.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/db-gate.test.mjs` | test | covered | contract test — the pgTAP gate must run locally |
 | `scripts/tests/docs.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/file-coverage.test.mjs` | test | reviewed | repo contract test — fails when the repository drifts |
 | `scripts/tests/hygiene.test.mjs` | test | covered | contract test — fails when the repository drifts |

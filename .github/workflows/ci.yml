@@ -50,8 +50,11 @@ jobs:
       - name: DB lint
         run: npx supabase db lint
 
+      # The runner sets `kickoff.dblink_password` so the two concurrency suites
+      # can open their dblink worker sessions — the stack maps the container
+      # network to scram-sha-256, so the workers need the password.
       - name: DB tests (pgTAP)
-        run: npx supabase test db
+        run: bash scripts/run-pgtap.sh
 
       - name: Edge function type check
         run: npm run functions:check

@@ -28,7 +28,7 @@
     "db:reset": "npx supabase db reset",
     "db:seed-demo": "node scripts/seed-demo.mjs",
     "db:types": "npx supabase gen types typescript --local > packages/shared/src/database.types.ts",
-    "db:test": "npx supabase test db",
+    "db:test": "bash scripts/run-pgtap.sh",
     "functions:serve": "npx supabase functions serve",
     "functions:check": "bash scripts/check-functions.sh"
   }
