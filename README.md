@@ -2,19 +2,24 @@
 
 **Your digital ticket to match day.**
 
-KickOff is the operations and supporter platform for a single football club:
-a customer mobile app, a staff admin console, and the Supabase + Stripe backend
-they share. Fixtures, seating, payments, passes and gate admissions are real —
-nothing runs on a mock data layer.
+KickOff is a **B2B platform for football clubs**: a supporter mobile app, a
+staff admin console, and the Supabase + Stripe backend they share. Fixtures,
+seating, payments, passes and gate admissions are real — nothing runs on a
+mock data layer.
 
 - **Mobile app** (Expo / React Native) — fixtures and news, exact-seat booking,
   Stripe Checkout, digital QR match passes, order history and PDF receipts,
   profile, settings and push notifications.
 - **Admin console** (Next.js 16) — fixtures and seating inventory, gates,
   scanner, orders, refunds, CSV export, news, users, settings and TOTP.
-- **Backend** (Supabase) — Postgres with row-level security, 15 Edge Functions,
+- **Backend** (Supabase) — Postgres with row-level security, 16 Edge Functions,
   Stripe webhooks, signed QR passes, audit logs, scheduled reminders and a
   token-guarded metrics endpoint.
+
+> **Deployment model today:** one club per deployment. Multi-tenancy is the
+> next architecture phase for the B2B model — see
+> [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) → *Known gaps*.
+
 
 ---
 
@@ -292,12 +297,13 @@ Sales close **15 minutes before kick-off**; unpaid orders expire after
 │                                #   date formatting, theme tokens, QR contract,
 │                                #   English string table, Bangkok greeting
 ├── supabase/
-│   ├── migrations/              # 33 migrations: schema, RLS, RPCs, cron, seeds
-│   ├── functions/               # 15 Edge Functions + _shared helpers
+│   ├── migrations/              # 37 migrations: schema, RLS, RPCs, cron, seeds
+│   ├── functions/               # 16 Edge Functions + _shared helpers
 │   ├── tests/                   # pgTAP suites (RLS, expiry, concurrency)
 │   └── seed.sql
 ├── scripts/                     # seed-demo, pgTAP runner, MVP gate, tests
-├── docs/                        # BRAND, SECURITY, TESTING, BASELINE
+├── docs/                        # REQUIREMENTS, ARCHITECTURE, SECURITY, TESTING, BRAND
+│   └── archive/                 # archived plan history
 ├── maestro/flows/               # buy/QR mobile smoke
 ├── PLAN.md                      # delivery plan and decisions (SSOT)
 └── README.md
@@ -307,14 +313,20 @@ Sales close **15 minutes before kick-off**; unpaid orders expire after
 
 ## Mobile routes
 
+Expo Router strips group segments, so the URLs below are the real ones
+(`(auth)` and `(tabs)` are layout groups, not path segments).
+
 | Route | Screen |
 |---|---|
+| `/` | Home: next match, fixtures, news, results |
+| `/tickets` | Active and past passes |
+| `/profile` | Supporter account |
+| `/profile/edit` | Edit name and phone |
 | `/welcome` | Branded onboarding |
 | `/login`, `/register` | Sign in, create account |
+| `/check-email` | "Check your inbox" landing after signup |
 | `/forgot-password`, `/reset-password` | Password recovery |
-| `/(tabs)` | Home: next match, fixtures, news, results |
-| `/(tabs)/tickets` | Active and past passes |
-| `/(tabs)/profile` | Supporter account |
+| `/auth/callback` | Deep-link callback for the email confirmation link |
 | `/match/[id]` | Match detail, zones and availability |
 | `/fixtures` | Full fixture list: upcoming and results |
 | `/seats/[matchId]` | Exact seat grid with live availability |
@@ -322,7 +334,6 @@ Sales close **15 minutes before kick-off**; unpaid orders expire after
 | `/ticket/[id]` | Signed QR pass |
 | `/orders`, `/orders/[id]` | Order history and PDF receipt |
 | `/news`, `/news/[id]` | Full news feed and article |
-| `/profile/edit` | Edit name and phone |
 | `/settings` | Notifications, language, legal, sign out, delete account |
 | `/legal/[doc]` | Terms, privacy and refund policy |
 
@@ -330,6 +341,7 @@ Sales close **15 minutes before kick-off**; unpaid orders expire after
 
 | Route | Screen |
 |---|---|
+| `/` | Public landing → redirects to login or the dashboard |
 | `/login`, `/login/mfa` | Staff sign-in and TOTP challenge |
 | `/dashboard` | Overview: revenue, passes sold, scan pulse, recent orders |
 | `/dashboard/matches` | Fixture list, create/edit/delete |
@@ -425,8 +437,15 @@ Stripe mode, and store deployment via EAS.
 
 ## Documentation
 
-- [`PLAN.md`](PLAN.md) — delivery plan, decisions and phase status (SSOT)
-- [`docs/SECURITY.md`](docs/SECURITY.md) — RLS matrix, secrets, payments, QR
-- [`docs/TESTING.md`](docs/TESTING.md) — every test layer and command
-- [`docs/BRAND.md`](docs/BRAND.md) — brand tokens and usage
-- [`docs/BASELINE.md`](docs/BASELINE.md) — recorded baseline environment
+| Document | Owns |
+|---|---|
+| [`PLAN.md`](PLAN.md) | delivery plan, current status, decision index (SSOT) |
+| [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | what the product must do, traceability, known gaps |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | how it is built: layers, data model, flows, standards |
+| [`docs/SECURITY.md`](docs/SECURITY.md) | RLS matrix, secrets, payments, QR, audit, ops |
+| [`docs/TESTING.md`](docs/TESTING.md) | every test layer, command and skip condition |
+| [`docs/BRAND.md`](docs/BRAND.md) | brand tokens and usage |
+| [`docs/archive/PLAN-history.md`](docs/archive/PLAN-history.md) | archived task-level history of the original build |
+
+Documentation drift fails CI (`scripts/tests/docs.test.mjs`): counts, route
+tables and the doc index are asserted against the repository.

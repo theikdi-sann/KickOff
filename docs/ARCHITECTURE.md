@@ -1,0 +1,311 @@
+# ARCHITECTURE — KickOff B2B
+
+How KickOff is put together: the runtime, the data model, the flows that carry
+money and admits, the trust boundaries, and the conventions every module must
+follow. This is the document an engineer reads on day one.
+
+- **Audience:** engineers, technical reviewers, new hires.
+- **Scope:** the shipped system. Forward-looking work is labelled.
+- **Last verified:** 2026-11-13 · **Owner:** engineering
+- **Related:** [`REQUIREMENTS.md`](REQUIREMENTS.md) (what it must do) ·
+  [`SECURITY.md`](SECURITY.md) (how it is protected) ·
+  [`TESTING.md`](TESTING.md) (how it is proven) ·
+  [`BRAND.md`](BRAND.md) (visual tokens)
+
+---
+
+## 1. System context
+
+KickOff is sold to football clubs. Each club is a tenant with its own
+fixtures, staff, supporters and payments.
+
+```text
+        ┌───────────────┐            ┌────────────────┐
+        │ Supporter app │            │  Staff console │
+        │  (Expo/RN)    │            │   (Next.js)    │
+        └───────┬───────┘            └────────┬───────┘
+                │  user JWT (supabase auth)     │  user JWT (role claim)
+                │                              │
+                │      ┌───────────────────────┼──────────────────────┐
+                │      ▼                       ▼                      │
+                │ ┌──────────────────────────────────────────────┐      │
+                │ │            Supabase (Postgres + Deno)        │      │
+                │ │                                              │      │
+                │ │  PostgREST ── RLS ── tables / views / RPCs   │      │
+                │ │  Edge Functions ── service role ── Stripe    │      │
+                │ │  Storage buckets ── receipts / news images  │      │
+                │ │  pg_cron ── reminders / retention            │      │
+                │ └──────────────────────────────────────────────┘      │
+                │                              │                      │
+                ▼                              ▼                      ▼
+        ┌───────────────┐            ┌────────────────┐      ┌────────────────┐
+        │ Stripe (test) │            │ Expo Push Svc  │      │  Storage (S3)  │
+        └───────────────┘            └────────────────┘      └────────────────┘
+```
+
+**The one architectural rule that explains the whole codebase:**
+
+> Anything a user can reach runs under **Row-Level Security** with their own
+> JWT. Anything that moves money, issues a pass, or admits a supporter runs
+> in an **Edge Function** with the service role, which *bypasses* RLS and must
+> therefore enforce authorization itself.
+
+Every Edge Function is a deliberate RLS bypass. That is where security review
+concentrates, and why every function starts with the same three steps:
+authenticate → authorize → validate.
+
+## 2. Runtime layers
+
+| Layer | Location | Responsibility | Trust |
+|---|---|---|---|
+| Presentation | `apps/mobile/src/app`, `apps/admin/src/app` | routes, screens, forms | untrusted input |
+| Domain/contract | `packages/shared` | Zod schemas, DTOs, mappers, money, format, theme, QR-adjacent types | pure, framework-free |
+| Client data access | `apps/*/src/lib/queries/*` | React Query hooks, polling, cache policy | user JWT |
+| Client edge access | `apps/mobile/src/lib/api.ts`, `apps/admin/src/lib/functions.ts` | edge-function client + error envelope | user JWT |
+| Serverless API | `supabase/functions/*` | privileged operations | service role |
+| Database | `supabase/migrations` | schema, RLS, RPCs, views, cron | Postgres |
+
+### 2.1 The three request paths
+
+1. **Catalogue read** — client → PostgREST → RLS `select` policy → rows.
+   Example: the seat map reads `seats` for one fixture.
+2. **Privileged write** — client → Edge Function → auth check → service-role
+   write. Example: `stripe-checkout` computes the amount from the database,
+   never from the client payload.
+3. **Scheduled work** — `pg_cron` → Edge Function with the scheduler secret.
+   Example: `send-kickoff-reminders` fans out Expo push notifications.
+
+### 2.2 Component map
+
+```
+apps/mobile/src/
+  app/                 Expo Router screens (auth group, tabs group, feature routes)
+  components/          UI kit (ui.tsx) + domain cards (match, news, ticket)
+  lib/queries/         React Query hooks, one file per domain
+  lib/api.ts           Edge-function client, ApiClientError, error envelope
+  lib/auth.ts          Supabase session → AppProfile, sign in/out/up
+  lib/store.tsx        AppProvider: profile state + demo-account entry
+  lib/notifications.ts Push registration + Expo-Go / project-id guards
+  lib/storage.ts       SecureStore adapter for the Supabase auth session
+  lib/receipt.ts       PDF receipt fetch + share
+
+apps/admin/src/
+  app/dashboard/*      staff screens (overview, matches, venues, gates, scan,
+                       tickets, news, users, settings)
+  app/login/*          sign-in + TOTP MFA challenge
+  lib/queries/*        React Query hooks, one file per domain
+  lib/audit.ts         privileged audit writes (reschedule, settings)
+  lib/offline-queue.ts gate scans recorded without connectivity
+  lib/scan-api.ts      scan/undo transport
+  lib/export.ts        CSV export
+  proxy.ts             server-side route protection
+
+packages/shared/src/
+  schemas.ts           Zod contracts at the trust boundary
+  dto.ts / entities.ts domain DTOs and DB row types
+  mappers.ts           row → DTO
+  money.ts format.ts   satang formatting, dates
+  qr.ts                QR payload contract (see §5.2 for the live copy)
+  theme.ts brand tokens
+
+supabase/
+  migrations/          37 ordered SQL migrations: schema, RLS, RPCs, views, cron
+  functions/_shared/   auth, config, validate, hmac, stripe, rate-limit,
+                       metrics, audit, http envelope, logger, qr
+  functions/<name>/    one directory per function (16)
+  tests/               pgTAP suites (10)
+```
+
+## 3. Data model
+
+| Group | Tables | Invariant |
+|---|---|---|
+| Catalogue | `matches`, `zones`, `seats`, `venues` | a seat belongs to exactly one zone of one fixture; a fixture plays at one venue |
+| Availability | `seat_holds` | one *active* hold per seat (partial unique index) |
+| Commerce | `orders`, `order_seats` | an order holds seats for a TTL, then is paid/cancelled/expired |
+| Fulfilment | `tickets` | one ticket per `order_seats` row, issued exactly once |
+| Access | `profiles`, `app_settings`, `app_secrets` | role lives in the JWT claim, mirrored in `profiles` |
+| Operations | `scan_events`, `audit_logs`, `stripe_events`, `rate_limits` | append-only history except `stripe_events` dedupe |
+| Engagement | `news_items`, `device_tokens` | device tokens are per user, revocable |
+
+**Key invariants (each has a test):**
+
+| Invariant | Enforced by | Test |
+|---|---|---|
+| One active hold per seat | partial unique index | `hold-concurrency.test.sql` |
+| A ticket is issued exactly once | `mark_order_paid` + `stripe_events` dedupe | `order-expiry.test.sql` |
+| A seat leaves `available` only via hold/order | RPC-only transitions | `seat-reservation.test.sql` |
+| A pass is accepted only within kickoff −2h…+2h | `scan-ticket` | `scan.test.sql` |
+| A scan can be undone for 60 s | `scan-undo` | `scan.test.sql` |
+| Nothing but admins reads `audit_logs` / `scan_events` | RLS policies | `rls.test.sql` |
+| Only admins write `audit_logs` | `0037` grant + policy | `reschedule-audit.test.sql` |
+
+## 4. The flows that matter
+
+### 4.1 Buy → pay → pass
+
+```text
+seats screen ──create_hold──▶ seat_holds (10 min, unique index)
+      │  Continue
+      ▼
+checkout ──create_order_from_hold──▶ orders (pending, 15 min TTL) + order_seats
+      │  Pay
+      ▼
+stripe-checkout ──▶ Stripe Checkout Session (amount from DB, card only, THB)
+      │  webhook (stripe-signature verified)
+      ▼
+stripe-webhook ──stripe_events (idempotent)──▶ mark_order_paid ──▶ tickets
+      │
+      ▼
+ticket screen ──ticket-qr──▶ KICKOFF-V2 signed payload ──▶ QR rendered
+```
+
+Failure paths that must never leave a seat stuck: payment abandoned → order
+expires → seats released; app dismissed mid-payment → hold survives until TTL;
+webhook retried → `stripe_events` dedupe → one ticket.
+
+### 4.2 Gate scan
+
+`scan-ticket` verifies: signature → ticket exists → ticket's fixture matches
+the gate's assigned fixture → ticket is `valid` → kickoff window → mark used
+→ write `scan_events`. `Idempotency-Key` makes offline replays safe;
+`scan-undo` reverses an accepted scan for 60 s. A scan result code set
+(`valid`, `used`, `invalid`, `wrong_match`) is a shared contract.
+
+### 4.3 Refund
+
+`refund-order` (admin JWT) → Stripe refund → order `refunded` → seats
+released → audit row. A used pass requires an explicit override.
+
+### 4.4 Reschedule a kickoff
+
+The rules live in the **shared Zod schema** (`adminRescheduleSchema`), enforced
+in the admin UI — deliberately **no database trigger or RPC** (walkthrough
+decision). Upcoming-only, future, outside the lock window, never earlier, at
+most +10 days, reason required. The reason is written to `audit_logs` by the
+client next to the update.
+
+> Known limitation (documented, not hidden): because the rules are client-side,
+> a direct PostgREST write could still move a kickoff. Recorded in
+> `PLAN.md` → `PB-RESCHEDULE` → Errors / Notes.
+
+### 4.5 Kickoff reminders
+
+`pg_cron` (hourly) → `send-kickoff-reminders` (scheduler secret) → fixtures
+starting in 24 h / 2 h → `device_tokens` → Expo Push Service.
+
+## 5. Trust boundaries
+
+| Boundary | Enforcement |
+|---|---|
+| Browser/app → Postgres | RLS + grants on every table |
+| Browser/app → Edge Function | JWT verification + role check (`_shared/auth.ts`) |
+| Edge Function → Postgres | service role — **no RLS**; authorization is the function's job |
+| Scheduler → Edge Function | shared secret, constant-time compare |
+| QR payload → gate | HMAC signature over `ticket|match|order|nonce` |
+| Payments → Stripe | `stripe-signature` verification + idempotent event ledger |
+
+Full matrix and secrets layout: [`SECURITY.md`](SECURITY.md).
+
+### 5.2 Where the QR contract lives
+
+The signed pass format `KICKOFF-V2:{…}` is implemented **once**, in
+`supabase/functions/_shared/qr.ts`, and is the only implementation. The
+supporter app never parses or signs a payload — it renders the string the
+server returns, so the signing contract cannot drift between tiers.
+
+## 6. Conventions (clean-code standard)
+
+These are the rules a change is expected to follow. They are enforced where a
+tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
+
+### 6.1 Type safety
+- `strict: true` plus `noImplicitOverride`, `noFallthroughCasesInSwitch`.
+- **No `any`** — ESLint `@typescript-eslint/no-explicit-any: error`. Use
+  `unknown` and narrow, or a Zod schema.
+- **No non-null assertions** (`!`) outside generated types — narrow explicitly.
+- Database types are **generated**, never hand-written:
+  `npx supabase gen types typescript --remote > packages/shared/src/database.types.ts`.
+
+### 6.2 Boundaries and validation
+- Every value crossing a trust boundary is parsed by a **Zod schema** in
+  `packages/shared/src/schemas.ts` (clients) or `_shared/validate.ts`
+  (functions). No ad-hoc `if (!x) throw` for structured input.
+- Errors crossing the wire use the **error envelope** (`ErrorCode` +
+  `ApiError`), never a raw string or a stack.
+
+### 6.3 Naming and structure
+- Files are kebab-case; components are PascalCase; hooks are `useX`.
+- One domain per file: a screen owns its screen, a query module owns its
+  entity.
+- Queries live in `lib/queries/<domain>.ts` and are the **only** place that
+  touches Supabase tables from a client.
+- Money is **integer satang** everywhere; formatting goes through
+  `shared/money.ts`. No floats, no `/100` at call sites.
+- No `console.log` — ESLint `no-console` allows only `warn`/`error`; use the
+  function logger.
+
+### 6.4 State and effects
+- Server state lives in React Query, never in local component state.
+- Mutations invalidate the queries they affect and surface failures to the
+  user (no silent `catch`).
+- Local persistence is only for: the auth session (SecureStore) and, in
+  future, cached pass payloads (`GAP-01`).
+
+### 6.5 Database
+- Schema changes are **migrations only** — never manual edits on a database.
+- Every new table ships with RLS enabled, a policy per role, matching
+  grants, and a pgTAP assertion.
+- Every privileged SQL function is `security definer` with
+  `set search_path = public`.
+- Anything money-bearing is idempotent and audit-logged.
+
+### 6.6 Testing
+- One behaviour per test; the test name states the behaviour.
+- Contract tests live in `scripts/tests/` and assert *shape* across the repo
+  (a README count, a route table, a migration shape).
+- Behaviour tests live with the code they cover
+  (`packages/shared/src/__tests__/`) or in the database (`supabase/tests/`).
+- A bug fix starts with a failing test that reproduces it.
+
+### 6.7 Documentation
+- One fact, one home. The README never restates what a linked document owns.
+- Documentation drift fails CI (`scripts/tests/docs.test.mjs`).
+- Decisions that change the shape of the system are recorded in
+  `PLAN.md` → Decision index, with the reasoning.
+
+## 7. Decision index
+
+| # | Decision | Why | Where |
+|---|---|---|---|
+| D-01 | Holds and orders are RPCs, not client-side transactions | seat integrity under concurrency | `0019`, `0020` |
+| D-02 | Amounts computed server-side from the database | the client must never price a ticket | `stripe-checkout` |
+| D-03 | Stripe webhooks are idempotent via `stripe_events` | Stripe retries | `0015`, `stripe-webhook` |
+| D-04 | QR payload is HMAC-signed and server-generated | tamper-evident entry | `_shared/qr.ts` |
+| D-05 | Admin authorization is a JWT claim (`app_metadata.role`) | RLS cannot read the app JWT | `0001`, `0018` |
+| D-06 | Reschedule rules live in shared Zod + UI, **no trigger/RPC** | walkthrough decision; the audit trail carries the reason | `0037`, `PB-RESCHEDULE` |
+| D-07 | Venues normalized into a table with a FK | free-text venues could not be managed | `0035`, `0036` |
+| D-08 | Edge Functions refuse non-`sk_test_` Stripe keys | Stripe test mode only, enforced | `_shared/config.ts` |
+| D-09 | Shared package holds contracts, not UI state | one place for schemas/DTOs | `packages/shared` |
+| D-10 | The QR contract lives only in `_shared` | the app renders, never parses, payloads | §5.2 |
+
+## 8. Extension points (B2B roadmap)
+
+| Workstream | Shape of the change | Notes |
+|---|---|---|
+| Multi-tenancy (`GAP-02`) | `clubs` table + `club_id` on every tenant table, `is_club_member(club_id)` RLS helper, per-club settings/branding/currency | the single biggest change; needs a data-migration plan and an RLS rewrite |
+| Staff roles (`GAP-03`) | `roles`/`permissions` tables, `user_roles(club_id, user_id, role)`, function-level checks | replaces the binary admin/user claim |
+| Observability (`GAP-04`) | structured logger with request IDs, error tracking, metrics push, alerts | the `_shared/logger.ts` seam already exists |
+| Locale & currency (`GAP-05`) | per-club locale + currency columns, `money.ts` gains a currency argument | the i18n groundwork exists but is unused |
+| Error tracking & tracing | request id propagation from client → function → logs | `ApiError.requestId` already carries it |
+
+## 9. Operational pointers
+
+| Task | Where |
+|---|---|
+| Local stack | `npx supabase start` · `npm run db:reset` · `npm run db:seed-demo` |
+| Database tests | `npm run db:test` (local) · `bash scripts/run-pgtap.sh` (hosted) |
+| Edge function checks | `npm run functions:check` · `cd supabase/functions && deno lint && deno test` |
+| Gates | `npm test` · `npm run check` · `npm run check:no-mocks` · `npm run build:admin` |
+| Deploy | `npx supabase db push --remote` · `npx supabase functions deploy <name>` |
+| Demo walkthrough | `README.md` → *Demo script* |
