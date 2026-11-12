@@ -10,9 +10,15 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { signInSchema } from '@kickoff/shared';
 import { AppText, LiveTag, PrimaryButton } from '@/components/ui';
 import { useApp } from '@/lib/store';
 import { colors, fonts, radii } from '@/lib/theme';
+
+// The credential rules live in the shared package, so the sign-in screen and
+// every other client agree on what "valid" means (F-11).
+const INVALID_CREDENTIALS_MESSAGE =
+  'Enter a valid email and a password of 8 to 72 characters.';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -27,14 +33,15 @@ export default function LoginScreen() {
   );
 
   const handleSignIn = async () => {
-    if (!email.includes('@') || password.length < 8) {
-      setError('Enter a valid email and a password of at least 8 characters.');
+    const credentials = signInSchema.safeParse({ email: email.trim(), password });
+    if (!credentials.success) {
+      setError(INVALID_CREDENTIALS_MESSAGE);
       return;
     }
     setError(null);
     setLoading(true);
     try {
-      await signIn(email, password);
+      await signIn(credentials.data.email, credentials.data.password);
       router.replace('/');
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not sign in.');

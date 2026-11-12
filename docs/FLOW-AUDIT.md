@@ -102,7 +102,7 @@ client-side redirect fires (F-09).
 | **F-07** | Medium | A15, A11 | Neither the reschedule nor the refund is atomic: the mutation lands before the audit row (reschedule) or before the DB state update (refund, where the Stripe refund happens first). A failure in between leaves a moved kickoff without an audit row, or a refunded Stripe order still marked `paid`. | ⬜ open — C4 cycle |
 | **F-08** | Medium | A4 | The zone rollback deletes the new zone **without checking the delete error**, so a failed rollback leaves an orphan zone while the operator is told it was removed. | ✅ **fixed** — the rollback error is checked and reported with the zone id |
 | **F-09** | Medium | all admin | `proxy.ts` performs no admin-role check and the dashboard layout renders `AdminShell` before the client-side redirect fires. RLS still protects the data, but the console is reachable by any signed-in account. | ✅ **fixed** — the proxy refuses a non-admin server-side and the layout never renders the console shell (`scripts/tests/admin-access.test.mjs`) |
-| **F-11** | Medium | all | The shared Zod schemas (`signInSchema`, `settingsUpdateSchema`, `refundOrderSchema`, `paginationSchema`, …) are **not used by the apps**; both consoles validate ad-hoc, and `refund-order` re-defines a copy of the shared schema. | ⬜ open — C4 cycle |
+| **F-11** | Medium | all | The shared Zod schemas (`signInSchema`, `settingsUpdateSchema`, `refundOrderSchema`, `paginationSchema`, …) are **not used by the apps**; both consoles validate ad-hoc, and `refund-order` re-defines a copy of the shared schema. | ✅ **fixed** — the mobile auth and profile screens parse through the shared schemas, the admin pager through `paginationSchema`, and `refund-order` consumes a generated copy of the canonical refund schema; unused schemas were deleted (`scripts/tests/schema-usage.test.mjs`) |
 | **F-12** | Medium | all | The order/ticket row→DTO mapping was implemented twice — once in the shared package, once in each app — and the app copies had no tests. | ✅ **fixed** — the shared package owns every mapper (`HYG-8`) |
 | **F-13** | Medium | A2 | The overview labels all-time scan counts as "last 30 days", and `useScanStats` loads every `scan_events` row with no limit. | ✅ **fixed** — the numbers come from the aggregate, which counts its window server-side; the browser no longer queries the scan history (`scripts/tests/scan-stats.test.mjs`) |
 | **F-14** | Medium | mobile | The supporter app has **no unit tests at all** (`apps/mobile/package.json` `test` script is a placeholder). | ✅ **fixed** — `jest-expo` + React Native Testing Library run under `npm test`, first tests cover the profile mapping, and CI runs the mobile workspace (`scripts/tests/mobile-tests.test.mjs`) |
@@ -135,10 +135,11 @@ came out of it — all fixed, all now enforced by a contract.
 5. **F-18 … F-23** (done) — the repository sweep: the unauthenticated Stripe
    probe, the dead analytics module, the template leftovers, the undocumented
    env variable, the misclassified TypeError and the filter injection.
-6. **F-07, F-11** — atomicity and the shared validation contracts.
-7. **F-15** (done) — the type-safety standard, now enforced by lint and a contract.
-8. **F-14** (done) — the mobile test harness, now run by CI.
-9. **F-17** (done) — the authoritative availability view.
+6. **F-11** (done) — the shared validation contracts, wired into every consumer.
+7. **F-07** — atomicity of the reschedule and the refund.
+8. **F-15** (done) — the type-safety standard, now enforced by lint and a contract.
+9. **F-14** (done) — the mobile test harness, now run by CI.
+10. **F-17** (done) — the authoritative availability view.
 
 > **Known limitation of the audit trail.** The staff console writes the audit
 > rows from the browser (the same pattern the reschedule flow already used,

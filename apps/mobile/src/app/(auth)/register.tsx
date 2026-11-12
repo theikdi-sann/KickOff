@@ -10,9 +10,21 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { signUpSchema } from '@kickoff/shared';
 import { AppText, LiveTag, PrimaryButton } from '@/components/ui';
 import { useApp } from '@/lib/store';
 import { colors, fonts, radii } from '@/lib/theme';
+
+// One message per rejected field, chosen from the shared schema's own issues —
+// the rules themselves live in `signUpSchema`, never here (F-11).
+function signUpErrorMessage(issues: readonly { path: readonly PropertyKey[] }[]): string {
+  const paths = issues.map((issue) => issue.path[0]);
+  if (paths.includes('email')) return 'Please enter a valid email address.';
+  if (paths.includes('password')) {
+    return 'Your password must be between 8 and 72 characters.';
+  }
+  return 'Please enter your full name.';
+}
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -25,22 +37,23 @@ export default function RegisterScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const handleSignUp = async () => {
-    if (fullName.trim().length < 2) {
-      setError('Please enter your full name.');
-      return;
-    }
-    if (!email.includes('@')) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    if (password.length < 8) {
-      setError('Your password must be at least 8 characters.');
+    const account = signUpSchema.safeParse({
+      fullName,
+      email: email.trim(),
+      password,
+    });
+    if (!account.success) {
+      setError(signUpErrorMessage(account.error.issues));
       return;
     }
     setError(null);
     setLoading(true);
     try {
-      const result = await signUp(fullName.trim(), email.trim(), password);
+      const result = await signUp(
+        account.data.fullName,
+        account.data.email,
+        account.data.password,
+      );
       if (result.status === 'confirmation-required') {
         // Link-only flow: the account exists but the email must be confirmed
         // from the link before any sign-in can succeed.
@@ -97,7 +110,7 @@ export default function RegisterScreen() {
             icon={<Lock size={17} color={colors.muted} />}
             value={password}
             onChangeText={setPassword}
-            placeholder="At least 6 characters"
+            placeholder="At least 8 characters"
             secureTextEntry={!showPassword}
             right={
               <Pressable onPress={() => setShowPassword((value) => !value)} hitSlop={10}>

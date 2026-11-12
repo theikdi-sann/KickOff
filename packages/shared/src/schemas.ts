@@ -24,6 +24,12 @@ export const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Expected a 
 export const nonEmptyTextSchema = z.string().trim().min(1);
 export const colorPairSchema = z.tuple([hexColorSchema, hexColorSchema]);
 
+/** An e-mail address as the auth screens accept it. */
+export const emailSchema = z.email();
+
+/** A password as the auth screens accept it (Supabase's 72-byte limit). */
+export const passwordSchema = z.string().min(8).max(72);
+
 export const roleSchema = z.enum(['customer', 'admin']);
 export const matchStatusSchema = z.enum(['upcoming', 'live', 'completed']);
 export const seatStatusSchema = z.enum(['available', 'sold', 'held']);
@@ -162,33 +168,18 @@ export const scanResultDtoSchema = z.object({
 /* ------------------------------------------------------------------ */
 
 export const signInSchema = z.object({
-  email: z.email(),
-  password: z.string().min(8).max(72),
+  email: emailSchema,
+  password: passwordSchema,
 });
 
 export const signUpSchema = z.object({
-  email: z.email(),
-  password: z.string().min(8).max(72),
-  fullName: nonEmptyTextSchema.max(120),
+  email: emailSchema,
+  password: passwordSchema,
+  // The register screen has always required at least two characters — a
+  // single letter is a typo, not a name — so the rule lives here, where both
+  // apps and any future client get it for free.
+  fullName: z.string().trim().min(2).max(120),
   phone: z.string().max(32).optional(),
-});
-
-export const createHoldSchema = z.object({
-  matchId: idSchema,
-  seatIds: z
-    .array(idSchema)
-    .min(1)
-    .max(MAX_SEATS_PER_ORDER)
-    .refine((ids) => new Set(ids).size === ids.length, 'Duplicate seat ids'),
-});
-
-export const createOrderSchema = z.object({
-  holdId: idSchema,
-});
-
-export const scanPayloadSchema = z.object({
-  payload: z.string().min(1).max(4096),
-  gateId: idSchema,
 });
 
 export const adminCreateMatchSchema = z.object({
@@ -309,28 +300,18 @@ export const paginationSchema = z.object({
   perPage: z.number().int().min(1).max(100).default(20),
 });
 
+/** The validated pager, as a list query consumes it. */
+export type PaginationParams = z.output<typeof paginationSchema>;
+
 export const profileUpdateSchema = z.object({
   fullName: nonEmptyTextSchema.max(120).optional(),
   phone: z.string().max(32).nullable().optional(),
 });
 
-export const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(8).max(72),
-    newPassword: z.string().min(8).max(72),
-  })
-  .refine((value) => value.currentPassword !== value.newPassword, {
-    message: 'New password must differ from the current password',
-    path: ['newPassword'],
-  });
-
-export const refundOrderSchema = z.object({
-  orderId: idSchema,
-  reason: z.string().max(400).optional(),
-  overrideUsedTickets: z.boolean().default(false),
-});
-
-export const settingsUpdateSchema = z.record(z.string().min(1).max(80), z.unknown());
+// The refund body lives in `./refund.ts` — the canonical source the Edge
+// Function's generated copy is built from — and is re-exported here so the
+// shared package still has one front door.
+export { refundOrderSchema, type RefundOrderInput } from './refund';
 
 /* ------------------------------------------------------------------ */
 /* Compile-time assertions: every DTO schema infers its DTO exactly.   */

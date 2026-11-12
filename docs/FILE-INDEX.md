@@ -217,6 +217,7 @@ before the suite is green again.
 | `packages/shared/src/index.ts` | source | reviewed | shared contract |
 | `packages/shared/src/mappers.ts` | source | reviewed | shared contract |
 | `packages/shared/src/money.ts` | source | reviewed | shared contract |
+| `packages/shared/src/refund.ts` | source | reviewed | shared contract — canonical refund body, no relative imports (F-11) |
 | `packages/shared/src/require.ts` | source | reviewed | narrowing helper — no non-null assertions |
 | `packages/shared/src/schemas.ts` | source | reviewed | shared contract |
 | `packages/shared/src/theme.ts` | source | reviewed | shared contract |
@@ -229,6 +230,7 @@ before the suite is green again.
 | `scripts/pg-url-parts.mjs` | source | covered | splits a DB URL so the password stays out of the command line |
 | `scripts/run-pgtap.sh` | config | reviewed | configuration |
 | `scripts/seed-demo.mjs` | source | reviewed | tool or gate script |
+| `scripts/sync-edge-schemas.mjs` | source | reviewed | generates the Edge copy of a shared Zod contract; drift fails CI |
 | `scripts/sync-error-codes.mjs` | source | reviewed | tool or gate script |
 | `scripts/tests/admin-access.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/audit-coverage.test.mjs` | test | covered | contract test — fails when the repository drifts |
@@ -250,6 +252,7 @@ before the suite is green again.
 | `scripts/tests/redirects.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/reschedule.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/scan-stats.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/schema-usage.test.mjs` | test | covered | contract test — the shared schemas are actually used (F-11) |
 | `scripts/tests/seeall.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/share.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/signup.test.mjs` | test | covered | contract test — fails when the repository drifts |
@@ -273,6 +276,7 @@ before the suite is green again.
 | `supabase/functions/_shared/probe.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/qr.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/rate-limit.ts` | source | reviewed | Edge Function helper |
+| `supabase/functions/_shared/refund.ts` | source | generated | GENERATED from packages/shared/src/refund.ts — do not edit |
 | `supabase/functions/_shared/roles.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/stripe.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/supabase.ts` | source | reviewed | Edge Function helper |

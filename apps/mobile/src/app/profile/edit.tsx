@@ -9,11 +9,19 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { passwordSchema, profileUpdateSchema } from '@kickoff/shared';
 import { AppText, Card, PrimaryButton, Screen, ScreenHeader, Skeleton } from '@/components/ui';
 import { errorMessage } from '@/lib/api';
 import type { AppProfile } from '@/lib/auth';
 import { useChangePassword, useProfile, useUpdateProfile } from '@/lib/queries/profile';
 import { colors, radii } from '@/lib/theme';
+
+// The rules come from the shared schemas; this screen only chooses the copy
+// the supporter sees (F-11).
+const NAME_REQUIRED_MESSAGE = 'Enter your name.';
+const PHONE_TOO_LONG_MESSAGE = 'That phone number must be 32 characters or fewer.';
+const PASSWORD_TOO_SHORT_MESSAGE = 'Passwords must be at least 8 characters.';
+const PASSWORDS_DO_NOT_MATCH_MESSAGE = 'The two passwords do not match.';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -63,25 +71,40 @@ function EditForm({ profile }: { profile: AppProfile }) {
 
   const handleSave = async () => {
     setError(null);
-    if (!fullName.trim()) {
-      setError('Enter your name.');
+    const details = profileUpdateSchema.safeParse({
+      fullName,
+      phone: phone.trim() ? phone.trim() : null,
+    });
+    if (!details.success) {
+      // Only the name and the phone are parsed here, so the message is chosen
+      // from the issue that actually failed instead of guessing.
+      const phoneRejected = details.error.issues.some(
+        (issue) => issue.path[0] === 'phone',
+      );
+      setError(phoneRejected ? PHONE_TOO_LONG_MESSAGE : NAME_REQUIRED_MESSAGE);
       return;
     }
-    if (password && password.length < 8) {
-      setError('Passwords must be at least 8 characters.');
-      return;
-    }
-    if (password && password !== confirm) {
-      setError('The two passwords do not match.');
-      return;
+
+    let nextPassword: string | null = null;
+    if (password) {
+      const parsedPassword = passwordSchema.safeParse(password);
+      if (!parsedPassword.success) {
+        setError(PASSWORD_TOO_SHORT_MESSAGE);
+        return;
+      }
+      if (password !== confirm) {
+        setError(PASSWORDS_DO_NOT_MATCH_MESSAGE);
+        return;
+      }
+      nextPassword = parsedPassword.data;
     }
 
     try {
       await updateProfile.mutateAsync({
-        fullName: fullName.trim(),
-        phone: phone.trim() ? phone.trim() : null,
+        fullName: details.data.fullName ?? profile.fullName,
+        phone: details.data.phone ?? null,
       });
-      if (password) await changePassword.mutateAsync(password);
+      if (nextPassword) await changePassword.mutateAsync(nextPassword);
       Alert.alert('Saved', 'Your details have been updated.');
       router.back();
     } catch (caught) {

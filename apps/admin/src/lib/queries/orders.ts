@@ -2,11 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  paginationSchema,
   requireDefined,
   toOrderDto,
   type OrderDto,
   type OrderJoinRow,
   type OrderStatus,
+  type PaginationParams,
 } from "@kickoff/shared";
 import { invokeFunction } from "@/lib/functions";
 import { sanitizeSearchTerm } from "@/lib/search";
@@ -51,23 +53,29 @@ function toAdminOrder(row: OrderJoinRow, holder?: Holder): AdminOrder {
   };
 }
 
-export interface OrdersFilter {
+/**
+ * The pager is the shared `paginationSchema`'s own shape: `page` and `perPage`
+ * are validated (and defaulted) by the contract, so a list query can never be
+ * asked for page 0 or 10,000 rows.
+ */
+export type OrdersFilter = PaginationParams & {
   search?: string;
   status?: OrderStatus | "all";
-  page: number;
-  perPage: number;
-}
+};
 
 export function useOrders(filter: OrdersFilter) {
   return useQuery({
     queryKey: ["admin-orders", filter],
     queryFn: async (): Promise<{ items: AdminOrder[]; total: number }> => {
-      const from = (filter.page - 1) * filter.perPage;
+      // Validated at the edge of the query: a malformed pager is a programmer
+      // error and must surface, not be silently clamped.
+      const { page, perPage } = paginationSchema.parse(filter);
+      const from = (page - 1) * perPage;
       let query = createClient()
         .from("orders")
         .select(SELECT, { count: "exact" })
         .order("created_at", { ascending: false })
-        .range(from, from + filter.perPage - 1);
+        .range(from, from + perPage - 1);
 
       if (filter.status && filter.status !== "all") query = query.eq("status", filter.status);
       if (filter.search && filter.search.trim().length > 0) {

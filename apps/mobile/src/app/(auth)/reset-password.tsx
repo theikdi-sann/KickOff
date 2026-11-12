@@ -11,9 +11,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { passwordSchema } from '@kickoff/shared';
 import { AppText, PrimaryButton } from '@/components/ui';
 import { applyLinkSession, updatePassword } from '@/lib/auth';
 import { colors, fonts, radii } from '@/lib/theme';
+
+// Supabase rejects passwords longer than 72 bytes, so the screen says so
+// before the round trip instead of surfacing a server error.
+const INVALID_PASSWORD_MESSAGE = 'Use between 8 and 72 characters.';
 
 function readRecoveryTokens(url: string): { access?: string; refresh?: string } {
   const hash = url.includes('#') ? url.slice(url.indexOf('#') + 1) : '';
@@ -72,8 +77,9 @@ export default function ResetPasswordScreen() {
   }, []);
 
   const handleSubmit = async () => {
-    if (password.length < 8) {
-      setError('Use at least 8 characters.');
+    const nextPassword = passwordSchema.safeParse(password);
+    if (!nextPassword.success) {
+      setError(INVALID_PASSWORD_MESSAGE);
       return;
     }
     if (password !== confirm) {
@@ -83,7 +89,7 @@ export default function ResetPasswordScreen() {
     setError(null);
     setLoading(true);
     try {
-      await updatePassword(password);
+      await updatePassword(nextPassword.data);
       router.replace('/');
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not update your password.');

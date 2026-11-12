@@ -10,9 +10,12 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { emailSchema } from '@kickoff/shared';
 import { AppText, PrimaryButton } from '@/components/ui';
 import { requestPasswordReset } from '@/lib/auth';
 import { colors, fonts, radii } from '@/lib/theme';
+
+const INVALID_EMAIL_MESSAGE = 'Enter a valid email address.';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -22,14 +25,15 @@ export default function ForgotPasswordScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    if (!email.includes('@')) {
-      setError('Enter a valid email address.');
+    const recipient = emailSchema.safeParse(email.trim());
+    if (!recipient.success) {
+      setError(INVALID_EMAIL_MESSAGE);
       return;
     }
     setError(null);
     setLoading(true);
     try {
-      await requestPasswordReset(email.trim());
+      await requestPasswordReset(recipient.data);
       setSent(true);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not send the reset email.');

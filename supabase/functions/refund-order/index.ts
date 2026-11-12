@@ -1,18 +1,11 @@
-import { z } from "zod";
-
 import { writeAudit } from "../_shared/audit.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
+import { refundOrderSchema } from "../_shared/refund.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { createRefund } from "../_shared/stripe.ts";
 import { validateBody } from "../_shared/validate.ts";
-
-const bodySchema = z.object({
-  orderId: z.string().min(1).max(64),
-  reason: z.string().max(400).optional(),
-  overrideUsedTickets: z.boolean().default(false),
-});
 
 interface OrderRow {
   id: string;
@@ -24,7 +17,7 @@ interface OrderRow {
 
 async function handler(request: Request): Promise<Response> {
   const context = await requireAdmin(request);
-  const body = await validateBody(request, bodySchema);
+  const body = await validateBody(request, refundOrderSchema);
   const db = serviceClient();
 
   const { data: order, error: orderError } = await db
