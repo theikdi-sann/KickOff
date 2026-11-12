@@ -22,7 +22,11 @@ function pair(colors: string[] | null, fallback: [string, string]): [string, str
   return [colors?.[0] ?? fallback[0], colors?.[1] ?? fallback[1]];
 }
 
-type MatchRowLike = Omit<MatchRow, 'home_away'> & { home_away: string };
+type MatchRowLike = Omit<MatchRow, 'home_away'> & {
+  home_away: string;
+  /** Embedded via `select('*, venues(name)')` — matches.venue_id FK. */
+  venues?: { name: string } | null;
+};
 
 export function toMatchDto(row: MatchRowLike): MatchDto {
   return {
@@ -30,7 +34,7 @@ export function toMatchDto(row: MatchRowLike): MatchDto {
     opponent: row.opponent,
     opponentShort: row.opponent_short,
     kickoffAt: row.kickoff_at,
-    venue: row.venue,
+    venue: row.venues?.name ?? 'KickOff Arena',
     competition: row.competition,
     homeAway: row.home_away === 'away' ? 'away' : 'home',
     status: row.status,

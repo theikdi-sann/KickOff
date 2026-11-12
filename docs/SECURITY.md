@@ -40,6 +40,7 @@ role bypasses RLS and is used only inside Edge Functions.
 |---|---|---|---|
 | `profiles` | — | read/update own row | read via policies |
 | `matches`, `zones`, `seats`, `news_items` | read | read | full write |
+| `venues` | read | read | full write |
 | `orders` | — | read own orders | read all |
 | `order_seats` | — | read rows of own orders | read all |
 | `tickets` | — | read own passes | read all |

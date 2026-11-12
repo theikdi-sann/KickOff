@@ -17,7 +17,7 @@ interface MatchRow {
   id: string;
   opponent: string;
   kickoff_at: string;
-  venue: string;
+  venue: { name: string } | null;
 }
 
 interface TicketRow {
@@ -74,7 +74,7 @@ async function handler(request: Request): Promise<Response> {
   if (body.matchId) {
     const { data, error } = await db
       .from("matches")
-      .select("id,opponent,kickoff_at,venue")
+      .select("id,opponent,kickoff_at,venue:venues(name)")
       .eq("id", body.matchId)
       .maybeSingle<MatchRow>();
     if (error) throw error;
@@ -83,7 +83,7 @@ async function handler(request: Request): Promise<Response> {
     const soon = new Date(Date.now() + 26 * 60 * 60 * 1000).toISOString();
     const { data, error } = await db
       .from("matches")
-      .select("id,opponent,kickoff_at,venue")
+      .select("id,opponent,kickoff_at,venue:venues(name)")
       .eq("status", "upcoming")
       .gt("kickoff_at", new Date().toISOString())
       .lt("kickoff_at", soon)
@@ -122,7 +122,7 @@ async function handler(request: Request): Promise<Response> {
     to: token,
     sound: "default",
     title: "Matchday is coming",
-    body: `KickOff vs ${match!.opponent} · ${bangkokKickoff(match!.kickoff_at)} at ${match!.venue}. Have your pass ready.`,
+    body: `KickOff vs ${match!.opponent} · ${bangkokKickoff(match!.kickoff_at)} at ${match!.venue?.name ?? "KickOff Arena"}. Have your pass ready.`,
     data: { url: "/(tabs)" },
   }));
 

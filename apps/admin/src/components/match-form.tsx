@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { adminCreateMatchSchema, type MatchDto, brand } from "@kickoff/shared";
+import {
+  adminCreateMatchSchema,
+  adminRescheduleSchema,
+  type MatchDto,
+  brand,
+} from "@kickoff/shared";
 import type { AdminMatchInput } from "@/lib/queries/matches";
+import { useSettings } from "@/lib/queries/settings";
+import { useVenues } from "@/lib/queries/venues";
 
 const DEFAULT_COLORS: [string, string] = [brand.primary, brand.primaryDark];
 const DEFAULT_ACCENT = brand.accent;
@@ -26,13 +33,17 @@ function toLocalInput(iso: string | undefined): string {
 }
 
 export function MatchForm({ initial, submitting = false, onSubmit }: MatchFormProps) {
+  const venuesQuery = useVenues();
+  const settings = useSettings();
+  const venues = venuesQuery.data ?? [];
   const [values, setValues] = useState({
     opponent: initial?.opponent ?? "",
     opponentShort: initial?.opponentShort ?? "",
     kickoffAt: toLocalInput(initial?.kickoffAt),
-    venue: initial?.venue ?? "KickOff Arena",
+    venue: initial?.venue ?? venues[0]?.name ?? "KickOff Arena",
     competition: initial?.competition ?? "Thai Premier League",
     homeAway: initial?.homeAway ?? "home",
+    reason: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -40,13 +51,24 @@ export function MatchForm({ initial, submitting = false, onSubmit }: MatchFormPr
   const set = (key: keyof typeof values) => (value: string) =>
     setValues((current) => ({ ...current, [key]: value }));
 
+  // RS-7: editing a fixture and moving its kickoff = a reschedule — the
+  // shared rules (future / lock window / never earlier / ≤10 days) apply and
+  // a reason becomes mandatory. Compare ISO instants (RS-7b): the raw
+  // datetime-local string drops seconds, so a stored kickoff with seconds
+  // would look unchanged while the submitted value still moves the fixture.
+  const kickoffIso = values.kickoffAt ? new Date(values.kickoffAt).toISOString() : "";
+  const storedKickoff = initial?.kickoffAt;
+  const storedMs = storedKickoff ? new Date(storedKickoff).getTime() : Number.NaN;
+  const originalIso = initial?.id && !Number.isNaN(storedMs) ? new Date(storedMs).toISOString() : null;
+  const kickoffChanged = Boolean(initial?.id) && kickoffIso !== "" && kickoffIso !== originalIso;
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setFormError(null);
 
     const parsed = adminCreateMatchSchema.safeParse({
       ...values,
-      kickoffAt: values.kickoffAt ? new Date(values.kickoffAt).toISOString() : "",
+      kickoffAt: kickoffIso,
       posterColors: initial?.posterColors ?? DEFAULT_COLORS,
       accent: initial?.accent ?? DEFAULT_ACCENT,
     });
@@ -60,9 +82,30 @@ export function MatchForm({ initial, submitting = false, onSubmit }: MatchFormPr
       return;
     }
 
+    let reason: string | undefined;
+    if (kickoffChanged) {
+      const reschedule = adminRescheduleSchema({
+        currentKickoffAt: initial?.kickoffAt ?? kickoffIso,
+        now: new Date().toISOString(),
+        lockMinutes: settings.data?.kickoffLockMinutes ?? 15,
+        status: initial?.status,
+      }).safeParse({ kickoffAt: kickoffIso, reason: values.reason });
+
+      if (!reschedule.success) {
+        const next: Record<string, string> = {};
+        for (const issue of reschedule.error.issues) {
+          next[issue.path.join(".") || "form"] = issue.message;
+        }
+        setErrors(next);
+        return;
+      }
+      reason = reschedule.data.reason;
+    }
+
     setErrors({});
     try {
-      await onSubmit(parsed.data as AdminMatchInput);
+      const payload = parsed.data as AdminMatchInput;
+      await onSubmit(reason !== undefined ? { ...payload, reason } : payload);
     } catch (caught) {
       setFormError(caught instanceof Error ? caught.message : "Could not save the match.");
     }
@@ -96,12 +139,39 @@ export function MatchForm({ initial, submitting = false, onSubmit }: MatchFormPr
             className="input"
           />
         </Field>
+        {kickoffChanged ? (
+          // RS-7: moving the kickoff demands the justification that ends up
+          // in audit_logs — same rules, same messages, as the shared schema.
+          <div className="sm:col-span-2">
+            <Field label="Reason" error={errors.reason}>
+              <input
+                value={values.reason}
+                onChange={(event) => set("reason")(event.target.value)}
+                className="input"
+                placeholder="TV broadcast request"
+                maxLength={400}
+              />
+            </Field>
+          </div>
+        ) : null}
         <Field label="Venue" error={errors.venue}>
-          <input
+          <select
             value={values.venue}
             onChange={(event) => set("venue")(event.target.value)}
-            className="input"
-          />
+            className="input">
+            {/* Keep an editing fixture's venue selectable even if the row was
+                deleted since the form loaded — the option stays truthful. */}
+            {venues.length > 0 && !venues.some((venue) => venue.name === values.venue) ? (
+              <option value={values.venue}>{values.venue}</option>
+            ) : null}
+            {venues.map((venue) => (
+              <option key={venue.id} value={venue.name}>
+                {venue.name}
+                {venue.city ? ` · ${venue.city}` : ""}
+              </option>
+            ))}
+            {venues.length === 0 ? <option value={values.venue}>{values.venue}</option> : null}
+          </select>
         </Field>
         <Field label="Competition" error={errors.competition}>
           <input

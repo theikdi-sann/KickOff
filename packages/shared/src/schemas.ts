@@ -202,6 +202,89 @@ export const adminCreateMatchSchema = z.object({
   accent: hexColorSchema,
 });
 
+/* ------------------------------------------------------------------ */
+/* Admin reschedule (punch list #13)                                   */
+/* ------------------------------------------------------------------ */
+
+export interface RescheduleContext {
+  /** The fixture's current kickoff — a reschedule may never move it earlier. */
+  currentKickoffAt: string;
+  /** Evaluation time (ISO) — injectable so the rules are deterministic. */
+  now?: string;
+  /** `kickoff_lock_minutes` from app settings (defaults to 15). */
+  lockMinutes?: number;
+  /** Fixture status — only upcoming fixtures may be rescheduled. */
+  status?: z.infer<typeof matchStatusSchema>;
+}
+
+/**
+ * Kick-off reschedule rules (walkthrough #13), enforced in the shared Zod
+ * schema — deliberately no DB trigger or RPC. Each rule lands with its own
+ * test (RS-x); the context carries the fixture's current state.
+ */
+export function adminRescheduleSchema(context: RescheduleContext) {
+  const nowMs = new Date(context.now ?? new Date().toISOString()).getTime();
+  const currentMs = new Date(context.currentKickoffAt).getTime();
+  const lockMinutes = context.lockMinutes ?? 15;
+
+  return z
+    .object({
+      kickoffAt: isoTimestampSchema,
+      // RS-5: the reason is always required, 1–400 characters after trim.
+      reason: nonEmptyTextSchema.max(400),
+    })
+    .superRefine((value, ctx) => {
+      const nextMs = new Date(value.kickoffAt).getTime();
+
+      // RS-6: only upcoming fixtures may move — a started or finished match
+      // is off the table, and the timing rules below stop mattering.
+      if (context.status !== undefined && context.status !== 'upcoming') {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['kickoffAt'],
+          message: 'Only upcoming fixtures can be rescheduled',
+        });
+        return;
+      }
+
+      // RS-2: never in the past — checked first so a past time gets the
+      // honest "future" message instead of the lock-window one.
+      if (nextMs <= nowMs) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['kickoffAt'],
+          message: 'The new kickoff must be in the future',
+        });
+      } else if (nextMs < nowMs + lockMinutes * 60_000) {
+        // RS-1: never inside the kickoff lock window.
+        ctx.addIssue({
+          code: 'custom',
+          path: ['kickoffAt'],
+          message: `The kickoff must stay outside the ${lockMinutes}-minute lock window`,
+        });
+      }
+
+      // RS-3: a reschedule only ever pushes a fixture forward.
+      if (nextMs < currentMs) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['kickoffAt'],
+          message: 'A fixture cannot be moved to an earlier time',
+        });
+      }
+
+      // RS-4: at most 10 days beyond the current kickoff.
+      const maxMs = currentMs + 10 * 24 * 60 * 60 * 1000;
+      if (nextMs > maxMs) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['kickoffAt'],
+          message: 'A fixture can be moved back at most 10 days',
+        });
+      }
+    });
+}
+
 export const adminUpdateZoneSchema = z.object({
   name: nonEmptyTextSchema.max(80),
   description: z.string().max(240),

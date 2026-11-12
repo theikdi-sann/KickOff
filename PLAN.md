@@ -670,14 +670,13 @@ untouched).
 - Root causes found during diagnosis: (1) `staleTime: 60_000` + no `['seats']` invalidation on order create made the seat map render cached "available" seats, so Continue hit the server's correct refusal with no explanation; (2) the Pay button entered a blind 90-second `verifying` state whenever an order existed and was `pending` — exactly the state a cancelled return leaves you in; (3) only the X button released the hold — swipe-down/back dispatched nothing, and the auto-cancel had a silent `.catch(() => undefined)`.
 - A *raw* hold (created at Continue, before Pay) never changes `seats.status` — only a pending order does — so other buyers' pre-payment holds are invisible to clients (`seat_holds` RLS is own-only). Unchanged by design: the refusal copy now explains it, and the unified exit guarantees your own stray holds are released. Server visibility for foreign raw holds would need a new view/migration — deliberately not done here.
 - iOS sheet swipe-down is intercepted via the navigator's removal prevention; if a native dismiss ever bypasses it, the unmount safety net releases the hold anyway — both paths are the X button's behaviour.
-- Second-walkthrough checkout complaints (cancelled seat stayed blocked / ~2-minute spinner / swipe-down → "seat already held") are closed here; the original 13-item punch list still has #1 LAN script, #2 signup, #3 redirects, #4 see-all, #5+#6 share/wallet, #7 README and #10–#13 staged for Phase B.
+- Second-walkthrough checkout complaints (cancelled seat stayed blocked / ~2-minute spinner / swipe-down → "seat already held") are closed here; the original 13-item punch list still had #1 LAN script, #2 signup, #3 redirects, #4 see-all, #5+#6 share/wallet, #7 README and #10–#13 staged for Phase B — all of them are now closed there except #10 (blocked, see `PB-PUSH`).
 
 ---
 
-### Phase B — Walkthrough Fixes: remaining punch list
+### Phase B — Walkthrough Fixes: remaining punch list — complete
 
-Staged work for the original 13-item punch list. `PB-01` is complete; the rest
-follow in the order the walkthrough recorded them.
+**One-line summary:** every walkthrough punch-list item except #10 is shipped and verified — #1–#7 and #11–#13 went through a strict per-behavior TDD cycle (red → green) with the full gate sweep, hosted migrations and 10 pgTAP suites green; #10 (EAS push dev build) stays **blocked** on Expo account credentials only the maintainer can provide.
 
 #### `PB-01` — 3-second seat-map polling — complete
 
@@ -787,6 +786,69 @@ from the LAN walkthrough and nothing recorded the unset step.
 **Errors / Notes**
 - The actual `secrets unset` on hosted is deliberately **not** run yet — it stays until the walkthrough re-test is finished (the LAN origin is what the demo laptop uses); then run the command above.
 
+#### `PB-LANG` — punch list #11: language setting is English-only — complete
+
+The settings screen offered Thai/English "language" choices that could not do
+anything — the app ships a single copy deck and no i18n runtime. Walkthrough
+decision: remove the non-English options rather than fake them.
+
+- [x] `PB-LANG-a` · `apps/mobile/src/app/settings.tsx` **[M]** — the `LANGUAGES` list, `chooseLanguage` handler and `LANGUAGE_KEY` SecureStore persistence are gone; the Language row is static **English** with a *"More languages coming soon"* hint. Nothing else on the screen changed.
+- [x] `PB-LANG-b` · `scripts/tests/language.test.mjs` **[N]** — 3 contracts (`LANG-1..3`): no non-English option is offered, no language persistence/SecureStore key remains, and the row still renders with the coming-soon hint.
+
+**Verification:** TDD — `LANG-1..3` red first, then green. `npm test` (node suite), `npm run check`, `check:no-mocks` clean. No server changes.
+
+#### `PB-VENUES` — punch list #12: proper venues/stadiums schema + admin venue management — complete
+
+Venues lived as a free-text `matches.venue` column: no address/city, no
+referential integrity, and duplicate spellings could not be prevented. This
+normalizes them into a real table and gives the admin console a page to manage
+them.
+
+- [x] `PB-VEN-a` · `supabase/migrations/0035_venues.sql` **[N]** — `venues` table (name unique, city, address), `matches.venue_id` FK with backfill from the old text, default `v_kickoff`, then `drop column matches.venue`.
+- [x] `PB-VEN-b` · `supabase/migrations/0036_venue_views.sql` **[N]** — views that embedded `matches.venue` are rebuilt over `venues(name)` with grants kept at parity with `0022_views.sql`.
+- [x] `PB-VEN-c` · `packages/shared/src/{entities.ts,mappers.ts,database.types.ts}` **[M]** — `MatchDto.venue` now comes from the embedded `venues(name)`; generated types refreshed with `npx supabase gen types typescript --remote` (no local Docker).
+- [x] `PB-VEN-d` · `apps/admin/src/lib/queries/{matches.ts,venues.ts}` **[M]/[N]** — every admin match read embeds `venues(name)`; new `useVenues` + `resolveVenueId()` (lookup by name, create-on-miss with a lost-race read-back).
+- [x] `PB-VEN-e` · `apps/admin/src/app/dashboard/venues/page.tsx` **[N]** · `apps/admin/src/app/dashboard/layout.tsx` **[M]** — venue management page (list/create/edit/delete) behind a new **Venues** nav link.
+- [x] `PB-VEN-f` · `apps/admin/src/components/match-form.tsx` **[M]** — venue is a `<select>` over the venues table (with a truthful fallback option if the row was deleted mid-edit).
+- [x] `PB-VEN-g` · `supabase/functions/{_shared/ticket-view.ts,stripe-checkout,send-kickoff-reminders}` **[M]** + `supabase/seed.sql` **[M]** — edge reads join `venues(name)`; seed inserts venues before matches.
+- [x] `PB-VEN-h` · `supabase/tests/venues.test.sql` **[N]** — 8 pgTAP assertions (backfill, default venue, FK rejection, anon/admin read-write rules).
+- [x] `PB-VEN-i` · `scripts/tests/venues.test.mjs` **[N]** — 8 contracts (`VEN-1..8`), including the reminders function embedding `venues(name)`.
+- [x] `PB-VEN-j` · `README.md` **[M]** · `docs/SECURITY.md` **[M]** — admin routes table gains `/dashboard/venues`; the RLS matrix gains the venues row.
+
+**Verification:** TDD — `VEN-1..8` red first, then green. Gates: `npm test`, `npm run check`, `check:no-mocks`, `functions:check`, `build:admin`. Migrations `0035`+`0036` pushed to hosted `cvebikawynavfyfbjnzu`; 5 edge functions redeployed; pgTAP 10 files green.
+
+**Errors / Notes**
+- **Critical, caught in adversarial review:** `send-kickoff-reminders` still selected the dropped `matches.venue` column and would have failed at runtime — fixed to embed `venues(name)` (`VEN-8` extended to cover it) and the function was redeployed with the other four.
+- Grant parity between `0022_views.sql` and `0036_venue_views.sql` was verified line-by-line (`zone_availability` anon+authenticated, receipt views authenticated only).
+- `npm run db:types` still points at `--local` (needs Docker, unavailable here); types were regenerated against the hosted project with `--remote`.
+
+#### `PB-RESCHEDULE` — punch list #13: reschedule rules + stored reason — complete
+
+Admins could move a kickoff to any time, silently. The rules now live in the
+shared Zod schema + admin UI — walkthrough decision: **no DB trigger or RPC** —
+and the reason is stored in `audit_logs` via Option 3 (a migration that grants
+authenticated-admin `INSERT`; the client writes the row next to the update).
+
+- [x] `PB-RS-a` · `packages/shared/src/schemas.ts` **[M]** — `adminRescheduleSchema({ currentKickoffAt, now, lockMinutes, status })`: upcoming-only, new kickoff in the future and outside the `kickoff_lock_minutes` window, never earlier than the current kickoff, at most +10 days, reason `trim()`-required 1–400 chars (issues reported on the `kickoffAt`/`reason` paths).
+- [x] `PB-RS-b` · `packages/shared/src/__tests__/reschedule.test.ts` **[N]** — behavior tests `RS-1..RS-6` (+`RS-4b` acceptance) with a fixed clock.
+- [x] `PB-RS-c` · `supabase/migrations/0037_reschedule_audit.sql` **[N]** — `grant insert on public.audit_logs to authenticated` + `audit_logs_admin_insert` policy `with check (public.is_admin())`; deliberately no trigger and no function.
+- [x] `PB-RS-d` · `apps/admin/src/lib/audit.ts` **[N]** — `recordReschedule()` writes `{action:'reschedule', entity:'match', metadata:{from,to,reason}}` with the acting user.
+- [x] `PB-RS-e` · `apps/admin/src/lib/queries/matches.ts` **[M]** — `useUpdateMatch` reads the old kickoff first, applies the update, then writes the audit row when `reason` rides along; `AdminMatchInput.reason?: string`.
+- [x] `PB-RS-f` · `apps/admin/src/components/match-form.tsx` **[M]** — `kickoffChanged` detection (ISO **instant** comparison), conditional **Reason** field, and `adminRescheduleSchema` validation wired with `useSettings().kickoffLockMinutes` + the fixture status.
+- [x] `PB-RS-g` · `scripts/tests/reschedule.test.mjs` **[N]** — wiring contracts `RS-7..RS-10` (+`RS-7b`): form wiring, audit writer + mutation call, migration shape (grant/policy, **no** trigger/function), pgTAP suite present.
+- [x] `PB-RS-h` · `supabase/tests/reschedule-audit.test.sql` **[N]** — 4 pgTAP assertions: admin insert lives, reason round-trips, non-admin and anonymous inserts throw `42501`.
+
+**Verification:** TDD — schema `RS-1..RS-6` red→green one behavior at a time; wiring `RS-7..RS-10` 0/4 → 4/4; `RS-7b` red→green during adversarial review. Gates: `npm test` **63/63** node + **76/76** vitest (8 files), `npm run check`, `check:no-mocks`, `functions:check`, `build:admin`. Migration `0037` pushed to hosted with explicit consent; pgTAP **61 ok / 0 fail** across 10 files (new suite 4/4).
+
+**Errors / Notes**
+- **Ordering:** the audit row is written *after* the kickoff update (no transaction is possible without the forbidden trigger/RPC), so an audit-write failure surfaces an error even though the kickoff already moved; re-submitting then saves without demanding a reason again. Non-critical for the demo; a server-side write would be the fix if the walkthrough ever lifts the no-trigger/no-RPC constraint.
+- The rules are enforced in shared Zod + admin UI only: a direct PostgREST write could still move a kickoff — accepted per the walkthrough decision (Option 3).
+- `RS-7b` exists because the `<input type="datetime-local">` value drops seconds: comparing raw strings would let a seconds-bearing kickoff be rewritten with no reason; the form now compares ISO instants.
+
+#### `PB-PUSH` — punch list #10: push notifications via an EAS dev build — blocked
+
+- [ ] `PB-PUSH-*` · Expo credentials required — **blocked on the maintainer**, not on code: `npx eas login` + `npx eas init` must be run in a terminal (Expo account), which writes `EAS_PROJECT_ID` into `.env`. Only then can the `PUSH-x` contract suite (`scripts/tests/push.test.mjs`) start its red→green cycle with expo-dev-client, an `eas.json` dev profile, the Expo-Go capability guard in `notifications.ts` and the README dev-build docs; builds run on EAS cloud (no local Android SDK available).
+
 #### Remaining punch-list items (staged)
 
 - ~~#1 LAN~~ — **done** (see `PB-LAN` below).
@@ -795,7 +857,10 @@ from the LAN walkthrough and nothing recorded the unset step.
 - ~~#4 see-all~~ — **done** (see `PB-SEEALL` below).
 - ~~#5+#6 share~~ — **done** (see `PB-SHARE` below) — wallet dropped in favour of a shareable pass image.
 - ~~#7 README~~ — **done** (see `PB-README` below).
-- #10–#13 admin/ops items — incl. #12 proper venues/stadiums schema and #13 reschedule rules (never past/inside lock window, never earlier, cap 10 days, reason always required).
+- #10 push notifications (EAS dev build) — **blocked**, see `PB-PUSH` below: needs `npx eas login` + `npx eas init` run by the maintainer.
+- ~~#11 language~~ — **done** (see `PB-LANG` below).
+- ~~#12 venues/stadiums schema~~ — **done** (see `PB-VENUES` below) — normalized `venues` table + admin venue management page.
+- ~~#13 reschedule rules~~ — **done** (see `PB-RESCHEDULE` below) — never past/inside lock window, never earlier, cap 10 days, reason always required, reason stored in `audit_logs`.
 
 ---
 

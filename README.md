@@ -287,6 +287,7 @@ Sales close **15 minutes before kick-off**; unpaid orders expire after
 | `/dashboard` | Overview: revenue, passes sold, scan pulse, recent orders |
 | `/dashboard/matches` | Fixture list, create/edit/delete |
 | `/dashboard/matches/[id]` | Zones, prices, rows and seats |
+| `/dashboard/venues` | Venue management: add/delete grounds fixtures play at |
 | `/dashboard/gates` | Gate registry and per-fixture assignment |
 | `/dashboard/scan` | Camera scanner, manual payload, demo pass, offline queue |
 | `/dashboard/tickets` | Orders, filters, CSV export, refunds |

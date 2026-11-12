@@ -10,7 +10,11 @@ interface TicketJoin {
   status: string;
   issued_at: string;
   used_at: string | null;
-  matches: { opponent: string; kickoff_at: string; venue: string } | null;
+  matches: {
+    opponent: string;
+    kickoff_at: string;
+    venue: { name: string } | null;
+  } | null;
   seats: { row_label: string; number: number; zones: { name: string } | null } | null;
   order_seats: { price_satang: number } | null;
 }
@@ -29,7 +33,7 @@ function mapTicket(row: TicketJoin, holder: string): TicketDto {
     matchLabel: `KickOff vs ${row.matches?.opponent ?? 'opponent'}`,
     opponent: row.matches?.opponent ?? '',
     kickoffAt: row.matches?.kickoff_at ?? '',
-    venue: row.matches?.venue ?? 'KickOff Arena',
+    venue: row.matches?.venue?.name ?? 'KickOff Arena',
     holder,
     zoneId: '',
     zoneName: seat?.zones?.name ?? '',
@@ -47,7 +51,7 @@ function mapTicket(row: TicketJoin, holder: string): TicketDto {
 }
 
 const SELECT =
-  'id,order_id,match_id,status,issued_at,used_at,matches(opponent,kickoff_at,venue),seats(row_label,number,zones(name)),order_seats!tickets_order_seat_id_fkey(price_satang)';
+  'id,order_id,match_id,status,issued_at,used_at,matches(opponent,kickoff_at,venue:venues(name)),seats(row_label,number,zones(name)),order_seats!tickets_order_seat_id_fkey(price_satang)';
 
 async function holderName(): Promise<string> {
   const { data } = await supabase.auth.getUser();

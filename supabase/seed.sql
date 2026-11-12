@@ -1,24 +1,28 @@
 -- Catalog seed (no customer data). Safe to run repeatedly.
+insert into public.venues (id, name, city, address)
+values ('v_kickoff', 'KickOff Arena', 'Bangkok', 'KickOff Stadium, Rama IX Road')
+on conflict (name) do nothing;
+
 insert into public.matches
-  (id, opponent, opponent_short, kickoff_at, venue, competition, home_away, status,
+  (id, opponent, opponent_short, kickoff_at, competition, home_away, status,
    home_score, away_score, poster_colors, accent)
 values
-  ('m-bkk', 'Bangkok Rovers', 'BKR', '2026-11-14T18:00:00+07:00', 'KickOff Arena',
+  ('m-bkk', 'Bangkok Rovers', 'BKR', '2026-11-14T18:00:00+07:00',
    'Thai Premier League', 'home', 'upcoming', null, null,
    array['#0B6B3A', '#052E1A']::text[], '#F4C430'),
-  ('m-cmi', 'Chiang Mai FC', 'CMI', '2026-11-21T19:30:00+07:00', 'KickOff Arena',
+  ('m-cmi', 'Chiang Mai FC', 'CMI', '2026-11-21T19:30:00+07:00',
    'Thai Premier League', 'home', 'upcoming', null, null,
    array['#065F46', '#022C22']::text[], '#34D399'),
-  ('m-hkt', 'Phuket United', 'PKT', '2026-11-28T17:00:00+07:00', 'KickOff Arena',
+  ('m-hkt', 'Phuket United', 'PKT', '2026-11-28T17:00:00+07:00',
    'Thai Premier League', 'home', 'upcoming', null, null,
    array['#1E3A8A', '#0B1220']::text[], '#60A5FA'),
-  ('m-kkn', 'Khon Kaen Athletic', 'KKA', '2026-12-05T20:00:00+07:00', 'KickOff Arena',
+  ('m-kkn', 'Khon Kaen Athletic', 'KKA', '2026-12-05T20:00:00+07:00',
    'Thai Premier League', 'home', 'upcoming', null, null,
    array['#7C2D12', '#1C0A04']::text[], '#FB923C'),
-  ('m-ryg', 'Rayong City', 'RYG', '2026-10-25T18:00:00+07:00', 'KickOff Arena',
+  ('m-ryg', 'Rayong City', 'RYG', '2026-10-25T18:00:00+07:00',
    'Thai Premier League', 'home', 'completed', 1, 0,
    array['#334155', '#0F172A']::text[], '#94A3B8'),
-  ('m-npt', 'Nakhon Pathom', 'NPT', '2026-10-18T19:00:00+07:00', 'KickOff Arena',
+  ('m-npt', 'Nakhon Pathom', 'NPT', '2026-10-18T19:00:00+07:00',
    'Thai Premier League', 'home', 'completed', 2, 2,
    array['#3F3F46', '#18181B']::text[], '#A1A1AA')
 on conflict (id) do nothing;

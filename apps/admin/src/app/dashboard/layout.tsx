@@ -8,6 +8,7 @@ import {
   DoorOpen,
   LayoutDashboard,
   LogOut,
+  MapPin,
   Megaphone,
   QrCode,
   Search,
@@ -27,6 +28,7 @@ import { cn, displayName, initialsFor } from "@/lib/utils";
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/matches", label: "Matches & seating", icon: CalendarDays },
+  { href: "/dashboard/venues", label: "Venues", icon: MapPin },
   { href: "/dashboard/news", label: "News & results", icon: Megaphone },
   { href: "/dashboard/gates", label: "Gates", icon: DoorOpen },
   { href: "/dashboard/scan", label: "Gate scan", icon: QrCode },

@@ -8,7 +8,7 @@ export function useMatches() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('matches')
-        .select('*')
+        .select('*, venues(name)')
         .order('kickoff_at', { ascending: true });
       if (error) throw new Error(error.message);
       return (data ?? []).map(toMatchDto);
@@ -21,7 +21,11 @@ export function useMatch(id: string | undefined) {
     queryKey: ['match', id],
     enabled: Boolean(id),
     queryFn: async () => {
-      const { data, error } = await supabase.from('matches').select('*').eq('id', id!).single();
+      const { data, error } = await supabase
+        .from('matches')
+        .select('*, venues(name)')
+        .eq('id', id!)
+        .single();
       if (error) throw new Error(error.message);
       return toMatchDto(data);
     },
@@ -34,7 +38,7 @@ export function useNextMatch() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('matches')
-        .select('*')
+        .select('*, venues(name)')
         .eq('status', 'upcoming')
         .gte('kickoff_at', new Date().toISOString())
         .order('kickoff_at', { ascending: true })

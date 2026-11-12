@@ -27,13 +27,13 @@ export interface ProfileRow {
   updated_at: IsoTimestamp;
 }
 
-/** `public.matches` (P3-03). */
+/** `public.matches` (P3-03). Venue is a foreign key — see `VenueRow`. */
 export interface MatchRow {
   id: string;
   opponent: string;
   opponent_short: string;
   kickoff_at: IsoTimestamp;
-  venue: string;
+  venue_id: string;
   competition: string;
   home_away: HomeAway;
   status: MatchStatus;
@@ -41,6 +41,16 @@ export interface MatchRow {
   away_score: number | null;
   poster_colors: string[];
   accent: string;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+}
+
+/** `public.venues` (punch list #12) — the single source of truth for grounds. */
+export interface VenueRow {
+  id: string;
+  name: string;
+  city: string | null;
+  address: string | null;
   created_at: IsoTimestamp;
   updated_at: IsoTimestamp;
 }

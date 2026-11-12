@@ -1,8 +1,7 @@
-import * as SecureStore from 'expo-secure-store';
 import { LogOut, ShieldAlert, Trash2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { AppText, Card, PrimaryButton, Screen, ScreenHeader } from '@/components/ui';
 import { api, errorMessage } from '@/lib/api';
@@ -15,13 +14,9 @@ import {
 } from '@/lib/notifications';
 import { colors, radii } from '@/lib/theme';
 
-const LANGUAGE_KEY = 'kickoff.language';
-const LANGUAGES = ['English', 'ไทย'] as const;
-
 export default function SettingsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [language, setLanguage] = useState<string>('English');
   const [busy, setBusy] = useState<'notifications' | 'delete' | null>(null);
 
   const devicesQuery = useQuery({
@@ -30,14 +25,6 @@ export default function SettingsScreen() {
     enabled: pushSupported(),
   });
   const notificationsOn = (devicesQuery.data?.length ?? 0) > 0;
-
-  useEffect(() => {
-    void SecureStore.getItemAsync(LANGUAGE_KEY)
-      .then((value) => {
-        if (value) setLanguage(value);
-      })
-      .catch(() => undefined);
-  }, []);
 
   const toggleNotifications = async (next: boolean) => {
     setBusy('notifications');
@@ -50,19 +37,6 @@ export default function SettingsScreen() {
     } finally {
       setBusy(null);
     }
-  };
-
-  const chooseLanguage = () => {
-    Alert.alert('Language', 'Choose the language for match updates.', [
-      ...LANGUAGES.map((option) => ({
-        text: option,
-        onPress: () => {
-          setLanguage(option);
-          void SecureStore.setItemAsync(LANGUAGE_KEY, option).catch(() => undefined);
-        },
-      })),
-      { text: 'Cancel', style: 'cancel' as const },
-    ]);
   };
 
   const handleSignOut = () => {
@@ -144,17 +118,17 @@ export default function SettingsScreen() {
           PREFERENCES
         </AppText>
         <Card style={styles.card}>
-          <Pressable onPress={chooseLanguage} style={styles.row}>
+          <View style={styles.row}>
             <View style={styles.flex}>
               <AppText variant="label">Language</AppText>
               <AppText variant="small" color={colors.muted} style={styles.rowDetail}>
-                Match updates and app copy
+                More languages coming soon
               </AppText>
             </View>
             <AppText variant="label" color={colors.primary}>
-              {language}
+              English
             </AppText>
-          </Pressable>
+          </View>
         </Card>
 
         <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>

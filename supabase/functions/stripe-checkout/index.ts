@@ -56,9 +56,9 @@ async function handler(request: Request): Promise<Response> {
 
   const { data: match, error: matchError } = await db
     .from("matches")
-    .select("opponent,kickoff_at,venue")
+    .select("opponent,kickoff_at")
     .eq("id", order.match_id)
-    .single<{ opponent: string; kickoff_at: string; venue: string }>();
+    .single<{ opponent: string; kickoff_at: string }>();
   if (matchError || !match) throw matchError ?? new AppError("not_found", "Match not found");
 
   const seatRows = (seats ?? []) as OrderSeatRow[];

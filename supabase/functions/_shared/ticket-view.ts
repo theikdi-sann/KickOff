@@ -30,7 +30,7 @@ interface TicketJoinRow {
   status: string;
   issued_at: string;
   used_at: string | null;
-  matches: { opponent: string; kickoff_at: string; venue: string } | null;
+  matches: { opponent: string; kickoff_at: string; venue: { name: string } | null } | null;
   seats: { row_label: string; number: number; zones: { name: string } | null } | null;
   order_seats: { price_satang: number } | null;
 }
@@ -38,7 +38,7 @@ interface TicketJoinRow {
 // `tickets` has two FK paths to `order_seats` (its own seat, and the reverse
 // ticket_id link), so the embed must name the seat relationship explicitly.
 const TICKET_SELECT =
-  "id,order_id,match_id,user_id,status,issued_at,used_at,matches(opponent,kickoff_at,venue),seats(row_label,number,zones(name)),order_seats!tickets_order_seat_id_fkey(price_satang)";
+  "id,order_id,match_id,user_id,status,issued_at,used_at,matches(opponent,kickoff_at,venue:venues(name)),seats(row_label,number,zones(name)),order_seats!tickets_order_seat_id_fkey(price_satang)";
 
 const STATUSES = new Set(["valid", "used", "void"]);
 
@@ -75,7 +75,7 @@ export async function loadTicketView(
     matchLabel: `KickOff vs ${data.matches?.opponent ?? "opponent"}`,
     opponent: data.matches?.opponent ?? "",
     kickoffAt: data.matches?.kickoff_at ?? "",
-    venue: data.matches?.venue ?? "KickOff Arena",
+    venue: data.matches?.venue?.name ?? "KickOff Arena",
     holder,
     zoneId: "",
     zoneName: seat?.zones?.name ?? "",

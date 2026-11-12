@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toMatchDto, toZoneDto } from "@kickoff/shared";
+import { recordReschedule } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/client";
 
 export interface AdminMatchInput {
@@ -13,6 +14,8 @@ export interface AdminMatchInput {
   homeAway: "home" | "away";
   posterColors: [string, string];
   accent: string;
+  /** Reschedule justification (1–400) — present iff the kickoff changed. */
+  reason?: string;
 }
 
 export interface AdminZoneInput {
@@ -28,13 +31,46 @@ function client() {
   return createClient();
 }
 
+/**
+ * Resolves a venue *name* (what the form edits) to its id, creating the row
+ * if it does not exist yet — the admin select only offers existing venues,
+ * but a stale tab may still submit a name that was deleted meanwhile.
+ */
+async function resolveVenueId(name: string): Promise<string> {
+  const db = client();
+  const { data: existing, error: lookupError } = await db
+    .from("venues")
+    .select("id")
+    .eq("name", name)
+    .maybeSingle();
+  if (lookupError) throw new Error(lookupError.message);
+  if (existing) return existing.id;
+
+  const { data: created, error: createError } = await db
+    .from("venues")
+    .upsert({ name }, { onConflict: "name", ignoreDuplicates: true })
+    .select("id")
+    .maybeSingle();
+  if (createError) throw new Error(createError.message);
+  if (created) return created.id;
+
+  // Lost the insert race — the row exists now, read it back.
+  const { data: raced, error: racedError } = await db
+    .from("venues")
+    .select("id")
+    .eq("name", name)
+    .single();
+  if (racedError) throw new Error(racedError.message);
+  return raced.id;
+}
+
 export function useMatches() {
   return useQuery({
     queryKey: ["admin-matches"],
     queryFn: async () => {
       const { data, error } = await client()
         .from("matches")
-        .select("*")
+        .select("*, venues(name)")
         .order("kickoff_at", { ascending: true });
       if (error) throw new Error(error.message);
       return (data ?? []).map(toMatchDto);
@@ -47,7 +83,11 @@ export function useMatch(id: string | undefined) {
     queryKey: ["admin-match", id],
     enabled: Boolean(id),
     queryFn: async () => {
-      const { data, error } = await client().from("matches").select("*").eq("id", id!).single();
+      const { data, error } = await client()
+        .from("matches")
+        .select("*, venues(name)")
+        .eq("id", id!)
+        .single();
       if (error) throw new Error(error.message);
       return toMatchDto(data);
     },
@@ -126,19 +166,20 @@ export function useCreateMatch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: AdminMatchInput) => {
+      const venueId = await resolveVenueId(input.venue);
       const { data, error } = await client()
         .from("matches")
         .insert({
           opponent: input.opponent,
           opponent_short: input.opponentShort,
           kickoff_at: input.kickoffAt,
-          venue: input.venue,
+          venue_id: venueId,
           competition: input.competition,
           home_away: input.homeAway,
           poster_colors: input.posterColors,
           accent: input.accent,
         })
-        .select("*")
+        .select("*, venues(name)")
         .single();
       if (error) throw new Error(error.message);
       return toMatchDto(data);
@@ -151,11 +192,26 @@ export function useUpdateMatch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { id: string; patch: Partial<AdminMatchInput> }) => {
+      // RS-8: a reason rides along only when the kickoff changed (the form
+      // guarantees it) — read the old kickoff first so the audit row has `from`.
+      const rescheduleReason = input.patch.reason;
+      const rescheduled = rescheduleReason !== undefined && input.patch.kickoffAt !== undefined;
+      let previousKickoffAt: string | null = null;
+      if (rescheduled) {
+        const { data: before, error: beforeError } = await client()
+          .from("matches")
+          .select("kickoff_at")
+          .eq("id", input.id)
+          .single();
+        if (beforeError) throw new Error(beforeError.message);
+        previousKickoffAt = before.kickoff_at;
+      }
+
       const patch: {
         opponent?: string;
         opponent_short?: string;
         kickoff_at?: string;
-        venue?: string;
+        venue_id?: string;
         competition?: string;
         home_away?: string;
         poster_colors?: string[];
@@ -164,7 +220,7 @@ export function useUpdateMatch() {
       if (input.patch.opponent !== undefined) patch.opponent = input.patch.opponent;
       if (input.patch.opponentShort !== undefined) patch.opponent_short = input.patch.opponentShort;
       if (input.patch.kickoffAt !== undefined) patch.kickoff_at = input.patch.kickoffAt;
-      if (input.patch.venue !== undefined) patch.venue = input.patch.venue;
+      if (input.patch.venue !== undefined) patch.venue_id = await resolveVenueId(input.patch.venue);
       if (input.patch.competition !== undefined) patch.competition = input.patch.competition;
       if (input.patch.homeAway !== undefined) patch.home_away = input.patch.homeAway;
       if (input.patch.posterColors !== undefined) patch.poster_colors = input.patch.posterColors;
@@ -174,9 +230,19 @@ export function useUpdateMatch() {
         .from("matches")
         .update(patch)
         .eq("id", input.id)
-        .select("*")
+        .select("*, venues(name)")
         .single();
       if (error) throw new Error(error.message);
+
+      if (rescheduled) {
+        // The kickoff moved: store {from, to, reason} in audit_logs (RS-8).
+        await recordReschedule({
+          matchId: input.id,
+          from: previousKickoffAt ?? input.patch.kickoffAt!,
+          to: input.patch.kickoffAt!,
+          reason: rescheduleReason!,
+        });
+      }
       return toMatchDto(data);
     },
     onSuccess: (match) => invalidateMatchData(queryClient, match.id),
