@@ -15,14 +15,14 @@ import {
 } from "@/lib/scan-api";
 import { createClient } from "@/lib/supabase/client";
 
-export interface ScanStats {
-  total: number;
-  valid: number;
-  used: number;
-  invalid: number;
-  wrongMatch: number;
-}
-
+/**
+ * The scan statistics are **not** queried here.
+ *
+ * `orders-aggregate` counts the scans of its window server-side and returns
+ * them; the console reads them from there. A second, browser-side query over
+ * the scan history would pull the whole table into the browser and could
+ * disagree with the aggregate.
+ */
 export interface RecentScan {
   id: string;
   result: ScanResultCode;
@@ -146,29 +146,6 @@ export function useScanEvents(input: { gateId?: string; limit?: number } = {}) {
           seatLabel: `${rowLabel}${seat?.number ?? ""}`,
         };
       });
-    },
-  });
-}
-
-export function useScanStats(range?: { from: string; to: string }) {
-  return useQuery<ScanStats>({
-    queryKey: ["scan-stats", range],
-    queryFn: async () => {
-      const client = createClient();
-      let query = client.from("scan_events").select("result");
-      if (range) query = query.gte("created_at", range.from).lte("created_at", range.to);
-      const { data, error } = await query;
-      if (error) throw new Error(error.message);
-
-      const counts: ScanStats = { total: 0, valid: 0, used: 0, invalid: 0, wrongMatch: 0 };
-      for (const row of data ?? []) {
-        counts.total += 1;
-        if (row.result === "valid") counts.valid += 1;
-        else if (row.result === "used") counts.used += 1;
-        else if (row.result === "wrong_match") counts.wrongMatch += 1;
-        else counts.invalid += 1;
-      }
-      return counts;
     },
   });
 }

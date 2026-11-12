@@ -18,7 +18,6 @@ import { Badge, EmptyState, SectionTitle, Skeleton } from "@/components/ui";
 import { useMatches, useAllZones, useMatchSalesSummaries } from "@/lib/queries/matches";
 import { useNews } from "@/lib/queries/news";
 import { useOrders, useOrdersAggregate } from "@/lib/queries/orders";
-import { useScanStats } from "@/lib/queries/scan";
 import { cn } from "@/lib/utils";
 import { formatMatchDate, formatMatchTime, formatTHB } from "@kickoff/shared";
 
@@ -29,7 +28,9 @@ export function DashboardOverview() {
   const newsQuery = useNews();
   const ordersQuery = useOrders({ page: 1, perPage: 4, status: "all" });
   const aggregate = useOrdersAggregate();
-  const scans = useScanStats();
+  // The scan counts come from the aggregate — the same numbers the server
+  // counted for its window, not a second browser-side query.
+  const scans = aggregate.data?.scans;
 
   const now = new Date();
   const matches = matchesQuery.data ?? [];
@@ -52,8 +53,8 @@ export function DashboardOverview() {
   const pulse = [
     { label: "Paid", value: aggregate.data?.ordersPaid ?? 0 },
     { label: "Tickets", value: ticketsSold },
-    { label: "Scans", value: scans.data?.total ?? 0 },
-    { label: "Valid", value: scans.data?.valid ?? 0 },
+    { label: "Scans", value: scans?.total ?? 0 },
+    { label: "Valid", value: scans?.valid ?? 0 },
   ];
   const pulseMax = Math.max(1, ...pulse.map((item) => item.value));
 
@@ -68,8 +69,7 @@ export function DashboardOverview() {
     salesQuery.error ??
     newsQuery.error ??
     ordersQuery.error ??
-    aggregate.error ??
-    scans.error;
+    aggregate.error;
 
   if (isLoading) {
     return (
@@ -144,8 +144,8 @@ export function DashboardOverview() {
         <StatCard
           icon={<QrCode size={17} />}
           label="Gate scans"
-          value={String(scans.data?.valid ?? 0)}
-          note={`${scans.data?.total ?? 0} scans, last 30 days`}
+          value={String(scans?.valid ?? 0)}
+          note={`${scans?.total ?? 0} scans, last 30 days`}
           tone="violet"
         />
       </div>
@@ -277,7 +277,7 @@ export function DashboardOverview() {
               <div className="flex-1">
                 <p className="text-xs font-semibold">Gate 2 · North Stand</p>
                 <p className="mt-0.5 text-[10px] text-emerald-50/45">
-                  {scans.data?.total ?? 0} scans recorded
+                  {scans?.total ?? 0} scans recorded
                 </p>
               </div>
               <QrCode size={18} className="text-gold" />

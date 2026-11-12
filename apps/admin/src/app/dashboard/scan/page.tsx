@@ -23,12 +23,12 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, SectionTitle } from "@/components/ui";
 import { useGates } from "@/lib/queries/gates";
+import { useOrdersAggregate } from "@/lib/queries/orders";
 import {
   useOfflineQueue,
   useScan,
   useScanDemo,
   useScanEvents,
-  useScanStats,
   useUndoScan,
 } from "@/lib/queries/scan";
 import type { ScanOutcome } from "@/lib/scan-api";
@@ -114,8 +114,10 @@ export default function ScanPage() {
   const undo = useUndoScan(selectedGate?.id);
   const demo = useScanDemo(selectedGate?.id);
   const events = useScanEvents({ gateId: selectedGate?.id, limit: 6 });
-  const stats = useScanStats();
   const queue = useOfflineQueue();
+  // The scan totals come from the aggregate — the same server-side count the
+  // dashboard shows, not a second browser-side query.
+  const aggregate = useOrdersAggregate();
 
   useEffect(() => {
     if (!undoDeadline) return;
@@ -457,7 +459,7 @@ export default function ScanPage() {
                     <p className="label text-pitch">Recent entries</p>
                     <h2 className="display mt-0.5 text-2xl text-slate-900">Scanned passes</h2>
                   </div>
-                  <Badge tone="muted">{stats.data?.total ?? 0} total</Badge>
+                  <Badge tone="muted">{aggregate.data?.scans.total ?? 0} in 30 days</Badge>
                 </div>
                 <div className="mt-3 divide-y divide-slate-100">
                   {events.isLoading ? (

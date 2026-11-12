@@ -20,9 +20,12 @@ interface ScanLite {
   result: string;
 }
 
+/** The window the console reports on when it does not ask for another. */
+const AGGREGATE_WINDOW_DAYS = 30;
+
 function defaultRange(): { from: string; to: string } {
   const to = new Date();
-  const from = new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const from = new Date(to.getTime() - AGGREGATE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
   return { from: from.toISOString(), to: to.toISOString() };
 }
 

@@ -27,9 +27,20 @@ const root = resolve(import.meta.dirname, '..', '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 const exists = (path) => existsSync(resolve(root, path));
 
+/** Directories that hold generated output — never part of the source contract. */
+const IGNORED_DIRECTORIES = new Set([
+  'node_modules',
+  '.next',
+  '.expo',
+  'dist',
+  'build',
+  'coverage',
+]);
+
 const walk = (dir, out = []) => {
   if (!existsSync(dir)) return out;
   for (const entry of readdirSync(dir)) {
+    if (IGNORED_DIRECTORIES.has(entry)) continue;
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) walk(full, out);
     else out.push(full);
@@ -65,8 +76,22 @@ test('HYG-1b every shared module is reachable from production code', () => {
     ...walk(resolve(root, 'supabase/functions')),
   ].filter((file) => /\.(ts|tsx)$/.test(file) && !file.includes('/node_modules/'));
 
+  /**
+   * Reads a file that may vanish while the suite runs (another test writes a
+   * temporary probe into the tree). A file that disappears is simply not
+   * production code.
+   */
+  const readIfPresent = (file) => {
+    try {
+      return readFileSync(file, 'utf8');
+    } catch (caught) {
+      if (caught && caught.code === 'ENOENT') return '';
+      throw caught;
+    }
+  };
+
   const importsOf = (file) => {
-    const source = readFileSync(file, 'utf8');
+    const source = readIfPresent(file);
     const names = new Set();
     for (const match of source.matchAll(/from\s+['"]([^'"]+)['"]/g)) {
       names.add(match[1]);

@@ -106,8 +106,10 @@ test("P9b dashboard layout exposes real session, aria-current and a skip link", 
 test("P9b migrated dashboard surfaces use query hooks instead of the mock store", async () => {
   const expectations = [
     // P11-20 split the route into a server segment (page.tsx) plus the client
-    // view; the data hooks now live in overview.tsx.
-    ["src/app/dashboard/overview.tsx", /useOrdersAggregate/, /useScanStats/],
+    // view; the data hooks now live in overview.tsx. The scan counts come from
+    // the aggregate — `useScanStats` (a second, browser-side query over the
+    // scan history) was removed in Phase C3.
+    ["src/app/dashboard/overview.tsx", /useOrdersAggregate/, /useMatches/],
     ["src/app/dashboard/matches/page.tsx", /useMatches/, /useDeleteMatch/],
     ["src/app/dashboard/matches/[id]/page.tsx", /useMatch\b/, /useZones/],
     ["src/app/dashboard/news/page.tsx", /useNews/, /useCreateNews/],

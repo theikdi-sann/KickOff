@@ -24,7 +24,7 @@ import {
   type AdminOrder,
   type OrdersFilter,
 } from "@/lib/queries/orders";
-import { useOrderScanUsage, useScanStats } from "@/lib/queries/scan";
+import { useOrderScanUsage } from "@/lib/queries/scan";
 import { formatShortDate, formatTHB } from "@kickoff/shared";
 
 const PAGE_SIZE = 10;
@@ -69,7 +69,6 @@ export default function TicketsPage() {
     perPage: PAGE_SIZE,
   });
   const aggregate = useOrdersAggregate();
-  const scans = useScanStats();
   const refund = useRefund();
 
   const orders = data?.items ?? [];
@@ -150,7 +149,7 @@ export default function TicketsPage() {
         <Stat icon={<Wallet size={16} />} label="Revenue" value={formatTHB(aggregate.data?.revenueSatang ?? 0)} />
         <Stat icon={<Ticket size={16} />} label="Paid orders" value={String(aggregate.data?.ordersPaid ?? 0)} />
         <Stat icon={<Ticket size={16} />} label="Tickets sold" value={String(aggregate.data?.ticketsSold ?? 0)} />
-        <Stat icon={<QrCode size={16} />} label="Gate scans" value={String(scans.data?.total ?? 0)} />
+        <Stat icon={<QrCode size={16} />} label="Gate scans (30d)" value={String(aggregate.data?.scans.total ?? 0)} />
       </div>
 
       <div className="panel mt-4 overflow-hidden">

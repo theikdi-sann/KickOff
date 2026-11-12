@@ -138,5 +138,4 @@ export function useOrdersAggregate(range?: { from: string; to: string }) {
 }
 
 // Scan stats moved to `./scan.ts` (P8-06); re-exported for existing callers.
-export { useScanStats } from "./scan";
-export type { ScanStats } from "./scan";
+export { useOrderScanUsage } from "./scan";
