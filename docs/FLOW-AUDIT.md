@@ -116,8 +116,9 @@ client-side redirect fires (F-09).
 2. **F-01, F-02, F-03, F-04, F-08** (done) — silent failures: the operator or
    the supporter is told nothing when something goes wrong.
 3. **F-05, F-06, F-16** (done) — the audit trail NFR-05 promises.
-4. **F-07, F-09, F-11** — atomicity and the trust boundary.
-5. **F-13 … F-15, F-17** — scale, standards and polish.
+4. **F-09, F-13** (done) — the trust boundary and the numbers the console shows.
+5. **F-07, F-11** — atomicity and the shared validation contracts.
+6. **F-14, F-15, F-17** — test coverage, standards and polish.
 
 > **Known limitation of the audit trail.** The staff console writes the audit
 > rows from the browser (the same pattern the reschedule flow already used,
