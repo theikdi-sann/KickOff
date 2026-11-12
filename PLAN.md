@@ -33,9 +33,9 @@ capability the business model requires.
 
 | Workstream | Scope | Status |
 |---|---|---|
-| **C1 — Documentation baseline** | Merge proposal + brainstorm into `REQUIREMENTS.md`; add `ARCHITECTURE.md`; delete stale/duplicate docs; make doc drift a failing test | 🔄 in progress |
-| **C2 — Code hygiene & single source of truth** | Delete the dead contract cluster in `packages/shared`; one implementation of the QR contract, the error envelope and business constants; remove redundant files | ⬜ next |
-| **C3 — Flow-by-flow audit** | 21 user flows × 6 questions (entry, trust boundary, validation, failure path, audit, test proof) → findings table, fixes as separate cycles | ⬜ queued |
+| **C1 — Documentation baseline** | Merge proposal + brainstorm into `REQUIREMENTS.md`; add `ARCHITECTURE.md`; delete stale/duplicate docs; make doc drift a failing test | ✅ complete |
+| **C2 — Code hygiene & single source of truth** | Delete the dead contract cluster in `packages/shared`; one implementation of the QR contract, the error envelope and business constants; remove redundant files | ✅ complete |
+| **C3 — Flow-by-flow audit** | 21 user flows × 6 questions (entry, trust boundary, validation, failure path, audit, test proof) → findings table, fixes as separate cycles | 🔄 in progress |
 | **C4 — Clean-code standard** | Stricter compiler flags (`noUncheckedIndexedAccess`), lint rules, logging conventions, dead-code guard, dependency hygiene | ⬜ queued |
 | **C5 — B2B readiness** | Multi-tenancy, staff roles, observability, locale/currency (see below) | ⬜ queued |
 
@@ -77,10 +77,28 @@ the archived history.
 | D-06 | Reschedule rules live in shared Zod + UI — **no trigger, no RPC** | walkthrough decision; the reason is stored in `audit_logs` | active |
 | D-07 | Venues are a normalized table with a FK | free-text venues could not be managed | active |
 | D-08 | Edge Functions refuse non-`sk_test_` Stripe keys | Stripe test mode only, enforced in code | active |
-| D-09 | `packages/shared` holds contracts, not UI state | one place for schemas/DTOs | active — **being slimmed in C2** |
-| D-10 | The QR contract has exactly one implementation, in `_shared` | the app renders payloads, never parses them | active — **C2** |
-| D-11 | Documentation is enforced by contracts in CI | doc drift was found in review, not by tooling | active — **C1** |
-| D-12 | Business constants live in `shared/constants.ts` and are asserted against the database | one source of truth for TTLs and lock windows | **C2** |
+| D-09 | `packages/shared` holds contracts, not UI state | one place for schemas/DTOs | active — **C2 applied** (dead modules removed, reachability enforced) |
+| D-10 | The QR contract has exactly one implementation, in `supabase/functions/_shared/qr.ts` | the app renders payloads, never parses them | active — **C2 applied** (it owns the prefix, the signing string and the encoder) |
+| D-11 | Documentation is enforced by contracts in CI | doc drift was found in review, not by tooling | active — **C1 applied** (`scripts/tests/docs.test.mjs`) |
+| D-12 | Business constants live in `packages/shared/src/constants.ts` and are asserted against the database | one source of truth for TTLs and lock windows | active — **C2 applied** |
+| D-13 | The deployed error-code copy is **generated**, never hand-written | Supabase deploys only `supabase/functions/**`, so the Edge Functions cannot import the shared package | active — **C2 applied** (`scripts/sync-error-codes.mjs`) |
+| D-14 | Every constant has exactly one owner: clients own what they display, SQL owns what it computes | two owners means two truths that drift | active — **C2 applied** (the pending-order TTL moved back into SQL) |
+| D-15 | `packages/shared/src/schemas.ts` is a deliberately retained contract surface | the Zod schemas are the trust boundary for both apps and are covered by their own contract tests | active — **retained on purpose in C2** |
+
+## Errors / Notes
+
+Findings that are recorded but deliberately **not** fixed in this cycle. Nothing
+here is silently dropped.
+
+| Note | Why it is not fixed now |
+|---|---|
+| The reschedule rules live only in shared Zod + the admin UI (D-06) — a direct PostgREST write can still move a kickoff. | A database trigger/RPC was explicitly rejected during the walkthrough. The reason is stored in `audit_logs`; the rules move server-side in the C5 hardening cycle. |
+| `packages/shared/src/greeting.ts` was almost deleted by a coarse "whole module" sweep in C2; the typecheck proved `bangkokGreeting` is live on the home screen. | Fixed in C2 (restored, trimmed to the used export). Recorded because the lesson is general: **delete by export reachability, never by module**. The reachability contract (`HYG-1b`) now enforces this. |
+| The first version of the error-code generator scraped every quoted word in the source and emitted a bogus `"string"` code. | Fixed in C2 — the generator now parses the `ERROR_CODES` array only. Recorded because a generator is code and needs its own guard. |
+| `apps/admin/next.config.ts` carries a LAN origin for the local walkthrough. | A local developer change, deliberately excluded from commits. |
+| GAP-01 (offline pass verification) is still open. | Deferred by decision — the server stays authoritative at scan time; only the payload needs caching. |
+| GAP-06 / GAP-07 (EAS build on hardware, 17 Expo patch bumps) are still open. | They need a device and a separate dependency cycle; mixing them into feature work is how drift starts. |
+| The pgTAP gate could not be re-run in this cycle: Docker is unavailable locally, and the hosted project needs explicit consent for a production mutation. | No SQL changed in this cycle, so the database gate is unaffected — the last verified run was 61/61 pgTAP assertions across 10 suites on the hosted project with migrations 0035–0037 applied. It must be re-run before the next SQL change. |
 
 ## Working method
 
@@ -107,7 +125,7 @@ Where to look for what — the map that replaces reading the 1,100-line history.
 
 | Concern | Files |
 |---|---|
-| Shared contracts | `packages/shared/src/{schemas,dto,entities,mappers,money,format,qr,theme}.ts` |
+| Shared contracts | `packages/shared/src/{schemas,dto,entities,mappers,money,format,error-codes,http,greeting,theme}.ts` |
 | Supporter app | `apps/mobile/src/app/**`, `apps/mobile/src/lib/**` |
 | Staff console | `apps/admin/src/app/dashboard/**`, `apps/admin/src/lib/**` |
 | Database | `supabase/migrations/*.sql` (schema → RLS → RPCs → views → cron → hardening) |

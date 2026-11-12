@@ -1,6 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
+import { GATE_UNDO_SECONDS } from "@kickoff/shared";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Camera,
@@ -398,7 +399,7 @@ export default function ScanPage() {
                       id="gate-manual-payload"
                       value={manual}
                       onChange={(event) => setManual(event.target.value)}
-                      placeholder="Paste an KICKOFF-V2: payload here…"
+                      placeholder="Paste a signed pass payload here…"
                       className="input min-h-[80px] resize-y font-mono text-[10px] leading-5"
                     />
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
@@ -626,7 +627,8 @@ export default function ScanPage() {
                         {demo.data.ticket?.seatLabel}
                       </p>
                       <p className="mt-1 text-[9px] uppercase tracking-[0.1em] text-slate-400">
-                        Real signed pass · scanning admits this ticket, undo within 60s to restore it
+                        Real signed pass · scanning admits this ticket, undo within {GATE_UNDO_SECONDS}s
+                        to restore it
                       </p>
                     </div>
                     <button
@@ -653,7 +655,7 @@ export default function ScanPage() {
                     <p className="mt-1 text-[11px] leading-5 text-slate-500">
                       Passes are HMAC-signed and valid once. The gate admits only its assigned
                       fixture, from 2h before to 2h after kick-off. A second scan returns “Already
-                      scanned”; an accepted scan can be undone for 60 seconds.
+                      scanned”; an accepted scan can be undone for {GATE_UNDO_SECONDS} seconds.
                     </p>
                   </div>
                 </div>

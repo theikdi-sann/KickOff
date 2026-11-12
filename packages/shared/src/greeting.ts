@@ -12,7 +12,7 @@ const BANGKOK_HOUR = new Intl.DateTimeFormat("en-GB", {
 });
 
 /** Hour of day (0–23) in Asia/Bangkok for the given instant. */
-export function bangkokHour(date: Date = new Date()): number {
+function bangkokHour(date: Date = new Date()): number {
   const hour = Number(BANGKOK_HOUR.format(date));
   // Some ICU builds emit 24 for midnight under h23.
   return hour === 24 ? 0 : hour;

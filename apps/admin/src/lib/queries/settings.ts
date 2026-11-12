@@ -1,7 +1,18 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Database, Json } from "@kickoff/shared";
+import {
+  CLUB_NAME,
+  CLUB_TIMEZONE,
+  CURRENCY,
+  GATE_UNDO_SECONDS,
+  KICKOFF_LOCK_MINUTES,
+  MAX_SEATS_PER_ORDER,
+  QR_VERSION,
+  SEAT_HOLD_TTL_SECONDS,
+  type Database,
+  type Json,
+} from "@kickoff/shared";
 import { createClient } from "@/lib/supabase/client";
 
 type SettingsRow = Database["public"]["Tables"]["app_settings"]["Row"];
@@ -31,16 +42,21 @@ export interface SettingsPatch {
   qrKeyVersion?: string;
 }
 
+/**
+ * Fallbacks used when a setting row is missing. The values come from
+ * `@kickoff/shared` so the TypeScript defaults and the SQL defaults in
+ * `supabase/migrations` cannot drift apart (the hygiene contract asserts it).
+ */
 const DEFAULTS: Omit<ClubSettings, "updatedAt"> = {
-  clubName: "KickOff",
-  clubTimezone: "Asia/Bangkok",
-  currency: "thb",
-  maxSeatsPerOrder: 8,
-  seatHoldTtlSeconds: 600,
-  kickoffLockMinutes: 15,
-  gateUndoSeconds: 60,
+  clubName: CLUB_NAME,
+  clubTimezone: CLUB_TIMEZONE,
+  currency: CURRENCY,
+  maxSeatsPerOrder: MAX_SEATS_PER_ORDER,
+  seatHoldTtlSeconds: SEAT_HOLD_TTL_SECONDS,
+  kickoffLockMinutes: KICKOFF_LOCK_MINUTES,
+  gateUndoSeconds: GATE_UNDO_SECONDS,
   notificationsEnabled: true,
-  qrKeyVersion: "v2",
+  qrKeyVersion: `v${QR_VERSION}`,
 };
 
 function valueFor(rows: SettingsRow[], key: string): Json | undefined {

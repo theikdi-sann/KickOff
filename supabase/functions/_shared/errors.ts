@@ -1,18 +1,13 @@
 import { z } from "zod";
+import type { ErrorCode } from "./error-codes.ts";
 
 /**
- * Error codes are duplicated from `packages/shared/src/http.ts` because Supabase
- * deploys only `supabase/functions/**`. Keep the two unions in sync.
+ * The error-code union lives in `packages/shared/src/error-codes.ts` and is
+ * generated into `_shared/error-codes.ts` by `scripts/sync-error-codes.mjs`
+ * (Supabase deploys only `supabase/functions/**`, so it cannot be imported).
+ * Do not redeclare it here — the hygiene contract fails on drift.
  */
-export type ErrorCode =
-  | "unauthorized"
-  | "forbidden"
-  | "not_found"
-  | "conflict"
-  | "validation"
-  | "rate_limited"
-  | "payment_required"
-  | "internal";
+export type { ErrorCode };
 
 export interface ApiError {
   code: ErrorCode;

@@ -1,14 +1,9 @@
-/** Stable machine-readable error codes shared by Edge Functions and both apps. */
-export type ErrorCode =
-  | 'unauthorized'
-  | 'forbidden'
-  | 'not_found'
-  | 'conflict'
-  | 'validation'
-  | 'rate_limited'
-  | 'payment_required'
-  | 'internal';
+import type { ErrorCode } from './error-codes';
 
+/**
+ * The shared error shape. The code vocabulary itself lives in
+ * `./error-codes` — one source for both apps and the Edge Functions.
+ */
 export interface ApiError {
   code: ErrorCode;
   message: string;
@@ -16,20 +11,6 @@ export interface ApiError {
   details?: unknown;
   /** Correlates the response with Edge Function logs. */
   requestId?: string;
-}
-
-export type ApiResponse<T> = { ok: true; data: T } | { ok: false; error: ApiError };
-
-export function apiOk<T>(data: T): ApiResponse<T> {
-  return { ok: true, data };
-}
-
-export function apiFail(
-  code: ErrorCode,
-  message: string,
-  options: { details?: unknown; requestId?: string } = {},
-): ApiResponse<never> {
-  return { ok: false, error: { code, message, ...options } };
 }
 
 /** Narrows an unknown thrown value into the shared error shape. */

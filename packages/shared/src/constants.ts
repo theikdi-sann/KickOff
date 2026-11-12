@@ -1,4 +1,12 @@
-/** Shared business constants. Values are also mirrored in SQL/Edge Functions. */
+/**
+ * Shared business constants.
+ *
+ * These are the values the **clients** need to show or validate. Values the
+ * server computes on its own (for example the pending-order expiry) stay in
+ * SQL, so there is exactly one owner for each number. The hygiene contract
+ * (`scripts/tests/hygiene.test.mjs`) asserts that the mirrored values here
+ * match the SQL in `supabase/migrations`.
+ */
 
 /** Brand copy used across the member app. */
 export const CLUB_NAME = 'KickOff';
@@ -17,9 +25,6 @@ export const QR_VERSION = 2 as const;
 
 /** Holds are rejected this many minutes before kick-off. */
 export const KICKOFF_LOCK_MINUTES = 15;
-
-/** Unpaid orders are cancelled after this many minutes. */
-export const PENDING_ORDER_TTL_MINUTES = 15;
 
 /** Admin may undo a gate scan within this window. */
 export const GATE_UNDO_SECONDS = 60;

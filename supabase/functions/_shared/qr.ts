@@ -1,8 +1,12 @@
 /**
  * QR v2 payload handling for Edge Functions.
  *
- * Mirrors `packages/shared/src/qr.ts`, which Supabase cannot deploy. Keep the
- * prefix, field set and canonical signing string byte-identical.
+ * This module is the **single implementation** of the signed pass format:
+ * the prefix, the field set, the canonical signing string and the encoder all
+ * live here, and every function that issues or verifies a pass imports them.
+ * Supabase deploys only `supabase/functions/**`, so this file cannot be shared
+ * with the apps — the apps never parse a payload, they only render the string
+ * the server returns.
  */
 import { verifyHmac } from "./hmac.ts";
 
@@ -84,6 +88,16 @@ export function parseTicketQr(raw: string): ParsedQr {
       sig: candidate.sig as string,
     },
   };
+}
+
+/**
+ * Encodes a signed payload into the wire format. The only place the prefix
+ * and the JSON shape are assembled — never inline it at a call site.
+ */
+export function encodeTicketQrPayload(
+  payload: TicketQrPayloadV2,
+): string {
+  return `${QR_V2_PREFIX}${JSON.stringify(payload)}`;
 }
 
 /** Parses the payload and verifies its HMAC signature. */

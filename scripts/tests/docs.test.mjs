@@ -12,10 +12,13 @@
 //   DOC-5  there is exactly one front door — no per-app README files,
 //   DOC-6  the requirements document carries REQ ids and a traceability map,
 //   DOC-7  known gaps stay visible (offline pass verification is still open),
-//   DOC-8  PLAN.md is the index and the task history lives in docs/archive/.
+//   DOC-8  PLAN.md is the index and the task history lives in docs/archive/,
+//   DOC-9  PLAN.md points only at files that exist,
+//   DOC-10 PLAN.md's workstream status matches what is actually delivered,
+//   DOC-11 PLAN.md keeps an "Errors / Notes" section.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..', '..');
@@ -176,4 +179,89 @@ test('DOC-8 PLAN.md is the index and the task history is archived', () => {
     'the archived history must actually contain the old task history',
   );
   assert.match(archived, /Phase 12|Phase B/, 'the archive must keep the phase records');
+});
+
+/**
+ * Expands a `{a,b}` path list into its individual candidates.
+ * @param {string} value a path fragment that may contain a brace list
+ * @returns {string[]} the individual path candidates
+ */
+const expandBraces = (value) => {
+  const match = value.match(/\{([^{}]*)\}/);
+  if (!match) return [value];
+  const [prefix, suffix] = value.split(match[0]);
+  return match[1]
+    .split(',')
+    .flatMap((option) => expandBraces(`${prefix}${option}${suffix}`));
+};
+
+test('DOC-9 PLAN.md points only at files that exist', () => {
+  const plan = read('PLAN.md');
+  const missing = [];
+
+  for (const match of plan.matchAll(/`([^`\n]+)`/g)) {
+    const span = match[1];
+    if (!span.includes('/')) continue;
+    // A prose path with a trailing word is not a path.
+    if (/\s/.test(span)) continue;
+
+    for (const candidate of expandBraces(span)) {
+      // `<name>` marks a placeholder, not a real path.
+      if (candidate.includes('<')) continue;
+
+      const path = candidate.replace(/\/$/, '');
+      if (path.includes('*')) {
+        // A glob must match at least one entry under its directory.
+        const dir = path.slice(0, path.lastIndexOf('/'));
+        const pattern = path.slice(path.lastIndexOf('/') + 1).replace(/\*/g, '');
+        if (!existsSync(resolve(root, dir))) {
+          missing.push(candidate);
+          continue;
+        }
+        const hits = readdirSync(resolve(root, dir)).filter((f) => f.includes(pattern));
+        if (hits.length === 0) missing.push(candidate);
+        continue;
+      }
+
+      if (!existsSync(resolve(root, path))) missing.push(candidate);
+    }
+  }
+
+  assert.deepEqual(
+    missing,
+    [],
+    `PLAN.md references paths that do not exist: ${missing.join(', ')}`,
+  );
+});
+
+test('DOC-10 PLAN.md reports the workstreams that are actually delivered', () => {
+  const plan = read('PLAN.md');
+
+  // Each workstream is guarded by a contract file. When the contract exists,
+  // the plan may not still call the workstream pending.
+  const guarded = [
+    { id: 'C1', contract: 'scripts/tests/docs.test.mjs' },
+    { id: 'C2', contract: 'scripts/tests/hygiene.test.mjs' },
+  ];
+
+  for (const { id, contract } of guarded) {
+    if (!existsSync(resolve(root, contract))) continue;
+
+    const row = plan.split('\n').find((line) => line.includes(`**${id} —`));
+    assert.ok(row, `PLAN.md must have a status row for workstream ${id}`);
+    assert.match(
+      row,
+      /complete|✅/,
+      `${id} is delivered — its contract ${contract} exists, so the plan must not call it pending`,
+    );
+  }
+});
+
+test('DOC-11 PLAN.md keeps an Errors / Notes section', () => {
+  const plan = read('PLAN.md');
+  assert.match(
+    plan,
+    /^##\s+Errors \/ Notes/m,
+    'PLAN.md must keep an "Errors / Notes" section for findings that are not fixed',
+  );
 });

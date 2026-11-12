@@ -162,7 +162,7 @@ tracked decision, not an accident.
 | **GAP-02** | **No multi-tenancy.** One club per deployment; branding, currency and staff are global. | Blocks the B2B model. | B2B hardening track, phase 1 (`PLAN.md`). |
 | **GAP-03** | **Two staff roles only** (`admin`, `user`). No box-office/gate-staff scoping. | Every staff member sees all club data and all refunds. | B2B hardening track, phase 2. |
 | **GAP-04** | **Observability is thin.** Structured logs and metrics exist, but there is no error tracking, tracing or alerting. | Incidents are found by users, not by monitoring. | B2B hardening track, phase 3. |
-| **GAP-05** | **One locale, one currency.** English + THB only. | Multi-country clubs need per-tenant locale/currency. | B2B hardening track, phase 4. |
+| **GAP-05** | **One locale, one currency.** English + THB only; the unused English string table was removed in Phase C2, so localization has to be rebuilt per tenant. | Multi-country clubs need per-tenant locale/currency. | B2B hardening track, phase 4. |
 | **GAP-06** | **The EAS dev build has never been exercised end to end.** Push code is contract-tested, but no APK has been built and no push delivered on a device. | Push is unproven on hardware. | Manual follow-up: `eas build --profile development` + `expo.dev/notifications`. |
 | **GAP-07** | **17 packages are one patch behind the Expo SDK's expected versions** (`expo-doctor` check fails). | Upgrade friction; possible SDK drift. | Separate dependency-bump cycle — deliberately not mixed into feature work. |
 

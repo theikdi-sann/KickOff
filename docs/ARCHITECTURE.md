@@ -104,9 +104,11 @@ packages/shared/src/
   schemas.ts           Zod contracts at the trust boundary
   dto.ts / entities.ts domain DTOs and DB row types
   mappers.ts           row → DTO
+  error-codes.ts       the error vocabulary (one source for every tier)
+  http.ts              the shared error shape
   money.ts format.ts   satang formatting, dates
-  qr.ts                QR payload contract (see §5.2 for the live copy)
-  theme.ts brand tokens
+  greeting.ts          club-timezone greeting
+  theme.ts             brand tokens
 
 supabase/
   migrations/          37 ordered SQL migrations: schema, RLS, RPCs, views, cron
@@ -210,9 +212,24 @@ Full matrix and secrets layout: [`SECURITY.md`](SECURITY.md).
 ### 5.2 Where the QR contract lives
 
 The signed pass format `KICKOFF-V2:{…}` is implemented **once**, in
-`supabase/functions/_shared/qr.ts`, and is the only implementation. The
-supporter app never parses or signs a payload — it renders the string the
-server returns, so the signing contract cannot drift between tiers.
+`supabase/functions/_shared/qr.ts`. That module owns the prefix, the field
+set, the canonical signing string (`v2|tid|mid|oid|n`) and the encoder; every
+function that issues or verifies a pass imports it (`ticket-qr`, `scan-demo`,
+`scan-ticket`). Nothing assembles the format inline — the hygiene contract
+(`scripts/tests/hygiene.test.mjs`) fails the build if a second implementation
+appears.
+
+The supporter app never parses or signs a payload — it renders the string the
+server returns — so the signing contract cannot drift between tiers.
+
+### 5.3 Where the error vocabulary lives
+
+`packages/shared/src/error-codes.ts` is the canonical error vocabulary.
+Supabase deploys only `supabase/functions/**`, so the Edge Functions cannot
+import the package at runtime; instead `scripts/sync-error-codes.mjs`
+**generates** `supabase/functions/_shared/error-codes.ts` from the canonical
+file, and the hygiene contract regenerates and compares, so a hand-edit or a
+stale copy fails CI. One source, one generator, no drift.
 
 ## 6. Conventions (clean-code standard)
 
@@ -274,6 +291,16 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
 - Decisions that change the shape of the system are recorded in
   `PLAN.md` → Decision index, with the reasoning.
 
+### 6.8 Single source of truth
+- A value that more than one tier needs lives in exactly one place: the
+  shared package for client-visible constants, SQL for server-computed ones,
+  `_shared/` for the server contract.
+- When a runtime boundary makes sharing impossible (Supabase deploys only
+  `supabase/functions/**`), the deployed copy is **generated**, never
+  hand-written, and CI compares it with the source.
+- Drift between two copies of the same fact is a failing test, not a code
+  review comment.
+
 ## 7. Decision index
 
 | # | Decision | Why | Where |
@@ -296,7 +323,7 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
 | Multi-tenancy (`GAP-02`) | `clubs` table + `club_id` on every tenant table, `is_club_member(club_id)` RLS helper, per-club settings/branding/currency | the single biggest change; needs a data-migration plan and an RLS rewrite |
 | Staff roles (`GAP-03`) | `roles`/`permissions` tables, `user_roles(club_id, user_id, role)`, function-level checks | replaces the binary admin/user claim |
 | Observability (`GAP-04`) | structured logger with request IDs, error tracking, metrics push, alerts | the `_shared/logger.ts` seam already exists |
-| Locale & currency (`GAP-05`) | per-club locale + currency columns, `money.ts` gains a currency argument | the i18n groundwork exists but is unused |
+| Locale & currency (`GAP-05`) | per-club locale + currency columns, `money.ts` gains a currency argument | the unused English string table was removed in Phase C2; localization must be rebuilt per tenant |
 | Error tracking & tracing | request id propagation from client → function → logs | `ApiError.requestId` already carries it |
 
 ## 9. Operational pointers

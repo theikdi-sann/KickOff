@@ -5,6 +5,7 @@ import { getEnv } from "../_shared/config.ts";
 import { AppError } from "../_shared/errors.ts";
 import { signHmac } from "../_shared/hmac.ts";
 import { ok, serveJson } from "../_shared/http.ts";
+import { encodeTicketQrPayload, ticketQrSigningPayload } from "../_shared/qr.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { validateBody } from "../_shared/validate.ts";
 
@@ -36,7 +37,14 @@ async function handler(request: Request): Promise<Response> {
   }
 
   const env = getEnv();
-  const canonical = `v2|${ticket.id}|${ticket.match_id}|${ticket.order_id}|${ticket.qr_nonce}`;
+  // The signing string and the wire format come from the shared QR contract —
+  // never assemble them here, or the verifier and the issuer can drift.
+  const canonical = ticketQrSigningPayload({
+    tid: ticket.id,
+    mid: ticket.match_id,
+    oid: ticket.order_id,
+    n: ticket.qr_nonce,
+  });
   const signature = await signHmac(canonical, env.TICKET_HMAC_KEY);
 
   const payload = {
@@ -50,7 +58,7 @@ async function handler(request: Request): Promise<Response> {
 
   return ok(
     {
-      qrPayload: `KICKOFF-V2:${JSON.stringify(payload)}`,
+      qrPayload: encodeTicketQrPayload(payload),
       version: 2,
       status: ticket.status,
     },

@@ -9,6 +9,7 @@ import {
   formatMatchTime,
   formatTHB,
   MAX_SEATS_PER_ORDER,
+  SEAT_HOLD_TTL_SECONDS,
   type SeatDto,
   type ZoneDto,
 } from '@kickoff/shared';
@@ -403,8 +404,8 @@ export default function SeatSelectionScreen() {
           <View style={styles.note}>
             <ShieldCheck size={15} color={colors.primary} />
             <AppText variant="small" color={colors.muted} style={styles.noteText}>
-              You can select up to {MAX_SEATS_PER_ORDER} seats per order. Seats are held for 10
-              minutes while you check out.
+              You can select up to {MAX_SEATS_PER_ORDER} seats per order. Seats are held for{' '}
+              {Math.round(SEAT_HOLD_TTL_SECONDS / 60)} minutes while you check out.
             </AppText>
           </View>
           {holdError ? (
