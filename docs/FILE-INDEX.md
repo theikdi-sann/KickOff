@@ -132,6 +132,7 @@ before the suite is green again.
 | `apps/mobile/assets/images/splash-icon.png` | asset | asset | app icon — referenced by the app config |
 | `apps/mobile/eas.json` | config | reviewed | EAS build profiles |
 | `apps/mobile/eslint.config.js` | source | reviewed | source |
+| `apps/mobile/jest.setup.ts` | config | reviewed | mobile test setup — pins the Supabase env to localhost |
 | `apps/mobile/package.json` | config | reviewed | mobile app manifest |
 | `apps/mobile/src/app/(auth)/_layout.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/(auth)/auth/callback.tsx` | source | reviewed | supporter app screen |
@@ -158,11 +159,13 @@ before the suite is green again.
 | `apps/mobile/src/app/seats/[matchId].tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/settings.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/ticket/[id].tsx` | source | reviewed | supporter app screen |
+| `apps/mobile/src/components/__tests__/ui-test.tsx` | test | covered | mobile component test — renders the shared Pill primitive |
 | `apps/mobile/src/components/match-card.tsx` | source | reviewed | presentational component |
 | `apps/mobile/src/components/news-row.tsx` | source | reviewed | presentational component |
 | `apps/mobile/src/components/ticket-card.tsx` | source | reviewed | presentational component |
 | `apps/mobile/src/components/ui.tsx` | source | reviewed | presentational component |
 | `apps/mobile/src/global.css` | config | reviewed | configuration |
+| `apps/mobile/src/lib/__tests__/auth-test.ts` | test | covered | mobile unit test — the profile mapping |
 | `apps/mobile/src/lib/api.ts` | source | reviewed | app library |
 | `apps/mobile/src/lib/auth.ts` | source | reviewed | app library |
 | `apps/mobile/src/lib/functions.ts` | source | reviewed | app library |
@@ -238,6 +241,7 @@ before the suite is green again.
 | `scripts/tests/lan.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/language.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/mobile-resilience.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/mobile-tests.test.mjs` | test | covered | contract test — the mobile Jest harness is real and CI runs it |
 | `scripts/tests/phase11.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/phaseb.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/phaseb0.test.mjs` | test | covered | contract test — fails when the repository drifts |

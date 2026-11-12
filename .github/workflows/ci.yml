@@ -41,6 +41,11 @@ jobs:
       - name: Shared unit tests (Vitest)
         run: npm run test --workspace @kickoff/shared
 
+      # The supporter app's own Jest harness (jest-expo). Without this step a
+      # broken mobile screen would only surface on a device.
+      - name: Mobile unit tests (Jest)
+        run: npm run test --workspace @kickoff/mobile
+
       - name: Repo script tests (node:test)
         run: node --test scripts/tests/
 

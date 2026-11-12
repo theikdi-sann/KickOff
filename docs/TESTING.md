@@ -7,7 +7,7 @@ gate locally it will break the build.
 
 | Layer | Command | What it proves |
 |---|---|---|
-| Workspace unit tests | `npm test` | shared schemas/format/i18n/greeting (Vitest), admin node tests, repo script tests, mobile stub |
+| Workspace unit tests | `npm test` | shared schemas/format/i18n/greeting (Vitest), admin node tests, mobile Jest tests, repo script tests |
 | Typecheck + lint | `npm run check` | TypeScript across shared/mobile/admin, ESLint |
 | Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency (61 assertions, 10 suites) |
 | Edge Functions (unit) | `cd supabase/functions && deno test --allow-env --allow-net tests/` | HMAC, config, error mapping, metrics helpers |
@@ -26,11 +26,13 @@ Runs every workspace `test` script, then the repository script tests:
   formatting, QR, the English string table (`P11-07`) and the Bangkok greeting
   (`P11-12`).
 - `apps/admin` uses `node --test tests`.
+- `apps/mobile` uses **Jest** with the `jest-expo` preset and React Native
+  Testing Library (`src/**/__tests__/*-test.ts(x)`). Native modules are mocked
+  by the preset; `jest.setup.ts` pins the Supabase env to localhost so a unit
+  test can never reach a real project. CI runs this workspace too.
 - `scripts/tests/*.test.mjs` are source-level contract tests run with
-  `node --test scripts/tests/`. The mobile app has no component runner yet, so
-  its Phase 11 contracts (Maestro flow, tab a11y, analytics adapters, settings
-  confirms) are asserted here. `apps/mobile`'s `test` script is an explicit
-  stub.
+  `node --test scripts/tests/`. The Phase 11 mobile contracts (Maestro flow,
+  tab a11y, analytics adapters, settings confirms) are still asserted here.
 
 Run a single file:
 
