@@ -19,6 +19,7 @@ export default function UsersPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
   const { data: users, isLoading, error } = useUsers(filter === "all" ? undefined : filter);
   const updateUser = useUpdateUser();
 
@@ -36,8 +37,16 @@ export default function UsersPage() {
 
   const changeRole = async (id: string, role: UserRole) => {
     setActionError(null);
+    setActionNotice(null);
     try {
-      await updateUser.mutateAsync({ id, role });
+      const result = await updateUser.mutateAsync({ id, role });
+      if (result.roleAppliesAtNextSignIn) {
+        setActionNotice(
+          role === "admin"
+            ? "Role updated. They can sign in to the console now — an open session keeps its old role until it is refreshed."
+            : "Role updated. An open session keeps its old access until it is refreshed.",
+        );
+      }
     } catch (caught) {
       setActionError(caught instanceof Error ? caught.message : "Could not update the user.");
     }
@@ -79,6 +88,12 @@ export default function UsersPage() {
       {actionError ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {actionError}
+        </div>
+      ) : null}
+
+      {actionNotice ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          {actionNotice}
         </div>
       ) : null}
 

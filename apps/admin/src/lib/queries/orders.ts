@@ -1,36 +1,15 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { OrderDto, OrderStatus } from "@kickoff/shared";
+import { toOrderDto, type OrderDto, type OrderJoinRow, type OrderStatus } from "@kickoff/shared";
 import { invokeFunction } from "@/lib/functions";
 import { createClient } from "@/lib/supabase/client";
-
-interface AdminOrderRow {
-  id: string;
-  user_id: string;
-  match_id: string;
-  amount_satang: number;
-  status: string;
-  created_at: string;
-  paid_at: string | null;
-  payment_ref: string | null;
-  matches: { opponent: string } | null;
-  order_seats: Array<{
-    seat_id: string;
-    ticket_id: string | null;
-    zone_name: string;
-    row_label: string;
-    number: number;
-    price_satang: number;
-  }>;
-}
 
 export interface AdminOrder extends OrderDto {
   holderName: string;
   holderEmail: string;
 }
 
-const STATUSES: readonly OrderStatus[] = ["pending", "paid", "failed", "cancelled", "refunded"];
 const SELECT =
   "*, matches(opponent), order_seats(seat_id,ticket_id,zone_name,row_label,number,price_satang)";
 
@@ -53,28 +32,13 @@ async function loadHolders(userIds: string[]): Promise<Record<string, Holder>> {
   );
 }
 
-function mapOrder(row: AdminOrderRow, holder?: Holder): AdminOrder {
+/**
+ * The staff console shows the order plus the holder's identity, so it
+ * projects the shared order DTO instead of mapping the row a second time.
+ */
+function toAdminOrder(row: OrderJoinRow, holder?: Holder): AdminOrder {
   return {
-    id: row.id,
-    userId: row.user_id,
-    matchId: row.match_id,
-    matchLabel: `KickOff vs ${row.matches?.opponent ?? "opponent"}`,
-    seats: (row.order_seats ?? []).map((seat) => ({
-      seatId: seat.seat_id,
-      ticketId: seat.ticket_id,
-      zoneId: "",
-      zoneName: seat.zone_name,
-      row: seat.row_label,
-      number: seat.number,
-      priceSatang: seat.price_satang,
-    })),
-    amountSatang: row.amount_satang,
-    status: STATUSES.includes(row.status as OrderStatus)
-      ? (row.status as OrderStatus)
-      : "pending",
-    createdAt: row.created_at,
-    paidAt: row.paid_at,
-    paymentRef: row.payment_ref,
+    ...toOrderDto(row),
     holderName: holder?.full_name ?? "",
     holderEmail: holder?.email ?? "",
   };
@@ -106,10 +70,10 @@ export function useOrders(filter: OrdersFilter) {
 
       const { data, count, error } = await query;
       if (error) throw new Error(error.message);
-      const rows = (data ?? []) as unknown as AdminOrderRow[];
+      const rows = (data ?? []) as unknown as OrderJoinRow[];
       const holders = await loadHolders(rows.map((row) => row.user_id));
       return {
-        items: rows.map((row) => mapOrder(row, holders[row.user_id])),
+        items: rows.map((row) => toAdminOrder(row, holders[row.user_id])),
         total: count ?? 0,
       };
     },
@@ -127,9 +91,9 @@ export function useOrder(id: string | undefined) {
         .eq("id", id!)
         .single();
       if (error) throw new Error(error.message);
-      const row = data as unknown as AdminOrderRow;
+      const row = data as unknown as OrderJoinRow;
       const holders = await loadHolders([row.user_id]);
-      return mapOrder(row, holders[row.user_id]);
+      return toAdminOrder(row, holders[row.user_id]);
     },
   });
 }

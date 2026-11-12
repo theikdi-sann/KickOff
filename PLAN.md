@@ -35,9 +35,22 @@ capability the business model requires.
 |---|---|---|
 | **C1 — Documentation baseline** | Merge proposal + brainstorm into `REQUIREMENTS.md`; add `ARCHITECTURE.md`; delete stale/duplicate docs; make doc drift a failing test | ✅ complete |
 | **C2 — Code hygiene & single source of truth** | Delete the dead contract cluster in `packages/shared`; one implementation of the QR contract, the error envelope and business constants; remove redundant files | ✅ complete |
-| **C3 — Flow-by-flow audit** | 21 user flows × 6 questions (entry, trust boundary, validation, failure path, audit, test proof) → findings table, fixes as separate cycles | 🔄 in progress |
+| **C3 — Flow-by-flow audit** | 29 user flows × 6 questions (entry, trust boundary, validation, failure path, audit, test proof) → findings table in [`docs/FLOW-AUDIT.md`](docs/FLOW-AUDIT.md), fixes as separate cycles | 🔄 in progress — audit done (F-01…F-17), fixes in progress |
 | **C4 — Clean-code standard** | Stricter compiler flags (`noUncheckedIndexedAccess`), lint rules, logging conventions, dead-code guard, dependency hygiene | ⬜ queued |
 | **C5 — B2B readiness** | Multi-tenancy, staff roles, observability, locale/currency (see below) | ⬜ queued |
+
+### Phase C delivery log
+
+One line per cycle, newest last. The detail lives in the commit history and in
+[`docs/FLOW-AUDIT.md`](docs/FLOW-AUDIT.md).
+
+| Cycle | Summary | Files |
+|---|---|---|
+| **C2** | Dead contract cluster deleted; the QR contract, the error vocabulary and the business constants each got exactly one owner (the deployed error-code copy is generated, not hand-written). | `packages/shared/src/{error-codes,http,constants,mappers}.ts`, `supabase/functions/_shared/{error-codes,qr}.ts`, `supabase/functions/ticket-qr/index.ts`, `scripts/sync-error-codes.mjs`, `scripts/tests/hygiene.test.mjs` |
+| **C3.1** | Plan truthfulness enforced: PLAN.md may not point at files that do not exist, may not call a delivered workstream pending, and keeps an Errors / Notes section. | `scripts/tests/docs.test.mjs`, `PLAN.md` |
+| **C3.2** | Row→DTO mapping has one owner — the shared package — and the order/ticket mappers are unit-tested; the apps stopped mapping rows themselves. | `packages/shared/src/mappers.ts`, `packages/shared/src/__tests__/mappers.test.ts`, `apps/mobile/src/lib/queries/{orders,tickets}.ts`, `apps/admin/src/lib/queries/orders.ts` |
+| **C3.3** | **F-10 (Critical)** — a staff role change now writes the profile row *and* the JWT claim together, the last-admin guard counts admins that can act, and the console says when the new role applies. | `supabase/functions/_shared/roles.ts`, `supabase/functions/admin-users/index.ts`, `supabase/functions/tests/roles.test.ts`, `scripts/tests/staff-roles.test.mjs`, `apps/admin/src/lib/queries/users.ts`, `apps/admin/src/app/dashboard/users/page.tsx` |
+| **C3.4** | The flow-by-flow audit is documented: 29 flows × 6 questions, 17 findings with severities and a fix order. | `docs/FLOW-AUDIT.md`, `README.md` |
 
 ## Open work
 
@@ -84,6 +97,8 @@ the archived history.
 | D-13 | The deployed error-code copy is **generated**, never hand-written | Supabase deploys only `supabase/functions/**`, so the Edge Functions cannot import the shared package | active — **C2 applied** (`scripts/sync-error-codes.mjs`) |
 | D-14 | Every constant has exactly one owner: clients own what they display, SQL owns what it computes | two owners means two truths that drift | active — **C2 applied** (the pending-order TTL moved back into SQL) |
 | D-15 | `packages/shared/src/schemas.ts` is a deliberately retained contract surface | the Zod schemas are the trust boundary for both apps and are covered by their own contract tests | active — **retained on purpose in C2** |
+| D-16 | A staff role change writes the profile row **and** the JWT claim together | `public.is_admin()` and every Edge Function guard authorise on `app_metadata.role`; the profile row alone is display only | active — **C3 applied** (`supabase/functions/_shared/roles.ts`) |
+| D-17 | Row→DTO mapping has one owner, in the shared package | two implementations of the same mapping drift, and the app copies had no tests | active — **C3 applied** (`HYG-8`) |
 
 ## Errors / Notes
 
@@ -99,6 +114,8 @@ here is silently dropped.
 | GAP-01 (offline pass verification) is still open. | Deferred by decision — the server stays authoritative at scan time; only the payload needs caching. |
 | GAP-06 / GAP-07 (EAS build on hardware, 17 Expo patch bumps) are still open. | They need a device and a separate dependency cycle; mixing them into feature work is how drift starts. |
 | The pgTAP gate could not be re-run in this cycle: Docker is unavailable locally, and the hosted project needs explicit consent for a production mutation. | No SQL changed in this cycle, so the database gate is unaffected — the last verified run was 61/61 pgTAP assertions across 10 suites on the hosted project with migrations 0035–0037 applied. It must be re-run before the next SQL change. |
+| The flow audit (C3) found **17 findings** — F-01…F-17 in [`docs/FLOW-AUDIT.md`](docs/FLOW-AUDIT.md). Only F-10 (Critical) and F-12 are fixed so far. | Each finding is fixed as its own TDD cycle in severity order. The findings table is the tracking record; nothing is dropped silently. |
+| After a role change the new claim reaches the account **at the next token refresh** (or sign-in). A demoted staff member keeps their old access until then. | Inherent to JWTs: the claim travels in the access token. `admin-users` now says so in the UI. A server-side role check (reading `profiles.role` inside `is_admin()`) removes the window — it belongs to the GAP-03 staff-role work, because it changes the authorisation model. |
 
 ## Working method
 
@@ -132,7 +149,7 @@ Where to look for what — the map that replaces reading the 1,100-line history.
 | Edge functions | `supabase/functions/_shared/*`, `supabase/functions/<name>/index.ts` |
 | Gates | `scripts/check-functions.sh`, `scripts/check-no-mocks.sh`, `scripts/run-pgtap.sh`, `scripts/mvp-gate.mjs` |
 | Tests | `packages/shared/src/__tests__/` · `scripts/tests/` · `supabase/tests/` · `supabase/functions/tests/` · `apps/admin/e2e/` · `maestro/flows/` |
-| Docs | `README.md` (front door) · `docs/REQUIREMENTS.md` · `docs/ARCHITECTURE.md` · `docs/SECURITY.md` · `docs/TESTING.md` · `docs/BRAND.md` |
+| Docs | `README.md` (front door) · `docs/REQUIREMENTS.md` · `docs/ARCHITECTURE.md` · `docs/FLOW-AUDIT.md` · `docs/SECURITY.md` · `docs/TESTING.md` · `docs/BRAND.md` |
 
 ## Archive
 

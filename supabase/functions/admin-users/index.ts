@@ -4,6 +4,7 @@ import { writeAudit } from "../_shared/audit.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
+import { planStaffRoleUpdate } from "../_shared/roles.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { validateBody, validateQuery } from "../_shared/validate.ts";
 
@@ -53,6 +54,35 @@ function idFromRequest(request: Request): string | null {
   return fromPath ?? url.searchParams.get("id");
 }
 
+/**
+ * Counts the admins that can actually act.
+ *
+ * `profiles.role = 'admin'` is only the display; an admin can act when their
+ * JWT claim says `admin`. Counting the profile rows alone would let the club
+ * demote its last *usable* admin while an unusable one (for example an
+ * account promoted before the claim was written) still carries the role.
+ *
+ * A user whose claim cannot be read is not counted — "cannot prove it works"
+ * must never count as "works".
+ */
+async function countUsableAdmins(
+  db: ReturnType<typeof serviceClient>,
+  excludeUserId: string,
+): Promise<number> {
+  const { data, error } = await db.from("profiles").select("id").eq("role", "admin");
+  if (error) throw error;
+
+  let usable = 0;
+  for (const row of data ?? []) {
+    if (row.id === excludeUserId) continue;
+    const { data: user, error: userError } = await db.auth.admin.getUserById(row.id);
+    if (userError) continue;
+    const claim = (user?.user.app_metadata as Record<string, unknown> | undefined)?.role;
+    if (claim === "admin") usable += 1;
+  }
+  return usable;
+}
+
 async function handler(request: Request): Promise<Response> {
   const context = await requireAdmin(request);
   const db = serviceClient();
@@ -100,12 +130,10 @@ async function handler(request: Request): Promise<Response> {
   if (!target) throw new AppError("not_found", "User not found");
 
   if (target.role === "admin" && body.role === "customer") {
-    const { count, error } = await db
-      .from("profiles")
-      .select("id", { head: true, count: "exact" })
-      .eq("role", "admin");
-    if (error) throw error;
-    if ((count ?? 0) <= 1) throw new AppError("conflict", "At least one admin must remain");
+    const usableAdmins = await countUsableAdmins(db, targetId);
+    if (usableAdmins === 0) {
+      throw new AppError("conflict", "At least one admin must remain");
+    }
   }
 
   const patch: Record<string, unknown> = {};
@@ -121,18 +149,63 @@ async function handler(request: Request): Promise<Response> {
     .single<ProfileRow>();
   if (updateError) throw updateError;
 
+  // The JWT claim is what every guard actually authorises on: `public.is_admin()`
+  // reads `app_metadata.role`, and so does every Edge Function guard. Without
+  // this write the role change is cosmetic — the console shows "ADMIN" while
+  // the account still fails every privilege check.
+  //
+  // Order matters: the profile row is written first and the claim second, so
+  // a failure can never leave an account with more access than its profile
+  // advertises. If the claim write fails, the profile row is restored and
+  // nothing is changed.
+  let roleChanged = false;
+  if (body.role !== undefined) {
+    const plan = planStaffRoleUpdate(body.role);
+    const { error: claimError } = await db.auth.admin.updateUserById(targetId, {
+      app_metadata: plan.auth.app_metadata,
+    });
+
+    if (claimError) {
+      // Restore the previous role so the profile never advertises more access
+      // than the account has. If even that fails, say so instead of claiming
+      // that nothing changed.
+      const { error: restoreError } = await db
+        .from("profiles")
+        .update({ role: target.role })
+        .eq("id", targetId);
+      if (restoreError) {
+        throw new AppError(
+          "internal",
+          "Could not update the staff role. The account still has no access — try again.",
+        );
+      }
+      throw new AppError("internal", "Could not update the staff role. Nothing was changed.");
+    }
+
+    roleChanged = plan.profile.role !== target.role;
+  }
+
   await writeAudit(
     {
       actorId: context.user.id,
       action: "admin.user.update",
       entity: "profiles",
       entityId: targetId,
-      metadata: patch,
+      metadata: { ...patch, role_claim_updated: body.role !== undefined },
     },
     db,
   );
 
-  return ok(toDto(updated), request);
+  return ok(
+    {
+      ...toDto(updated),
+      // The claim travels in the access token, so an existing session keeps
+      // the old role until the token is refreshed.
+      roleAppliesAtNextSignIn: body.role !== undefined,
+      roleChanged,
+    },
+    request,
+  );
 }
 
 Deno.serve(serveJson(handler, ["GET", "PATCH"]));

@@ -319,3 +319,37 @@ test('HYG-7 every query module is imported by something', () => {
     }
   }
 });
+
+test('HYG-8 row→DTO mapping has one owner', () => {
+  // The shared package owns every row→DTO mapper (and tests them). An app
+  // that maps rows itself is a second implementation waiting to drift.
+  const apps = walk(resolve(root, 'apps')).filter((file) => /\.tsx?$/.test(file));
+
+  for (const file of apps) {
+    const source = readFileSync(file, 'utf8');
+    const relative = file.replace(`${root}/`, '');
+
+    for (const mapper of ['mapOrder', 'mapTicket', 'mapMatch', 'mapSeat', 'mapZone', 'mapNews']) {
+      assert.doesNotMatch(
+        source,
+        new RegExp(`(function|const)\\s+${mapper}\\b`),
+        `${relative} defines its own ${mapper} — the shared package owns the mappers`,
+      );
+    }
+  }
+
+  const sharedMappers = read('packages/shared/src/mappers.ts');
+  for (const mapper of ['toOrderDto', 'toTicketDto', 'toMatchDto', 'toSeatDto', 'toZoneDto']) {
+    assert.match(
+      sharedMappers,
+      new RegExp(`export function ${mapper}\\b`),
+      `${mapper} must be implemented in packages/shared/src/mappers.ts`,
+    );
+  }
+
+  // The apps must actually use the shared mappers.
+  const mobileTickets = read('apps/mobile/src/lib/queries/tickets.ts');
+  assert.match(mobileTickets, /toTicketDto/, 'the mobile app must use the shared ticket mapper');
+  const mobileOrders = read('apps/mobile/src/lib/queries/orders.ts');
+  assert.match(mobileOrders, /toOrderDto/, 'the mobile app must use the shared order mapper');
+});

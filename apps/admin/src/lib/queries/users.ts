@@ -53,12 +53,20 @@ export function useUsers(role?: UserRole) {
   });
 }
 
+/** The result of a role change — the function also updates the JWT claim. */
+export interface AdminUserUpdate extends AdminUser {
+  /** True when the new role reaches the user's session only at the next sign-in. */
+  roleAppliesAtNextSignIn: boolean;
+  /** True when the stored role actually changed. */
+  roleChanged: boolean;
+}
+
 export function useUpdateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { id: string; role?: UserRole }): Promise<AdminUser> => {
-      return invokeFunction<AdminUser>("admin-users", {
+    mutationFn: async (input: { id: string; role?: UserRole }): Promise<AdminUserUpdate> => {
+      return invokeFunction<AdminUserUpdate>("admin-users", {
         method: "PATCH",
         body: input,
       });
