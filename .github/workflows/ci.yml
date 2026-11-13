@@ -46,6 +46,11 @@ jobs:
       - name: Mobile unit tests (Jest)
         run: npm run test --workspace @kickoff/mobile
 
+      # The Expo SDK's own compatibility list (GAP-07): patch drift between
+      # expo and its native modules fails here instead of on a device.
+      - name: Expo dependency compatibility
+        run: npm run deps:check --workspace @kickoff/mobile
+
       - name: Repo script tests (node:test)
         run: node --test scripts/tests/
 

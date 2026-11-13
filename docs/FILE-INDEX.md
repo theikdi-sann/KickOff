@@ -240,6 +240,7 @@ before the suite is green again.
 | `scripts/tests/availability.test.mjs` | test | covered | contract test — availability comes from the view, not the layout |
 | `scripts/tests/ci.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/db-gate.test.mjs` | test | covered | contract test — the pgTAP gate must run locally |
+| `scripts/tests/dep-drift.test.mjs` | test | covered | contract test — the Expo SDK compatibility check runs in CI (GAP-07) |
 | `scripts/tests/docs.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/file-coverage.test.mjs` | test | reviewed | repo contract test — fails when the repository drifts |
 | `scripts/tests/hygiene.test.mjs` | test | covered | contract test — fails when the repository drifts |

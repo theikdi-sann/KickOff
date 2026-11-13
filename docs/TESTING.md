@@ -15,6 +15,7 @@ gate locally it will break the build.
 | Functions typecheck | `npm run functions:check` | `deno check` on every `supabase/functions/*/index.ts` |
 | Admin E2E | `npm run test:e2e --workspace @kickoff/admin` | Playwright: auth + full ops walkthrough |
 | Mobile smoke | `maestro test maestro/flows/buy-ticket.yaml` | buy flow up to Pay + signed QR pass |
+| Expo dependency check | `npm run deps:check --workspace @kickoff/mobile` | SDK 58 compatibility — no patch drift between expo and its native modules |
 | MVP gate | `node scripts/mvp-gate.mjs` | 15 launch-critical facts still true |
 | No-mocks guard | `npm run check:no-mocks` | the Phase A mock layer cannot return |
 
