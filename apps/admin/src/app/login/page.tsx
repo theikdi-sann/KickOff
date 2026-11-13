@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Logo } from "@/components/logo";
 import { Badge } from "@/components/ui";
-import { isAdminUser, needsMfa, signIn } from "@/lib/auth";
+import { isStaffUser, needsMfa, signIn } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/client";
 
 const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_EMAIL ?? "";
@@ -13,7 +13,7 @@ const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "";
 
 /** Why the console refused the account — the proxy sends the reason. */
 const REFUSAL_MESSAGES: Record<string, string> = {
-  "not-admin": "This account does not have admin access. Ask a club administrator to grant it.",
+  "not-staff": "This account does not have staff access. Ask a club administrator to grant it.",
 };
 
 export default function LoginPage() {
@@ -49,9 +49,9 @@ function LoginForm() {
     setLoading(true);
     try {
       const user = await signIn(email, password);
-      if (!isAdminUser(user)) {
+      if (!isStaffUser(user)) {
         await createClient().auth.signOut();
-        throw new Error("This account does not have admin access.");
+        throw new Error("This account does not have staff access.");
       }
       router.replace((await needsMfa()) ? "/login/mfa" : "/dashboard");
     } catch (caught) {
@@ -76,7 +76,7 @@ function LoginForm() {
         <div className="relative z-10 my-auto max-w-xl">
           <Badge tone="dark" className="mb-5 w-fit">
             <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-            Admin operations · 2026/27
+            Club operations · 2026/27
           </Badge>
           <h1 className="display text-[74px] leading-[0.9] tracking-tight text-white">
             MATCHDAY

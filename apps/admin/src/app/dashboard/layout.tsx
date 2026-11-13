@@ -51,7 +51,7 @@ const pageTitles: Record<string, string> = {
 };
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const session = useSessionGuard({ requireAdmin: true });
+  const session = useSessionGuard({ requireStaff: true });
 
   if (session.status !== "authenticated" || !session.user) {
     return (
@@ -68,34 +68,46 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // The console shell must never render for an account without the admin
+  // The console shell must never render for an account without a staff
   // claim — the proxy already refuses it, and this keeps the boundary in the
   // client too (a cached page must not flash the console either).
-  if (!session.isAdmin) {
+  if (!session.isStaff) {
     return (
       <div className="grid min-h-screen place-items-center bg-app px-6">
         <div className="max-w-md text-center">
           <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-pitch text-xl font-bold text-gold">
             K
           </div>
-          <h1 className="display mt-5 text-3xl text-slate-900">Admin access required</h1>
+          <h1 className="display mt-5 text-3xl text-slate-900">Staff access required</h1>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            This account does not have admin access. Ask a club administrator to grant it.
+            This account does not have staff access. Ask a club administrator to grant it.
           </p>
         </div>
       </div>
     );
   }
 
-  return <AdminShell user={session.user}>{children}</AdminShell>;
+  return <AdminShell user={session.user} isAdmin={session.isAdmin}>{children}</AdminShell>;
 }
 
-function AdminShell({ children, user }: { children: ReactNode; user: User }) {
+function AdminShell({
+  children,
+  user,
+  isAdmin,
+}: {
+  children: ReactNode;
+  user: User;
+  isAdmin: boolean;
+}) {
   const pathname = usePathname();
   const signOut = useSignOut();
   const name = displayName(user);
   const initials = initialsFor(name);
   const email = user.email ?? "";
+  // A gatekeeper's console is the gate surface. Filtering here is defence in
+  // depth: the proxy already confines them, and the links must not advertise
+  // screens they cannot open.
+  const visibleNav = isAdmin ? navItems : navItems.filter((item) => item.href === "/dashboard/scan");
   const currentTitle =
     Object.entries(pageTitles)
       .sort((a, b) => b[0].length - a[0].length)
@@ -119,7 +131,7 @@ function AdminShell({ children, user }: { children: ReactNode; user: User }) {
           </p>
         </div>
         <nav className="mt-2 flex flex-1 flex-col gap-1">
-          {navItems.map((item) => {
+          {visibleNav.map((item) => {
             const active = item.exact
               ? pathname === item.href
               : pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -151,6 +163,9 @@ function AdminShell({ children, user }: { children: ReactNode; user: User }) {
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold text-white">{name}</p>
               <p className="truncate text-[10px] text-emerald-100/45">{email}</p>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gold/70">
+                {isAdmin ? "Admin" : "Gatekeeper"}
+              </p>
             </div>
           </div>
           <button
@@ -206,7 +221,7 @@ function AdminShell({ children, user }: { children: ReactNode; user: User }) {
           </div>
 
           <div className="flex gap-1 overflow-x-auto px-4 pb-3 lg:hidden">
-            {navItems.map((item) => {
+            {visibleNav.map((item) => {
               const active = item.exact
                 ? pathname === item.href
                 : pathname === item.href || pathname.startsWith(`${item.href}/`);

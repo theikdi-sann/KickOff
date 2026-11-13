@@ -12,6 +12,7 @@ import type {
   TicketDto,
   ZoneDto,
 } from './dto';
+import { staffRoleSchema } from './roles';
 
 /* ------------------------------------------------------------------ */
 /* Primitives                                                          */
@@ -30,7 +31,6 @@ export const emailSchema = z.email();
 /** A password as the auth screens accept it (Supabase's 72-byte limit). */
 export const passwordSchema = z.string().min(8).max(72);
 
-export const roleSchema = z.enum(['customer', 'admin']);
 export const matchStatusSchema = z.enum(['upcoming', 'live', 'completed']);
 export const seatStatusSchema = z.enum(['available', 'sold', 'held']);
 export const orderStatusSchema = z.enum(['pending', 'paid', 'failed', 'cancelled', 'refunded']);
@@ -47,7 +47,7 @@ export const profileDtoSchema = z.object({
   id: idSchema,
   email: z.email(),
   fullName: nonEmptyTextSchema.max(120),
-  role: roleSchema,
+  role: staffRoleSchema,
   phone: z.string().max(32).nullable().optional(),
   joinedAt: isoTimestampSchema,
 });

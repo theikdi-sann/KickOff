@@ -221,6 +221,7 @@ before the suite is green again.
 | `packages/shared/src/money.ts` | source | reviewed | shared contract |
 | `packages/shared/src/refund.ts` | source | reviewed | shared contract — canonical refund body, no relative imports (F-11) |
 | `packages/shared/src/require.ts` | source | reviewed | narrowing helper — no non-null assertions |
+| `packages/shared/src/roles.ts` | source | reviewed | canonical staff role vocabulary (`customer` / `admin` / `gatekeeper`); generates the Edge copy |
 | `packages/shared/src/schemas.ts` | source | reviewed | shared contract |
 | `packages/shared/src/theme.ts` | source | reviewed | shared contract |
 | `packages/shared/tsconfig.json` | config | reviewed | shared TypeScript config |
@@ -283,7 +284,7 @@ before the suite is green again.
 | `supabase/functions/_shared/qr.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/rate-limit.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/refund.ts` | source | generated | GENERATED from packages/shared/src/refund.ts — do not edit |
-| `supabase/functions/_shared/roles.ts` | source | reviewed | Edge Function helper |
+| `supabase/functions/_shared/roles.ts` | source | generated | generated Edge copy of `packages/shared/src/roles.ts` — do not edit |
 | `supabase/functions/_shared/stripe.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/supabase.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/ticket-view.ts` | source | reviewed | Edge Function helper |
@@ -356,6 +357,7 @@ before the suite is green again.
 | `supabase/migrations/0036_venue_views.sql` | data | reviewed | 0036_venue_views — recreate order_receipt_view against venues. |
 | `supabase/migrations/0037_reschedule_audit.sql` | data | reviewed | 0037_reschedule_audit — punch list #13: where the reschedule reason lives. |
 | `supabase/migrations/0038_atomic_reschedule_refund.sql` | source | reviewed | migration — atomic reschedule + refund RPCs (F-07) |
+| `supabase/migrations/0039_staff_roles.sql` | data | reviewed | migration — GAP-03a staff roles (`gatekeeper`), `is_staff()`, gate RLS |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
@@ -367,5 +369,6 @@ before the suite is green again.
 | `supabase/tests/rls.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/scan-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/seat-reservation.test.sql` | data | covered | pgTAP suite — asserts the database contract |
+| `supabase/tests/staff-roles.test.sql` | test | covered | pgTAP suite — GAP-03a staff roles, gate authority and RLS boundary (25 assertions) |
 | `supabase/tests/venues.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `tsconfig.base.json` | config | reviewed | shared TypeScript strictness |

@@ -70,8 +70,8 @@ display-only.
 | A4 Zones / seats / prices | `dashboard/matches/[id]` | direct PostgREST write, RLS | Zod (shared) | surfaced; rollback error unchecked (F-08) | **none** (F-05) | **none** |
 | A5 Manage venues | `dashboard/venues/page.tsx` | direct PostgREST write, RLS | ad-hoc | surfaced | **none** (F-05) | migration/DB tests only |
 | A6 Gates + assignment | `dashboard/gates/page.tsx` | direct PostgREST write, RLS | ad-hoc | surfaced | **none** (F-05) | Playwright UI |
-| A7 Scan ticket | `dashboard/scan/page.tsx` | Edge `scan-ticket` — `requireAdmin` + RPC `is_admin()` | Zod (function-local) | surfaced | `scan_events` | function test (7 cases) + pgTAP + Playwright |
-| A8 Undo scan | `dashboard/scan/page.tsx` | Edge `scan-undo` — `requireAdmin` + RPC | Zod (function-local) | surfaced | `audit_logs` (`scan.undo`) | function test + Playwright |
+| A7 Scan ticket | `dashboard/scan/page.tsx` | Edge `scan-ticket` — `requireStaff` + RPC `is_staff()`; a gatekeeper's whole console | Zod (function-local) | surfaced | `scan_events` | function test (7 cases) + pgTAP `staff-roles.test.sql` + Playwright |
+| A8 Undo scan | `dashboard/scan/page.tsx` | Edge `scan-undo` — `requireStaff` + RPC; own scans only | Zod (function-local) | surfaced | `audit_logs` (`scan.undo`) | function test + pgTAP `staff-roles.test.sql` + Playwright |
 | A9 Offline scan queue | `lib/offline-queue.ts` | localStorage → replayed through `scan-ticket` | hand-written guard | **silent discard** (F-04) | on replay | **none** |
 | A10 Orders + CSV export | `dashboard/tickets/**` | RLS + Edge `orders-aggregate`; export is browser-only | ad-hoc | surfaced | **none** for the export (F-05) | Playwright (header only) |
 | A11 Refund order | `dashboard/tickets/**` | Edge `refund-order` — `requireAdmin` → atomic `mark_order_refunded` RPC | Zod (shared `refundOrderSchema`, generated Edge copy) | surfaced | `audit_logs` (`order.refund`, same transaction) | pgTAP `atomicity.test.sql`; Playwright, **skipped** without keys |
@@ -81,10 +81,14 @@ display-only.
 | A15 Reschedule kickoff | `components/match-form.tsx` | atomic RPC `admin_update_match` (`0038`) | Zod (shared `adminRescheduleSchema`) | surfaced; **atomic** — the database refuses a move without a reason | `audit_logs` (`reschedule`, same transaction) | unit + contract + pgTAP `atomicity.test.sql` |
 
 **Effective authorisation** for every admin mutation is RLS `public.is_admin()`
-(JWT claim `app_metadata.role`) or `requireAdmin` in the Edge Function. The
-application layer contributes no role enforcement: `proxy.ts` only proves
-"signed in" and "MFA level", and the dashboard layout renders before the
-client-side redirect fires (F-09).
+(JWT claim `app_metadata.role`) or `requireAdmin` in the Edge Function. Since
+F-09 the application layer repeats the check instead of only proving "signed
+in": `proxy.ts` admits staff server-side, confines a gatekeeper to
+`/dashboard/scan`, and the dashboard layout filters the navigation (AA-1…AA-7).
+Since GAP-03a the gate surface authorises on `public.is_staff()`/`requireStaff`,
+while every other operation stays admin-only; a gatekeeper can read the gate
+registry, its own scan events and the tickets it scanned, and nothing else
+(SR-1…SR-7).
 
 ---
 
@@ -156,8 +160,9 @@ came out of it — all fixed, all now enforced by a contract.
 
 - **No client-trusted money.** No request from either app carries an amount;
   the server recomputes every total from the database and rejects a mismatch.
-- **No unguarded privileged Edge Function.** Every function that moves money,
-  admits a supporter or changes a role calls `requireAdmin` (and the SQL RPC
-  re-checks `is_admin()`).
+- **No unguarded privileged Edge Function.** Every function that moves money
+  or changes a role calls `requireAdmin`; the two gate functions call
+  `requireStaff` and the SQL RPC re-checks `is_staff()`/`is_admin()`. A scan
+  cannot be filed under another operator's id.
 - **No secret in a client bundle.** Both apps use the anon key; the service
   role key exists only in the Edge Functions.

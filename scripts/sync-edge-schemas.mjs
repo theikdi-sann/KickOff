@@ -22,6 +22,13 @@ export const CONTRACTS = [
     source: 'packages/shared/src/logging.ts',
     target: 'supabase/functions/_shared/logger.ts',
   },
+  {
+    // The role vocabulary is shared by the console, the Edge guards and the
+    // database constraint; the deployed copy is generated for the same reason
+    // the logger is (D-13/§6.8).
+    source: 'packages/shared/src/roles.ts',
+    target: 'supabase/functions/_shared/roles.ts',
+  },
 ];
 
 /**

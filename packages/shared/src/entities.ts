@@ -4,9 +4,17 @@
  * the wire/UI contract. Use `dto.ts` for camelCase payloads sent to the apps.
  */
 
+import type { StaffRole } from './roles';
+
 export type IsoTimestamp = string;
 
-export type Role = 'customer' | 'admin';
+/**
+ * `profiles.role` — the one role vocabulary, owned by `roles.ts`.
+ *
+ * Kept as an alias because the row/DTO types read better with a short name;
+ * the values are never repeated here, so `gatekeeper` cannot be forgotten.
+ */
+export type Role = StaffRole;
 export type MatchStatus = 'upcoming' | 'live' | 'completed';
 export type SeatStatus = 'available' | 'sold' | 'held';
 export type OrderStatus = 'pending' | 'paid' | 'failed' | 'cancelled' | 'refunded';

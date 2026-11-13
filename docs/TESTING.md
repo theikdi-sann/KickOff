@@ -9,7 +9,7 @@ gate locally it will break the build.
 |---|---|---|
 | Workspace unit tests | `npm test` | shared schemas/format/i18n/greeting (Vitest), admin node tests, mobile Jest tests, repo script tests |
 | Typecheck + lint | `npm run check` | TypeScript across shared/mobile/admin, ESLint |
-| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity (91 assertions, 11 suites) |
+| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary (116 assertions, 12 suites) |
 | Edge Functions (unit) | `cd supabase/functions && deno test --allow-env --allow-net tests/` | HMAC, config, error mapping, metrics helpers |
 | Edge Functions (integration) | `RUN_INTEGRATION=1 deno test --allow-env --allow-net tests/` | real checkout → webhook → ticket → receipt, scan/undo |
 | Functions typecheck | `npm run functions:check` | `deno check` on every `supabase/functions/*/index.ts` |
@@ -58,10 +58,11 @@ The script prefers a local Supabase/Docker instance and falls back to running
 the same SQL against the hosted project when Docker is unavailable. It applies
 the `supabase/tests/*.sql` suites and reports pass/fail per assertion.
 
-**91 assertions across 11 suites**, verified against the local stack on
+**116 assertions across 12 suites**, verified against the local stack on
 2026-11-13: constraints, hold concurrency, hold TTL, order expiry, reschedule
-audit, RLS (auth + anonymous), scan concurrency, seat reservation, venues and
-the F-07 atomicity suite (reschedule and refund).
+audit, RLS (auth + anonymous), scan concurrency, seat reservation, venues, the
+F-07 atomicity suite (reschedule and refund), and the GAP-03a staff-role suite
+(`admin` / `gatekeeper` authority and the gate RLS boundary).
 
 **Why the runner exists.** The two concurrency suites open their worker
 sessions through `dblink`, which reconnects over the network. Both the local

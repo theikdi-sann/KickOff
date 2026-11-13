@@ -4,12 +4,12 @@ import { writeAudit } from "../_shared/audit.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
-import { planStaffRoleUpdate } from "../_shared/roles.ts";
+import { planStaffRoleUpdate, staffRoleSchema, type StaffRole } from "../_shared/roles.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { validateBody, validateQuery } from "../_shared/validate.ts";
 
 const listQuerySchema = z.object({
-  role: z.enum(["customer", "admin"]).optional(),
+  role: staffRoleSchema.optional(),
   page: z.coerce.number().int().min(1).max(1000).default(1),
   perPage: z.coerce.number().int().min(1).max(100).default(50),
 });
@@ -17,7 +17,7 @@ const listQuerySchema = z.object({
 const patchSchema = z
   .object({
     id: z.string().min(1).max(64).optional(),
-    role: z.enum(["customer", "admin"]).optional(),
+    role: staffRoleSchema.optional(),
     fullName: z.string().trim().min(1).max(120).optional(),
     phone: z.string().max(32).nullable().optional(),
   })
@@ -30,7 +30,7 @@ type ProfileRow = {
   id: string;
   email: string;
   full_name: string;
-  role: "customer" | "admin";
+  role: StaffRole;
   phone: string | null;
   created_at: string;
 };
@@ -129,7 +129,7 @@ async function handler(request: Request): Promise<Response> {
   if (targetError) throw targetError;
   if (!target) throw new AppError("not_found", "User not found");
 
-  if (target.role === "admin" && body.role === "customer") {
+  if (target.role === "admin" && body.role !== undefined && body.role !== "admin") {
     const usableAdmins = await countUsableAdmins(db, targetId);
     if (usableAdmins === 0) {
       throw new AppError("conflict", "At least one admin must remain");

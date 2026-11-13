@@ -1,16 +1,15 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { StaffRole } from "@kickoff/shared";
 import { invokeFunction } from "@/lib/functions";
 import { createClient } from "@/lib/supabase/client";
-
-export type UserRole = "customer" | "admin";
 
 export interface AdminUser {
   id: string;
   email: string;
   fullName: string;
-  role: UserRole;
+  role: StaffRole;
   phone: string | null;
   joinedAt: string;
 }
@@ -19,7 +18,7 @@ interface ProfileRow {
   id: string;
   email: string;
   full_name: string;
-  role: UserRole;
+  role: StaffRole;
   phone: string | null;
   created_at: string;
 }
@@ -35,7 +34,7 @@ function toUser(row: ProfileRow): AdminUser {
   };
 }
 
-export function useUsers(role?: UserRole) {
+export function useUsers(role?: StaffRole) {
   return useQuery({
     queryKey: ["admin-users", role ?? "all"],
     queryFn: async (): Promise<AdminUser[]> => {
@@ -65,7 +64,7 @@ export function useUpdateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { id: string; role?: UserRole }): Promise<AdminUserUpdate> => {
+    mutationFn: async (input: { id: string; role?: StaffRole }): Promise<AdminUserUpdate> => {
       return invokeFunction<AdminUserUpdate>("admin-users", {
         method: "PATCH",
         body: input,

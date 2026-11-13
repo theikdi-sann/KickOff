@@ -58,15 +58,27 @@ tickets and scans are created through `security definer` functions
 (`create_hold`, `create_order_from_hold`, `scan_ticket`, …) or Edge Functions.
 `supabase/tests/rls.test.sql` asserts the matrix above (pgTAP).
 
-Helper: `public.is_admin()` reads the JWT claim and is the single predicate used
-by every admin policy, so a role change is applied everywhere at once.
+A second staff role, `gatekeeper` (GAP-03a), is narrower than `admin`: it may
+read `gates`, its **own** `scan_events`, and the `tickets` rows of passes it
+scanned; every other row marked admin-only above stays closed. It may not read
+the audit trail, other profiles, or write the gate registry.
+
+Helpers: `public.is_admin()` reads the JWT claim and is the single predicate
+used by every admin policy; `public.is_staff()` is the broader predicate for
+the gate surface (admin or gatekeeper). Both read `app_metadata.role`, so a
+role change is applied everywhere at once. `supabase/tests/staff-roles.test.sql`
+asserts the boundary.
 
 ## 3. Edge Function authorization
 
 - `requireUser(request)` validates the bearer JWT with Supabase Auth and returns
   a token-scoped client.
 - `requireAdmin(request)` additionally requires
-  `app_metadata.role === 'admin'`; all admin operations use it.
+  `app_metadata.role === 'admin'`; every operation except the gate surface
+  uses it.
+- `requireStaff(request)` requires `admin` or `gatekeeper` and is used **only**
+  by `scan-ticket` and `scan-undo`. A gatekeeper's authority is exactly the
+  gate; a broader guard would quietly widen it.
 - `metrics` is the only machine endpoint. It requires
   `x-metrics-token: <METRICS_TOKEN>` and compares in constant time
   (`_shared/metrics.ts`); it is `GET` only and returns aggregates, never rows.
@@ -113,7 +125,8 @@ by every admin policy, so a role change is applied everywhere at once.
 - Comparison is constant-time in `_shared/hmac.ts`; the payload carries no
   personal data beyond ids.
 - A pass is valid once. Re-scanning returns `used`; an accepted scan can be
-  undone for 60 seconds (`scan-undo`, admin only).
+  undone for 60 seconds (`scan-undo`, staff only, and only the operator who
+  recorded it).
 
 ## 6. Gate scanning & audit
 
@@ -121,7 +134,9 @@ by every admin policy, so a role change is applied everywhere at once.
   ticket's fixture (`wrong_match`), the fixture has not completed, and the
   current time is within **kick-off −2h … +2h**.
 - Every attempt — valid, used, invalid, wrong fixture — writes a `scan_events`
-  row with the admin id, gate id and an `idempotency_key`.
+  row with the operator id, gate id and an `idempotency_key`. The SQL function
+  refuses a caller whose `p_admin_id` is not their own `auth.uid()`, so a scan
+  cannot be filed under another operator's name.
 - `Idempotency-Key` (8–64 URL-safe characters) makes offline replays safe: the
   same key returns the original outcome instead of admitting twice.
 - `audit_logs` records privileged actions (refunds, account deletion, admin
@@ -129,11 +144,13 @@ by every admin policy, so a role change is applied everywhere at once.
   makes — fixtures, zones, venues, gates, news, settings and CSV exports).
   The admin console is read-only over audit data.
 - The staff console is gated **server-side** by the Next proxy: a request to
-  `/dashboard/*` must carry a session whose JWT claim `app_metadata.role` is
-  `admin`; a signed-in non-admin is redirected to the sign-in form with the
-  reason. The dashboard layout repeats the check, so the console shell never
-  renders for an account without the claim. The database remains the final
-  authority — every write is filtered by RLS `public.is_admin()`.
+  `/dashboard/*` must carry a session whose JWT claim `app_metadata.role` is a
+  staff role. A signed-in non-staff account is redirected to the sign-in form
+  with the reason; a gatekeeper is confined to `/dashboard/scan` and sent back
+  there from every other dashboard path. The dashboard layout repeats the
+  check and filters the navigation. The database remains the final authority —
+  every write is filtered by RLS `public.is_admin()` (or `public.is_staff()`
+  for the gate surface).
 - The admin console ships `robots: { index: false, follow: false }` and
   `nocache: true` (P11-19) so staff screens are not indexed or cached.
 
@@ -146,8 +163,8 @@ database call errors, the request is rejected with 429 rather than allowed.
 | Action | Key | Budget |
 |---|---|---|
 | `stripe-checkout` | `checkout:<ip>` | 10 / 60s |
-| `scan-ticket` | `scan:<admin id>` | 240 / 60s |
-| `scan-undo` | `scan-undo:<admin id>` | 60 / 60s |
+| `scan-ticket` | `scan:<staff id>` | 240 / 60s |
+| `scan-undo` | `scan-undo:<staff id>` | 60 / 60s |
 | `devices` | `devices:<ip>` | 60 / 60s |
 | `send-kickoff-reminders` | `reminders:<ip>` | 12 / 60s |
 

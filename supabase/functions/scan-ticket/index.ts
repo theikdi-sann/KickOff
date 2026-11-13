@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { requireAdmin } from "../_shared/auth.ts";
+import { requireStaff } from "../_shared/auth.ts";
 import { getEnv } from "../_shared/config.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
@@ -50,7 +50,7 @@ function idempotencyKey(request: Request): string {
 }
 
 async function handler(request: Request): Promise<Response> {
-  const context = await requireAdmin(request);
+  const context = await requireStaff(request);
   const key = idempotencyKey(request);
   await enforceRateLimit(request, `scan:${context.user.id}`, { maxHits: 240 });
   const body = await validateBody(request, bodySchema);

@@ -1,11 +1,12 @@
 import type { User } from '@supabase/supabase-js';
+import type { StaffRole } from '@kickoff/shared';
 import { supabase } from './supabase';
 
 export interface AppProfile {
   id: string;
   email: string;
   fullName: string;
-  role: 'customer' | 'admin';
+  role: StaffRole;
   phone?: string;
   initials: string;
   joinedAt: string;
@@ -15,7 +16,7 @@ interface ProfileRow {
   id: string;
   email: string;
   full_name: string;
-  role: 'customer' | 'admin';
+  role: StaffRole;
   phone: string | null;
   created_at: string;
 }

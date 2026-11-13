@@ -1,16 +1,26 @@
 import type { Database } from '@kickoff/shared';
+import { isAdminRole, isStaffRole } from '@kickoff/shared';
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+
+/** The one screen a gatekeeper may use — and its (currently empty) subtree. */
+const GATE_SURFACE = '/dashboard/scan';
+
+function isGateSurface(pathname: string): boolean {
+  return pathname === GATE_SURFACE || pathname.startsWith(`${GATE_SURFACE}/`);
+}
 
 /**
  * Next 16 Proxy (formerly middleware). Refreshes the Supabase session cookie on
  * every dashboard/login navigation and gates /dashboard behind a signed-in
- * **admin** account.
+ * **staff** account.
  *
  * The role is read from the validated JWT (`app_metadata.role`) — the same
- * claim `public.is_admin()` and the Edge Function guards authorise on. The
- * database still refuses a non-admin's writes; this layer makes sure such an
- * account never reaches the console in the first place.
+ * claim `public.is_admin()`/`public.is_staff()` and the Edge Function guards
+ * authorise on. Two staff roles exist (GAP-03a): an `admin` may use the whole
+ * console, a `gatekeeper` may use the gate surface and nothing else. The
+ * database still refuses anything a gatekeeper is not entitled to; this layer
+ * makes sure such an account never reaches those screens in the first place.
  */
 export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -45,7 +55,9 @@ export async function proxy(request: NextRequest) {
 
   const { pathname, search } = request.nextUrl;
 
-  const isAdmin = (user?.app_metadata as Record<string, unknown> | undefined)?.role === 'admin';
+  const role = (user?.app_metadata as Record<string, unknown> | undefined)?.role;
+  const isAdmin = isAdminRole(role);
+  const isStaff = isStaffRole(role);
 
   let requiresMfa = false;
   if (user) {
@@ -61,12 +73,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // A signed-in account without the admin claim must not reach the console.
-  if (user && !isAdmin && pathname.startsWith('/dashboard')) {
+  // A signed-in account without a staff claim must not reach the console.
+  if (user && !isStaff && pathname.startsWith('/dashboard')) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';
     redirectUrl.search = '';
-    redirectUrl.searchParams.set('error', 'not-admin');
+    redirectUrl.searchParams.set('error', 'not-staff');
     return NextResponse.redirect(redirectUrl);
   }
 
@@ -77,11 +89,26 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Only an admin is sent into the console; anyone else keeps the sign-in
-  // form (otherwise the two redirects would fight each other).
-  if (user && isAdmin && !requiresMfa && (pathname === '/login' || pathname === '/login/mfa')) {
+  // A gatekeeper's console is exactly the gate surface. Everything else
+  // (fixtures, seating, orders, refunds, users, settings) is admin-only.
+  if (
+    user &&
+    isStaff &&
+    !isAdmin &&
+    pathname.startsWith('/dashboard') &&
+    !isGateSurface(pathname)
+  ) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/dashboard';
+    redirectUrl.pathname = '/dashboard/scan';
+    redirectUrl.search = '';
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // Only a staff account is sent into the console; anyone else keeps the
+  // sign-in form (otherwise the two redirects would fight each other).
+  if (user && isStaff && !requiresMfa && (pathname === '/login' || pathname === '/login/mfa')) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = isAdmin ? '/dashboard' : '/dashboard/scan';
     redirectUrl.search = '';
     return NextResponse.redirect(redirectUrl);
   }

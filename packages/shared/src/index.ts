@@ -13,3 +13,4 @@ export * from './greeting';
 export * from './require';
 export * from './availability';
 export * from './logging';
+export * from './roles';

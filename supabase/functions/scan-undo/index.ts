@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { writeAudit } from "../_shared/audit.ts";
-import { requireAdmin } from "../_shared/auth.ts";
+import { requireStaff } from "../_shared/auth.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
 import { enforceRateLimit } from "../_shared/rate-limit.ts";
@@ -15,7 +15,7 @@ const bodySchema = z.object({
 });
 
 async function handler(request: Request): Promise<Response> {
-  const context = await requireAdmin(request);
+  const context = await requireStaff(request);
   await enforceRateLimit(request, `scan-undo:${context.user.id}`, { maxHits: 60 });
   const body = await validateBody(request, bodySchema);
 

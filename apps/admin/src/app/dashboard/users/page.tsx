@@ -1,19 +1,43 @@
 "use client";
 
-import { Loader2, ShieldCheck, UserMinus, UserPlus, Users } from "lucide-react";
+import { Loader2, ShieldCheck, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui";
-import { useUsers, useUpdateUser, type UserRole } from "@/lib/queries/users";
+import { useUsers, useUpdateUser } from "@/lib/queries/users";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import type { StaffRole } from "@kickoff/shared";
 
-type Filter = "all" | UserRole;
+type Filter = "all" | StaffRole;
 
 const filters: Array<{ value: Filter; label: string }> = [
   { value: "all", label: "All" },
   { value: "admin", label: "Admins" },
+  { value: "gatekeeper", label: "Gatekeepers" },
   { value: "customer", label: "Customers" },
 ];
+
+const COUNT_LABELS: Record<Filter, string> = {
+  all: "users",
+  admin: "admins",
+  gatekeeper: "gatekeepers",
+  customer: "customers",
+};
+
+const ROLE_LABELS: Record<StaffRole, string> = {
+  admin: "ADMIN",
+  gatekeeper: "GATEKEEPER",
+  customer: "CUSTOMER",
+};
+
+const ROLE_TONES: Record<StaffRole, "green" | "gold" | "muted"> = {
+  admin: "green",
+  gatekeeper: "gold",
+  customer: "muted",
+};
+
+/** The roles an admin may assign — the same vocabulary the database accepts. */
+const ASSIGNABLE_ROLES: StaffRole[] = ["customer", "gatekeeper", "admin"];
 
 export default function UsersPage() {
   const [filter, setFilter] = useState<Filter>("all");
@@ -35,7 +59,7 @@ export default function UsersPage() {
     };
   }, []);
 
-  const changeRole = async (id: string, role: UserRole) => {
+  const changeRole = async (id: string, role: StaffRole) => {
     setActionError(null);
     setActionNotice(null);
     try {
@@ -44,7 +68,9 @@ export default function UsersPage() {
         setActionNotice(
           role === "admin"
             ? "Role updated. They can sign in to the console now — an open session keeps its old role until it is refreshed."
-            : "Role updated. An open session keeps its old access until it is refreshed.",
+            : role === "gatekeeper"
+              ? "Role updated. A gatekeeper can scan passes and undo their own scans — an open session keeps its old role until it is refreshed."
+              : "Role updated. An open session keeps its old access until it is refreshed.",
         );
       }
     } catch (caught) {
@@ -59,12 +85,13 @@ export default function UsersPage() {
           <p className="label mb-1 text-pitch">Access control</p>
           <h1 className="display text-4xl leading-none text-slate-900">USERS & ROLES</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Promote trusted staff to admins. At least one admin always remains.
+            Promote trusted staff to admins, or give gate staff a gatekeeper account. At least one
+            admin always remains.
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
           <Users size={15} />
-          {users?.length ?? 0} {filter === "all" ? "users" : filter === "admin" ? "admins" : "customers"}
+          {users?.length ?? 0} {COUNT_LABELS[filter]}
         </div>
       </header>
 
@@ -122,7 +149,6 @@ export default function UsersPage() {
             <tbody>
               {users.map((user) => {
                 const isSelf = user.id === currentUserId;
-                const promoting = user.role === "customer";
                 return (
                   <tr key={user.id} className="border-b border-slate-100 last:border-0">
                     <td className="px-5 py-3.5">
@@ -133,9 +159,7 @@ export default function UsersPage() {
                       <p className="text-xs text-slate-400">{user.email}</p>
                     </td>
                     <td className="px-4 py-3.5">
-                      <Badge tone={user.role === "admin" ? "green" : "muted"}>
-                        {user.role === "admin" ? "ADMIN" : "CUSTOMER"}
-                      </Badge>
+                      <Badge tone={ROLE_TONES[user.role]}>{ROLE_LABELS[user.role]}</Badge>
                     </td>
                     <td className="px-4 py-3.5 text-xs text-slate-500">
                       {new Date(user.joinedAt).toLocaleDateString("en-GB", {
@@ -146,19 +170,18 @@ export default function UsersPage() {
                       })}
                     </td>
                     <td className="px-5 py-3.5 text-right">
-                      <button
-                        type="button"
+                      <select
+                        aria-label={`Role for ${user.fullName || user.email}`}
+                        value={user.role}
                         disabled={isSelf || updateUser.isPending}
-                        onClick={() => changeRole(user.id, promoting ? "admin" : "customer")}
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-40",
-                          promoting
-                            ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                            : "border-red-200 text-red-600 hover:bg-red-50",
-                        )}>
-                        {promoting ? <UserPlus size={13} /> : <UserMinus size={13} />}
-                        {promoting ? "Promote" : "Demote"}
-                      </button>
+                        onChange={(event) => void changeRole(user.id, event.target.value as StaffRole)}
+                        className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition disabled:cursor-not-allowed disabled:opacity-40">
+                        {ASSIGNABLE_ROLES.map((role) => (
+                          <option key={role} value={role}>
+                            {ROLE_LABELS[role]}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                   </tr>
                 );
@@ -170,8 +193,8 @@ export default function UsersPage() {
 
       <div className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-500">
         <ShieldCheck size={15} className="mt-0.5 shrink-0 text-pitch" />
-        Role changes are written to the audit log and require a service-side check; you cannot demote
-        your own account.
+        Role changes are written to the audit log and require a service-side check; you cannot change
+        your own role.
       </div>
     </div>
   );

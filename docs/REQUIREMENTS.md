@@ -92,7 +92,7 @@ Supabase backend with Stripe payments and the Expo Push Service.
 | NFR-07 | Type safety: strict TS, no `any` | shipped | `tsconfig.base.json`, ESLint `no-explicit-any` |
 | NFR-08 | Offline entry verification without a network | **open** | `GAP-01` |
 | NFR-09 | Multi-tenant isolation | **open** | `GAP-02` — B2B blocker |
-| NFR-10 | Fine-grained staff roles beyond owner/admin | **open** | `GAP-03` — B2B blocker |
+| NFR-10 | Fine-grained staff roles beyond owner/admin | **partial** | `GAP-03a` delivered `admin` / `gatekeeper` (`0039`, `roles.ts`); per-club RBAC remains under `GAP-03` |
 | NFR-11 | Observability: structured logs, metrics, error tracking | **open** | `GAP-04` — B2B blocker |
 | NFR-12 | Multi-language and multi-currency | **open** | `GAP-05` — B2B blocker |
 
@@ -160,7 +160,7 @@ tracked decision, not an accident.
 |---|---|---|---|
 | **GAP-01** | **Offline pass verification.** The signed QR payload is fetched over the network, so a pass cannot be presented without connectivity. The proposal's SC-08 wants issued passes cached locally. | Supporter at a venue with poor signal cannot show the pass. | Open — deliberately deferred; the system is otherwise sound. Implementation must keep the server authoritative at scan time and only cache the *payload*. |
 | **GAP-02** | **No multi-tenancy.** One club per deployment; branding, currency and staff are global. | Blocks the B2B model. | B2B hardening track, phase 1 (`PLAN.md`). |
-| **GAP-03** | **Two staff roles only** (`admin`, `user`). No box-office/gate-staff scoping. | Every staff member sees all club data and all refunds. | B2B hardening track, phase 2. |
+| **GAP-03** | **Staff roles are a fixed pair.** `GAP-03a` delivered the two-role scope (`admin` \| `gatekeeper`, migration `0039`): a gatekeeper may scan and undo only their own scans and is confined to the gate surface. Roles are still global, not per-club. | Gate staff no longer hold refund/user authority, but a club cannot define its own roles or scope a staff member to one venue/tenant. | B2B hardening track, phase 2 — `GAP-03a` complete, per-club RBAC open. |
 | **GAP-04** | **Observability is thin.** Structured logs and metrics exist, but there is no error tracking, tracing or alerting. | Incidents are found by users, not by monitoring. | B2B hardening track, phase 3. |
 | **GAP-05** | **One locale, one currency.** English + THB only; the unused English string table was removed in Phase C2, so localization has to be rebuilt per tenant. | Multi-country clubs need per-tenant locale/currency. | B2B hardening track, phase 4. |
 | **GAP-06** | **The EAS dev build has never been exercised end to end.** Push code is contract-tested, but no APK has been built and no push delivered on a device. | Push is unproven on hardware. | Manual follow-up: `eas build --profile development` + `expo.dev/notifications`. |

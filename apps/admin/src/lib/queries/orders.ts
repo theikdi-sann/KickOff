@@ -143,9 +143,15 @@ export interface OrdersAggregate {
   scans: { total: number; valid: number; used: number; invalid: number; wrongMatch: number };
 }
 
-export function useOrdersAggregate(range?: { from: string; to: string }) {
+export function useOrdersAggregate(
+  range?: { from: string; to: string },
+  options: { enabled?: boolean } = {},
+) {
   return useQuery({
     queryKey: ["orders-aggregate", range],
+    // The aggregate carries revenue and club-wide counts; a gatekeeper's scan
+    // screen must not request it at all, not merely hide the result.
+    enabled: options.enabled ?? true,
     queryFn: () =>
       invokeFunction<OrdersAggregate>("orders-aggregate", {
         method: "POST",

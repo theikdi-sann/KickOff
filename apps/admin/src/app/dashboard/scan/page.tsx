@@ -23,6 +23,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, SectionTitle } from "@/components/ui";
 import { useGates } from "@/lib/queries/gates";
+import { useSession } from "@/lib/use-session";
 import { useOrdersAggregate } from "@/lib/queries/orders";
 import {
   useOfflineQueue,
@@ -84,6 +85,10 @@ function toneFor(code: DisplayCode): "green" | "gold" | "red" {
 
 export default function ScanPage() {
   const queryClient = useQueryClient();
+  const session = useSession();
+  // Admin-only tools: the club-wide aggregate and the demo pass. A gatekeeper
+  // gets the scanner, the gate log and nothing else.
+  const canManage = session.isAdmin;
   const { data: gates, isLoading: gatesLoading } = useGates();
   const [gateId, setGateId] = useState<string>(() =>
     typeof window === "undefined" ? "" : (window.localStorage.getItem(GATE_STORAGE_KEY) ?? ""),
@@ -112,12 +117,12 @@ export default function ScanPage() {
 
   const scan = useScan(selectedGate?.id);
   const undo = useUndoScan(selectedGate?.id);
-  const demo = useScanDemo(selectedGate?.id);
+  const demo = useScanDemo(selectedGate?.id, { enabled: canManage });
   const events = useScanEvents({ gateId: selectedGate?.id, limit: 6 });
   const queue = useOfflineQueue();
   // The scan totals come from the aggregate — the same server-side count the
   // dashboard shows, not a second browser-side query.
-  const aggregate = useOrdersAggregate();
+  const aggregate = useOrdersAggregate(undefined, { enabled: canManage });
 
   useEffect(() => {
     if (!undoDeadline) return;
@@ -421,14 +426,16 @@ export default function ScanPage() {
                     />
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setManual(demoPayload)}
-                          disabled={!demoPayload}
-                          className="btn-ghost px-3 py-2 text-[11px] disabled:opacity-50">
-                          <Clipboard size={13} />
-                          Use demo pass
-                        </button>
+                        {canManage ? (
+                          <button
+                            type="button"
+                            onClick={() => setManual(demoPayload)}
+                            disabled={!demoPayload}
+                            className="btn-ghost px-3 py-2 text-[11px] disabled:opacity-50">
+                            <Clipboard size={13} />
+                            Use demo pass
+                          </button>
+                        ) : null}
                         {queue.count > 0 ? (
                           <button
                             type="button"
@@ -459,7 +466,11 @@ export default function ScanPage() {
                     <p className="label text-pitch">Recent entries</p>
                     <h2 className="display mt-0.5 text-2xl text-slate-900">Scanned passes</h2>
                   </div>
-                  <Badge tone="muted">{aggregate.data?.scans.total ?? 0} in 30 days</Badge>
+                  {canManage ? (
+                    <Badge tone="muted">{aggregate.data?.scans.total ?? 0} in 30 days</Badge>
+                  ) : (
+                    <Badge tone="muted">{sessionCount} this session</Badge>
+                  )}
                 </div>
                 <div className="mt-3 divide-y divide-slate-100">
                   {events.isLoading ? (
@@ -468,7 +479,9 @@ export default function ScanPage() {
                     </div>
                   ) : (events.data ?? []).length === 0 ? (
                     <p className="py-6 text-center text-xs text-slate-500">
-                      No scans recorded at this gate yet.
+                      {canManage
+                        ? "No scans recorded at this gate yet."
+                        : "No scans by you at this gate yet."}
                     </p>
                   ) : (
                     (events.data ?? []).map((event) => (
@@ -491,7 +504,7 @@ export default function ScanPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-xs font-semibold text-slate-800">
-                            {event.holder}
+                            {event.holder || "Pass holder"}
                             {event.seatLabel ? ` · ${event.zoneName} ${event.seatLabel}` : ""}
                           </p>
                           <p className="text-[10px] text-slate-400">
@@ -615,54 +628,56 @@ export default function ScanPage() {
                 )}
               </div>
 
-              <div className="panel overflow-hidden">
-                <div className="border-b border-slate-100 px-5 py-4">
-                  <p className="label text-pitch">Test pass</p>
-                  <h2 className="display mt-0.5 text-2xl text-slate-900">Scan a sample QR</h2>
-                </div>
-                {demo.isLoading ? (
-                  <div className="flex items-center justify-center gap-2 p-6 text-xs text-slate-500">
-                    <Loader2 size={13} className="animate-spin" /> Preparing a valid pass…
+              {canManage ? (
+                <div className="panel overflow-hidden">
+                  <div className="border-b border-slate-100 px-5 py-4">
+                    <p className="label text-pitch">Test pass</p>
+                    <h2 className="display mt-0.5 text-2xl text-slate-900">Scan a sample QR</h2>
                   </div>
-                ) : demo.error ? (
-                  <div className="p-5 text-xs text-slate-500">
-                    {demo.error instanceof Error ? demo.error.message : "No demo pass available."}
-                  </div>
-                ) : demo.data ? (
-                  <div className="p-5">
-                    <div className="flex justify-center rounded-2xl border border-slate-200 bg-white p-4">
-                      <div role="img" aria-label="Demo pass QR code">
-                        <QRCodeSVG value={demo.data.payload} size={164} level="M" />
+                  {demo.isLoading ? (
+                    <div className="flex items-center justify-center gap-2 p-6 text-xs text-slate-500">
+                      <Loader2 size={13} className="animate-spin" /> Preparing a valid pass…
+                    </div>
+                  ) : demo.error ? (
+                    <div className="p-5 text-xs text-slate-500">
+                      {demo.error instanceof Error ? demo.error.message : "No demo pass available."}
+                    </div>
+                  ) : demo.data ? (
+                    <div className="p-5">
+                      <div className="flex justify-center rounded-2xl border border-slate-200 bg-white p-4">
+                        <div role="img" aria-label="Demo pass QR code">
+                          <QRCodeSVG value={demo.data.payload} size={164} level="M" />
+                        </div>
                       </div>
+                      <div className="mt-4 rounded-xl bg-slate-50 p-3">
+                        <p className="text-xs font-semibold text-slate-800">
+                          {demo.data.ticket?.holder ?? "KickOff fan"}
+                        </p>
+                        <p className="mt-0.5 text-[10px] text-slate-500">
+                          {demo.data.ticket?.matchLabel} · {demo.data.ticket?.zoneName}{" "}
+                          {demo.data.ticket?.seatLabel}
+                        </p>
+                        <p className="mt-1 text-[9px] uppercase tracking-[0.1em] text-slate-400">
+                          Real signed pass · scanning admits this ticket, undo within{" "}
+                          {GATE_UNDO_SECONDS}s to restore it
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void handleCode(demoPayload)}
+                        disabled={scan.isPending}
+                        className="btn-gold mt-3 w-full">
+                        <ShieldCheck size={14} />
+                        Validate demo pass now
+                      </button>
                     </div>
-                    <div className="mt-4 rounded-xl bg-slate-50 p-3">
-                      <p className="text-xs font-semibold text-slate-800">
-                        {demo.data.ticket?.holder ?? "KickOff fan"}
-                      </p>
-                      <p className="mt-0.5 text-[10px] text-slate-500">
-                        {demo.data.ticket?.matchLabel} · {demo.data.ticket?.zoneName}{" "}
-                        {demo.data.ticket?.seatLabel}
-                      </p>
-                      <p className="mt-1 text-[9px] uppercase tracking-[0.1em] text-slate-400">
-                        Real signed pass · scanning admits this ticket, undo within {GATE_UNDO_SECONDS}s
-                        to restore it
-                      </p>
+                  ) : (
+                    <div className="p-6 text-center text-xs text-slate-500">
+                      No valid ticket is available for this fixture.
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void handleCode(demoPayload)}
-                      disabled={scan.isPending}
-                      className="btn-gold mt-3 w-full">
-                      <ShieldCheck size={14} />
-                      Validate demo pass now
-                    </button>
-                  </div>
-                ) : (
-                  <div className="p-6 text-center text-xs text-slate-500">
-                    No valid ticket is available for this fixture.
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              ) : null}
 
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <div className="flex items-start gap-3">

@@ -101,10 +101,15 @@ export function useUndoScan(gateId: string | undefined) {
   });
 }
 
-export function useScanDemo(gateId: string | undefined) {
+export function useScanDemo(
+  gateId: string | undefined,
+  options: { enabled?: boolean } = {},
+) {
   return useQuery<DemoPass>({
     queryKey: ["scan-demo", gateId],
-    enabled: Boolean(gateId),
+    // The demo pass is an admin convenience (it issues a real signed pass);
+    // a gatekeeper never calls the admin-only function behind it.
+    enabled: Boolean(gateId) && (options.enabled ?? true),
     staleTime: 0,
     retry: false,
     queryFn: () => getDemoPass(requireDefined(gateId, "gate id")),

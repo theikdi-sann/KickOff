@@ -111,7 +111,7 @@ packages/shared/src/
   theme.ts             brand tokens
 
 supabase/
-  migrations/          37 ordered SQL migrations: schema, RLS, RPCs, views, cron
+  migrations/          39 ordered SQL migrations: schema, RLS, RPCs, views, cron
   functions/_shared/   auth, config, validate, hmac, stripe, rate-limit,
                        metrics, audit, http envelope, logger, qr
   functions/<name>/    one directory per function (16)
@@ -126,7 +126,7 @@ supabase/
 | Availability | `seat_holds` | one *active* hold per seat (partial unique index) |
 | Commerce | `orders`, `order_seats` | an order holds seats for a TTL, then is paid/cancelled/expired |
 | Fulfilment | `tickets` | one ticket per `order_seats` row, issued exactly once |
-| Access | `profiles`, `app_settings`, `app_secrets` | role lives in the JWT claim, mirrored in `profiles` |
+| Access | `profiles`, `app_settings`, `app_secrets` | role lives in the JWT claim, mirrored in `profiles`; vocabulary is `customer` / `gatekeeper` / `admin` |
 | Operations | `scan_events`, `audit_logs`, `stripe_events`, `rate_limits` | append-only history except `stripe_events` dedupe |
 | Engagement | `news_items`, `device_tokens` | device tokens are per user, revocable |
 
@@ -206,7 +206,7 @@ starting in 24 h / 2 h → `device_tokens` → Expo Push Service.
 | Boundary | Enforcement |
 |---|---|
 | Browser/app → Postgres | RLS + grants on every table |
-| Browser/app → Edge Function | JWT verification + role check (`_shared/auth.ts`) |
+| Browser/app → Edge Function | JWT verification + staff/admin role check (`_shared/auth.ts`) |
 | Edge Function → Postgres | service role — **no RLS**; authorization is the function's job |
 | Scheduler → Edge Function | shared secret, constant-time compare |
 | QR payload → gate | HMAC signature over `ticket|match|order|nonce` |
@@ -324,6 +324,26 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
   no ignore directive — every other function trips the rule on the global).
   Contract: `scripts/tests/logging.test.mjs` (LG-1…LG-4).
 
+### 6.10 Authorization
+- The role vocabulary is exactly `customer` | `gatekeeper` | `admin`
+  (D-20), owned by `packages/shared/src/roles.ts` and generated into
+  `supabase/functions/_shared/roles.ts` (§6.8). The database mirrors it in the
+  `profiles_role_check` constraint.
+- Two SQL predicates read the JWT claim and nothing else:
+  `public.is_admin()` (admin only) and `public.is_staff()` (admin or
+  gatekeeper). RLS keeps every operational table behind `is_admin()`; only
+  `gates` (read), the caller's own `scan_events`, and tickets the caller
+  scanned open to a gatekeeper.
+- Edge Functions use `requireAdmin` everywhere except `scan-ticket` and
+  `scan-undo`, which use `requireStaff`. The SQL gate functions repeat the
+  check and refuse a scan filed under another user's id.
+- The console applies the same boundary twice: the Next proxy admits staff and
+  confines a gatekeeper to `/dashboard/scan`, and the dashboard layout filters
+  the navigation. The database remains the final authority.
+- Contract: `scripts/tests/staff-roles.test.mjs` (SR-1…SR-7),
+  `scripts/tests/admin-access.test.mjs` (AA-1…AA-7), and
+  `supabase/tests/staff-roles.test.sql`.
+
 ## 7. Decision index
 
 | # | Decision | Why | Where |
@@ -332,7 +352,7 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
 | D-02 | Amounts computed server-side from the database | the client must never price a ticket | `stripe-checkout` |
 | D-03 | Stripe webhooks are idempotent via `stripe_events` | Stripe retries | `0015`, `stripe-webhook` |
 | D-04 | QR payload is HMAC-signed and server-generated | tamper-evident entry | `_shared/qr.ts` |
-| D-05 | Admin authorization is a JWT claim (`app_metadata.role`) | RLS cannot read the app JWT | `0001`, `0018` |
+| D-05 | Staff authorization is a JWT claim (`app_metadata.role`) | RLS cannot read the app JWT | `0001`, `0018`, `0039` |
 | D-06 | Reschedule rules live in shared Zod + UI, **no trigger/RPC** | walkthrough decision; the audit trail carries the reason | `0037`, `PB-RESCHEDULE` |
 | D-07 | Venues normalized into a table with a FK | free-text venues could not be managed | `0035`, `0036` |
 | D-08 | Edge Functions refuse non-`sk_test_` Stripe keys | Stripe test mode only, enforced | `_shared/config.ts` |
@@ -344,7 +364,7 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
 | Workstream | Shape of the change | Notes |
 |---|---|---|
 | Multi-tenancy (`GAP-02`) | `clubs` table + `club_id` on every tenant table, `is_club_member(club_id)` RLS helper, per-club settings/branding/currency | the single biggest change; needs a data-migration plan and an RLS rewrite |
-| Staff roles (`GAP-03`) | `roles`/`permissions` tables, `user_roles(club_id, user_id, role)`, function-level checks | replaces the binary admin/user claim |
+| Staff roles (`GAP-03`) | `roles`/`permissions` tables, `user_roles(club_id, user_id, role)`, function-level checks | **GAP-03a delivered** the two-role scope (`admin` \| `gatekeeper`, migration `0039`); richer per-club RBAC remains |
 | Observability (`GAP-04`) | structured logger with request IDs, error tracking, metrics push, alerts | the `_shared/logger.ts` seam already exists |
 | Locale & currency (`GAP-05`) | per-club locale + currency columns, `money.ts` gains a currency argument | the unused English string table was removed in Phase C2; localization must be rebuilt per tenant |
 | Error tracking & tracing | request id propagation from client → function → logs | `ApiError.requestId` already carries it |
