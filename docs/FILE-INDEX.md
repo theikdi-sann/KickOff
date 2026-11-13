@@ -245,6 +245,7 @@ before the suite is green again.
 | `scripts/tests/language.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/mobile-resilience.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/mobile-tests.test.mjs` | test | covered | contract test — the mobile Jest harness is real and CI runs it |
+| `scripts/tests/mvp-gate.test.mjs` | test | covered | contract test — the MVP demo gate drives Stripe's current checkout (MG-1…MG-5) |
 | `scripts/tests/phase11.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/phaseb.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/phaseb0.test.mjs` | test | covered | contract test — fails when the repository drifts |

@@ -167,22 +167,80 @@ try {
   step('checkout session created', Boolean(sessionId), orderId);
 
   // 5. Pay with the Stripe test card (this fires the configured webhook).
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+  //
+  // Browser hardening (diagnosed 2026-11-13): the hosted page withholds
+  // nothing, but it is read by Stripe's risk engine, so launch the full
+  // Chromium (not the headless shell), send a normal Chrome UA built from its
+  // real version, and clear navigator.webdriver before any page script runs.
+  const browser = await chromium.launch({ channel: 'chromium' });
+  const context = await browser.newContext({
+    userAgent: `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${browser.version()} Safari/537.36`,
+  });
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+  });
+  const page = await context.newPage();
+
+  // Everything the payment needs lives inside Stripe's Payment Element iframe,
+  // never in the main document. Resolve the frame by what it renders — the
+  // iframe's URL carries a Stripe-internal build name that may change.
+  const paymentElement = async () => {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      for (const frame of page.frames()) {
+        if (frame === page.mainFrame()) continue;
+        const known = await frame
+          .locator('#linkAuthentication-emailInput, input[autocomplete="cc-number"]')
+          .count()
+          .catch(() => 0);
+        if (known > 0) return frame;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    throw new Error('payment element frame did not render');
+  };
+
   let paid = false;
   try {
     await page.goto(checkout.data.url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-    await page.locator('#cardNumber').fill('4242424242424242');
-    await page.locator('#cardExpiry').fill('1234');
-    await page.locator('#cardCvc').fill('123');
-    await page.locator('#billingName').fill('Demo Fan');
-    await page.getByRole('button', { name: /pay/i }).first().click();
+    const element = await paymentElement();
+
+    const contact = element.locator('#linkAuthentication-emailInput');
+    if ((await contact.count()) > 0 && (await contact.first().isEditable().catch(() => false))) {
+      // Stripe locks and pre-fills this field when the session carries a
+      // customer_email (our checkout always does) — only fill an editable one.
+      await contact.fill(fanEmail, { timeout: 10_000 });
+    }
+
+    // The fields are addressed by their W3C autocomplete tokens: the current
+    // Payment Element names them `payment-*` and the legacy `#cardNumber` id
+    // is gone. Sessions are card-only today (F-9), but when the checkout is
+    // not restricted PromptPay is selected by default and the card fields
+    // hide behind the Card option — handle that layout too, and only then.
+    // Give the method list time to hydrate first: an option that matches
+    // before its handlers are wired takes the click and ignores it.
+    const cardFields = element.locator('input[autocomplete="cc-number"]');
+    if ((await cardFields.count()) === 0) {
+      const cardMethod = element.getByText(/Card\s*Visa/i);
+      await cardMethod.first().waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+      if ((await cardMethod.count()) > 0) await cardMethod.first().click();
+    }
+    await cardFields.first().waitFor({ state: 'visible', timeout: 20_000 });
+
+    await cardFields.first().fill('4242424242424242', { timeout: 10_000 });
+    await element.locator('input[autocomplete="cc-exp"]').fill('1234', { timeout: 10_000 });
+    await element.locator('input[autocomplete="cc-csc"]').fill('123', { timeout: 10_000 });
+    const billingName = element.locator('input[autocomplete="cc-name"]');
+    if ((await billingName.count()) > 0) await billingName.first().fill('Demo Fan', { timeout: 10_000 });
+
+    await element.getByRole('button', { name: /^pay$/i }).first().click({ timeout: 20_000 });
     // success_url is the kickoff:// deep link, so the browser never navigates;
     // the payment itself is what matters — the webhook fires server-side.
     await page.waitForTimeout(8000);
     paid = true;
   } catch (err) {
-    console.log(`      checkout page note: ${err.message.split('\n')[0]}`);
+    // First lines carry the locator and the call log — enough to see which
+    // field refused without a second instrumented run.
+    console.log(`      checkout page note: ${err.message.split('\n').slice(0, 4).join(' | ')}`);
   } finally {
     await browser.close();
   }
