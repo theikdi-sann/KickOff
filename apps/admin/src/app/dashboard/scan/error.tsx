@@ -3,6 +3,9 @@
 import { QrCode, RefreshCw, ShieldAlert, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
+import { createLogger } from "@kickoff/shared";
+
+const log = createLogger("admin.scan-boundary");
 
 export default function ScanError({
   error,
@@ -12,7 +15,7 @@ export default function ScanError({
   retry: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    log.error("scan error boundary", { error });
   }, [error]);
 
   const message =

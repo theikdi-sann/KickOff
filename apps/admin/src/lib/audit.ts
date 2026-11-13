@@ -1,5 +1,9 @@
-import type { Json } from '@kickoff/shared';
+import { createLogger, type Json } from '@kickoff/shared';
 import { createClient } from '@/lib/supabase/client';
+
+// One structured, redacting emitter for the audit writer's failures (C4.11):
+// the context may carry row data, so it must pass the shared redactor.
+const log = createLogger('admin.audit');
 
 /**
  * The audit vocabulary.
@@ -70,7 +74,7 @@ export async function recordAudit(entry: AuditEntry): Promise<boolean> {
     });
 
     if (error) {
-      console.error('audit write failed', {
+      log.error('audit write failed', {
         action: entry.action,
         entity: entry.entity,
         message: error.message,
@@ -79,10 +83,10 @@ export async function recordAudit(entry: AuditEntry): Promise<boolean> {
     }
     return true;
   } catch (caught) {
-    console.error('audit write failed', {
+    log.error('audit write failed', {
       action: entry.action,
       entity: entry.entity,
-      message: caught instanceof Error ? caught.message : String(caught),
+      error: caught instanceof Error ? caught : String(caught),
     });
     return false;
   }

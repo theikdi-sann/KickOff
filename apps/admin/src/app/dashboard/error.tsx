@@ -3,6 +3,9 @@
 import { AlertTriangle, LayoutDashboard, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
+import { createLogger } from "@kickoff/shared";
+
+const log = createLogger("admin.boundary");
 
 export default function DashboardError({
   error,
@@ -12,7 +15,7 @@ export default function DashboardError({
   retry: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    log.error("dashboard error boundary", { error });
   }, [error]);
 
   const message =

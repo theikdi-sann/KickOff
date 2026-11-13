@@ -308,6 +308,22 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
 - Drift between two copies of the same fact is a failing test, not a code
   review comment.
 
+### 6.9 Logging
+- One convention, one owner: `createLogger('<scope>')` from
+  `packages/shared/src/logging.ts` — exactly one JSON line per event
+  (`level`, `message`, `time`, `scope`, then the caller's context).
+- Every value passes the redactor before it is emitted: secret-looking keys
+  become `[redacted]`, `Error` values serialise to `{ name, message, stack }`
+  (plain `JSON.stringify` would print `{}`), and recursion is capped.
+- The Edge Functions receive a **generated copy** (`_shared/logger.ts`),
+  because they cannot import `@kickoff/shared` at deploy time (§6.8); the
+  copy is drift-checked by contract.
+- Raw `console.*` is banned everywhere else: ESLint `no-console: ["error"]`
+  with no `allow` in both apps, and deno `no-console` in the functions (the
+  generated logger emits through its own module-scoped `console`, so it needs
+  no ignore directive — every other function trips the rule on the global).
+  Contract: `scripts/tests/logging.test.mjs` (LG-1…LG-4).
+
 ## 7. Decision index
 
 | # | Decision | Why | Where |

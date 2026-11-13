@@ -200,6 +200,7 @@ before the suite is green again.
 | `packages/shared/src/__tests__/availability.test.ts` | test | covered | unit test — the availability mapping and arithmetic |
 | `packages/shared/src/__tests__/format.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `packages/shared/src/__tests__/greeting.test.ts` | test | covered | contract test — fails when the repository drifts |
+| `packages/shared/src/__tests__/logging.test.ts` | test | covered | unit test — redaction, Error serialisation, scoped and default logger |
 | `packages/shared/src/__tests__/mappers.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `packages/shared/src/__tests__/money.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `packages/shared/src/__tests__/reschedule.test.ts` | test | covered | contract test — fails when the repository drifts |
@@ -215,6 +216,7 @@ before the suite is green again.
 | `packages/shared/src/greeting.ts` | source | reviewed | shared contract |
 | `packages/shared/src/http.ts` | source | reviewed | shared contract |
 | `packages/shared/src/index.ts` | source | reviewed | shared contract |
+| `packages/shared/src/logging.ts` | source | reviewed | shared contract — the one logging convention; generates the Edge copy |
 | `packages/shared/src/mappers.ts` | source | reviewed | shared contract |
 | `packages/shared/src/money.ts` | source | reviewed | shared contract |
 | `packages/shared/src/refund.ts` | source | reviewed | shared contract — canonical refund body, no relative imports (F-11) |
@@ -243,6 +245,7 @@ before the suite is green again.
 | `scripts/tests/hygiene.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/lan.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/language.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/logging.test.mjs` | test | covered | contract test — one logger, generated Edge copy, no raw console (LG-1…LG-4) |
 | `scripts/tests/mobile-resilience.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/mobile-tests.test.mjs` | test | covered | contract test — the mobile Jest harness is real and CI runs it |
 | `scripts/tests/mvp-gate.test.mjs` | test | covered | contract test — the MVP demo gate drives Stripe's current checkout (MG-1…MG-5) |
@@ -273,7 +276,7 @@ before the suite is green again.
 | `supabase/functions/_shared/errors.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/hmac.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/http.ts` | source | reviewed | Edge Function helper |
-| `supabase/functions/_shared/logger.ts` | source | reviewed | Edge Function helper |
+| `supabase/functions/_shared/logger.ts` | source | generated | GENERATED from packages/shared/src/logging.ts — do not edit |
 | `supabase/functions/_shared/metrics.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/probe.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/qr.ts` | source | reviewed | Edge Function helper |

@@ -12,3 +12,4 @@ export * from './constants';
 export * from './greeting';
 export * from './require';
 export * from './availability';
+export * from './logging';

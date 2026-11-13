@@ -18,6 +18,10 @@ export const CONTRACTS = [
     source: 'packages/shared/src/refund.ts',
     target: 'supabase/functions/_shared/refund.ts',
   },
+  {
+    source: 'packages/shared/src/logging.ts',
+    target: 'supabase/functions/_shared/logger.ts',
+  },
 ];
 
 /**
@@ -28,16 +32,17 @@ export const CONTRACTS = [
  * can diff the two files by eye.
  *
  * @param {string} canonicalSource contents of the canonical file
+ * @param {string} [sourcePath] repository path of the canonical file (for the header)
  * @returns {string} the file content for the deployed copy
  */
-export function generate(canonicalSource) {
+export function generate(canonicalSource, sourcePath = 'packages/shared/src/refund.ts') {
   return `// GENERATED FILE — do not edit.
-// Source: packages/shared/src/refund.ts
+// Source: ${sourcePath}
 // Regenerate: node scripts/sync-edge-schemas.mjs
 //
 // Supabase deploys only \`supabase/functions/**\`, so this copy cannot be an
 // import from \`@kickoff/shared\`. It is generated from the canonical source,
-// and \`scripts/tests/schema-usage.test.mjs\` fails if it drifts.
+// and a contract test fails if it drifts.
 
 ${canonicalSource}`;
 }
@@ -55,7 +60,7 @@ function runAsCommand() {
 
   for (const contract of CONTRACTS) {
     const source = readFileSync(resolve(root, contract.source), 'utf8');
-    const expected = generate(source);
+    const expected = generate(source, contract.source);
     const target = resolve(root, contract.target);
 
     if (check) {

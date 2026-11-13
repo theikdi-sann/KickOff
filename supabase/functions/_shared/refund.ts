@@ -4,7 +4,7 @@
 //
 // Supabase deploys only `supabase/functions/**`, so this copy cannot be an
 // import from `@kickoff/shared`. It is generated from the canonical source,
-// and `scripts/tests/schema-usage.test.mjs` fails if it drifts.
+// and a contract test fails if it drifts.
 
 import { z } from 'zod';
 
