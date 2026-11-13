@@ -242,7 +242,9 @@ These are the rules a change is expected to follow. They are enforced where a
 tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
 
 ### 6.1 Type safety
-- `strict: true` plus `noImplicitOverride`, `noFallthroughCasesInSwitch`.
+- `strict: true` plus `noImplicitOverride`, `noFallthroughCasesInSwitch`,
+  `noUncheckedIndexedAccess` (an indexed read is `T | undefined`; contracts
+  TS-4/TS-5 keep it on).
 - **No `any`** — ESLint `@typescript-eslint/no-explicit-any: error`. Use
   `unknown` and narrow, or a Zod schema.
 - **No non-null assertions** (`!`) outside generated types — narrow explicitly.

@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { requireDefined } from '@kickoff/shared';
 import { AppText, Card, Screen, ScreenHeader } from '@/components/ui';
 import { colors } from '@/lib/theme';
 
@@ -89,7 +90,10 @@ export default function LegalScreen() {
   const router = useRouter();
   const { doc } = useLocalSearchParams<{ doc: string }>();
   // An unknown document falls back to the terms — the route is user-supplied.
-  const selected = DOCS[doc ?? ''] ?? DOCS.terms;
+  // DOCS is a Record, so both reads may be undefined under
+  // noUncheckedIndexedAccess; the terms row is a build invariant, not a
+  // guess, so it is narrowed explicitly.
+  const selected = DOCS[doc ?? ''] ?? requireDefined(DOCS.terms, 'terms document');
 
   return (
     <Screen>

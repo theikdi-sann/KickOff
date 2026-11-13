@@ -19,6 +19,9 @@
 //   TS-1  no non-null assertion survives in first-party source
 //   TS-2  the narrowing helper exists and behaves
 //   TS-3  both app lint configs forbid the assertion
+//   TS-4  the base compiler options enable `noUncheckedIndexedAccess`, so an
+//         index read is `T | undefined` and cannot be swallowed by an `!`
+//   TS-5  no workspace opts back out of the flag
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -106,6 +109,38 @@ test('TS-3 both app lint configs forbid the assertion', () => {
       read(config),
       /no-non-null-assertion/,
       `${config} must forbid the non-null assertion`,
+    );
+  }
+});
+
+test('TS-4 the base compiler options enable noUncheckedIndexedAccess', () => {
+  const base = JSON.parse(read('tsconfig.base.json'));
+
+  assert.equal(
+    base.compilerOptions?.noUncheckedIndexedAccess,
+    true,
+    'tsconfig.base.json must enable noUncheckedIndexedAccess — an indexed read may be undefined',
+  );
+});
+
+test('TS-5 no workspace opts back out of the flag', () => {
+  const configs = [
+    'apps/admin/tsconfig.json',
+    'apps/mobile/tsconfig.json',
+    'packages/shared/tsconfig.json',
+  ];
+
+  for (const config of configs) {
+    const parsed = JSON.parse(read(config));
+    assert.notEqual(
+      parsed.compilerOptions?.noUncheckedIndexedAccess,
+      false,
+      `${config} must not disable noUncheckedIndexedAccess`,
+    );
+    assert.match(
+      parsed.extends ?? '',
+      /tsconfig\.base\.json/,
+      `${config} must extend the base compiler options`,
     );
   }
 });

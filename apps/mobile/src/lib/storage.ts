@@ -69,8 +69,10 @@ const nativeStorage: SupabaseStorageAdapter = {
     if (chunks.length === 0) chunks.push('');
 
     // Write data first, then publish the count so a partial write is never read.
-    for (let index = 0; index < chunks.length; index += 1) {
-      await SecureStore.setItemAsync(chunkKey(key, index), chunks[index]);
+    // Iterating entries() keeps each chunk typed as a string — an indexed read
+    // would be `string | undefined` under noUncheckedIndexedAccess.
+    for (const [index, chunk] of chunks.entries()) {
+      await SecureStore.setItemAsync(chunkKey(key, index), chunk);
     }
     await SecureStore.setItemAsync(metaKey(key), String(chunks.length));
 
