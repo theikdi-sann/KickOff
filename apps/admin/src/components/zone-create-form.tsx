@@ -33,7 +33,7 @@ export function ZoneCreateForm({ submitting = false, onSubmit }: ZoneCreateFormP
     const parsed = adminUpdateZoneSchema.safeParse({
       name: values.name,
       description: values.description,
-      priceSatang: bahtToSatang(Number(values.price)),
+      priceMinorUnits: bahtToSatang(Number(values.price)),
       color: values.color,
       rows,
       seatsPerRow: Number(values.seatsPerRow),
@@ -51,7 +51,7 @@ export function ZoneCreateForm({ submitting = false, onSubmit }: ZoneCreateFormP
       await onSubmit({
         name: parsed.data.name,
         description: parsed.data.description,
-        priceSatang: parsed.data.priceSatang,
+        priceMinorUnits: parsed.data.priceMinorUnits,
         color: parsed.data.color,
         rows: parsed.data.rows,
         seatsPerRow: parsed.data.seatsPerRow,
@@ -71,7 +71,7 @@ export function ZoneCreateForm({ submitting = false, onSubmit }: ZoneCreateFormP
             className="input"
           />
         </Field>
-        <Field label="Price (THB)" error={errors.priceSatang}>
+        <Field label="Price (THB)" error={errors.priceMinorUnits}>
           <input
             type="number"
             min="0"

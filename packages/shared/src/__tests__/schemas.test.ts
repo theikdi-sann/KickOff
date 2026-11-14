@@ -21,7 +21,7 @@ const validZone = {
   matchId: 'm-bkk',
   name: 'North Stand',
   description: 'Behind the goal',
-  priceSatang: 35000,
+  priceMinorUnits: 35000,
   color: '#22C55E',
   rows: ['A', 'B'],
   seatsPerRow: 12,
@@ -40,8 +40,8 @@ const cases: InvalidCase[] = [
   { name: 'adminCreateMatch: bad colour', schema: schemas.adminCreateMatchSchema, payload: { ...validMatch, accent: 'gold' } },
   { name: 'adminCreateMatch: bad kickoff', schema: schemas.adminCreateMatchSchema, payload: { ...validMatch, kickoffAt: '2026-11-14 18:00' } },
   { name: 'adminCreateMatch: wrong colour tuple', schema: schemas.adminCreateMatchSchema, payload: { ...validMatch, posterColors: ['#0B6B3A'] } },
-  { name: 'adminUpdateZone: negative price', schema: schemas.adminUpdateZoneSchema, payload: { ...validZone, priceSatang: -1 } },
-  { name: 'adminUpdateZone: fractional price', schema: schemas.adminUpdateZoneSchema, payload: { ...validZone, priceSatang: 350.5 } },
+  { name: 'adminUpdateZone: negative price', schema: schemas.adminUpdateZoneSchema, payload: { ...validZone, priceMinorUnits: -1 } },
+  { name: 'adminUpdateZone: fractional price', schema: schemas.adminUpdateZoneSchema, payload: { ...validZone, priceMinorUnits: 350.5 } },
   { name: 'adminUpdateZone: empty rows', schema: schemas.adminUpdateZoneSchema, payload: { ...validZone, rows: [] } },
   { name: 'adminUpdateZone: zero seats per row', schema: schemas.adminUpdateZoneSchema, payload: { ...validZone, seatsPerRow: 0 } },
   { name: 'newsInput: bad category', schema: schemas.newsInputSchema, payload: { title: 'T', excerpt: 'E', body: 'B', category: 'Gossip', publishedAt: '2026-11-04T10:00:00+07:00', readMinutes: 2, imageColors: ['#0B6B3A', '#022C22'] } },
@@ -51,8 +51,8 @@ const cases: InvalidCase[] = [
   { name: 'pagination: zero page', schema: schemas.paginationSchema, payload: { page: 0, perPage: 20 } },
   { name: 'pagination: perPage too large', schema: schemas.paginationSchema, payload: { page: 1, perPage: 1000 } },
   { name: 'matchDto: bad status', schema: schemas.matchDtoSchema, payload: { ...validMatch, status: 'postponed' } },
-  { name: 'zoneDto: negative price', schema: schemas.zoneDtoSchema, payload: { ...validZone, priceSatang: -100 } },
-  { name: 'seatDto: unknown status', schema: schemas.seatDtoSchema, payload: { id: 's-1', zoneId: 'z-1', row: 'A', number: 1, label: 'A1', status: 'reserved' } },
+  { name: 'zoneDto: negative price', schema: schemas.zoneDtoSchema, payload: { ...validZone, priceMinorUnits: -100 } },
+  { name: 'seatDto: label too long', schema: schemas.seatDtoSchema, payload: { id: 's-1', zoneId: 'z-1', row: 'A', number: 1, label: 'AAAAAAAAAAAAAAAA' } },
 ];
 
 describe('zod schemas reject invalid payloads', () => {

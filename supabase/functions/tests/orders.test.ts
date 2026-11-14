@@ -55,7 +55,7 @@ Deno.test({
       const bytes = new Uint8Array(await pdf.arrayBuffer());
       assertEquals(new TextDecoder().decode(bytes.slice(0, 5)), "%PDF-");
     } finally {
-      await cleanup(env, { ...order, seatId: SEAT });
+      await cleanup(env, { ...order });
     }
   },
 });

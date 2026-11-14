@@ -5,7 +5,7 @@ import {
   requireDefined,
   toMatchDto,
   toZoneAvailabilityDto,
-  toZoneDto,
+  zoneDtosWithPrices,
   type MatchRow,
   type ZoneAvailabilityDto,
 } from "@kickoff/shared";
@@ -28,7 +28,7 @@ export interface AdminMatchInput {
 export interface AdminZoneInput {
   name: string;
   description: string;
-  priceSatang: number;
+  priceMinorUnits: number;
   color: string;
   rows: string[];
   seatsPerRow: number;
@@ -105,12 +105,13 @@ export function useAllZones() {
   return useQuery({
     queryKey: ["admin-zones-all"],
     queryFn: async () => {
-      const { data, error } = await client()
-        .from("zones")
-        .select("*")
-        .order("price_satang", { ascending: true });
-      if (error) throw new Error(error.message);
-      return (data ?? []).map(toZoneDto);
+      const [zones, prices] = await Promise.all([
+        client().from("zones").select("*"),
+        client().from("match_zone_prices").select("zone_id, price_minor_units"),
+      ]);
+      if (zones.error) throw new Error(zones.error.message);
+      if (prices.error) throw new Error(prices.error.message);
+      return zoneDtosWithPrices(zones.data ?? [], prices.data ?? []);
     },
   });
 }
@@ -150,7 +151,7 @@ export function useZoneAvailability() {
 export interface MatchSalesSummary {
   matchId: string;
   ordersPaid: number;
-  revenueSatang: number;
+  revenueMinorUnits: number;
   ticketsSold: number;
 }
 
@@ -166,7 +167,7 @@ export function useMatchSalesSummaries() {
           {
             matchId: row.match_id,
             ordersPaid: row.orders_paid ?? 0,
-            revenueSatang: row.revenue_satang ?? 0,
+            revenueMinorUnits: row.revenue_minor_units ?? 0,
             ticketsSold: row.tickets_sold ?? 0,
           },
         ]),
@@ -180,13 +181,17 @@ export function useZones(matchId: string | undefined) {
     queryKey: ["admin-zones", matchId],
     enabled: Boolean(matchId),
     queryFn: async () => {
-      const { data, error } = await client()
-        .from("zones")
-        .select("*")
-        .eq("match_id", requireDefined(matchId, "match id"))
-        .order("price_satang", { ascending: true });
-      if (error) throw new Error(error.message);
-      return (data ?? []).map(toZoneDto);
+      const match = requireDefined(matchId, "match id");
+      const [zones, prices] = await Promise.all([
+        client().from("zones").select("*").eq("match_id", match),
+        client()
+          .from("match_zone_prices")
+          .select("zone_id, price_minor_units")
+          .eq("match_id", match),
+      ]);
+      if (zones.error) throw new Error(zones.error.message);
+      if (prices.error) throw new Error(prices.error.message);
+      return zoneDtosWithPrices(zones.data ?? [], prices.data ?? []);
     },
   });
 }
@@ -326,30 +331,42 @@ export function useUpdateZone() {
       matchId: string;
       patch: Partial<Omit<AdminZoneInput, "rows" | "seatsPerRow">>;
     }) => {
-      const patch: { name?: string; description?: string; price_satang?: number; color?: string } = {};
-      if (input.patch.name !== undefined) patch.name = input.patch.name;
-      if (input.patch.description !== undefined) patch.description = input.patch.description;
-      if (input.patch.priceSatang !== undefined) patch.price_satang = input.patch.priceSatang;
-      if (input.patch.color !== undefined) patch.color = input.patch.color;
+      const zonePatch: { name?: string; description?: string; color?: string } = {};
+      if (input.patch.name !== undefined) zonePatch.name = input.patch.name;
+      if (input.patch.description !== undefined) zonePatch.description = input.patch.description;
+      if (input.patch.color !== undefined) zonePatch.color = input.patch.color;
 
-      const { data, error } = await client()
-        .from("zones")
-        .update(patch)
-        .eq("id", input.id)
-        .select("*")
-        .single();
-      if (error) throw new Error(error.message);
+      const hasZonePatch = Object.keys(zonePatch).length > 0;
+      if (hasZonePatch) {
+        const { error } = await client()
+          .from("zones")
+          .update(zonePatch)
+          .eq("id", input.id);
+        if (error) throw new Error(error.message);
+      }
+
+      const changed = Object.keys(zonePatch);
+      // The price is a row of its own: editing it never touches the zone.
+      if (input.patch.priceMinorUnits !== undefined) {
+        const { error } = await client().from("match_zone_prices").upsert({
+          match_id: input.matchId,
+          zone_id: input.id,
+          price_minor_units: input.patch.priceMinorUnits,
+        });
+        if (error) throw new Error(error.message);
+        changed.push("price_minor_units");
+      }
 
       await recordAudit({
         action: AUDIT_ACTIONS.zoneUpdate,
         entity: "zones",
         entityId: input.id,
-        metadata: { fields: changedFields(patch), match_id: input.matchId },
+        metadata: { fields: changed.sort(), match_id: input.matchId },
       });
 
-      return toZoneDto(data);
+      return { matchId: input.matchId };
     },
-    onSuccess: (zone) => invalidateMatchData(queryClient, zone.matchId),
+    onSuccess: ({ matchId }) => invalidateMatchData(queryClient, matchId),
   });
 }
 
@@ -363,7 +380,6 @@ export function useAddZone() {
           match_id: input.matchId,
           name: input.name,
           description: input.description,
-          price_satang: input.priceSatang,
           color: input.color,
           rows: input.rows,
           seats_per_row: input.seatsPerRow,
@@ -371,6 +387,20 @@ export function useAddZone() {
         .select("*")
         .single();
       if (error) throw new Error(error.message);
+
+      // The price is a separate row keyed by (match, zone); without it the
+      // zone is unpriced and `create_order_from_hold` refuses to sell it.
+      const { error: priceError } = await client().from("match_zone_prices").insert({
+        match_id: input.matchId,
+        zone_id: zone.id,
+        price_minor_units: input.priceMinorUnits,
+      });
+      if (priceError) {
+        await rollbackZone(zone.id);
+        throw new Error(
+          `The zone could not be completed and was removed: ${priceError.message}`,
+        );
+      }
 
       const seats = input.rows.flatMap((row) =>
         Array.from({ length: input.seatsPerRow }, (_, index) => ({
@@ -402,16 +432,16 @@ export function useAddZone() {
         metadata: {
           match_id: input.matchId,
           name: input.name,
-          price_satang: input.priceSatang,
+          price_minor_units: input.priceMinorUnits,
           rows: input.rows.length,
           seats_per_row: input.seatsPerRow,
           seats_created: seats.length,
         },
       });
 
-      return toZoneDto(zone);
+      return { matchId: input.matchId };
     },
-    onSuccess: (zone) => invalidateMatchData(queryClient, zone.matchId),
+    onSuccess: ({ matchId }) => invalidateMatchData(queryClient, matchId),
   });
 }
 

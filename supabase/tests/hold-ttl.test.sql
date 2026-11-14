@@ -18,10 +18,15 @@ insert into public.matches (id, opponent, opponent_short, kickoff_at) values
   ('lock-match', 'Late FC', 'LTE', now() + interval '10 minutes')
 on conflict (id) do nothing;
 
-insert into public.zones (id, match_id, name, price_satang, rows, seats_per_row) values
-  ('ttl-zone', 'ttl-match', 'TTL Stand', 35000, array['A']::text[], 1),
-  ('lock-zone', 'lock-match', 'Late Stand', 35000, array['A']::text[], 1)
+insert into public.zones (id, match_id, name, rows, seats_per_row) values
+  ('ttl-zone', 'ttl-match', 'TTL Stand', array['A']::text[], 1),
+  ('lock-zone', 'lock-match', 'Late Stand', array['A']::text[], 1)
 on conflict (id) do nothing;
+
+insert into public.match_zone_prices (match_id, zone_id, price_minor_units) values
+  ('ttl-match', 'ttl-zone', 35000),
+  ('lock-match', 'lock-zone', 35000)
+on conflict (match_id, zone_id) do nothing;
 
 insert into public.seats (id, zone_id, row_label, number) values
   ('ttl-seat', 'ttl-zone', 'A', 1),
@@ -29,11 +34,12 @@ insert into public.seats (id, zone_id, row_label, number) values
 on conflict (id) do nothing;
 
 -- An already-expired hold still occupies the unique index.
-insert into public.seat_holds (id, hold_group_id, seat_id, user_id, expires_at)
+insert into public.seat_holds (id, hold_group_id, seat_id, match_id, user_id, expires_at)
 values (
   'ttl-expired',
   'ttl-expired-group',
   'ttl-seat',
+  'ttl-match',
   '00000000-0000-0000-0000-0000000000d2',
   now() - interval '1 minute'
 );

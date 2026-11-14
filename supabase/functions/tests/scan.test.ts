@@ -158,7 +158,7 @@ Deno.test({
       assertEquals(secondUndo.status, 409);
     } finally {
       await setKickoff(env, kickoff);
-      await cleanup(env, { orderId: ticket.orderId, eventId: ticket.eventId, seatId: seat });
+      await cleanup(env, { orderId: ticket.orderId, eventId: ticket.eventId });
     }
   },
 });
@@ -193,7 +193,7 @@ Deno.test({
       assertEquals(voided.status, 200);
       assertEquals(voided.body.data?.code, "invalid");
     } finally {
-      await cleanup(env, { orderId: ticket.orderId, eventId: ticket.eventId, seatId: seat });
+      await cleanup(env, { orderId: ticket.orderId, eventId: ticket.eventId });
     }
   },
 });
@@ -218,7 +218,7 @@ Deno.test({
       assertEquals(result.status, 200);
       assertEquals(result.body.data?.code, "wrong_match");
     } finally {
-      await cleanup(env, { orderId: ticket.orderId, eventId: ticket.eventId, seatId: seat });
+      await cleanup(env, { orderId: ticket.orderId, eventId: ticket.eventId });
     }
   },
 });
@@ -263,7 +263,7 @@ Deno.test({
         body: { kickoff_at: match.kickoff_at },
         prefer: "return=minimal",
       });
-      await cleanup(env, { orderId: ticket.orderId, eventId: ticket.eventId, seatId: seat });
+      await cleanup(env, { orderId: ticket.orderId, eventId: ticket.eventId });
     }
   },
 });
@@ -296,7 +296,7 @@ Deno.test({
       assertEquals(codes.filter((code) => code === "used").length, 9);
     } finally {
       await setKickoff(env, kickoff);
-      await cleanup(env, { orderId: ticket.orderId, eventId: ticket.eventId, seatId: seat });
+      await cleanup(env, { orderId: ticket.orderId, eventId: ticket.eventId });
     }
   },
 });

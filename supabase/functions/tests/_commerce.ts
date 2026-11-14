@@ -150,16 +150,12 @@ export async function sendCheckoutCompleted(
 
 export async function cleanup(
   env: Env,
-  input: { orderId: string; eventId: string; seatId: string },
+  input: { orderId: string; eventId: string },
 ): Promise<void> {
   await rest(env, `orders?id=eq.${input.orderId}`, { token: env.service, method: "DELETE" });
   await rest(env, `stripe_events?id=eq.${input.eventId}`, { token: env.service, method: "DELETE" });
-  await rest(env, `seats?id=eq.${input.seatId}`, {
-    token: env.service,
-    method: "PATCH",
-    body: { status: "available" },
-    prefer: "return=minimal",
-  });
+  // Deleting the order releases its seats — occupancy is the order line, so
+  // there is no seat flag to reset any more (`0043`).
 }
 
 export interface IssuedTicket {

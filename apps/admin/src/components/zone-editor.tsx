@@ -9,7 +9,7 @@ interface ZoneEditorProps {
   onSubmit: (patch: {
     name: string;
     description: string;
-    priceSatang: number;
+    priceMinorUnits: number;
     color: string;
   }) => Promise<void> | void;
 }
@@ -18,7 +18,7 @@ export function ZoneEditor({ zone, submitting = false, onSubmit }: ZoneEditorPro
   const [values, setValues] = useState({
     name: zone.name,
     description: zone.description,
-    price: String(zone.priceSatang / 100),
+    price: String(zone.priceMinorUnits / 100),
     color: zone.color,
   });
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +28,11 @@ export function ZoneEditor({ zone, submitting = false, onSubmit }: ZoneEditorPro
     event.preventDefault();
     setError(null);
 
-    const priceSatang = bahtToSatang(Number(values.price));
+    const priceMinorUnits = bahtToSatang(Number(values.price));
     const parsed = adminUpdateZoneSchema.safeParse({
       name: values.name,
       description: values.description,
-      priceSatang,
+      priceMinorUnits,
       color: values.color,
       rows: zone.rows,
       seatsPerRow: zone.seatsPerRow,
@@ -50,7 +50,7 @@ export function ZoneEditor({ zone, submitting = false, onSubmit }: ZoneEditorPro
       await onSubmit({
         name: parsed.data.name,
         description: parsed.data.description,
-        priceSatang: parsed.data.priceSatang,
+        priceMinorUnits: parsed.data.priceMinorUnits,
         color: parsed.data.color,
       });
     } catch (caught) {
@@ -68,7 +68,7 @@ export function ZoneEditor({ zone, submitting = false, onSubmit }: ZoneEditorPro
             className="input"
           />
         </Field>
-        <Field label="Price (THB)" error={fieldErrors.priceSatang}>
+        <Field label="Price (THB)" error={fieldErrors.priceMinorUnits}>
           <input
             type="number"
             min="0"

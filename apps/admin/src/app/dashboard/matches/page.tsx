@@ -202,7 +202,7 @@ export default function MatchesPage() {
             const capacity = availability[match.id]?.capacity ?? 0;
             const sold = Math.min(capacity, sales?.[match.id]?.ticketsSold ?? 0);
             const minPrice = matchZones.length
-              ? Math.min(...matchZones.map((zone) => zone.priceSatang))
+              ? Math.min(...matchZones.map((zone) => zone.priceMinorUnits))
               : 0;
             const completed = match.status === "completed";
             return (

@@ -11,9 +11,13 @@ insert into public.matches (id, opponent, opponent_short, kickoff_at)
 values ('race-match', 'Race FC', 'RAC', now() + interval '7 days')
 on conflict (id) do nothing;
 
-insert into public.zones (id, match_id, name, price_satang, rows, seats_per_row)
-values ('race-zone', 'race-match', 'Race Stand', 35000, array['A']::text[], 1)
+insert into public.zones (id, match_id, name, rows, seats_per_row)
+values ('race-zone', 'race-match', 'Race Stand', array['A']::text[], 1)
 on conflict (id) do nothing;
+
+insert into public.match_zone_prices (match_id, zone_id, price_minor_units)
+values ('race-match', 'race-zone', 35000)
+on conflict (match_id, zone_id) do nothing;
 
 insert into public.seats (id, zone_id, row_label, number)
 values ('race-seat', 'race-zone', 'A', 1)

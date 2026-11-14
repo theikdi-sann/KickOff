@@ -15,7 +15,8 @@ interface OrderRow {
   id: string;
   user_id: string;
   match_id: string;
-  amount_satang: number;
+  amount_minor_units: number;
+  currency: string;
   status: string;
 }
 
@@ -23,7 +24,7 @@ interface OrderSeatRow {
   zone_name: string;
   row_label: string;
   number: number;
-  price_satang: number;
+  price_minor_units: number;
 }
 
 async function handler(request: Request): Promise<Response> {
@@ -43,14 +44,14 @@ async function handler(request: Request): Promise<Response> {
   const created = orderData as unknown as { id: string };
   const { data: order, error: fetchError } = await db
     .from("orders")
-    .select("id,user_id,match_id,amount_satang,status")
+    .select("id,user_id,match_id,amount_minor_units,currency,status")
     .eq("id", created.id)
     .single<OrderRow>();
   if (fetchError || !order) throw fetchError ?? new AppError("not_found", "Order not found");
 
   const { data: seats, error: seatError } = await db
     .from("order_seats")
-    .select("zone_name,row_label,number,price_satang")
+    .select("zone_name,row_label,number,price_minor_units")
     .eq("order_id", order.id);
   if (seatError) throw seatError;
 
@@ -62,10 +63,12 @@ async function handler(request: Request): Promise<Response> {
   if (matchError || !match) throw matchError ?? new AppError("not_found", "Match not found");
 
   const seatRows = (seats ?? []) as OrderSeatRow[];
-  const total = seatRows.reduce((sum, seat) => sum + seat.price_satang, 0);
-  if (total !== order.amount_satang) {
+  const total = seatRows.reduce((sum, seat) => sum + seat.price_minor_units, 0);
+  if (total !== order.amount_minor_units) {
     throw new AppError("conflict", "Order total does not match its seat snapshot");
   }
+  // The order snapshotted its currency at sale time; Stripe takes it lowercase.
+  const currency = order.currency.toLowerCase();
 
   try {
     const sessionExpiresAt = Math.floor(Date.now() / 1000) + 30 * 60;
@@ -75,12 +78,12 @@ async function handler(request: Request): Promise<Response> {
       // on in the dashboard (PromptPay appeared during the Phase 10 demo).
       allowed_payment_method_types: ["card"],
       customer_email: context.user.email ?? undefined,
-      currency: "thb",
+      currency,
       line_items: seatRows.map((seat) => ({
         quantity: 1,
         price_data: {
-          currency: "thb",
-          unit_amount: seat.price_satang,
+          currency,
+          unit_amount: seat.price_minor_units,
           product_data: {
             name: `${seat.zone_name} · ${seat.row_label}${seat.number}`,
             description: `KickOff vs ${match.opponent} · ${new Date(match.kickoff_at).toISOString()}`,

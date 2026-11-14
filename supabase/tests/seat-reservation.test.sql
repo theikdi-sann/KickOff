@@ -1,8 +1,32 @@
--- Phase A — seat reservation lifecycle: a pending order reserves its seats
--- ('held') so a second buyer cannot double-sell while the first is on Stripe;
--- cancel/expiry frees them; mark_order_paid refuses conflicting seats.
+-- Phase A — seat reservation lifecycle: a pending order reserves its seats so
+-- a second buyer cannot double-sell while the first is on Stripe; cancel and
+-- expiry free them; mark_order_paid refuses conflicting seats. With no seat
+-- status column the reservation is the order line itself.
 begin;
 select plan(16);
+
+-- "Taken" is derived, never stored: an active hold or a live order line claims
+-- the seat. This is exactly the rule `create_hold` applies.
+create function pg_temp.seat_taken(p_seat_id text)
+returns boolean
+language sql
+stable
+as $$
+  select
+    exists (
+      select 1 from public.seat_holds h
+      where h.seat_id = p_seat_id
+        and h.released_at is null
+        and h.expires_at > now()
+    )
+    or exists (
+      select 1
+      from public.order_seats os
+      join public.orders o on o.id = os.order_id
+      where os.seat_id = p_seat_id
+        and o.status in ('pending', 'paid')
+    );
+$$;
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000a1', 'buyer-a@kickoff.test'),
@@ -13,9 +37,13 @@ insert into public.matches (id, opponent, opponent_short, kickoff_at)
 values ('rsv-match', 'Reservation FC', 'RSV', now() + interval '7 days')
 on conflict do nothing;
 
-insert into public.zones (id, match_id, name, price_satang, rows, seats_per_row)
-values ('rsv-zone', 'rsv-match', 'R Stand', 35000, array['A']::text[], 2)
+insert into public.zones (id, match_id, name, rows, seats_per_row)
+values ('rsv-zone', 'rsv-match', 'R Stand', array['A']::text[], 2)
 on conflict do nothing;
+
+insert into public.match_zone_prices (match_id, zone_id, price_minor_units)
+values ('rsv-match', 'rsv-zone', 35000)
+on conflict (match_id, zone_id) do nothing;
 
 insert into public.seats (id, zone_id, row_label, number) values
   ('rsv-s1', 'rsv-zone', 'A', 1),
@@ -36,9 +64,9 @@ select public.create_order_from_hold(:'h1'::jsonb ->> 'id') as o1 \gset
 select isnt(:'o1'::jsonb ->> 'id', null::text, 'buyer A creates an order from the hold');
 
 select is(
-  (select status::text from public.seats where id = 'rsv-s1'),
-  'held',
-  'a pending order reserves the seat (held), not leaving it available'
+  pg_temp.seat_taken('rsv-s1'),
+  true,
+  'a pending order reserves its seat, with no flag to flip'
 );
 
 select isnt(
@@ -74,8 +102,8 @@ select public.cancel_order(:'o1'::jsonb ->> 'id', '00000000-0000-0000-0000-00000
 select is(:'c1'::jsonb ->> 'status', 'cancelled', 'the owner cancels the pending order');
 
 select is(
-  (select status::text from public.seats where id = 'rsv-s1'),
-  'available',
+  pg_temp.seat_taken('rsv-s1'),
+  false,
   'cancelling the order releases its seat back to sale'
 );
 
@@ -131,8 +159,8 @@ select is(
 );
 
 select is(
-  (select status::text from public.seats where id = 'rsv-s2'),
-  'available',
+  pg_temp.seat_taken('rsv-s2'),
+  false,
   'expiry releases the reserved seat back to sale'
 );
 
@@ -144,9 +172,9 @@ select isnt(:'o3'::jsonb ->> 'id', null::text, 'the freed seat can be checked ou
 select public.mark_order_paid(:'o3'::jsonb ->> 'id', 'sess-rsv-1', 'pi-rsv-1') as paid \gset
 
 select is(
-  (select status::text from public.seats where id = 'rsv-s2'),
-  'sold',
-  'mark_order_paid flips the reserved seat to sold'
+  pg_temp.seat_taken('rsv-s2'),
+  true,
+  'mark_order_paid keeps the seat taken'
 );
 
 select is(
@@ -158,7 +186,14 @@ select is(
 -- A seat that is no longer held (double-sell window) must fail the payment.
 select public.create_hold('rsv-match', array['rsv-s1']) as h5 \gset
 select public.create_order_from_hold(:'h5'::jsonb ->> 'id') as o4 \gset
-update public.seats set status = 'available' where id = 'rsv-s1';
+-- A seat another live order has claimed (the double-sell window) must fail the
+-- payment. The intruder is written directly, bypassing create_hold, exactly as
+-- a lost reservation would look from here.
+insert into public.orders (id, user_id, match_id, amount_minor_units, status)
+values ('rsv-intruder', '00000000-0000-0000-0000-0000000000a2', 'rsv-match', 35000, 'pending');
+
+insert into public.order_seats (id, order_id, seat_id, match_id, zone_name, row_label, number, price_minor_units)
+values ('rsv-intruder-os', 'rsv-intruder', 'rsv-s1', 'rsv-match', 'R Stand', 'A', 1, 35000);
 
 select format(
   'select public.mark_order_paid(%L, %L, %L)',

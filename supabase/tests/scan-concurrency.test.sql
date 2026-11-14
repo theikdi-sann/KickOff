@@ -15,9 +15,13 @@ insert into public.matches (id, opponent, opponent_short, kickoff_at, status)
 values ('scan-race-match', 'Race FC', 'RAC', now() + interval '1 hour', 'upcoming')
 on conflict (id) do nothing;
 
-insert into public.zones (id, match_id, name, price_satang, rows, seats_per_row)
-values ('scan-race-zone', 'scan-race-match', 'Race Stand', 35000, array['A']::text[], 1)
+insert into public.zones (id, match_id, name, rows, seats_per_row)
+values ('scan-race-zone', 'scan-race-match', 'Race Stand', array['A']::text[], 1)
 on conflict (id) do nothing;
+
+insert into public.match_zone_prices (match_id, zone_id, price_minor_units)
+values ('scan-race-match', 'scan-race-zone', 35000)
+on conflict (match_id, zone_id) do nothing;
 
 insert into public.seats (id, zone_id, row_label, number)
 values ('scan-race-seat', 'scan-race-zone', 'A', 1)
@@ -27,7 +31,7 @@ insert into public.gates (id, name, match_id, active)
 values ('scan-race-gate', 'Race Gate', 'scan-race-match', true)
 on conflict (id) do nothing;
 
-insert into public.orders (id, user_id, match_id, amount_satang, status)
+insert into public.orders (id, user_id, match_id, amount_minor_units, status)
 values (
   'scan-race-order',
   '00000000-0000-0000-0000-0000000000d2',
@@ -38,9 +42,9 @@ values (
 on conflict (id) do nothing;
 
 insert into public.order_seats
-  (id, order_id, seat_id, zone_name, row_label, number, price_satang)
+  (id, order_id, seat_id, match_id, zone_name, row_label, number, price_minor_units)
 values
-  ('scan-race-seat-row', 'scan-race-order', 'scan-race-seat', 'Race Stand', 'A', 1, 35000)
+  ('scan-race-seat-row', 'scan-race-order', 'scan-race-seat', 'scan-race-match', 'Race Stand', 'A', 1, 35000)
 on conflict (id) do nothing;
 
 insert into public.tickets

@@ -77,7 +77,7 @@ export default function MatchDetailScreen() {
   }
 
   const completed = match.status === 'completed';
-  const minPrice = zones.length ? Math.min(...zones.map((zone) => zone.priceSatang)) : undefined;
+  const minPrice = zones.length ? Math.min(...zones.map((zone) => zone.priceMinorUnits)) : undefined;
 
   return (
     <Screen style={{ backgroundColor: colors.bg }}>
@@ -381,7 +381,7 @@ function ZoneRow({
         </View>
       </View>
       <View style={styles.zoneRight}>
-        <AppText variant="h3">{formatTHB(zone.priceSatang)}</AppText>
+        <AppText variant="h3">{formatTHB(zone.priceMinorUnits)}</AppText>
         <AppText variant="caption" color={colors.primary} style={styles.selectText}>
           SELECT
         </AppText>

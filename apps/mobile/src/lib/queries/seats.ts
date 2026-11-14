@@ -3,7 +3,7 @@ import {
   requireDefined,
   toSeatDto,
   toZoneAvailabilityDto,
-  toZoneDto,
+  zoneDtosWithPrices,
   type SeatDto,
   type ZoneAvailabilityDto,
 } from '@kickoff/shared';
@@ -14,13 +14,50 @@ export function useZones(matchId: string | undefined) {
     queryKey: ['zones', matchId],
     enabled: Boolean(matchId),
     queryFn: async () => {
+      const match = requireDefined(matchId, 'match id');
+      // Price lives on `match_zone_prices`, so the zone row alone cannot
+      // answer "what does this cost" — both tables come back together.
+      const [zones, prices] = await Promise.all([
+        supabase.from('zones').select('*').eq('match_id', match),
+        supabase
+          .from('match_zone_prices')
+          .select('zone_id, price_minor_units')
+          .eq('match_id', match),
+      ]);
+      if (zones.error) throw new Error(zones.error.message);
+      if (prices.error) throw new Error(prices.error.message);
+      return zoneDtosWithPrices(zones.data ?? [], prices.data ?? []);
+    },
+  });
+}
+
+/**
+ * The seats of a match that are already taken, by id.
+ *
+ * A seat has no status column (`0043`): occupancy is derived from active holds
+ * and live orders, and this view is the public projection of that derivation —
+ * it says which seats, never who holds them. Own rows come from
+ * `useMyActiveHolds` / `usePendingOrderSeats`, which do carry identity.
+ *
+ * The key is namespaced under `'seats'` so the existing
+ * `invalidateQueries({ queryKey: ['seats'] })` calls refresh the derived set
+ * along with the raw rows.
+ */
+export function useTakenSeats(
+  matchId: string | undefined,
+  options: { refetchInterval?: number } = {},
+) {
+  return useQuery({
+    queryKey: ['seats', 'taken', matchId],
+    enabled: Boolean(matchId),
+    refetchInterval: options.refetchInterval ?? false,
+    queryFn: async () => {
       const { data, error } = await supabase
-        .from('zones')
-        .select('*')
-        .eq('match_id', requireDefined(matchId, 'match id'))
-        .order('price_satang', { ascending: true });
+        .from('seat_availability')
+        .select('seat_id')
+        .eq('match_id', requireDefined(matchId, 'match id'));
       if (error) throw new Error(error.message);
-      return (data ?? []).map(toZoneDto);
+      return new Set((data ?? []).map((row) => row.seat_id));
     },
   });
 }

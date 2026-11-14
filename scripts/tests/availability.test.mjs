@@ -39,7 +39,7 @@ test('AV-1 the shared package owns the availability mapping', () => {
     'toZoneAvailabilityDto',
     'summariseAvailability',
     'sellThroughPercent',
-    'potentialRevenueSatang',
+    'potentialRevenueMinorUnits',
   ]) {
     assert.match(
       shared,

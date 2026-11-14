@@ -15,13 +15,13 @@ interface ReceiptSeat {
   zoneName: string;
   row: string;
   number: number;
-  priceSatang: number;
+  priceMinorUnits: number;
 }
 
 interface ReceiptRow {
   order_id: string;
   user_id: string;
-  amount_satang: number;
+  amount_minor_units: number;
   status: string;
   created_at: string;
   paid_at: string | null;
@@ -116,12 +116,12 @@ async function handler(request: Request): Promise<Response> {
       font,
       color: ink,
     });
-    page.drawText(thb(seat.priceSatang), { x: 430, y, size: 10, font, color: ink });
+    page.drawText(thb(seat.priceMinorUnits), { x: 430, y, size: 10, font, color: ink });
     y -= 18;
   }
 
-  const vat = Math.round((receipt.amount_satang * 7) / 107);
-  const net = receipt.amount_satang - vat;
+  const vat = Math.round((receipt.amount_minor_units * 7) / 107);
+  const net = receipt.amount_minor_units - vat;
 
   y -= 10;
   page.drawLine({ start: { x: 48, y }, end: { x: 547, y }, thickness: 1, color: rgb(0.88, 0.9, 0.92) });
@@ -133,7 +133,7 @@ async function handler(request: Request): Promise<Response> {
   page.drawText(thb(vat), { x: 450, y, size: 10, font, color: ink });
   y -= 22;
   page.drawText("Total", { x: 360, y, size: 12, font: bold, color: ink });
-  page.drawText(thb(receipt.amount_satang), { x: 450, y, size: 12, font: bold, color: green });
+  page.drawText(thb(receipt.amount_minor_units), { x: 450, y, size: 12, font: bold, color: green });
 
   y -= 54;
   page.drawText(

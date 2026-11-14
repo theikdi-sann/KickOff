@@ -125,7 +125,7 @@ export default function OrdersScreen() {
           <View style={styles.flex}>
             <AppText variant="label">Lifetime ticket spend</AppText>
             <AppText variant="h2" style={styles.summaryTotal}>
-              {formatTHB(paidOrders.reduce((sum, order) => sum + order.amountSatang, 0))}
+              {formatTHB(paidOrders.reduce((sum, order) => sum + order.amountMinorUnits, 0))}
             </AppText>
           </View>
           <Pill label="THB" tone="gold" />
@@ -186,7 +186,7 @@ export default function OrdersScreen() {
                       ROW {seat.row} · SEAT {seat.number}
                     </AppText>
                   </View>
-                  <AppText variant="label">{formatTHB(seat.priceSatang)}</AppText>
+                  <AppText variant="label">{formatTHB(seat.priceMinorUnits)}</AppText>
                 </View>
               ))}
 
@@ -195,7 +195,7 @@ export default function OrdersScreen() {
                   {order.status === 'paid' ? 'Total paid' : 'Total'} ·{' '}
                   {order.paymentRef ?? order.id.slice(-6).toUpperCase()}
                 </AppText>
-                <AppText variant="h3">{formatTHB(order.amountSatang)}</AppText>
+                <AppText variant="h3">{formatTHB(order.amountMinorUnits)}</AppText>
               </View>
 
               <View style={styles.actions}>

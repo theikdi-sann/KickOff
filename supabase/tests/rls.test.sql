@@ -13,21 +13,24 @@ update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-00
 insert into public.matches (id, opponent, opponent_short, kickoff_at)
 values ('rls-match', 'RLS FC', 'RLS', now() + interval '10 days');
 
-insert into public.zones (id, match_id, name, price_satang, rows, seats_per_row)
-values ('rls-zone', 'rls-match', 'RLS Stand', 35000, array['A']::text[], 2);
+insert into public.zones (id, match_id, name, rows, seats_per_row)
+values ('rls-zone', 'rls-match', 'RLS Stand', array['A']::text[], 2);
+
+insert into public.match_zone_prices (match_id, zone_id, price_minor_units)
+values ('rls-match', 'rls-zone', 35000);
 
 insert into public.seats (id, zone_id, row_label, number) values
   ('rls-seat-carol', 'rls-zone', 'A', 1),
   ('rls-seat-dave', 'rls-zone', 'A', 2);
 
 -- Carol's order + ticket, Dave's order + ticket.
-insert into public.orders (id, user_id, match_id, amount_satang, status) values
+insert into public.orders (id, user_id, match_id, amount_minor_units, status) values
   ('rls-order-carol', '00000000-0000-0000-0000-0000000000a1', 'rls-match', 35000, 'paid'),
   ('rls-order-dave', '00000000-0000-0000-0000-0000000000a2', 'rls-match', 35000, 'paid');
 
-insert into public.order_seats (id, order_id, seat_id, zone_name, row_label, number, price_satang) values
-  ('rls-os-carol', 'rls-order-carol', 'rls-seat-carol', 'RLS Stand', 'A', 1, 35000),
-  ('rls-os-dave', 'rls-order-dave', 'rls-seat-dave', 'RLS Stand', 'A', 2, 35000);
+insert into public.order_seats (id, order_id, seat_id, match_id, zone_name, row_label, number, price_minor_units) values
+  ('rls-os-carol', 'rls-order-carol', 'rls-seat-carol', 'rls-match', 'RLS Stand', 'A', 1, 35000),
+  ('rls-os-dave', 'rls-order-dave', 'rls-seat-dave', 'rls-match', 'RLS Stand', 'A', 2, 35000);
 
 insert into public.tickets (id, order_id, order_seat_id, user_id, match_id, seat_id, status) values
   ('rls-ticket-carol', 'rls-order-carol', 'rls-os-carol',

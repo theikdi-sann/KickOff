@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  potentialRevenueSatang,
+  potentialRevenueMinorUnits,
   sellThroughPercent,
   summariseAvailability,
   toZoneAvailabilityDto,
@@ -130,12 +130,12 @@ describe('sellThroughPercent', () => {
   });
 });
 
-describe('potentialRevenueSatang', () => {
+describe('potentialRevenueMinorUnits', () => {
   it('prices every seat the club actually has, at the zone price', () => {
-    const revenue = potentialRevenueSatang(
+    const revenue = potentialRevenueMinorUnits(
       [
-        { id: 'zone-north', priceSatang: 25000 },
-        { id: 'zone-vip', priceSatang: 50000 },
+        { id: 'zone-north', priceMinorUnits: 25000 },
+        { id: 'zone-vip', priceMinorUnits: 50000 },
       ],
       mapZones([northStand, vipStand]),
     );
@@ -144,8 +144,8 @@ describe('potentialRevenueSatang', () => {
   });
 
   it('ignores a zone with no seat count', () => {
-    const revenue = potentialRevenueSatang(
-      [{ id: 'zone-vip', priceSatang: 50000 }],
+    const revenue = potentialRevenueMinorUnits(
+      [{ id: 'zone-vip', priceMinorUnits: 50000 }],
       [{ zone_id: 'zone-vip', totalSeats: 0, availableSeats: 0, matchId: 'm-bkk' }],
     );
 

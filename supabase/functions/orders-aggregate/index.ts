@@ -12,7 +12,7 @@ const querySchema = z.object({
 
 interface OrderLite {
   id: string;
-  amount_satang: number;
+  amount_minor_units: number;
   status: string;
 }
 
@@ -41,7 +41,7 @@ async function handler(request: Request): Promise<Response> {
 
   const { data: orders, error: orderError } = await db
     .from("orders")
-    .select("id,amount_satang,status")
+    .select("id,amount_minor_units,status")
     .gte("created_at", range.from)
     .lte("created_at", range.to)
     .in("status", ["paid", "refunded"]);
@@ -49,7 +49,7 @@ async function handler(request: Request): Promise<Response> {
 
   const paid = ((orders ?? []) as OrderLite[]).filter((order) => order.status === "paid");
   const paidIds = paid.map((order) => order.id);
-  const revenueSatang = paid.reduce((sum, order) => sum + order.amount_satang, 0);
+  const revenueMinorUnits = paid.reduce((sum, order) => sum + order.amount_minor_units, 0);
 
   let ticketsSold = 0;
   if (paidIds.length > 0) {
@@ -77,7 +77,7 @@ async function handler(request: Request): Promise<Response> {
   return ok(
     {
       range,
-      revenueSatang,
+      revenueMinorUnits,
       ordersPaid: paid.length,
       ordersRefunded: ((orders ?? []) as OrderLite[]).filter((o) => o.status === "refunded").length,
       ticketsSold,

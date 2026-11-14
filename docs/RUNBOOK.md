@@ -56,7 +56,7 @@ npx supabase db push                     # apply supabase/migrations to hosted p
 Rules:
 
 - Migrations run in filename order and are append-only; never edit an applied
-  migration — add the next one (`0043…` is the next free number).
+  migration — add the next one (`0044…` is the next free number).
 - Apply migrations **before** deploying functions that depend on them.
 - After any schema change regenerate the shared types:
   `npm run db:types` (local) and commit the updated

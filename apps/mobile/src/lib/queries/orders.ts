@@ -3,7 +3,7 @@ import { requireDefined, toOrderDto, type OrderDto, type OrderJoinRow } from '@k
 import { invokeFunction } from '@/lib/functions';
 import { supabase } from '@/lib/supabase';
 
-const SELECT = '*, order_seats(seat_id,ticket_id,zone_name,row_label,number,price_satang), matches(opponent)';
+const SELECT = '*, order_seats(seat_id,ticket_id,zone_name,row_label,number,price_minor_units), matches(opponent)';
 
 export function useOrders(
   options: {
@@ -63,9 +63,9 @@ export function useCreateOrder() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['orders'] });
       void queryClient.invalidateQueries({ queryKey: ['tickets'] });
-      // create_order_from_hold flips the seats to 'held' and releases the raw
-      // hold rows — the seat map (staleTime 60s) must not keep showing
-      // "available" for seats this fan just reserved.
+      // The pending order's lines now claim the seats, so the raw seat rows,
+      // the derived "taken" set (keyed under 'seats') and the availability
+      // counts must all refresh.
       void queryClient.invalidateQueries({ queryKey: ['seats'] });
       void queryClient.invalidateQueries({ queryKey: ['my-holds'] });
       void queryClient.invalidateQueries({ queryKey: ['zone-availability'] });

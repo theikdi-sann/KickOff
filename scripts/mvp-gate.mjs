@@ -139,7 +139,12 @@ try {
   await rest('zones', {
     token: adminToken,
     method: 'POST',
-    body: { id: `${fixtureId}-zone`, match_id: fixtureId, name: 'Gate Stand', price_satang: 35000, rows: ['A'], seats_per_row: 2 },
+    body: { id: `${fixtureId}-zone`, match_id: fixtureId, name: 'Gate Stand', rows: ['A'], seats_per_row: 2 },
+  });
+  await rest('match_zone_prices', {
+    token: adminToken,
+    method: 'POST',
+    body: { match_id: fixtureId, zone_id: `${fixtureId}-zone`, price_minor_units: 35000 },
   });
   await rest('seats', {
     token: adminToken,

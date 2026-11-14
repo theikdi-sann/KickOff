@@ -6,6 +6,29 @@
 begin;
 select plan(30);
 
+-- With no seat status column, "taken" is derived rather than stored: an active
+-- hold or a live order line claims the seat. Same rule `create_hold` applies.
+create function pg_temp.seat_taken(p_seat_id text)
+returns boolean
+language sql
+stable
+as $$
+  select
+    exists (
+      select 1 from public.seat_holds h
+      where h.seat_id = p_seat_id
+        and h.released_at is null
+        and h.expires_at > now()
+    )
+    or exists (
+      select 1
+      from public.order_seats os
+      join public.orders o on o.id = os.order_id
+      where os.seat_id = p_seat_id
+        and o.status in ('pending', 'paid')
+    );
+$$;
+
 -- ── fixtures ────────────────────────────────────────────────────────────────
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000a1', 'atomic.admin@kickoff.test'),
@@ -16,28 +39,29 @@ update public.profiles set role = 'admin'
 insert into public.matches (id, opponent, opponent_short, kickoff_at)
 values ('atm-match', 'Original FC', 'ORI', '2026-11-20T18:00:00+07:00');
 
-insert into public.zones (id, match_id, name, price_satang, rows, seats_per_row)
-values ('atm-zone', 'atm-match', 'Atomic Stand', 35000, array['A']::text[], 2);
+insert into public.zones (id, match_id, name, rows, seats_per_row)
+values ('atm-zone', 'atm-match', 'Atomic Stand', array['A']::text[], 2);
+
+insert into public.match_zone_prices (match_id, zone_id, price_minor_units)
+values ('atm-match', 'atm-zone', 35000);
 
 insert into public.seats (id, zone_id, row_label, number) values
   ('atm-seat-1', 'atm-zone', 'A', 1),
   ('atm-seat-2', 'atm-zone', 'A', 2);
 
-insert into public.orders (id, user_id, match_id, amount_satang, status, payment_intent_id) values
+insert into public.orders (id, user_id, match_id, amount_minor_units, status, payment_intent_id) values
   ('atm-order',   '00000000-0000-0000-0000-0000000000a2', 'atm-match', 35000, 'paid', 'pi_atm_one'),
   ('atm-order-2', '00000000-0000-0000-0000-0000000000a2', 'atm-match', 35000, 'paid', 'pi_atm_two');
 
-insert into public.order_seats (id, order_id, seat_id, zone_name, row_label, number, price_satang) values
-  ('atm-os-1', 'atm-order',   'atm-seat-1', 'Atomic Stand', 'A', 1, 35000),
-  ('atm-os-2', 'atm-order-2', 'atm-seat-2', 'Atomic Stand', 'A', 2, 35000);
+insert into public.order_seats (id, order_id, seat_id, match_id, zone_name, row_label, number, price_minor_units) values
+  ('atm-os-1', 'atm-order',   'atm-seat-1', 'atm-match', 'Atomic Stand', 'A', 1, 35000),
+  ('atm-os-2', 'atm-order-2', 'atm-seat-2', 'atm-match', 'Atomic Stand', 'A', 2, 35000);
 
 insert into public.tickets (id, order_id, order_seat_id, user_id, match_id, seat_id, status) values
   ('atm-ticket-1', 'atm-order',   'atm-os-1',
    '00000000-0000-0000-0000-0000000000a2', 'atm-match', 'atm-seat-1', 'valid'),
   ('atm-ticket-2', 'atm-order-2', 'atm-os-2',
    '00000000-0000-0000-0000-0000000000a2', 'atm-match', 'atm-seat-2', 'used');
-
-update public.seats set status = 'sold' where id in ('atm-seat-1', 'atm-seat-2');
 
 -- ── reschedule: one call, one transaction ───────────────────────────────────
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000a1', true);
@@ -173,9 +197,9 @@ select is(
   'F07-14 the ticket is still valid'
 );
 select is(
-  (select status::text from public.seats where id = 'atm-seat-1'),
-  'sold',
-  'F07-15 the seat is still sold'
+  pg_temp.seat_taken('atm-seat-1'),
+  true,
+  'F07-15 the seat is still taken'
 );
 select is(
   (select count(*) from public.audit_logs
@@ -218,8 +242,8 @@ select is(
   'F07-21 the ticket is voided'
 );
 select is(
-  (select status::text from public.seats where id = 'atm-seat-1'),
-  'available',
+  pg_temp.seat_taken('atm-seat-1'),
+  false,
   'F07-22 the seat returns to sale'
 );
 select is(
@@ -269,9 +293,9 @@ select is(
   'F07-28 its ticket is voided'
 );
 select is(
-  (select status::text from public.seats where id = 'atm-seat-2'),
-  'sold',
-  'F07-29 its seat stays sold'
+  pg_temp.seat_taken('atm-seat-2'),
+  false,
+  'F07-29 the override allows the refund, so the seat returns to sale too'
 );
 select is(
   (select count(*) from public.audit_logs

@@ -28,32 +28,45 @@ values
 on conflict (id) do nothing;
 
 insert into public.zones
-  (id, match_id, name, description, price_satang, color, rows, seats_per_row)
+  (id, match_id, name, description, color, rows, seats_per_row)
 values
-  ('m-bkk-north', 'm-bkk', 'North Stand', 'Behind the goal · loudest end', 35000, '#22C55E', array['A','B','C','D','E','F']::text[], 12),
-  ('m-bkk-east', 'm-bkk', 'East Stand', 'Side view · family friendly', 45000, '#F4C430', array['A','B','C','D','E','F']::text[], 12),
-  ('m-bkk-vip', 'm-bkk', 'VIP Pavilion', 'Halfway line · padded seats', 85000, '#8B5CF6', array['A','B','C','D']::text[], 10),
-  ('m-cmi-north', 'm-cmi', 'North Stand', 'Behind the goal · loudest end', 35000, '#22C55E', array['A','B','C','D','E','F']::text[], 12),
-  ('m-cmi-east', 'm-cmi', 'East Stand', 'Side view · family friendly', 45000, '#F4C430', array['A','B','C','D','E','F']::text[], 12),
-  ('m-cmi-vip', 'm-cmi', 'VIP Pavilion', 'Halfway line · padded seats', 85000, '#8B5CF6', array['A','B','C','D']::text[], 10),
-  ('m-hkt-north', 'm-hkt', 'North Stand', 'Behind the goal · loudest end', 35000, '#22C55E', array['A','B','C','D','E','F']::text[], 12),
-  ('m-hkt-east', 'm-hkt', 'East Stand', 'Side view · family friendly', 45000, '#F4C430', array['A','B','C','D','E','F']::text[], 12),
-  ('m-hkt-vip', 'm-hkt', 'VIP Pavilion', 'Halfway line · padded seats', 85000, '#8B5CF6', array['A','B','C','D']::text[], 10),
-  ('m-kkn-north', 'm-kkn', 'North Stand', 'Behind the goal · loudest end', 35000, '#22C55E', array['A','B','C','D','E','F']::text[], 12),
-  ('m-kkn-east', 'm-kkn', 'East Stand', 'Side view · family friendly', 45000, '#F4C430', array['A','B','C','D','E','F']::text[], 12),
-  ('m-kkn-vip', 'm-kkn', 'VIP Pavilion', 'Halfway line · padded seats', 85000, '#8B5CF6', array['A','B','C','D']::text[], 10),
-  ('m-ryg-north', 'm-ryg', 'North Stand', 'Behind the goal · loudest end', 35000, '#22C55E', array['A','B','C','D','E','F']::text[], 12),
-  ('m-ryg-east', 'm-ryg', 'East Stand', 'Side view · family friendly', 45000, '#F4C430', array['A','B','C','D','E','F']::text[], 12),
-  ('m-ryg-vip', 'm-ryg', 'VIP Pavilion', 'Halfway line · padded seats', 85000, '#8B5CF6', array['A','B','C','D']::text[], 10)
+  ('m-bkk-north', 'm-bkk', 'North Stand', 'Behind the goal · loudest end', '#22C55E', array['A','B','C','D','E','F']::text[], 12),
+  ('m-bkk-east', 'm-bkk', 'East Stand', 'Side view · family friendly', '#F4C430', array['A','B','C','D','E','F']::text[], 12),
+  ('m-bkk-vip', 'm-bkk', 'VIP Pavilion', 'Halfway line · padded seats', '#8B5CF6', array['A','B','C','D']::text[], 10),
+  ('m-cmi-north', 'm-cmi', 'North Stand', 'Behind the goal · loudest end', '#22C55E', array['A','B','C','D','E','F']::text[], 12),
+  ('m-cmi-east', 'm-cmi', 'East Stand', 'Side view · family friendly', '#F4C430', array['A','B','C','D','E','F']::text[], 12),
+  ('m-cmi-vip', 'm-cmi', 'VIP Pavilion', 'Halfway line · padded seats', '#8B5CF6', array['A','B','C','D']::text[], 10),
+  ('m-hkt-north', 'm-hkt', 'North Stand', 'Behind the goal · loudest end', '#22C55E', array['A','B','C','D','E','F']::text[], 12),
+  ('m-hkt-east', 'm-hkt', 'East Stand', 'Side view · family friendly', '#F4C430', array['A','B','C','D','E','F']::text[], 12),
+  ('m-hkt-vip', 'm-hkt', 'VIP Pavilion', 'Halfway line · padded seats', '#8B5CF6', array['A','B','C','D']::text[], 10),
+  ('m-kkn-north', 'm-kkn', 'North Stand', 'Behind the goal · loudest end', '#22C55E', array['A','B','C','D','E','F']::text[], 12),
+  ('m-kkn-east', 'm-kkn', 'East Stand', 'Side view · family friendly', '#F4C430', array['A','B','C','D','E','F']::text[], 12),
+  ('m-kkn-vip', 'm-kkn', 'VIP Pavilion', 'Halfway line · padded seats', '#8B5CF6', array['A','B','C','D']::text[], 10),
+  ('m-ryg-north', 'm-ryg', 'North Stand', 'Behind the goal · loudest end', '#22C55E', array['A','B','C','D','E','F']::text[], 12),
+  ('m-ryg-east', 'm-ryg', 'East Stand', 'Side view · family friendly', '#F4C430', array['A','B','C','D','E','F']::text[], 12),
+  ('m-ryg-vip', 'm-ryg', 'VIP Pavilion', 'Halfway line · padded seats', '#8B5CF6', array['A','B','C','D']::text[], 10)
 on conflict (id) do nothing;
 
-insert into public.seats (id, zone_id, row_label, number, status)
+-- Price lives on the (match, zone) row, not on the zone: the demo sells the
+-- same three tiers at every fixture.
+insert into public.match_zone_prices (match_id, zone_id, price_minor_units)
+select z.match_id, z.id,
+       case z.name
+         when 'North Stand' then 35000
+         when 'East Stand' then 45000
+         when 'VIP Pavilion' then 85000
+       end
+from public.zones z
+where z.name in ('North Stand', 'East Stand', 'VIP Pavilion')
+  and z.match_id in ('m-bkk', 'm-cmi', 'm-hkt', 'm-kkn', 'm-ryg')
+on conflict (match_id, zone_id) do nothing;
+
+insert into public.seats (id, zone_id, row_label, number)
 select
   z.id || '-' || r || n,
   z.id,
   r,
-  n,
-  'available'::public.seat_status
+  n
 from public.zones z
 cross join lateral unnest(z.rows) as r
 cross join lateral generate_series(1, z.seats_per_row) as n

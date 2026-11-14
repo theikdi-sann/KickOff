@@ -89,27 +89,28 @@ update public.profiles set role = 'gatekeeper'
 insert into public.matches (id, opponent, opponent_short, kickoff_at, status)
 values ('staff-match', 'Gate FC', 'GAT', now() + interval '30 minutes', 'upcoming');
 
-insert into public.zones (id, match_id, name, price_satang, rows, seats_per_row)
-values ('staff-zone', 'staff-match', 'Gate Stand', 35000, array['A']::text[], 2);
+insert into public.zones (id, match_id, name, rows, seats_per_row)
+values ('staff-zone', 'staff-match', 'Gate Stand', array['A']::text[], 2);
+
+insert into public.match_zone_prices (match_id, zone_id, price_minor_units)
+values ('staff-match', 'staff-zone', 35000);
 
 insert into public.seats (id, zone_id, row_label, number) values
   ('staff-seat-1', 'staff-zone', 'A', 1),
   ('staff-seat-2', 'staff-zone', 'A', 2);
 
-insert into public.orders (id, user_id, match_id, amount_satang, status, payment_intent_id) values
+insert into public.orders (id, user_id, match_id, amount_minor_units, status, payment_intent_id) values
   ('staff-order', '00000000-0000-0000-0000-0000000000c3', 'staff-match', 35000, 'paid', 'pi_staff');
 
-insert into public.order_seats (id, order_id, seat_id, zone_name, row_label, number, price_satang) values
-  ('staff-os-1', 'staff-order', 'staff-seat-1', 'Gate Stand', 'A', 1, 35000),
-  ('staff-os-2', 'staff-order', 'staff-seat-2', 'Gate Stand', 'A', 2, 35000);
+insert into public.order_seats (id, order_id, seat_id, match_id, zone_name, row_label, number, price_minor_units) values
+  ('staff-os-1', 'staff-order', 'staff-seat-1', 'staff-match', 'Gate Stand', 'A', 1, 35000),
+  ('staff-os-2', 'staff-order', 'staff-seat-2', 'staff-match', 'Gate Stand', 'A', 2, 35000);
 
 insert into public.tickets (id, order_id, order_seat_id, user_id, match_id, seat_id, status) values
   ('staff-ticket-1', 'staff-order', 'staff-os-1',
    '00000000-0000-0000-0000-0000000000c3', 'staff-match', 'staff-seat-1', 'valid'),
   ('staff-ticket-2', 'staff-order', 'staff-os-2',
    '00000000-0000-0000-0000-0000000000c3', 'staff-match', 'staff-seat-2', 'valid');
-
-update public.seats set status = 'sold' where id in ('staff-seat-1', 'staff-seat-2');
 
 insert into public.gates (id, name, match_id, active)
 values ('staff-gate', 'Gate A', 'staff-match', true);

@@ -47,7 +47,7 @@ Deno.test({
       });
       assertEquals(rejected.status, 400);
     } finally {
-      await cleanup(env, { ...order, seatId: SEAT });
+      await cleanup(env, { ...order });
     }
   },
 });

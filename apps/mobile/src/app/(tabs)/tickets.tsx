@@ -128,7 +128,7 @@ export default function TicketsScreen() {
               TOTAL
             </AppText>
             <AppText variant="label">
-              {formatTHB(paidOrders.reduce((sum, order) => sum + order.amountSatang, 0))}
+              {formatTHB(paidOrders.reduce((sum, order) => sum + order.amountMinorUnits, 0))}
             </AppText>
           </View>
           <ChevronRight size={18} color={colors.muted} />

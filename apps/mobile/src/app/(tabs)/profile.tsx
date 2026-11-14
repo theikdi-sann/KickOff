@@ -31,7 +31,7 @@ export default function ProfileScreen() {
   const active = tickets.filter((ticket) => ticket.status === 'valid').length;
   const spent = orders
     .filter((order) => order.status === 'paid')
-    .reduce((sum, order) => sum + order.amountSatang, 0);
+    .reduce((sum, order) => sum + order.amountMinorUnits, 0);
 
   const confirmSignOut = () => {
     Alert.alert('Sign out?', "You'll need to sign in again to access your passes.", [

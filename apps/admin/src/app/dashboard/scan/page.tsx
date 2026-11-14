@@ -604,7 +604,7 @@ export default function ScanPage() {
                           <span>
                             {formatMatchDate(result.ticket.kickoffAt)} · {formatMatchTime(result.ticket.kickoffAt)}
                           </span>
-                          <span>{formatTHB(result.ticket.priceSatang)}</span>
+                          <span>{formatTHB(result.ticket.priceMinorUnits)}</span>
                         </div>
                       </div>
                     ) : null}

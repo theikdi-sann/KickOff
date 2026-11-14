@@ -15,7 +15,7 @@ export interface TicketView {
   row: string;
   number: number;
   seatLabel: string;
-  priceSatang: number;
+  priceMinorUnits: number;
   status: "valid" | "used" | "void";
   issuedAt: string;
   usedAt: string | null;
@@ -32,13 +32,13 @@ interface TicketJoinRow {
   used_at: string | null;
   matches: { opponent: string; kickoff_at: string; venue: { name: string } | null } | null;
   seats: { row_label: string; number: number; zones: { name: string } | null } | null;
-  order_seats: { price_satang: number } | null;
+  order_seats: { price_minor_units: number } | null;
 }
 
 // `tickets` has two FK paths to `order_seats` (its own seat, and the reverse
 // ticket_id link), so the embed must name the seat relationship explicitly.
 const TICKET_SELECT =
-  "id,order_id,match_id,user_id,status,issued_at,used_at,matches(opponent,kickoff_at,venue:venues(name)),seats(row_label,number,zones(name)),order_seats!tickets_order_seat_id_fkey(price_satang)";
+  "id,order_id,match_id,user_id,status,issued_at,used_at,matches(opponent,kickoff_at,venue:venues(name)),seats(row_label,number,zones(name)),order_seats!tickets_order_seat_id_fkey(price_minor_units)";
 
 const STATUSES = new Set(["valid", "used", "void"]);
 
@@ -82,7 +82,7 @@ export async function loadTicketView(
     row,
     number,
     seatLabel: `${row}${number}`,
-    priceSatang: data.order_seats?.price_satang ?? 0,
+    priceMinorUnits: data.order_seats?.price_minor_units ?? 0,
     status: STATUSES.has(data.status) ? (data.status as TicketView["status"]) : "void",
     issuedAt: data.issued_at,
     usedAt: data.used_at,

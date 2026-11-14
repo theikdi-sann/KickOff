@@ -367,6 +367,7 @@ before the suite is green again.
 | `supabase/migrations/0040_tenants.sql` | data | reviewed | migration — C6.1 `tenants`, `current_tenant()`, `minor_units()`, `provision_tenant()` |
 | `supabase/migrations/0041_identity_split.sql` | data | reviewed | migration — C6.2 global identity (`fans`), per-tenant `staff_roles` + `staff_members`, legacy `profiles.role` dual-write bridge |
 | `supabase/migrations/0042_tenancy_columns.sql` | data | reviewed | migration — C6.3 `tenant_id` columns, `UNIQUE (id, tenant_id)`, composite FKs, tenant-led indexes, view embeds restored |
+| `supabase/migrations/0043_sales_restructure.sql` | data | reviewed | migration — C7.1 drops `seats.status`, adds `match_zone_prices`, `refunds`, `*_minor_units` money, order snapshots and the derived occupancy RPCs/views |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
@@ -377,6 +378,7 @@ before the suite is green again.
 | `supabase/tests/reschedule-audit.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/rls-auth.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/rls.test.sql` | data | covered | pgTAP suite — asserts the database contract |
+| `supabase/tests/sales.test.sql` | test | covered | pgTAP suite — C7.1 derived occupancy, per-match pricing, order snapshots, refund ledger, one-live-ticket-per-seat (28 assertions) |
 | `supabase/tests/scan-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/seat-reservation.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/staff-roles.test.sql` | test | covered | pgTAP suite — GAP-03a staff roles, gate authority and RLS boundary (25 assertions) |

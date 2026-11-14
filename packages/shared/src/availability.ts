@@ -102,13 +102,13 @@ export function sellThroughPercent(sold: number, capacity: number): number {
  * @param availability the availability rows the prices belong to
  * @returns the potential revenue, in satang
  */
-export function potentialRevenueSatang(
-  zones: readonly { id: string; priceSatang: number }[],
+export function potentialRevenueMinorUnits(
+  zones: readonly { id: string; priceMinorUnits: number }[],
   availability: readonly { zoneId: string; totalSeats: number }[],
 ): number {
   const seatsByZone = new Map(availability.map((zone) => [zone.zoneId, zone.totalSeats]));
 
   return zones.reduce((total, zone) => {
-    return total + (seatsByZone.get(zone.id) ?? 0) * zone.priceSatang;
+    return total + (seatsByZone.get(zone.id) ?? 0) * zone.priceMinorUnits;
   }, 0);
 }

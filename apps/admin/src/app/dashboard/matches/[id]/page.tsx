@@ -43,7 +43,7 @@ import {
   formatMatchDate,
   formatMatchTime,
   formatTHB,
-  potentialRevenueSatang,
+  potentialRevenueMinorUnits,
   summariseAvailability,
   type ZoneDto,
 } from "@kickoff/shared";
@@ -110,7 +110,7 @@ export default function SeatingPage() {
   const capacity = matchAvailability?.capacity ?? 0;
   const sold = Math.min(capacity, salesQuery.data?.[match.id]?.ticketsSold ?? 0);
   const available = matchAvailability?.available ?? 0;
-  const potential = potentialRevenueSatang(matchZones, availabilityQuery.data ?? []);
+  const potential = potentialRevenueMinorUnits(matchZones, availabilityQuery.data ?? []);
   const availabilityByZone = new Map(
     (availabilityQuery.data ?? []).map((zone) => [zone.zoneId, zone]),
   );
@@ -127,7 +127,7 @@ export default function SeatingPage() {
 
   const handleUpdateZone = async (
     zone: ZoneDto,
-    patch: { name: string; description: string; priceSatang: number; color: string },
+    patch: { name: string; description: string; priceMinorUnits: number; color: string },
   ) => {
     await updateZone.mutateAsync({ id: zone.id, matchId: zone.matchId, patch });
     toast({ title: "Zone updated", description: `${patch.name} saved.`, tone: "green" });
@@ -208,7 +208,7 @@ export default function SeatingPage() {
                     {availabilityByZone.get(zone.id)?.totalSeats ?? 0} seats
                   </p>
                 </div>
-                <Badge tone="green">{formatTHB(zone.priceSatang)}</Badge>
+                <Badge tone="green">{formatTHB(zone.priceMinorUnits)}</Badge>
                 <button
                   type="button"
                   onClick={() => setDeletingZone(zone)}
@@ -219,7 +219,7 @@ export default function SeatingPage() {
               </div>
               <div className="p-4">
                 <ZoneEditor
-                  key={`${zone.id}-${zone.priceSatang}-${zone.name}`}
+                  key={`${zone.id}-${zone.priceMinorUnits}-${zone.name}`}
                   zone={zone}
                   submitting={updateZone.isPending}
                   onSubmit={(patch) => handleUpdateZone(zone, patch)}

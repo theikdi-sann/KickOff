@@ -16,7 +16,6 @@ export type IsoTimestamp = string;
  */
 export type Role = StaffRole;
 export type MatchStatus = 'upcoming' | 'live' | 'completed';
-export type SeatStatus = 'available' | 'sold' | 'held';
 export type OrderStatus = 'pending' | 'paid' | 'failed' | 'cancelled' | 'refunded';
 export type TicketStatus = 'valid' | 'used' | 'void';
 export type ScanResultCode = 'valid' | 'used' | 'invalid' | 'wrong_match';
@@ -63,13 +62,12 @@ export interface VenueRow {
   updated_at: IsoTimestamp;
 }
 
-/** `public.zones` (P3-04). Prices are integer satang. */
+/** `public.zones` (P3-04). The price is not here — it lives on `match_zone_prices`. */
 export interface ZoneRow {
   id: string;
   match_id: string;
   name: string;
   description: string;
-  price_satang: number;
   color: string;
   rows: string[];
   seats_per_row: number;
@@ -77,13 +75,19 @@ export interface ZoneRow {
   updated_at: IsoTimestamp;
 }
 
-/** `public.seats` (P3-05). */
+/** `public.match_zone_prices` — what this zone costs for this match. */
+export interface MatchZonePriceRow {
+  match_id: string;
+  zone_id: string;
+  price_minor_units: number;
+}
+
+/** `public.seats` (P3-05). Physical inventory: occupancy is derived, not stored. */
 export interface SeatRow {
   id: string;
   zone_id: string;
   row_label: string;
   number: number;
-  status: SeatStatus;
   created_at: IsoTimestamp;
 }
 
@@ -92,6 +96,7 @@ export interface SeatHoldRow {
   id: string;
   hold_group_id: string;
   seat_id: string;
+  match_id: string;
   user_id: string;
   expires_at: IsoTimestamp;
   released_at: IsoTimestamp | null;
@@ -103,7 +108,7 @@ export interface OrderRow {
   id: string;
   user_id: string;
   match_id: string;
-  amount_satang: number;
+  amount_minor_units: number;
   status: OrderStatus;
   stripe_session_id: string | null;
   payment_intent_id: string | null;
@@ -122,7 +127,7 @@ export interface OrderSeatRow {
   zone_name: string;
   row_label: string;
   number: number;
-  price_satang: number;
+  price_minor_units: number;
   created_at: IsoTimestamp;
 }
 

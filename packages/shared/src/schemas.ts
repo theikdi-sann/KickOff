@@ -20,7 +20,7 @@ import { staffRoleSchema } from './roles';
 
 export const idSchema = z.string().min(1).max(64);
 export const isoTimestampSchema = z.iso.datetime({ offset: true });
-export const satangSchema = z.number().int().min(0).max(100_000_000);
+export const minorUnitsSchema = z.number().int().min(0).max(100_000_000);
 export const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Expected a #RRGGBB colour');
 export const nonEmptyTextSchema = z.string().trim().min(1);
 export const colorPairSchema = z.tuple([hexColorSchema, hexColorSchema]);
@@ -32,7 +32,6 @@ export const emailSchema = z.email();
 export const passwordSchema = z.string().min(8).max(72);
 
 export const matchStatusSchema = z.enum(['upcoming', 'live', 'completed']);
-export const seatStatusSchema = z.enum(['available', 'sold', 'held']);
 export const orderStatusSchema = z.enum(['pending', 'paid', 'failed', 'cancelled', 'refunded']);
 export const ticketStatusSchema = z.enum(['valid', 'used', 'void']);
 export const scanResultCodeSchema = z.enum(['valid', 'used', 'invalid', 'wrong_match']);
@@ -72,7 +71,7 @@ export const zoneDtoSchema = z.object({
   matchId: idSchema,
   name: nonEmptyTextSchema.max(80),
   description: z.string().max(240),
-  priceSatang: satangSchema,
+  priceMinorUnits: minorUnitsSchema,
   color: hexColorSchema,
   rows: z.array(z.string().min(1).max(4)).min(1).max(50),
   seatsPerRow: z.number().int().min(1).max(100),
@@ -84,7 +83,6 @@ export const seatDtoSchema = z.object({
   row: z.string().min(1).max(4),
   number: z.number().int().min(1).max(1000),
   label: z.string().min(1).max(12),
-  status: seatStatusSchema,
 });
 
 export const holdDtoSchema = z.object({
@@ -103,7 +101,7 @@ export const orderSeatDtoSchema = z.object({
   zoneName: nonEmptyTextSchema.max(80),
   row: z.string().min(1).max(4),
   number: z.number().int().min(1).max(1000),
-  priceSatang: satangSchema,
+  priceMinorUnits: minorUnitsSchema,
 });
 
 export const orderDtoSchema = z.object({
@@ -112,7 +110,7 @@ export const orderDtoSchema = z.object({
   matchId: idSchema,
   matchLabel: nonEmptyTextSchema.max(160),
   seats: z.array(orderSeatDtoSchema).min(1).max(MAX_SEATS_PER_ORDER),
-  amountSatang: satangSchema,
+  amountMinorUnits: minorUnitsSchema,
   status: orderStatusSchema,
   createdAt: isoTimestampSchema,
   paidAt: isoTimestampSchema.nullable().optional(),
@@ -135,7 +133,7 @@ export const ticketDtoSchema = z.object({
   row: z.string().min(1).max(4),
   number: z.number().int().min(1).max(1000),
   seatLabel: z.string().min(1).max(12),
-  priceSatang: satangSchema,
+  priceMinorUnits: minorUnitsSchema,
   status: ticketStatusSchema,
   issuedAt: isoTimestampSchema,
   usedAt: isoTimestampSchema.nullable().optional(),
@@ -279,7 +277,7 @@ export function adminRescheduleSchema(context: RescheduleContext) {
 export const adminUpdateZoneSchema = z.object({
   name: nonEmptyTextSchema.max(80),
   description: z.string().max(240),
-  priceSatang: satangSchema,
+  priceMinorUnits: minorUnitsSchema,
   color: hexColorSchema,
   rows: z.array(z.string().min(1).max(4)).min(1).max(50),
   seatsPerRow: z.number().int().min(1).max(100),

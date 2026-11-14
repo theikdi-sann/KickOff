@@ -68,7 +68,7 @@ export function TicketCard({
             </AppText>
           </View>
           <AppText variant="label" color={colors.primary}>
-            {formatTHB(ticket.priceSatang)}
+            {formatTHB(ticket.priceMinorUnits)}
           </AppText>
         </View>
       </View>

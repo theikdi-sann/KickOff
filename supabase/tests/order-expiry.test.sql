@@ -9,8 +9,11 @@ insert into auth.users (id, email) values
 insert into public.matches (id, opponent, opponent_short, kickoff_at)
 values ('exp-match', 'Expiry FC', 'EXP', now() + interval '10 days');
 
-insert into public.zones (id, match_id, name, price_satang, rows, seats_per_row)
-values ('exp-zone', 'exp-match', 'Expiry Stand', 35000, array['A']::text[], 2);
+insert into public.zones (id, match_id, name, rows, seats_per_row)
+values ('exp-zone', 'exp-match', 'Expiry Stand', array['A']::text[], 2);
+
+insert into public.match_zone_prices (match_id, zone_id, price_minor_units)
+values ('exp-match', 'exp-zone', 35000);
 
 insert into public.seats (id, zone_id, row_label, number) values
   ('exp-seat-pending', 'exp-zone', 'A', 1),
@@ -22,20 +25,18 @@ insert into public.seats (id, zone_id, row_label, number) values
 select public.expire_pending_orders()::bigint;
 
 -- A pending order for seat 1 and a paid order for seat 2.
-insert into public.orders (id, user_id, match_id, amount_satang, status, created_at) values
+insert into public.orders (id, user_id, match_id, amount_minor_units, status, created_at) values
   ('exp-order-pending', '00000000-0000-0000-0000-0000000000e1', 'exp-match', 35000,
    'pending', now() - interval '20 minutes'),
   ('exp-order-paid', '00000000-0000-0000-0000-0000000000e1', 'exp-match', 35000,
    'paid', now() - interval '20 minutes');
 
-insert into public.order_seats (id, order_id, seat_id, zone_name, row_label, number, price_satang) values
-  ('exp-os-pending', 'exp-order-pending', 'exp-seat-pending', 'Expiry Stand', 'A', 1, 35000),
-  ('exp-os-paid', 'exp-order-paid', 'exp-seat-paid', 'Expiry Stand', 'A', 2, 35000);
+insert into public.order_seats (id, order_id, seat_id, match_id, zone_name, row_label, number, price_minor_units) values
+  ('exp-os-pending', 'exp-order-pending', 'exp-seat-pending', 'exp-match', 'Expiry Stand', 'A', 1, 35000),
+  ('exp-os-paid', 'exp-order-paid', 'exp-seat-paid', 'exp-match', 'Expiry Stand', 'A', 2, 35000);
 
--- The paid seat is sold; the pending seat is still 'available' at the seat
--- level and is withheld from sale only by the pending-order rule in the view.
-update public.seats set status = 'sold' where id = 'exp-seat-paid';
-
+-- The paid seat is withheld by its paid order; the pending seat is withheld
+-- by the pending-order rule. Neither needs a flag on the seat row.
 select is(
   (select available_seats from public.zone_availability where zone_id = 'exp-zone'),
   0::bigint,
@@ -69,13 +70,15 @@ select is(
 );
 
 select is(
-  (select status::text from public.seats where id = 'exp-seat-paid'),
-  'sold',
-  'the paid seat stays sold'
+  (select count(*) from public.order_seats os
+     join public.orders o on o.id = os.order_id
+    where os.seat_id = 'exp-seat-paid' and o.status in ('pending', 'paid')),
+  1::bigint,
+  'the paid seat stays taken'
 );
 
 -- A fresh pending order (inside the 15-minute window) must not be expired.
-insert into public.orders (id, user_id, match_id, amount_satang, status, created_at) values
+insert into public.orders (id, user_id, match_id, amount_minor_units, status, created_at) values
   ('exp-order-fresh', '00000000-0000-0000-0000-0000000000e1', 'exp-match', 35000,
    'pending', now() - interval '2 minutes');
 

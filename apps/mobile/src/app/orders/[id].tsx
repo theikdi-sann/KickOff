@@ -103,7 +103,7 @@ export default function OrderDetailScreen() {
                   ROW {seat.row} · SEAT {seat.number}
                 </AppText>
               </View>
-              <AppText variant="label">{formatTHB(seat.priceSatang)}</AppText>
+              <AppText variant="label">{formatTHB(seat.priceMinorUnits)}</AppText>
             </View>
           ))}
 
@@ -111,7 +111,7 @@ export default function OrderDetailScreen() {
             <AppText variant="small" color={colors.muted}>
               {paid ? 'Total paid' : 'Total'}
             </AppText>
-            <AppText variant="h2">{formatTHB(order.amountSatang)}</AppText>
+            <AppText variant="h2">{formatTHB(order.amountMinorUnits)}</AppText>
           </View>
         </Card>
 

@@ -138,7 +138,7 @@ async function provisionPaidOrder(): Promise<ProvisionedOrder> {
       id: orderId,
       user_id: userId,
       match_id: matchId,
-      amount_satang: 10000,
+      amount_minor_units: 10000,
       status: "paid",
       payment_intent_id: intent.id,
       paid_at: new Date().toISOString(),

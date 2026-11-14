@@ -18,11 +18,14 @@ import { errorMessage } from '@/lib/api';
 import { useCreateHold, useMyActiveHolds, useReleaseHold } from '@/lib/queries/holds';
 import { useMatch } from '@/lib/queries/matches';
 import { useCancelOrder, usePendingOrderSeats } from '@/lib/queries/orders';
-import { useSeatMap, useZones } from '@/lib/queries/seats';
+import { useSeatMap, useTakenSeats, useZones } from '@/lib/queries/seats';
 import { colors, radii, shadow } from '@/lib/theme';
 
 /** Poll cadence for live seat availability — silent background refetches. */
 const POLL_INTERVAL_MS = 3000;
+
+/** Shared empty set so a loading render does not churn identity every frame. */
+const NO_TAKEN_SEATS: ReadonlySet<string> = new Set<string>();
 
 export default function SeatSelectionScreen() {
   const router = useRouter();
@@ -41,9 +44,12 @@ export default function SeatSelectionScreen() {
   const zone: ZoneDto | undefined = zones.find((item) => item.id === zoneId) ?? zones[0];
   const seatsQuery = useSeatMap(zone?.id, { refetchInterval: POLL_INTERVAL_MS });
   const seats = useMemo(() => seatsQuery.data ?? [], [seatsQuery.data]);
+  // Occupancy is derived server-side; this is the "someone has this seat" set.
+  const takenSeatsQuery = useTakenSeats(matchId, { refetchInterval: POLL_INTERVAL_MS });
+  const takenSeats = takenSeatsQuery.data ?? NO_TAKEN_SEATS;
   const rows = zone?.rows ?? [];
   const selectedSeats = seats.filter((seat) => selected.includes(seat.id));
-  const total = (zone?.priceSatang ?? 0) * selected.length;
+  const total = (zone?.priceMinorUnits ?? 0) * selected.length;
 
   // Truth about "my" seats: own raw holds (pre-payment) and own pending orders.
   const myHoldsQuery = useMyActiveHolds({ refetchInterval: POLL_INTERVAL_MS });
@@ -68,11 +74,9 @@ export default function SeatSelectionScreen() {
     if (!seat) return true;
     // "Mine" seats resolve through their own resume/release alerts instead.
     const mine = holdsBySeat.has(id) || pendingBySeat.has(id);
-    return seat.status !== 'available' && !mine;
+    return takenSeats.has(id) && !mine;
   });
-  const freeCount = seats.filter(
-    (seat) => seat.status === 'available' && !holdsBySeat.has(seat.id),
-  ).length;
+  const freeCount = seats.filter((seat) => !takenSeats.has(seat.id)).length;
   const zoneHoldCount = seats.filter((seat) => holdsBySeat.has(seat.id)).length;
   const pendingCount = seats.filter((seat) => pendingBySeat.has(seat.id)).length;
   const pendingExpiryMs = seats.reduce((max, seat) => {
@@ -171,7 +175,7 @@ export default function SeatSelectionScreen() {
       setSelected((current) => current.filter((id) => id !== seat.id));
       return;
     }
-    if (seat.status !== 'available') return;
+    if (takenSeats.has(seat.id)) return;
     setHoldError(null);
     setSelected((current) => {
       if (current.length >= MAX_SEATS_PER_ORDER) return current;
@@ -295,7 +299,7 @@ export default function SeatSelectionScreen() {
                     variant="caption"
                     color={item.id === zone?.id ? 'rgba(255,255,255,0.7)' : colors.muted}
                     style={styles.zoneChipPrice}>
-                    {formatTHB(item.priceSatang)}
+                    {formatTHB(item.priceMinorUnits)}
                   </AppText>
                 </View>
               </Pressable>
@@ -339,7 +343,7 @@ export default function SeatSelectionScreen() {
                       .filter((seat) => seat.row === row)
                       .map((seat) => {
                         const isMine = holdsBySeat.has(seat.id) || pendingBySeat.has(seat.id);
-                        const isTaken = !isMine && seat.status !== 'available';
+                        const isTaken = !isMine && takenSeats.has(seat.id);
                         const isSelected = selected.includes(seat.id);
                         const isConflict = isSelected && selectedConflictIds.includes(seat.id);
                         const stateLabel = isMine
@@ -348,11 +352,9 @@ export default function SeatSelectionScreen() {
                             ? ' selected, no longer available'
                             : isSelected
                               ? ' selected'
-                              : seat.status === 'sold'
-                                ? ' sold'
-                                : isTaken
-                                  ? ' reserved by another buyer'
-                                  : '';
+                              : isTaken
+                                ? ' taken'
+                                : '';
                         return (
                           <Pressable
                             key={seat.id}

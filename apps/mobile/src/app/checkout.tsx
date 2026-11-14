@@ -89,7 +89,7 @@ export default function CheckoutScreen() {
     ),
   ].join(', ') || '—';
 
-  const total = order?.amountSatang ?? (zone?.priceSatang ?? 0) * seats.length;
+  const total = order?.amountMinorUnits ?? (zone?.priceMinorUnits ?? 0) * seats.length;
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);

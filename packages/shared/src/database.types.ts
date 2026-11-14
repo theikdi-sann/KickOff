@@ -137,6 +137,50 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"match_zone_prices": {
+                  Row: {
+                    "created_at": string,"match_id": string,"price_minor_units": number,"tenant_id": string,"updated_at": string,"zone_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"match_id": string,"price_minor_units": number,"tenant_id"?: string,"updated_at"?: string,"zone_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"match_id"?: string,"price_minor_units"?: number,"tenant_id"?: string,"updated_at"?: string,"zone_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "match_zone_prices_match_id_fkey"
+      columns: ["match_id"]
+isOneToOne: false
+      referencedRelation: "match_sales_summary"
+      referencedColumns: ["match_id"]
+    },{
+      foreignKeyName: "match_zone_prices_match_id_fkey"
+      columns: ["match_id"]
+isOneToOne: false
+      referencedRelation: "matches"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "match_zone_prices_match_id_tenant_id_fkey"
+      columns: ["match_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "matches"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "match_zone_prices_zone_id_fkey"
+      columns: ["zone_id"]
+isOneToOne: false
+      referencedRelation: "zones"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "match_zone_prices_zone_id_tenant_id_fkey"
+      columns: ["zone_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "zones"
+      referencedColumns: ["id","tenant_id"]
+    }
+                  ]
                 },"matches": {
                   Row: {
                     "accent": string,"away_score": number | null,"competition": string,"created_at": string,"home_away": string,"home_score": number | null,"id": string,"kickoff_at": string,"opponent": string,"opponent_short": string,"poster_colors": (string)[],"status": Database["public"]['Enums']["match_status"],"tenant_id": string,"updated_at": string,"venue_id": string
@@ -185,17 +229,23 @@ isOneToOne: false
                   ]
                 },"order_seats": {
                   Row: {
-                    "created_at": string,"id": string,"number": number,"order_id": string,"price_satang": number,"row_label": string,"seat_id": string,"tenant_id": string,"ticket_id": string | null,"zone_name": string
+                    "created_at": string,"id": string,"match_id": string,"number": number,"order_id": string,"price_minor_units": number,"row_label": string,"seat_id": string,"tenant_id": string,"ticket_id": string | null,"zone_name": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"number": number,"order_id": string,"price_satang": number,"row_label": string,"seat_id": string,"tenant_id"?: string,"ticket_id"?: string | null,"zone_name": string
+                    "created_at"?: string,"id"?: string,"match_id": string,"number": number,"order_id": string,"price_minor_units": number,"row_label": string,"seat_id": string,"tenant_id"?: string,"ticket_id"?: string | null,"zone_name": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"number"?: number,"order_id"?: string,"price_satang"?: number,"row_label"?: string,"seat_id"?: string,"tenant_id"?: string,"ticket_id"?: string | null,"zone_name"?: string
+                    "created_at"?: string,"id"?: string,"match_id"?: string,"number"?: number,"order_id"?: string,"price_minor_units"?: number,"row_label"?: string,"seat_id"?: string,"tenant_id"?: string,"ticket_id"?: string | null,"zone_name"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "order_seats_match_id_fkey"
+      columns: ["match_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "matches"
+      referencedColumns: ["id","tenant_id"]
+    },{
       foreignKeyName: "order_seats_order_id_fkey"
       columns: ["order_id","tenant_id"]
 isOneToOne: false
@@ -229,14 +279,14 @@ isOneToOne: false
                   ]
                 },"orders": {
                   Row: {
-                    "amount_satang": number,"checkout_url": string | null,"created_at": string,"expires_at": string | null,"id": string,"match_id": string,"paid_at": string | null,"payment_intent_id": string | null,"payment_ref": string | null,"status": Database["public"]['Enums']["order_status"],"stripe_session_id": string | null,"tenant_id": string,"updated_at": string,"user_id": string
+                    "amount_minor_units": number,"application_fee_amount": number,"checkout_url": string | null,"created_at": string,"currency": string,"expires_at": string | null,"id": string,"match_id": string,"paid_at": string | null,"payment_intent_id": string | null,"payment_ref": string | null,"status": Database["public"]['Enums']["order_status"],"stripe_session_id": string | null,"tenant_id": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "amount_satang": number,"checkout_url"?: string | null,"created_at"?: string,"expires_at"?: string | null,"id"?: string,"match_id": string,"paid_at"?: string | null,"payment_intent_id"?: string | null,"payment_ref"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_session_id"?: string | null,"tenant_id"?: string,"updated_at"?: string,"user_id": string
+                    "amount_minor_units": number,"application_fee_amount"?: number,"checkout_url"?: string | null,"created_at"?: string,"currency"?: string,"expires_at"?: string | null,"id"?: string,"match_id": string,"paid_at"?: string | null,"payment_intent_id"?: string | null,"payment_ref"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_session_id"?: string | null,"tenant_id"?: string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "amount_satang"?: number,"checkout_url"?: string | null,"created_at"?: string,"expires_at"?: string | null,"id"?: string,"match_id"?: string,"paid_at"?: string | null,"payment_intent_id"?: string | null,"payment_ref"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_session_id"?: string | null,"tenant_id"?: string,"updated_at"?: string,"user_id"?: string
+                    "amount_minor_units"?: number,"application_fee_amount"?: number,"checkout_url"?: string | null,"created_at"?: string,"currency"?: string,"expires_at"?: string | null,"id"?: string,"match_id"?: string,"paid_at"?: string | null,"payment_intent_id"?: string | null,"payment_ref"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_session_id"?: string | null,"tenant_id"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -281,6 +331,32 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"refunds": {
+                  Row: {
+                    "actor_id": string | null,"amount_minor_units": number,"created_at": string,"currency": string,"id": string,"order_id": string,"override_used_tickets": boolean,"reason": string | null,"tenant_id": string,"used_tickets": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_id"?: string | null,"amount_minor_units": number,"created_at"?: string,"currency": string,"id"?: string,"order_id": string,"override_used_tickets"?: boolean,"reason"?: string | null,"tenant_id": string,"used_tickets"?: number
+                  }
+                  Update: {
+                    "actor_id"?: string | null,"amount_minor_units"?: number,"created_at"?: string,"currency"?: string,"id"?: string,"order_id"?: string,"override_used_tickets"?: boolean,"reason"?: string | null,"tenant_id"?: string,"used_tickets"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "refunds_order_id_tenant_id_fkey"
+      columns: ["order_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "order_receipt_view"
+      referencedColumns: ["order_id","tenant_id"]
+    },{
+      foreignKeyName: "refunds_order_id_tenant_id_fkey"
+      columns: ["order_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id","tenant_id"]
+    }
+                  ]
                 },"scan_events": {
                   Row: {
                     "admin_id": string,"created_at": string,"gate_id": string,"id": string,"idempotency_key": string,"raw_hash": string,"result": Database["public"]['Enums']["scan_result"],"tenant_id": string,"ticket_id": string | null,"undone_at": string | null
@@ -315,17 +391,23 @@ isOneToOne: false
                   ]
                 },"seat_holds": {
                   Row: {
-                    "created_at": string,"expires_at": string,"hold_group_id": string,"id": string,"released_at": string | null,"seat_id": string,"tenant_id": string,"user_id": string
+                    "created_at": string,"expires_at": string,"hold_group_id": string,"id": string,"match_id": string,"released_at": string | null,"seat_id": string,"tenant_id": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"expires_at": string,"hold_group_id": string,"id"?: string,"released_at"?: string | null,"seat_id": string,"tenant_id"?: string,"user_id": string
+                    "created_at"?: string,"expires_at": string,"hold_group_id": string,"id"?: string,"match_id": string,"released_at"?: string | null,"seat_id": string,"tenant_id"?: string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"expires_at"?: string,"hold_group_id"?: string,"id"?: string,"released_at"?: string | null,"seat_id"?: string,"tenant_id"?: string,"user_id"?: string
+                    "created_at"?: string,"expires_at"?: string,"hold_group_id"?: string,"id"?: string,"match_id"?: string,"released_at"?: string | null,"seat_id"?: string,"tenant_id"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "seat_holds_match_id_fkey"
+      columns: ["match_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "matches"
+      referencedColumns: ["id","tenant_id"]
+    },{
       foreignKeyName: "seat_holds_seat_id_fkey"
       columns: ["seat_id","tenant_id"]
 isOneToOne: false
@@ -341,14 +423,14 @@ isOneToOne: false
                   ]
                 },"seats": {
                   Row: {
-                    "created_at": string,"id": string,"number": number,"row_label": string,"status": Database["public"]['Enums']["seat_status"],"tenant_id": string,"zone_id": string
+                    "created_at": string,"id": string,"number": number,"row_label": string,"tenant_id": string,"zone_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"number": number,"row_label": string,"status"?: Database["public"]['Enums']["seat_status"],"tenant_id"?: string,"zone_id": string
+                    "created_at"?: string,"id"?: string,"number": number,"row_label": string,"tenant_id"?: string,"zone_id": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"number"?: number,"row_label"?: string,"status"?: Database["public"]['Enums']["seat_status"],"tenant_id"?: string,"zone_id"?: string
+                    "created_at"?: string,"id"?: string,"number"?: number,"row_label"?: string,"tenant_id"?: string,"zone_id"?: string
                   }
                   Relationships: [
                     {
@@ -523,14 +605,14 @@ isOneToOne: false
                   ]
                 },"zones": {
                   Row: {
-                    "color": string,"created_at": string,"description": string,"id": string,"match_id": string,"name": string,"price_satang": number,"rows": (string)[],"seats_per_row": number,"tenant_id": string,"updated_at": string
+                    "color": string,"created_at": string,"description": string,"id": string,"match_id": string,"name": string,"rows": (string)[],"seats_per_row": number,"tenant_id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "color"?: string,"created_at"?: string,"description"?: string,"id"?: string,"match_id": string,"name": string,"price_satang": number,"rows"?: (string)[],"seats_per_row": number,"tenant_id"?: string,"updated_at"?: string
+                    "color"?: string,"created_at"?: string,"description"?: string,"id"?: string,"match_id": string,"name": string,"rows"?: (string)[],"seats_per_row": number,"tenant_id"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "color"?: string,"created_at"?: string,"description"?: string,"id"?: string,"match_id"?: string,"name"?: string,"price_satang"?: number,"rows"?: (string)[],"seats_per_row"?: number,"tenant_id"?: string,"updated_at"?: string
+                    "color"?: string,"created_at"?: string,"description"?: string,"id"?: string,"match_id"?: string,"name"?: string,"rows"?: (string)[],"seats_per_row"?: number,"tenant_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -552,7 +634,7 @@ isOneToOne: false
           Views: {
             "match_sales_summary": {
                   Row: {
-                    "match_id": string,"orders_paid": number | null,"revenue_satang": number | null,"tickets_sold": number | null
+                    "match_id": string,"orders_paid": number | null,"revenue_minor_units": number | null,"tickets_sold": number | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -560,7 +642,7 @@ isOneToOne: false
                   ]
                 },"order_receipt_view": {
                   Row: {
-                    "amount_satang": number,"created_at": string,"holder": string,"holder_email": string,"kickoff_at": string,"match_id": string,"opponent": string,"order_id": string,"paid_at": string | null,"payment_ref": string | null,"seats": Json | null,"status": Database["public"]['Enums']["order_status"],"tenant_id": string,"user_id": string,"venue": string
+                    "amount_minor_units": number,"created_at": string,"currency": string,"holder": string,"holder_email": string,"kickoff_at": string,"match_id": string,"opponent": string,"order_id": string,"paid_at": string | null,"payment_ref": string | null,"seats": Json | null,"status": Database["public"]['Enums']["order_status"],"tenant_id": string,"user_id": string,"venue": string
                   }
                   ComputedFields: never
                   Relationships: [
@@ -581,6 +663,14 @@ isOneToOne: false
                 },"pg_all_foreign_keys": {
                   Row: {
                     "fk_columns": (unknown)[] | null,"fk_constraint_name": unknown,"fk_schema_name": unknown,"fk_table_name": unknown,"fk_table_oid": unknown,"is_deferrable": boolean | null,"is_deferred": boolean | null,"match_type": string | null,"on_delete": string | null,"on_update": string | null,"pk_columns": (unknown)[] | null,"pk_constraint_name": unknown,"pk_index_name": unknown,"pk_schema_name": unknown,"pk_table_name": unknown,"pk_table_oid": unknown
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    
+                  ]
+                },"seat_availability": {
+                  Row: {
+                    "match_id": string | null,"seat_id": string | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -883,7 +973,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "match_status": "upcoming"|"live"|"completed","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded","scan_result": "valid"|"used"|"invalid"|"wrong_match","seat_status": "available"|"sold"|"held","tenant_status": "active"|"suspended","ticket_status": "valid"|"used"|"void"
+            "match_status": "upcoming"|"live"|"completed","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded","scan_result": "valid"|"used"|"invalid"|"wrong_match","tenant_status": "active"|"suspended","ticket_status": "valid"|"used"|"void"
           }
           CompositeTypes: {
             "_time_trial_type": {
@@ -1007,7 +1097,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "match_status": ["upcoming", "live", "completed"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded"],"scan_result": ["valid", "used", "invalid", "wrong_match"],"seat_status": ["available", "sold", "held"],"tenant_status": ["active", "suspended"],"ticket_status": ["valid", "used", "void"]
+            "match_status": ["upcoming", "live", "completed"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded"],"scan_result": ["valid", "used", "invalid", "wrong_match"],"tenant_status": ["active", "suspended"],"ticket_status": ["valid", "used", "void"]
           }
         }
 } as const

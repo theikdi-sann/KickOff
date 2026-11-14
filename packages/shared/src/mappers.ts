@@ -33,7 +33,7 @@ export interface OrderJoinRow {
   id: string;
   user_id: string;
   match_id: string;
-  amount_satang: number;
+  amount_minor_units: number;
   /** Stored as text — narrowed by `toOrderStatus`. */
   status: string;
   created_at: string;
@@ -53,7 +53,7 @@ export interface OrderSeatJoinRow {
   zone_name: string;
   row_label: string;
   number: number;
-  price_satang: number;
+  price_minor_units: number;
 }
 
 /** `tickets` joined with the fixture, the seat and the purchased price. */
@@ -71,7 +71,7 @@ export interface TicketJoinRow {
     venue: { name: string } | null;
   } | null;
   seats: { row_label: string; number: number; zones: { name: string } | null } | null;
-  order_seats: { price_satang: number } | null;
+  order_seats: { price_minor_units: number } | null;
 }
 
 const ORDER_STATUSES: readonly OrderStatus[] = [
@@ -108,7 +108,7 @@ export function toOrderDto(row: OrderJoinRow): OrderDto {
     zoneName: seat.zone_name,
     row: seat.row_label,
     number: seat.number,
-    priceSatang: seat.price_satang,
+    priceMinorUnits: seat.price_minor_units,
   }));
 
   return {
@@ -117,7 +117,7 @@ export function toOrderDto(row: OrderJoinRow): OrderDto {
     matchId: row.match_id,
     matchLabel: toMatchLabel(row.matches?.opponent),
     seats,
-    amountSatang: row.amount_satang,
+    amountMinorUnits: row.amount_minor_units,
     status: toOrderStatus(row.status),
     createdAt: row.created_at,
     paidAt: row.paid_at,
@@ -147,7 +147,7 @@ export function toTicketDto(row: TicketJoinRow, holder: string): TicketDto {
     row: rowLabel,
     number,
     seatLabel: `${rowLabel}${number}`,
-    priceSatang: row.order_seats?.price_satang ?? 0,
+    priceMinorUnits: row.order_seats?.price_minor_units ?? 0,
     status: toTicketStatus(row.status),
     issuedAt: row.issued_at,
     usedAt: row.used_at,
@@ -178,17 +178,41 @@ export function toMatchDto(row: MatchRowLike): MatchDto {
   };
 }
 
-export function toZoneDto(row: ZoneRow): ZoneDto {
+/**
+ * A zone with the price it costs for its match.
+ *
+ * The price moved off `zones` onto `match_zone_prices` in `0043`, so a zone
+ * row on its own is unpriced. Callers fetch both tables and hand them to
+ * {@link zoneDtosWithPrices}, which is the one place the two are joined.
+ */
+export function toZoneDto(row: ZoneRow, priceMinorUnits: number): ZoneDto {
   return {
     id: row.id,
     matchId: row.match_id,
     name: row.name,
     description: row.description,
-    priceSatang: row.price_satang,
+    priceMinorUnits,
     color: row.color,
     rows: row.rows,
     seatsPerRow: row.seats_per_row,
   };
+}
+
+/**
+ * Zones joined to their per-match price, cheapest first.
+ *
+ * Sorting here replaces the `order by price` the zone table used to carry;
+ * the price is no longer a column of `zones`, so the database cannot order by
+ * it and the caller must not either.
+ */
+export function zoneDtosWithPrices(
+  zones: readonly ZoneRow[],
+  prices: readonly { readonly zone_id: string; readonly price_minor_units: number }[],
+): ZoneDto[] {
+  const priceByZone = new Map(prices.map((price) => [price.zone_id, price.price_minor_units]));
+  return zones
+    .map((zone) => toZoneDto(zone, priceByZone.get(zone.id) ?? 0))
+    .sort((a, b) => a.priceMinorUnits - b.priceMinorUnits);
 }
 
 export function toSeatDto(row: SeatRow): SeatDto {
@@ -198,7 +222,6 @@ export function toSeatDto(row: SeatRow): SeatDto {
     row: row.row_label,
     number: row.number,
     label: `${row.row_label}${row.number}`,
-    status: row.status,
   };
 }
 

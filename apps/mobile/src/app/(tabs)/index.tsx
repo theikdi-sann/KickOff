@@ -58,7 +58,7 @@ export default function HomeScreen() {
     0,
   );
 
-  const minPrice = zones.length ? Math.min(...zones.map((zone) => zone.priceSatang)) : undefined;
+  const minPrice = zones.length ? Math.min(...zones.map((zone) => zone.priceMinorUnits)) : undefined;
   const profile = profileQuery.data;
   const firstName = (profile?.fullName ?? 'there').split(' ')[0];
   const validTickets = tickets.filter((ticket) => ticket.status === 'valid');

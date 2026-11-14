@@ -83,7 +83,7 @@ export default function TicketsPage() {
       email: order.holderEmail,
       match: order.matchLabel,
       seats: order.seats.map((seat) => `${seat.zoneName} ${seat.row}${seat.number}`).join(" | "),
-      amount: (order.amountSatang / 100).toFixed(2),
+      amount: (order.amountMinorUnits / 100).toFixed(2),
       status: order.status,
       created: order.createdAt,
     }));
@@ -146,7 +146,7 @@ export default function TicketsPage() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat icon={<Wallet size={16} />} label="Revenue" value={formatTHB(aggregate.data?.revenueSatang ?? 0)} />
+        <Stat icon={<Wallet size={16} />} label="Revenue" value={formatTHB(aggregate.data?.revenueMinorUnits ?? 0)} />
         <Stat icon={<Ticket size={16} />} label="Paid orders" value={String(aggregate.data?.ordersPaid ?? 0)} />
         <Stat icon={<Ticket size={16} />} label="Tickets sold" value={String(aggregate.data?.ticketsSold ?? 0)} />
         <Stat icon={<QrCode size={16} />} label="Gate scans (30d)" value={String(aggregate.data?.scans.total ?? 0)} />
@@ -229,7 +229,7 @@ export default function TicketsPage() {
                       </p>
                     </td>
                     <td className="px-4 py-3.5 text-xs font-semibold text-slate-800">
-                      {formatTHB(order.amountSatang)}
+                      {formatTHB(order.amountMinorUnits)}
                     </td>
                     <td className="px-4 py-3.5">
                       <Badge tone={toneFor(order.status)}>{order.status.toUpperCase()}</Badge>
@@ -280,7 +280,7 @@ export default function TicketsPage() {
         title="Refund this order?"
         description={
           refunding
-            ? `${formatTHB(refunding.amountSatang)} will be refunded through Stripe for ${refunding.id}. Used tickets are non-refundable; use the order detail page to override with an audit reason.`
+            ? `${formatTHB(refunding.amountMinorUnits)} will be refunded through Stripe for ${refunding.id}. Used tickets are non-refundable; use the order detail page to override with an audit reason.`
             : undefined
         }
         confirmLabel="Refund order"

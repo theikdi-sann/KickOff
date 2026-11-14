@@ -12,7 +12,7 @@ update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-00
 insert into public.matches (id, opponent, opponent_short, kickoff_at)
 values ('tap-match', 'Tap FC', 'TAP', now() + interval '10 days');
 
-insert into public.orders (id, user_id, match_id, amount_satang, status) values
+insert into public.orders (id, user_id, match_id, amount_minor_units, status) values
   ('tap-order-alice', '00000000-0000-0000-0000-0000000000b1', 'tap-match', 35000, 'paid'),
   ('tap-order-bob', '00000000-0000-0000-0000-0000000000b2', 'tap-match', 45000, 'paid');
 

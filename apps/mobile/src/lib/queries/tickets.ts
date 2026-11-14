@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
 const SELECT =
-  'id,order_id,match_id,status,issued_at,used_at,matches(opponent,kickoff_at,venue:venues(name)),seats(row_label,number,zones(name)),order_seats!tickets_order_seat_id_fkey(price_satang)';
+  'id,order_id,match_id,status,issued_at,used_at,matches(opponent,kickoff_at,venue:venues(name)),seats(row_label,number,zones(name)),order_seats!tickets_order_seat_id_fkey(price_minor_units)';
 
 async function holderName(): Promise<string> {
   const { data } = await supabase.auth.getUser();

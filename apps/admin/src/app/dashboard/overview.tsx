@@ -54,7 +54,7 @@ export function DashboardOverview() {
   const sold = Math.min(capacity, next ? (sales[next.id]?.ticketsSold ?? 0) : 0);
   const available = nextAvailability?.available ?? 0;
   const sellThrough = sellThroughPercent(sold, capacity);
-  const revenue = aggregate.data?.revenueSatang ?? 0;
+  const revenue = aggregate.data?.revenueMinorUnits ?? 0;
   const ticketsSold = aggregate.data?.ticketsSold ?? 0;
   const pulse = [
     { label: "Paid", value: aggregate.data?.ordersPaid ?? 0 },
@@ -371,7 +371,7 @@ export function DashboardOverview() {
                       {formatMatchDate(order.createdAt)}
                     </p>
                   </div>
-                  <p className="text-xs font-semibold text-slate-800">{formatTHB(order.amountSatang)}</p>
+                  <p className="text-xs font-semibold text-slate-800">{formatTHB(order.amountMinorUnits)}</p>
                   <Badge tone={order.status === "paid" ? "green" : "muted"}>{order.status}</Badge>
                 </div>
               ))}

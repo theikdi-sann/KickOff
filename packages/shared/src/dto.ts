@@ -1,6 +1,7 @@
 /**
  * Wire DTOs — camelCase payloads exchanged between apps, Edge Functions and the
- * database. Monetary fields are always integer satang (never floats/baht).
+ * database. Monetary fields are always integer **minor units** of the order's
+ * currency (never floats/baht).
  */
 import type {
   HomeAway,
@@ -10,7 +11,6 @@ import type {
   OrderStatus,
   Role,
   ScanResultCode,
-  SeatStatus,
   TicketStatus,
 } from './entities';
 
@@ -43,7 +43,7 @@ export interface ZoneDto {
   matchId: string;
   name: string;
   description: string;
-  priceSatang: number;
+  priceMinorUnits: number;
   color: string;
   rows: string[];
   seatsPerRow: number;
@@ -55,7 +55,6 @@ export interface SeatDto {
   row: string;
   number: number;
   label: string;
-  status: SeatStatus;
 }
 
 export interface HoldDto {
@@ -74,7 +73,7 @@ export interface OrderSeatDto {
   zoneName: string;
   row: string;
   number: number;
-  priceSatang: number;
+  priceMinorUnits: number;
 }
 
 export interface OrderDto {
@@ -83,7 +82,7 @@ export interface OrderDto {
   matchId: string;
   matchLabel: string;
   seats: OrderSeatDto[];
-  amountSatang: number;
+  amountMinorUnits: number;
   status: OrderStatus;
   createdAt: IsoTimestamp;
   paidAt?: IsoTimestamp | null;
@@ -106,7 +105,7 @@ export interface TicketDto {
   row: string;
   number: number;
   seatLabel: string;
-  priceSatang: number;
+  priceMinorUnits: number;
   status: TicketStatus;
   issuedAt: IsoTimestamp;
   usedAt?: IsoTimestamp | null;

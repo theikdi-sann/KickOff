@@ -33,7 +33,7 @@ export default function OrderDetailPage() {
       });
       toast({
         title: "Refund issued",
-        description: `${formatTHB(order.amountSatang)} refunded for ${order.id}.`,
+        description: `${formatTHB(order.amountMinorUnits)} refunded for ${order.id}.`,
         tone: "green",
       });
     } catch (caught) {
@@ -125,13 +125,13 @@ export default function OrderDetailPage() {
                     ticket {seat.ticketId ?? "not issued"}
                   </p>
                 </div>
-                <span className="font-semibold text-slate-700">{formatTHB(seat.priceSatang)}</span>
+                <span className="font-semibold text-slate-700">{formatTHB(seat.priceMinorUnits)}</span>
               </div>
             ))}
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
             <span className="text-xs uppercase tracking-[0.12em] text-slate-400">Total</span>
-            <span className="text-lg font-bold text-slate-900">{formatTHB(order.amountSatang)}</span>
+            <span className="text-lg font-bold text-slate-900">{formatTHB(order.amountMinorUnits)}</span>
           </div>
         </div>
 
@@ -187,7 +187,7 @@ export default function OrderDetailPage() {
       <ConfirmDialog
         open={confirmingRefund}
         title="Refund this order?"
-        description={`${formatTHB(order.amountSatang)} will be refunded through Stripe for ${order.id}. ${
+        description={`${formatTHB(order.amountMinorUnits)} will be refunded through Stripe for ${order.id}. ${
           override
             ? "The used-ticket override is enabled and will be audited."
             : "Used tickets are non-refundable unless you enable the override."

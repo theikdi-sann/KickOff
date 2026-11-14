@@ -11,7 +11,7 @@ const orderRow: OrderJoinRow = {
   id: 'ord-1',
   user_id: 'usr-1',
   match_id: 'm-1',
-  amount_satang: 120000,
+  amount_minor_units: 120000,
   status: 'paid',
   created_at: '2026-11-01T10:00:00Z',
   paid_at: '2026-11-01T10:05:00Z',
@@ -25,7 +25,7 @@ const orderRow: OrderJoinRow = {
       zone_name: 'North Stand',
       row_label: 'A',
       number: 12,
-      price_satang: 120000,
+      price_minor_units: 120000,
     },
   ],
   matches: { opponent: 'Rovers FC' },
@@ -44,7 +44,7 @@ const ticketRow: TicketJoinRow = {
     venue: { name: 'KickOff Arena' },
   },
   seats: { row_label: 'A', number: 12, zones: { name: 'North Stand' } },
-  order_seats: { price_satang: 120000 },
+  order_seats: { price_minor_units: 120000 },
 };
 
 describe('toOrderDto', () => {
@@ -55,7 +55,7 @@ describe('toOrderDto', () => {
     expect(dto.userId).toBe('usr-1');
     expect(dto.matchId).toBe('m-1');
     expect(dto.matchLabel).toBe('KickOff vs Rovers FC');
-    expect(dto.amountSatang).toBe(120000);
+    expect(dto.amountMinorUnits).toBe(120000);
     expect(dto.status).toBe('paid');
     expect(dto.paymentRef).toBe('pi_123');
     expect(dto.checkoutUrl).toBe('https://checkout.stripe.test/session');
@@ -67,7 +67,7 @@ describe('toOrderDto', () => {
         zoneName: 'North Stand',
         row: 'A',
         number: 12,
-        priceSatang: 120000,
+        priceMinorUnits: 120000,
       },
     ]);
   });
@@ -100,7 +100,7 @@ describe('toTicketDto', () => {
     expect(dto.row).toBe('A');
     expect(dto.number).toBe(12);
     expect(dto.seatLabel).toBe('A12');
-    expect(dto.priceSatang).toBe(120000);
+    expect(dto.priceMinorUnits).toBe(120000);
     expect(dto.status).toBe('valid');
     expect(dto.issuedAt).toBe('2026-11-01T10:05:00Z');
     expect(dto.qrPayload).toBe('');
@@ -121,7 +121,7 @@ describe('toTicketDto', () => {
     expect(dto.row).toBe('');
     expect(dto.number).toBe(0);
     expect(dto.seatLabel).toBe('0');
-    expect(dto.priceSatang).toBe(0);
+    expect(dto.priceMinorUnits).toBe(0);
     expect(dto.venue).toBe('KickOff Arena');
   });
 });

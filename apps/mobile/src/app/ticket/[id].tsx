@@ -267,7 +267,7 @@ export default function TicketDetailScreen() {
                 PAID
               </AppText>
               <AppText variant="label" color={colors.accent}>
-                {formatTHB(ticket.priceSatang)}
+                {formatTHB(ticket.priceMinorUnits)}
               </AppText>
             </View>
           </View>

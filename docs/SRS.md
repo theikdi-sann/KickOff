@@ -314,7 +314,7 @@ Layered per [`TESTING.md`](TESTING.md):
 |---|---|---|
 | Repo contracts | `node --test scripts/tests/` | `npm test` |
 | Shared + mobile unit | Vitest / jest-expo | `npm test` |
-| Database | pgTAP via `scripts/run-pgtap.sh` (183 assertions / 15 suites) | `db:test` |
+| Database | pgTAP via `scripts/run-pgtap.sh` (211 assertions / 16 suites) | `db:test` |
 | Edge Functions | Deno lint + tests | `functions:check`, CI |
 | Browser demo gate | `scripts/mvp-gate.mjs` (15/15) | manual/CI |
 | Auth E2E | Playwright against hosted project | manual `workflow_dispatch` |

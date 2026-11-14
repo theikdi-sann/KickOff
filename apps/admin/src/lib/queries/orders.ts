@@ -20,7 +20,7 @@ export interface AdminOrder extends OrderDto {
 }
 
 const SELECT =
-  "*, matches(opponent), order_seats(seat_id,ticket_id,zone_name,row_label,number,price_satang)";
+  "*, matches(opponent), order_seats(seat_id,ticket_id,zone_name,row_label,number,price_minor_units)";
 
 interface Holder {
   full_name: string;
@@ -136,7 +136,7 @@ export function useRefund() {
 
 export interface OrdersAggregate {
   range: { from: string; to: string };
-  revenueSatang: number;
+  revenueMinorUnits: number;
   ordersPaid: number;
   ordersRefunded: number;
   ticketsSold: number;
