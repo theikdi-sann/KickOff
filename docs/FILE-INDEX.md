@@ -364,6 +364,7 @@ before the suite is green again.
 | `supabase/migrations/0037_reschedule_audit.sql` | data | reviewed | 0037_reschedule_audit — punch list #13: where the reschedule reason lives. |
 | `supabase/migrations/0038_atomic_reschedule_refund.sql` | source | reviewed | migration — atomic reschedule + refund RPCs (F-07) |
 | `supabase/migrations/0039_staff_roles.sql` | data | reviewed | migration — GAP-03a staff roles (`gatekeeper`), `is_staff()`, gate RLS |
+| `supabase/migrations/0040_tenants.sql` | data | reviewed | migration — C6.1 `tenants`, `current_tenant()`, `minor_units()`, `provision_tenant()` |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
@@ -376,5 +377,6 @@ before the suite is green again.
 | `supabase/tests/scan-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/seat-reservation.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/staff-roles.test.sql` | test | covered | pgTAP suite — GAP-03a staff roles, gate authority and RLS boundary (25 assertions) |
+| `supabase/tests/tenants.test.sql` | test | covered | pgTAP suite — C6.1 tenant row, claim resolution, scale parity, provisioning, branding-only reads and write denial (23 assertions) |
 | `supabase/tests/venues.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `tsconfig.base.json` | config | reviewed | shared TypeScript strictness |

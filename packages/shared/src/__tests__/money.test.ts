@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { assertSatang, bahtToSatang, isSatang, satangToBaht, sumSatang } from '../money';
+import {
+  assertSatang,
+  bahtToSatang,
+  isSatang,
+  minorUnitScale,
+  satangToBaht,
+  sumSatang,
+} from '../money';
 
 describe('money', () => {
   it('converts whole baht to satang', () => {
@@ -50,5 +57,29 @@ describe('money', () => {
     expect(isSatang('100')).toBe(false);
     expect(isSatang(-5)).toBe(false);
     expect(isSatang(Number.NaN)).toBe(false);
+  });
+});
+
+describe('minorUnitScale', () => {
+  it('uses two decimals for the common currencies', () => {
+    expect(minorUnitScale('THB')).toBe(2);
+    expect(minorUnitScale('USD')).toBe(2);
+    expect(minorUnitScale('eur')).toBe(2);
+  });
+
+  it('knows the zero-decimal currencies', () => {
+    expect(minorUnitScale('JPY')).toBe(0);
+    expect(minorUnitScale('KRW')).toBe(0);
+    expect(minorUnitScale('VND')).toBe(0);
+  });
+
+  it('knows the three-decimal currencies', () => {
+    expect(minorUnitScale('KWD')).toBe(3);
+    expect(minorUnitScale('BHD')).toBe(3);
+  });
+
+  it('rejects anything that is not a three-letter code', () => {
+    expect(() => minorUnitScale('BAHT')).toThrow(RangeError);
+    expect(() => minorUnitScale('')).toThrow(RangeError);
   });
 });

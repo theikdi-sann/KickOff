@@ -311,6 +311,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"tenants": {
+                  Row: {
+                    "application_fee_bps": number,"created_at": string,"currency": string,"id": string,"locale": string,"logo_url": string | null,"name": string,"primary_color": string,"slug": string,"status": Database["public"]['Enums']["tenant_status"],"stripe_account_id": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "application_fee_bps"?: number,"created_at"?: string,"currency"?: string,"id"?: string,"locale"?: string,"logo_url"?: string | null,"name": string,"primary_color"?: string,"slug": string,"status"?: Database["public"]['Enums']["tenant_status"],"stripe_account_id"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "application_fee_bps"?: number,"created_at"?: string,"currency"?: string,"id"?: string,"locale"?: string,"logo_url"?: string | null,"name"?: string,"primary_color"?: string,"slug"?: string,"status"?: Database["public"]['Enums']["tenant_status"],"stripe_account_id"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"tickets": {
                   Row: {
                     "created_at": string,"id": string,"issued_at": string,"match_id": string,"order_id": string,"order_seat_id": string,"qr_nonce": string,"seat_id": string,"status": Database["public"]['Enums']["ticket_status"],"used_at": string | null,"user_id": string
@@ -541,6 +555,9 @@ isOneToOne: false
 "create_order_from_hold":
 { Args: { "p_hold_id": string }; Returns: Json
                            },
+"current_tenant":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
 "dblink":
 { Args: { "": string }; Returns: Record<string, unknown>[]
                            },
@@ -643,6 +660,9 @@ isOneToOne: false
 "is_empty":
 { Args: { "": string }; Returns: string
                            },
+"is_staff":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "isnt_empty":
 { Args: { "": string }; Returns: string
                            },
@@ -654,6 +674,9 @@ isOneToOne: false
                            },
 "mark_order_refunded":
 { Args: { "p_actor_id": string,"p_order_id": string,"p_override_used_tickets"?: boolean,"p_reason"?: string,"p_refund_id": string }; Returns: Json
+                           },
+"minor_units":
+{ Args: { "p_currency": string }; Returns: number
                            },
 "no_plan":
 { Args: Record<PropertyKey, never>; Returns: boolean[]
@@ -677,6 +700,9 @@ isOneToOne: false
                            },
 "pgtap_version":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"provision_tenant":
+{ Args: { "p_currency"?: string,"p_locale"?: string,"p_name": string,"p_slug": string }; Returns: string
                            },
 "release_hold":
 { Args: { "p_hold_id": string }; Returns: number
@@ -719,7 +745,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "match_status": "upcoming"|"live"|"completed","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded","scan_result": "valid"|"used"|"invalid"|"wrong_match","seat_status": "available"|"sold"|"held","ticket_status": "valid"|"used"|"void"
+            "match_status": "upcoming"|"live"|"completed","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded","scan_result": "valid"|"used"|"invalid"|"wrong_match","seat_status": "available"|"sold"|"held","tenant_status": "active"|"suspended","ticket_status": "valid"|"used"|"void"
           }
           CompositeTypes: {
             "_time_trial_type": {
@@ -843,7 +869,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "match_status": ["upcoming", "live", "completed"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded"],"scan_result": ["valid", "used", "invalid", "wrong_match"],"seat_status": ["available", "sold", "held"],"ticket_status": ["valid", "used", "void"]
+            "match_status": ["upcoming", "live", "completed"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded"],"scan_result": ["valid", "used", "invalid", "wrong_match"],"seat_status": ["available", "sold", "held"],"tenant_status": ["active", "suspended"],"ticket_status": ["valid", "used", "void"]
           }
         }
 } as const

@@ -69,7 +69,7 @@ the gate surface (admin or gatekeeper). Both read `app_metadata.role`, so a
 role change is applied everywhere at once. `supabase/tests/staff-roles.test.sql`
 asserts the boundary.
 
-### 2.1 Target multi-tenant model (C6–C7 — designed, not yet implemented)
+### 2.1 Target multi-tenant model (C6–C7 — `0040` landed, the rest designed)
 
 The single-tenant matrix above is replaced by a tenant-scoped one in the
 `0040`–`0045` series (ADR-001, ADR-002):
@@ -93,7 +93,10 @@ The single-tenant matrix above is replaced by a tenant-scoped one in the
   RLS applies per row (`order_receipt_view` carries holder PII).
 - **Public catalogue** (`venues`, `matches`, `zones`, `seats`,
   `match_zone_prices`, published `news_items`) is open for SELECT, writes
-  remain tenant-scoped (ADR-002 §6).
+  remain tenant-scoped (ADR-002 §6). `tenants` exposes its branding columns
+  only (`id`, `name`, `slug`, `currency`, `locale`, `logo_url`,
+  `primary_color`, `status`); the platform fee and the Connect account stay
+  service-role.
 - **Connect:** `stripe_events` resolves its tenant from the Connect event's
   `account`; the platform Stripe secret stays the only payment secret.
 

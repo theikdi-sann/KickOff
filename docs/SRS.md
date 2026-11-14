@@ -314,7 +314,7 @@ Layered per [`TESTING.md`](TESTING.md):
 |---|---|---|
 | Repo contracts | `node --test scripts/tests/` | `npm test` |
 | Shared + mobile unit | Vitest / jest-expo | `npm test` |
-| Database | pgTAP via `scripts/run-pgtap.sh` (116 assertions / 12 suites) | `db:test` |
+| Database | pgTAP via `scripts/run-pgtap.sh` (139 assertions / 13 suites) | `db:test` |
 | Edge Functions | Deno lint + tests | `functions:check`, CI |
 | Browser demo gate | `scripts/mvp-gate.mjs` (15/15) | manual/CI |
 | Auth E2E | Playwright against hosted project | manual `workflow_dispatch` |
@@ -333,8 +333,10 @@ the execution order fixed in `PLAN.md`:
   `0040`–`0048`: per-tenant `staff_roles` with capability flags, global
   identity, `tenant_id` + composite FKs, the RLS rewrite and the isolation
   suite. Design: [`ADR-001`](adr/ADR-001-account-model.md),
-  [`ADR-002`](adr/ADR-002-multi-tenancy.md). Not yet implemented; the current
-  single-tenant behaviour above remains authoritative until each step lands.
+  [`ADR-002`](adr/ADR-002-multi-tenancy.md). `0040` (the `tenants` row,
+  `current_tenant()`, `minor_units()` and `provision_tenant()`) has landed; the
+  rest is not yet implemented, so the current single-tenant behaviour above
+  remains authoritative until each step lands.
 - **C8 (GAP-09)** — Stripe Connect (per-club connected accounts, platform fee,
   per-account webhooks, refund ledger): [`ADR-003`](adr/ADR-003-stripe-connect.md).
   GDPR export and tenant offboarding land before this cycle.

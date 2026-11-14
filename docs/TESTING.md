@@ -9,7 +9,7 @@ gate locally it will break the build.
 |---|---|---|
 | Workspace unit tests | `npm test` | shared schemas/format/i18n/greeting (Vitest), admin node tests, mobile Jest tests, repo script tests |
 | Typecheck + lint | `npm run check` | TypeScript across shared/mobile/admin, ESLint |
-| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary (116 assertions, 12 suites) |
+| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning (139 assertions, 13 suites) |
 | Edge Functions (unit) | `cd supabase/functions && deno test --allow-env --allow-net tests/` | HMAC, config, error mapping, metrics helpers |
 | Edge Functions (integration) | `RUN_INTEGRATION=1 deno test --allow-env --allow-net tests/` | real checkout → webhook → ticket → receipt, scan/undo |
 | Functions typecheck | `npm run functions:check` | `deno check` on every `supabase/functions/*/index.ts` |
@@ -58,11 +58,13 @@ The script prefers a local Supabase/Docker instance and falls back to running
 the same SQL against the hosted project when Docker is unavailable. It applies
 the `supabase/tests/*.sql` suites and reports pass/fail per assertion.
 
-**116 assertions across 12 suites**, verified against the local stack on
-2026-11-13: constraints, hold concurrency, hold TTL, order expiry, reschedule
+**139 assertions across 13 suites**, verified against the local stack on
+2026-11-14: constraints, hold concurrency, hold TTL, order expiry, reschedule
 audit, RLS (auth + anonymous), scan concurrency, seat reservation, venues, the
-F-07 atomicity suite (reschedule and refund), and the GAP-03a staff-role suite
-(`admin` / `gatekeeper` authority and the gate RLS boundary).
+F-07 atomicity suite (reschedule and refund), the GAP-03a staff-role suite
+(`admin` / `gatekeeper` authority and the gate RLS boundary), and the C6.1
+tenant suite (`tenants`, `current_tenant()`, `minor_units()`,
+`provision_tenant()`).
 
 **Why the runner exists.** The two concurrency suites open their worker
 sessions through `dblink`, which reconnects over the network. Both the local
