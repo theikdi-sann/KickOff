@@ -41,7 +41,7 @@ column check, `is_admin()`/`is_staff()` and the shared `roles.ts`.
   dual-write window; every consumer reads `staff_members`/`roles.ts`.
 - RLS and Edge guards stop enumerating role names — a new role works
   everywhere without touching a predicate.
-- The account split is implemented in migration series `0040`–`0048`
+- The account split lands in migration series `0040`–`0048`
   (see [`../../PLAN.md`](../../PLAN.md) C6/C7), not as a standalone refactor.
 - Ticket transfer/claim (a fan holding another fan's pass) is explicitly out
   of scope; tracked as `GAP-08`.

@@ -96,8 +96,9 @@ One line per cycle, newest last. The detail lives in the commit history and in
 | **GAP-10** White-label ops | per-club EAS project/bundle id, Expo push credentials, store listings, release checklist | One app per club multiplies release overhead | **C9.2** |
 
 Execution order: C5.2–C5.4 (docs, ADRs, gaps — done) → **C6** →
-**C7** → **C8** → **C9** → **C10**. The full sequencing with dependencies,
-risks and per-step gates is the master plan agreed on 2026-11-14.
+**C7** → **C8** → **C9** → **C10**. This table, the workstream rows above and
+the delivery log below are the sequencing of record; sub-numbers used in
+earlier drafts of this plan are superseded.
 
 ### Deliberate non-goals
 
@@ -137,14 +138,14 @@ the archived history.
 | D-20 | Staff roles are exactly two for now — `admin` and `gatekeeper` | a gatekeeper may only scan and undo their own scans; anything richer belongs to the remainder of GAP-03 | active — **GAP-03a applied** (`0039`, `roles.ts`) |
 | D-21 | F-11 keeps the wire DTO and the auth schemas and deletes the rest | an unused contract is a contract that drifts; the shared package is the one source of truth | active |
 | D-22 | The pgTAP gate runs against the **local** stack, not the hosted project | a hosted run needs explicit consent for a production mutation; the local stack proves the same SQL with no production risk | active — **C4.4 applied** |
-| D-23 | Identity is **global**; authority is per tenant (`staff_members(id, tenant_id)`, per-tenant `staff_roles` with capability flags) | one login for every club; a person can be staff at one club and a fan at another; capabilities replace role-name predicates | active — design (ADR-001), implemented in `0041` |
-| D-24 | Multi-tenancy uses `tenant_id` on every scoped table plus **composite FKs** `(id, tenant_id)` | a cross-tenant reference becomes impossible at the database level, not merely forbidden by a policy | active — design (ADR-002), implemented in `0040`–`0042` |
+| D-23 | Identity is **global**; authority is per tenant (`staff_members(id, tenant_id)`, per-tenant `staff_roles` with capability flags) | one login for every club; a person can be staff at one club and a fan at another; capabilities replace role-name predicates | active — design (ADR-001), lands in `0041` |
+| D-24 | Multi-tenancy uses `tenant_id` on every scoped table plus **composite FKs** `(id, tenant_id)` | a cross-tenant reference becomes impossible at the database level, not merely forbidden by a policy | active — design (ADR-002), lands in `0040`–`0042` |
 | D-25 | Public catalogue reads are **open**; commerce, identity and ops data stay tenant + user scoped | catalogue data is public by nature; JWT claims are per user, so a dual-club fan must not see the wrong feed after refresh | active — design (ADR-002 §6), lands with the `0045` RLS rewrite |
-| D-26 | Seats are physical inventory; occupancy is per `(match, seat)`; price per `(match, zone)`; **one ticket per seat** | a venue-level seat status would block every fixture; a venue-level price cannot price a derby differently | active — design, implemented in `0043` |
+| D-26 | Seats are physical inventory; occupancy is per `(match, seat)`; price per `(match, zone)`; **one ticket per seat** | a venue-level seat status would block every fixture; a venue-level price cannot price a derby differently | active — design, lands in `0043` |
 | D-27 | Money is integer **minor units** plus a `currency` snapshot; `minor_units()` decides the scale | mixed units are a ×100 bug; zero-decimal currencies (JPY) break a hard-coded 100 | active — planned for C6 (`minor_units()` + shared scale helper) |
-| D-28 | Stripe **Connect**, one connected account per tenant; platform fee snapshotted on the order | the club is merchant of record; manual payouts do not scale | active — design (ADR-003), implemented in C8 |
-| D-29 | **White-label**: one mobile app and one console per club; `bootstrap` sets `app_metadata.tenant_id` | clubs buy a branded product; global identity is preserved across apps | active — design (ADR-004), implemented in C9 |
-| D-30 | The **platform console** is a cross-tenant control surface gated by `is_platform_admin()`; it never reads another club's row-level data | provisioning, fee rates and suspension are platform operations, not club operations | active — design (ADR-004), implemented in C9 |
+| D-28 | Stripe **Connect**, one connected account per tenant; platform fee snapshotted on the order | the club is merchant of record; manual payouts do not scale | active — design (ADR-003), lands in C8 |
+| D-29 | **White-label**: one mobile app and one console per club; `bootstrap` sets `app_metadata.tenant_id` | clubs buy a branded product; global identity is preserved across apps | active — design (ADR-004), lands in C9 |
+| D-30 | The **platform console** is a cross-tenant control surface gated by `is_platform_admin()`; it never reads another club's row-level data | provisioning, fee rates and suspension are platform operations, not club operations | active — design (ADR-004), lands in C9 |
 
 ## Errors / Notes
 
