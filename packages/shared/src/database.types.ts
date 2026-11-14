@@ -79,6 +79,26 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"fans": {
+                  Row: {
+                    "created_at": string,"id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "fans_id_fkey"
+      columns: ["id"]
+isOneToOne: true
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"gates": {
                   Row: {
                     "active": boolean,"created_at": string,"id": string,"match_id": string | null,"name": string,"updated_at": string
@@ -294,6 +314,64 @@ isOneToOne: false
       columns: ["zone_id"]
 isOneToOne: false
       referencedRelation: "zones"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"staff_members": {
+                  Row: {
+                    "created_at": string,"granted_by": string | null,"id": string,"staff_role": string,"tenant_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"granted_by"?: string | null,"id": string,"staff_role": string,"tenant_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"granted_by"?: string | null,"id"?: string,"staff_role"?: string,"tenant_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "staff_members_granted_by_fkey"
+      columns: ["granted_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "staff_members_id_fkey"
+      columns: ["id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "staff_members_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "staff_members_tenant_id_staff_role_fkey"
+      columns: ["tenant_id","staff_role"]
+isOneToOne: false
+      referencedRelation: "staff_roles"
+      referencedColumns: ["tenant_id","code"]
+    }
+                  ]
+                },"staff_roles": {
+                  Row: {
+                    "can_manage_staff": boolean,"can_operate_gate": boolean,"code": string,"created_at": string,"name": string,"sort_order": number,"tenant_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "can_manage_staff"?: boolean,"can_operate_gate"?: boolean,"code": string,"created_at"?: string,"name": string,"sort_order"?: number,"tenant_id": string
+                  }
+                  Update: {
+                    "can_manage_staff"?: boolean,"can_operate_gate"?: boolean,"code"?: string,"created_at"?: string,"name"?: string,"sort_order"?: number,"tenant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "staff_roles_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
       referencedColumns: ["id"]
     }
                   ]

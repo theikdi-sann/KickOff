@@ -142,7 +142,7 @@ supabase/
 | Nothing but admins reads `audit_logs` / `scan_events` | RLS policies | `rls.test.sql` |
 | Only admins write `audit_logs` | `0037` grant + policy; `0038` RPCs write their own rows atomically | `reschedule-audit.test.sql` + `atomicity.test.sql` |
 
-### 3.1 Target model (C6–C7 — `0040` landed, the rest designed)
+### 3.1 Target model (C6–C7 — `0040`–`0041` landed, the rest designed)
 
 The B2B account and tenancy model agreed on 2026-11-14 replaces the
 single-tenant shape above. It is delivered as the migration series

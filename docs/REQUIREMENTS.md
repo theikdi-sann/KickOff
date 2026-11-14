@@ -92,7 +92,7 @@ Supabase backend with Stripe payments and the Expo Push Service.
 | NFR-07 | Type safety: strict TS, no `any` | shipped | `tsconfig.base.json`, ESLint `no-explicit-any` |
 | NFR-08 | Offline entry verification without a network | **open** | `GAP-01` |
 | NFR-09 | Multi-tenant isolation | **open** | `GAP-02` — ADR-002; C6–C7 (`0040`–`0045`) |
-| NFR-10 | Fine-grained staff roles beyond owner/admin | **partial** | `GAP-03a` delivered `admin` / `gatekeeper` (`0039`, `roles.ts`); per-tenant capability roles designed in ADR-001 (C6) |
+| NFR-10 | Fine-grained staff roles beyond owner/admin | **partial** | `GAP-03a` delivered `admin` / `gatekeeper` (`0039`, `roles.ts`); `0041` made roles per-tenant with capability flags (`staff_roles`, `staff_members`), closing GAP-03 |
 | NFR-11 | Observability: structured logs, metrics, error tracking | **open** | `GAP-04` — B2B blocker |
 | NFR-12 | Multi-language and multi-currency | **open** | `GAP-05` — schema (`tenants.locale`/`currency`) in C6/C7, UX in C10.2 |
 
@@ -160,7 +160,7 @@ tracked decision, not an accident.
 |---|---|---|---|
 | **GAP-01** | **Offline pass verification.** The signed QR payload is fetched over the network, so a pass cannot be presented without connectivity. The proposal's SC-08 wants issued passes cached locally. | Supporter at a venue with poor signal cannot show the pass. | C10.3 — deliberately deferred; the system is otherwise sound. Implementation must keep the server authoritative at scan time and only cache the *payload*. |
 | **GAP-02** | **No multi-tenancy.** One club per deployment; branding, currency and staff are global. | Blocks the B2B model. | C6–C7 — ADR-002; closes at `0045` when the tenant-isolation pgTAP suite is green. |
-| **GAP-03** | **Staff roles are a fixed pair.** `GAP-03a` delivered the two-role scope (`admin` \| `gatekeeper`, migration `0039`): a gatekeeper may scan and undo only their own scans and is confined to the gate surface. Roles are still global, not per-club. | Gate staff no longer hold refund/user authority, but a club cannot define its own roles or scope a staff member to one venue/tenant. | C6 — ADR-001; per-tenant capability roles and `staff_members(id, tenant_id)` land in `0041`. |
+| **GAP-03** | **Staff roles are a fixed pair.** `GAP-03a` delivered the two-role scope (`admin` \| `gatekeeper`, migration `0039`): a gatekeeper may scan and undo only their own scans and is confined to the gate surface. | Gate staff no longer hold refund/user authority, but a club cannot define its own roles or scope a staff member to one venue/tenant. | ✅ closed by C6.2 — `0041` ships per-tenant `staff_roles` with capability flags and `staff_members(id, tenant_id)` (ADR-001). |
 | **GAP-04** | **Observability is thin.** Structured logs and metrics exist, but there is no error tracking, tracing or alerting. | Incidents are found by users, not by monitoring. | C10.1. |
 | **GAP-05** | **One locale, one currency.** English + THB only; the unused English string table was removed in Phase C2, so localization has to be rebuilt per tenant. | Multi-country clubs need per-tenant locale/currency. | Schema (`tenants.locale`/`currency`) in C6/C7; UX in C10.2. |
 | **GAP-06** | **The EAS dev build has never been exercised end to end.** Push code is contract-tested, but no APK has been built and no push delivered on a device. | Push is unproven on hardware. | C10.4 — `eas build --profile development` + `expo.dev/notifications`. |

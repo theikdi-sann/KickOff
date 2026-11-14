@@ -69,7 +69,7 @@ the gate surface (admin or gatekeeper). Both read `app_metadata.role`, so a
 role change is applied everywhere at once. `supabase/tests/staff-roles.test.sql`
 asserts the boundary.
 
-### 2.1 Target multi-tenant model (C6–C7 — `0040` landed, the rest designed)
+### 2.1 Target multi-tenant model (C6–C7 — `0040`–`0041` landed, the rest designed)
 
 The single-tenant matrix above is replaced by a tenant-scoped one in the
 `0040`–`0045` series (ADR-001, ADR-002):

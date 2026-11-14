@@ -83,14 +83,14 @@ production admin origin — CORS falls back to localhost defaults otherwise.
 
 ### 3.5 Tenant provisioning and white-label releases (planned — C6–C9)
 
-`provision_tenant()` and the `tenants` row exist (migration `0040`); role and
-setting seeding arrives in `0041`/`0042`. The full procedure lands with the
-C6–C9 cycles and will be completed here before the first second-club
-deployment.
+`provision_tenant()` and the `tenants` row exist (migration `0040`), and it
+seeds the per-club `staff_roles` vocabulary (`0041`); default `app_settings`
+seeding arrives in `0042`. The full procedure lands with the C6–C9 cycles and
+will be completed here before the first second-club deployment.
 
 1. `select provision_tenant('Club Name', 'club-slug', 'THB', 'th-TH');`
    — idempotent by slug; seeds `staff_roles` (`admin`, `gatekeeper`) and default
-   `app_settings` once `0041`/`0042` land.
+   `app_settings` once `0042` lands.
 2. Create the venue, zones and seats; invite the first admin
    (`admin-users`), who grants the rest.
 3. Complete Stripe Connect onboarding for the club (`tenants.stripe_account_id`)

@@ -246,7 +246,7 @@ Each NFR states the measurable target and the enforcement mechanism.
 | NFR-07 | Type safety | strict TS, `noUncheckedIndexedAccess` on, no `any`, no non-null assertions | `tsconfig.base.json`, ESLint, `scripts/tests/type-safety.test.mjs` |
 | NFR-08 | Offline entry verification | cached signed payload; server authoritative | **open** — `GAP-01` |
 | NFR-09 | Multi-tenant isolation | per-club data isolation, branding, currency | **open** — `GAP-02`; ADR-002, C6–C7 |
-| NFR-10 | Fine-grained staff roles | beyond `admin`/`gatekeeper`: per-club RBAC | **partial** — `GAP-03a` shipped; per-tenant capability roles in ADR-001, C6 |
+| NFR-10 | Fine-grained staff roles | beyond `admin`/`gatekeeper`: per-club RBAC | **partial** — `GAP-03a` shipped; `0041` made roles per-tenant with capability flags (C6.2) |
 | NFR-11 | Observability | structured logs (single JSON line, redacted), request IDs, error tracking, alerting | **open** — `GAP-04`; logger exists (`createLogger`, C4.11) |
 | NFR-12 | Multi-language/currency | per-tenant locale and currency | **open** — `GAP-05`; schema in C6/C7, UX in C10.2 |
 
@@ -314,7 +314,7 @@ Layered per [`TESTING.md`](TESTING.md):
 |---|---|---|
 | Repo contracts | `node --test scripts/tests/` | `npm test` |
 | Shared + mobile unit | Vitest / jest-expo | `npm test` |
-| Database | pgTAP via `scripts/run-pgtap.sh` (139 assertions / 13 suites) | `db:test` |
+| Database | pgTAP via `scripts/run-pgtap.sh` (160 assertions / 14 suites) | `db:test` |
 | Edge Functions | Deno lint + tests | `functions:check`, CI |
 | Browser demo gate | `scripts/mvp-gate.mjs` (15/15) | manual/CI |
 | Auth E2E | Playwright against hosted project | manual `workflow_dispatch` |
@@ -334,9 +334,11 @@ the execution order fixed in `PLAN.md`:
   identity, `tenant_id` + composite FKs, the RLS rewrite and the isolation
   suite. Design: [`ADR-001`](adr/ADR-001-account-model.md),
   [`ADR-002`](adr/ADR-002-multi-tenancy.md). `0040` (the `tenants` row,
-  `current_tenant()`, `minor_units()` and `provision_tenant()`) has landed; the
-  rest is not yet implemented, so the current single-tenant behaviour above
-  remains authoritative until each step lands.
+  `current_tenant()`, `minor_units()` and `provision_tenant()`) and `0041`
+  (global `fans`, per-tenant `staff_roles` with capability flags,
+  `staff_members`, and the legacy `profiles.role` dual-write bridge) have
+  landed; the rest is not yet implemented, so the current single-tenant
+  behaviour above remains authoritative until each step lands.
 - **C8 (GAP-09)** — Stripe Connect (per-club connected accounts, platform fee,
   per-account webhooks, refund ledger): [`ADR-003`](adr/ADR-003-stripe-connect.md).
   GDPR export and tenant offboarding land before this cycle.
