@@ -314,7 +314,7 @@ Layered per [`TESTING.md`](TESTING.md):
 |---|---|---|
 | Repo contracts | `node --test scripts/tests/` | `npm test` |
 | Shared + mobile unit | Vitest / jest-expo | `npm test` |
-| Database | pgTAP via `scripts/run-pgtap.sh` (160 assertions / 14 suites) | `db:test` |
+| Database | pgTAP via `scripts/run-pgtap.sh` (183 assertions / 15 suites) | `db:test` |
 | Edge Functions | Deno lint + tests | `functions:check`, CI |
 | Browser demo gate | `scripts/mvp-gate.mjs` (15/15) | manual/CI |
 | Auth E2E | Playwright against hosted project | manual `workflow_dispatch` |
@@ -334,11 +334,12 @@ the execution order fixed in `PLAN.md`:
   identity, `tenant_id` + composite FKs, the RLS rewrite and the isolation
   suite. Design: [`ADR-001`](adr/ADR-001-account-model.md),
   [`ADR-002`](adr/ADR-002-multi-tenancy.md). `0040` (the `tenants` row,
-  `current_tenant()`, `minor_units()` and `provision_tenant()`) and `0041`
+  `current_tenant()`, `minor_units()` and `provision_tenant()`), `0041`
   (global `fans`, per-tenant `staff_roles` with capability flags,
-  `staff_members`, and the legacy `profiles.role` dual-write bridge) have
-  landed; the rest is not yet implemented, so the current single-tenant
-  behaviour above remains authoritative until each step lands.
+  `staff_members`, and the legacy `profiles.role` dual-write bridge) and `0042`
+  (`tenant_id` on every scoped table, composite foreign keys, tenant-led
+  indexes) have landed; the rest is not yet implemented, so the current
+  single-tenant behaviour above remains authoritative until each step lands.
 - **C8 (GAP-09)** — Stripe Connect (per-club connected accounts, platform fee,
   per-account webhooks, refund ledger): [`ADR-003`](adr/ADR-003-stripe-connect.md).
   GDPR export and tenant offboarding land before this cycle.

@@ -366,6 +366,7 @@ before the suite is green again.
 | `supabase/migrations/0039_staff_roles.sql` | data | reviewed | migration — GAP-03a staff roles (`gatekeeper`), `is_staff()`, gate RLS |
 | `supabase/migrations/0040_tenants.sql` | data | reviewed | migration — C6.1 `tenants`, `current_tenant()`, `minor_units()`, `provision_tenant()` |
 | `supabase/migrations/0041_identity_split.sql` | data | reviewed | migration — C6.2 global identity (`fans`), per-tenant `staff_roles` + `staff_members`, legacy `profiles.role` dual-write bridge |
+| `supabase/migrations/0042_tenancy_columns.sql` | data | reviewed | migration — C6.3 `tenant_id` columns, `UNIQUE (id, tenant_id)`, composite FKs, tenant-led indexes, view embeds restored |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
@@ -379,6 +380,7 @@ before the suite is green again.
 | `supabase/tests/scan-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/seat-reservation.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/staff-roles.test.sql` | test | covered | pgTAP suite — GAP-03a staff roles, gate authority and RLS boundary (25 assertions) |
+| `supabase/tests/tenancy.test.sql` | test | covered | pgTAP suite — C6.3 tenant columns, composite FK isolation, backfill, tenant-led indexes (23 assertions) |
 | `supabase/tests/tenants.test.sql` | test | covered | pgTAP suite — C6.1 tenant row, claim resolution, scale parity, provisioning, branding-only reads and write denial (23 assertions) |
 | `supabase/tests/venues.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `tsconfig.base.json` | config | reviewed | shared TypeScript strictness |

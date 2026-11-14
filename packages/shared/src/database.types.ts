@@ -39,31 +39,43 @@ export type Database = {
                   ]
                 },"app_settings": {
                   Row: {
-                    "key": string,"updated_at": string,"updated_by": string | null,"value": NonNullable<Json>
+                    "key": string,"tenant_id": string,"updated_at": string,"updated_by": string | null,"value": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                    "key": string,"updated_at"?: string,"updated_by"?: string | null,"value": NonNullable<Json>
+                    "key": string,"tenant_id"?: string,"updated_at"?: string,"updated_by"?: string | null,"value": NonNullable<Json>
                   }
                   Update: {
-                    "key"?: string,"updated_at"?: string,"updated_by"?: string | null,"value"?: NonNullable<Json>
+                    "key"?: string,"tenant_id"?: string,"updated_at"?: string,"updated_by"?: string | null,"value"?: NonNullable<Json>
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "app_settings_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"audit_logs": {
                   Row: {
-                    "action": string,"actor_id": string | null,"created_at": string,"entity": string,"entity_id": string | null,"id": string,"metadata": Json | null
+                    "action": string,"actor_id": string | null,"created_at": string,"entity": string,"entity_id": string | null,"id": string,"metadata": Json | null,"tenant_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "action": string,"actor_id"?: string | null,"created_at"?: string,"entity": string,"entity_id"?: string | null,"id"?: string,"metadata"?: Json | null
+                    "action": string,"actor_id"?: string | null,"created_at"?: string,"entity": string,"entity_id"?: string | null,"id"?: string,"metadata"?: Json | null,"tenant_id"?: string
                   }
                   Update: {
-                    "action"?: string,"actor_id"?: string | null,"created_at"?: string,"entity"?: string,"entity_id"?: string | null,"id"?: string,"metadata"?: Json | null
+                    "action"?: string,"actor_id"?: string | null,"created_at"?: string,"entity"?: string,"entity_id"?: string | null,"id"?: string,"metadata"?: Json | null,"tenant_id"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "audit_logs_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"device_tokens": {
                   Row: {
@@ -101,125 +113,143 @@ isOneToOne: true
                   ]
                 },"gates": {
                   Row: {
-                    "active": boolean,"created_at": string,"id": string,"match_id": string | null,"name": string,"updated_at": string
+                    "active": boolean,"created_at": string,"id": string,"match_id": string | null,"name": string,"tenant_id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "active"?: boolean,"created_at"?: string,"id": string,"match_id"?: string | null,"name": string,"updated_at"?: string
+                    "active"?: boolean,"created_at"?: string,"id": string,"match_id"?: string | null,"name": string,"tenant_id"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "active"?: boolean,"created_at"?: string,"id"?: string,"match_id"?: string | null,"name"?: string,"updated_at"?: string
+                    "active"?: boolean,"created_at"?: string,"id"?: string,"match_id"?: string | null,"name"?: string,"tenant_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "gates_match_id_fkey"
-      columns: ["match_id"]
-isOneToOne: false
-      referencedRelation: "match_sales_summary"
-      referencedColumns: ["match_id"]
-    },{
-      foreignKeyName: "gates_match_id_fkey"
-      columns: ["match_id"]
+      columns: ["match_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "matches"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "gates_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
       referencedColumns: ["id"]
     }
                   ]
                 },"matches": {
                   Row: {
-                    "accent": string,"away_score": number | null,"competition": string,"created_at": string,"home_away": string,"home_score": number | null,"id": string,"kickoff_at": string,"opponent": string,"opponent_short": string,"poster_colors": (string)[],"status": Database["public"]['Enums']["match_status"],"updated_at": string,"venue_id": string
+                    "accent": string,"away_score": number | null,"competition": string,"created_at": string,"home_away": string,"home_score": number | null,"id": string,"kickoff_at": string,"opponent": string,"opponent_short": string,"poster_colors": (string)[],"status": Database["public"]['Enums']["match_status"],"tenant_id": string,"updated_at": string,"venue_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "accent"?: string,"away_score"?: number | null,"competition"?: string,"created_at"?: string,"home_away"?: string,"home_score"?: number | null,"id"?: string,"kickoff_at": string,"opponent": string,"opponent_short": string,"poster_colors"?: (string)[],"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string,"venue_id"?: string
+                    "accent"?: string,"away_score"?: number | null,"competition"?: string,"created_at"?: string,"home_away"?: string,"home_score"?: number | null,"id"?: string,"kickoff_at": string,"opponent": string,"opponent_short": string,"poster_colors"?: (string)[],"status"?: Database["public"]['Enums']["match_status"],"tenant_id"?: string,"updated_at"?: string,"venue_id"?: string
                   }
                   Update: {
-                    "accent"?: string,"away_score"?: number | null,"competition"?: string,"created_at"?: string,"home_away"?: string,"home_score"?: number | null,"id"?: string,"kickoff_at"?: string,"opponent"?: string,"opponent_short"?: string,"poster_colors"?: (string)[],"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string,"venue_id"?: string
+                    "accent"?: string,"away_score"?: number | null,"competition"?: string,"created_at"?: string,"home_away"?: string,"home_score"?: number | null,"id"?: string,"kickoff_at"?: string,"opponent"?: string,"opponent_short"?: string,"poster_colors"?: (string)[],"status"?: Database["public"]['Enums']["match_status"],"tenant_id"?: string,"updated_at"?: string,"venue_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "matches_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "matches_venue_id_fkey"
-      columns: ["venue_id"]
+      columns: ["venue_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "venues"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","tenant_id"]
     }
                   ]
                 },"news_items": {
                   Row: {
-                    "body": string,"category": string,"created_at": string,"created_by": string | null,"excerpt": string,"id": string,"image_colors": (string)[],"published_at": string,"read_minutes": number,"title": string,"updated_at": string
+                    "body": string,"category": string,"created_at": string,"created_by": string | null,"excerpt": string,"id": string,"image_colors": (string)[],"published_at": string,"read_minutes": number,"tenant_id": string,"title": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "body"?: string,"category"?: string,"created_at"?: string,"created_by"?: string | null,"excerpt"?: string,"id"?: string,"image_colors"?: (string)[],"published_at"?: string,"read_minutes"?: number,"title": string,"updated_at"?: string
+                    "body"?: string,"category"?: string,"created_at"?: string,"created_by"?: string | null,"excerpt"?: string,"id"?: string,"image_colors"?: (string)[],"published_at"?: string,"read_minutes"?: number,"tenant_id"?: string,"title": string,"updated_at"?: string
                   }
                   Update: {
-                    "body"?: string,"category"?: string,"created_at"?: string,"created_by"?: string | null,"excerpt"?: string,"id"?: string,"image_colors"?: (string)[],"published_at"?: string,"read_minutes"?: number,"title"?: string,"updated_at"?: string
+                    "body"?: string,"category"?: string,"created_at"?: string,"created_by"?: string | null,"excerpt"?: string,"id"?: string,"image_colors"?: (string)[],"published_at"?: string,"read_minutes"?: number,"tenant_id"?: string,"title"?: string,"updated_at"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "news_items_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"order_seats": {
                   Row: {
-                    "created_at": string,"id": string,"number": number,"order_id": string,"price_satang": number,"row_label": string,"seat_id": string,"ticket_id": string | null,"zone_name": string
+                    "created_at": string,"id": string,"number": number,"order_id": string,"price_satang": number,"row_label": string,"seat_id": string,"tenant_id": string,"ticket_id": string | null,"zone_name": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"number": number,"order_id": string,"price_satang": number,"row_label": string,"seat_id": string,"ticket_id"?: string | null,"zone_name": string
+                    "created_at"?: string,"id"?: string,"number": number,"order_id": string,"price_satang": number,"row_label": string,"seat_id": string,"tenant_id"?: string,"ticket_id"?: string | null,"zone_name": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"number"?: number,"order_id"?: string,"price_satang"?: number,"row_label"?: string,"seat_id"?: string,"ticket_id"?: string | null,"zone_name"?: string
+                    "created_at"?: string,"id"?: string,"number"?: number,"order_id"?: string,"price_satang"?: number,"row_label"?: string,"seat_id"?: string,"tenant_id"?: string,"ticket_id"?: string | null,"zone_name"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "order_seats_order_id_fkey"
-      columns: ["order_id"]
+      columns: ["order_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "order_receipt_view"
-      referencedColumns: ["order_id"]
+      referencedColumns: ["order_id","tenant_id"]
     },{
       foreignKeyName: "order_seats_order_id_fkey"
-      columns: ["order_id"]
+      columns: ["order_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "orders"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","tenant_id"]
     },{
       foreignKeyName: "order_seats_seat_id_fkey"
-      columns: ["seat_id"]
+      columns: ["seat_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "seats"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "order_seats_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "order_seats_ticket_id_fkey"
-      columns: ["ticket_id"]
-isOneToOne: true
+      columns: ["ticket_id","tenant_id"]
+isOneToOne: false
       referencedRelation: "tickets"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","tenant_id"]
     }
                   ]
                 },"orders": {
                   Row: {
-                    "amount_satang": number,"checkout_url": string | null,"created_at": string,"expires_at": string | null,"id": string,"match_id": string,"paid_at": string | null,"payment_intent_id": string | null,"payment_ref": string | null,"status": Database["public"]['Enums']["order_status"],"stripe_session_id": string | null,"updated_at": string,"user_id": string
+                    "amount_satang": number,"checkout_url": string | null,"created_at": string,"expires_at": string | null,"id": string,"match_id": string,"paid_at": string | null,"payment_intent_id": string | null,"payment_ref": string | null,"status": Database["public"]['Enums']["order_status"],"stripe_session_id": string | null,"tenant_id": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "amount_satang": number,"checkout_url"?: string | null,"created_at"?: string,"expires_at"?: string | null,"id"?: string,"match_id": string,"paid_at"?: string | null,"payment_intent_id"?: string | null,"payment_ref"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_session_id"?: string | null,"updated_at"?: string,"user_id": string
+                    "amount_satang": number,"checkout_url"?: string | null,"created_at"?: string,"expires_at"?: string | null,"id"?: string,"match_id": string,"paid_at"?: string | null,"payment_intent_id"?: string | null,"payment_ref"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_session_id"?: string | null,"tenant_id"?: string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "amount_satang"?: number,"checkout_url"?: string | null,"created_at"?: string,"expires_at"?: string | null,"id"?: string,"match_id"?: string,"paid_at"?: string | null,"payment_intent_id"?: string | null,"payment_ref"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_session_id"?: string | null,"updated_at"?: string,"user_id"?: string
+                    "amount_satang"?: number,"checkout_url"?: string | null,"created_at"?: string,"expires_at"?: string | null,"id"?: string,"match_id"?: string,"paid_at"?: string | null,"payment_intent_id"?: string | null,"payment_ref"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_session_id"?: string | null,"tenant_id"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "orders_match_id_fkey"
-      columns: ["match_id"]
-isOneToOne: false
-      referencedRelation: "match_sales_summary"
-      referencedColumns: ["match_id"]
-    },{
-      foreignKeyName: "orders_match_id_fkey"
-      columns: ["match_id"]
+      columns: ["match_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "matches"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "orders_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
       referencedColumns: ["id"]
     }
                   ]
@@ -253,68 +283,86 @@ isOneToOne: false
                   ]
                 },"scan_events": {
                   Row: {
-                    "admin_id": string,"created_at": string,"gate_id": string,"id": string,"idempotency_key": string,"raw_hash": string,"result": Database["public"]['Enums']["scan_result"],"ticket_id": string | null,"undone_at": string | null
+                    "admin_id": string,"created_at": string,"gate_id": string,"id": string,"idempotency_key": string,"raw_hash": string,"result": Database["public"]['Enums']["scan_result"],"tenant_id": string,"ticket_id": string | null,"undone_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "admin_id": string,"created_at"?: string,"gate_id": string,"id"?: string,"idempotency_key": string,"raw_hash": string,"result": Database["public"]['Enums']["scan_result"],"ticket_id"?: string | null,"undone_at"?: string | null
+                    "admin_id": string,"created_at"?: string,"gate_id": string,"id"?: string,"idempotency_key": string,"raw_hash": string,"result": Database["public"]['Enums']["scan_result"],"tenant_id"?: string,"ticket_id"?: string | null,"undone_at"?: string | null
                   }
                   Update: {
-                    "admin_id"?: string,"created_at"?: string,"gate_id"?: string,"id"?: string,"idempotency_key"?: string,"raw_hash"?: string,"result"?: Database["public"]['Enums']["scan_result"],"ticket_id"?: string | null,"undone_at"?: string | null
+                    "admin_id"?: string,"created_at"?: string,"gate_id"?: string,"id"?: string,"idempotency_key"?: string,"raw_hash"?: string,"result"?: Database["public"]['Enums']["scan_result"],"tenant_id"?: string,"ticket_id"?: string | null,"undone_at"?: string | null
                   }
                   Relationships: [
                     {
       foreignKeyName: "scan_events_gate_id_fkey"
-      columns: ["gate_id"]
+      columns: ["gate_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "gates"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "scan_events_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "scan_events_ticket_id_fkey"
-      columns: ["ticket_id"]
+      columns: ["ticket_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "tickets"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","tenant_id"]
     }
                   ]
                 },"seat_holds": {
                   Row: {
-                    "created_at": string,"expires_at": string,"hold_group_id": string,"id": string,"released_at": string | null,"seat_id": string,"user_id": string
+                    "created_at": string,"expires_at": string,"hold_group_id": string,"id": string,"released_at": string | null,"seat_id": string,"tenant_id": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"expires_at": string,"hold_group_id": string,"id"?: string,"released_at"?: string | null,"seat_id": string,"user_id": string
+                    "created_at"?: string,"expires_at": string,"hold_group_id": string,"id"?: string,"released_at"?: string | null,"seat_id": string,"tenant_id"?: string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"expires_at"?: string,"hold_group_id"?: string,"id"?: string,"released_at"?: string | null,"seat_id"?: string,"user_id"?: string
+                    "created_at"?: string,"expires_at"?: string,"hold_group_id"?: string,"id"?: string,"released_at"?: string | null,"seat_id"?: string,"tenant_id"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "seat_holds_seat_id_fkey"
-      columns: ["seat_id"]
+      columns: ["seat_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "seats"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "seat_holds_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
       referencedColumns: ["id"]
     }
                   ]
                 },"seats": {
                   Row: {
-                    "created_at": string,"id": string,"number": number,"row_label": string,"status": Database["public"]['Enums']["seat_status"],"zone_id": string
+                    "created_at": string,"id": string,"number": number,"row_label": string,"status": Database["public"]['Enums']["seat_status"],"tenant_id": string,"zone_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"number": number,"row_label": string,"status"?: Database["public"]['Enums']["seat_status"],"zone_id": string
+                    "created_at"?: string,"id"?: string,"number": number,"row_label": string,"status"?: Database["public"]['Enums']["seat_status"],"tenant_id"?: string,"zone_id": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"number"?: number,"row_label"?: string,"status"?: Database["public"]['Enums']["seat_status"],"zone_id"?: string
+                    "created_at"?: string,"id"?: string,"number"?: number,"row_label"?: string,"status"?: Database["public"]['Enums']["seat_status"],"tenant_id"?: string,"zone_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "seats_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "seats_zone_id_fkey"
-      columns: ["zone_id"]
+      columns: ["zone_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "zones"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","tenant_id"]
     }
                   ]
                 },"staff_members": {
@@ -405,91 +453,97 @@ isOneToOne: false
                   ]
                 },"tickets": {
                   Row: {
-                    "created_at": string,"id": string,"issued_at": string,"match_id": string,"order_id": string,"order_seat_id": string,"qr_nonce": string,"seat_id": string,"status": Database["public"]['Enums']["ticket_status"],"used_at": string | null,"user_id": string
+                    "created_at": string,"id": string,"issued_at": string,"match_id": string,"order_id": string,"order_seat_id": string,"qr_nonce": string,"seat_id": string,"status": Database["public"]['Enums']["ticket_status"],"tenant_id": string,"used_at": string | null,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"issued_at"?: string,"match_id": string,"order_id": string,"order_seat_id": string,"qr_nonce"?: string,"seat_id": string,"status"?: Database["public"]['Enums']["ticket_status"],"used_at"?: string | null,"user_id": string
+                    "created_at"?: string,"id"?: string,"issued_at"?: string,"match_id": string,"order_id": string,"order_seat_id": string,"qr_nonce"?: string,"seat_id": string,"status"?: Database["public"]['Enums']["ticket_status"],"tenant_id"?: string,"used_at"?: string | null,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"issued_at"?: string,"match_id"?: string,"order_id"?: string,"order_seat_id"?: string,"qr_nonce"?: string,"seat_id"?: string,"status"?: Database["public"]['Enums']["ticket_status"],"used_at"?: string | null,"user_id"?: string
+                    "created_at"?: string,"id"?: string,"issued_at"?: string,"match_id"?: string,"order_id"?: string,"order_seat_id"?: string,"qr_nonce"?: string,"seat_id"?: string,"status"?: Database["public"]['Enums']["ticket_status"],"tenant_id"?: string,"used_at"?: string | null,"user_id"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "tickets_match_id_fkey"
-      columns: ["match_id"]
-isOneToOne: false
-      referencedRelation: "match_sales_summary"
-      referencedColumns: ["match_id"]
-    },{
-      foreignKeyName: "tickets_match_id_fkey"
-      columns: ["match_id"]
+      columns: ["match_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "matches"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","tenant_id"]
     },{
       foreignKeyName: "tickets_order_id_fkey"
-      columns: ["order_id"]
+      columns: ["order_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "order_receipt_view"
-      referencedColumns: ["order_id"]
+      referencedColumns: ["order_id","tenant_id"]
     },{
       foreignKeyName: "tickets_order_id_fkey"
-      columns: ["order_id"]
+      columns: ["order_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "orders"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","tenant_id"]
     },{
       foreignKeyName: "tickets_order_seat_id_fkey"
-      columns: ["order_seat_id"]
+      columns: ["order_seat_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "order_seats"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","tenant_id"]
     },{
       foreignKeyName: "tickets_seat_id_fkey"
-      columns: ["seat_id"]
+      columns: ["seat_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "seats"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "tickets_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
       referencedColumns: ["id"]
     }
                   ]
                 },"venues": {
                   Row: {
-                    "address": string | null,"city": string | null,"created_at": string,"id": string,"name": string,"updated_at": string
+                    "address": string | null,"city": string | null,"created_at": string,"id": string,"name": string,"tenant_id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "address"?: string | null,"city"?: string | null,"created_at"?: string,"id"?: string,"name": string,"updated_at"?: string
+                    "address"?: string | null,"city"?: string | null,"created_at"?: string,"id"?: string,"name": string,"tenant_id"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "address"?: string | null,"city"?: string | null,"created_at"?: string,"id"?: string,"name"?: string,"updated_at"?: string
+                    "address"?: string | null,"city"?: string | null,"created_at"?: string,"id"?: string,"name"?: string,"tenant_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "venues_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"zones": {
                   Row: {
-                    "color": string,"created_at": string,"description": string,"id": string,"match_id": string,"name": string,"price_satang": number,"rows": (string)[],"seats_per_row": number,"updated_at": string
+                    "color": string,"created_at": string,"description": string,"id": string,"match_id": string,"name": string,"price_satang": number,"rows": (string)[],"seats_per_row": number,"tenant_id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "color"?: string,"created_at"?: string,"description"?: string,"id"?: string,"match_id": string,"name": string,"price_satang": number,"rows"?: (string)[],"seats_per_row": number,"updated_at"?: string
+                    "color"?: string,"created_at"?: string,"description"?: string,"id"?: string,"match_id": string,"name": string,"price_satang": number,"rows"?: (string)[],"seats_per_row": number,"tenant_id"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "color"?: string,"created_at"?: string,"description"?: string,"id"?: string,"match_id"?: string,"name"?: string,"price_satang"?: number,"rows"?: (string)[],"seats_per_row"?: number,"updated_at"?: string
+                    "color"?: string,"created_at"?: string,"description"?: string,"id"?: string,"match_id"?: string,"name"?: string,"price_satang"?: number,"rows"?: (string)[],"seats_per_row"?: number,"tenant_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "zones_match_id_fkey"
-      columns: ["match_id"]
-isOneToOne: false
-      referencedRelation: "match_sales_summary"
-      referencedColumns: ["match_id"]
-    },{
-      foreignKeyName: "zones_match_id_fkey"
-      columns: ["match_id"]
+      columns: ["match_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "matches"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "zones_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
       referencedColumns: ["id"]
     }
                   ]
@@ -506,21 +560,21 @@ isOneToOne: false
                   ]
                 },"order_receipt_view": {
                   Row: {
-                    "amount_satang": number,"created_at": string,"holder": string,"holder_email": string,"kickoff_at": string,"match_id": string,"opponent": string,"order_id": string,"paid_at": string | null,"payment_ref": string | null,"seats": Json | null,"status": Database["public"]['Enums']["order_status"],"user_id": string,"venue": string
+                    "amount_satang": number,"created_at": string,"holder": string,"holder_email": string,"kickoff_at": string,"match_id": string,"opponent": string,"order_id": string,"paid_at": string | null,"payment_ref": string | null,"seats": Json | null,"status": Database["public"]['Enums']["order_status"],"tenant_id": string,"user_id": string,"venue": string
                   }
                   ComputedFields: never
                   Relationships: [
                     {
       foreignKeyName: "orders_match_id_fkey"
-      columns: ["match_id"]
-isOneToOne: false
-      referencedRelation: "match_sales_summary"
-      referencedColumns: ["match_id"]
-    },{
-      foreignKeyName: "orders_match_id_fkey"
-      columns: ["match_id"]
+      columns: ["match_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "matches"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "orders_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
       referencedColumns: ["id"]
     }
                   ]
@@ -542,16 +596,22 @@ isOneToOne: false
                   ]
                 },"zone_availability": {
                   Row: {
-                    "available_seats": number | null,"total_seats": number | null,"zone_id": string
+                    "available_seats": number | null,"tenant_id": string,"total_seats": number | null,"zone_id": string
                   }
                   ComputedFields: never
                   Relationships: [
                     {
+      foreignKeyName: "seats_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "seats_zone_id_fkey"
-      columns: ["zone_id"]
+      columns: ["zone_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "zones"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","tenant_id"]
     }
                   ]
                 }
