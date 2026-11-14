@@ -441,10 +441,12 @@ Stripe mode, and store deployment via EAS.
 |---|---|
 | [`PLAN.md`](PLAN.md) | delivery plan, current status, decision index (SSOT) |
 | [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | what the product must do, traceability, known gaps |
+| [`docs/SRS.md`](docs/SRS.md) | detailed specification of every requirement with acceptance criteria |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | how it is built: layers, data model, flows, standards |
 | [`docs/FLOW-AUDIT.md`](docs/FLOW-AUDIT.md) | the flow-by-flow audit: 29 flows, findings and severities |
 | [`docs/FILE-INDEX.md`](docs/FILE-INDEX.md) | every file in the repository and the verdict on it |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | RLS matrix, secrets, payments, QR, audit, ops |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | operational procedures: deploy, migrate, rotate keys, incidents, recovery |
 | [`docs/TESTING.md`](docs/TESTING.md) | every test layer, command and skip condition |
 | [`docs/BRAND.md`](docs/BRAND.md) | brand tokens and usage |
 | [`docs/archive/PLAN-history.md`](docs/archive/PLAN-history.md) | archived task-level history of the original build |

@@ -190,6 +190,8 @@ before the suite is green again.
 | `docs/FILE-INDEX.md` | doc | reviewed | this file — every tracked file and its verdict |
 | `docs/FLOW-AUDIT.md` | doc | reviewed | flow-by-flow audit findings |
 | `docs/REQUIREMENTS.md` | doc | reviewed | product requirements, traceability, known gaps |
+| `docs/RUNBOOK.md` | doc | reviewed | operational procedures: deploy, rotate, incident, recovery |
+| `docs/SRS.md` | doc | reviewed | detailed specification of REQ/NFR/SC with acceptance criteria |
 | `docs/SECURITY.md` | doc | reviewed | RLS matrix, secrets, payments, QR, audit |
 | `docs/TESTING.md` | doc | reviewed | test layers and commands |
 | `docs/archive/PLAN-history.md` | doc | reviewed | archived task history of the original build |
