@@ -51,7 +51,7 @@ staff use a web console. As a **B2B platform** it will be sold to many clubs
 
 | ID | Statement |
 |---|---|
-| A-01 | One Supabase project per deployment; multi-tenancy is a future schema change (`GAP-02`). |
+| A-01 | One Supabase project per deployment; multi-tenancy is designed in [`ADR-002`](adr/ADR-002-multi-tenancy.md) and delivered in C6–C7 (`GAP-02`). |
 | A-02 | Stripe stays in test mode (`SC-02`); going live is a key rotation, not a code change. |
 | A-03 | Seat allocation is a rectangular grid per zone (`SC-03`); no 3D map. |
 | A-04 | Single-match tickets only; no season tickets or membership tiers (`SC-04`, `SC-05`). |
@@ -245,10 +245,10 @@ Each NFR states the measurable target and the enforcement mechanism.
 | NFR-06 | Deterministic CI on every push | the CI job list is itself contract-tested | `.github/workflows/ci.yml`; `scripts/tests/ci.test.mjs` |
 | NFR-07 | Type safety | strict TS, `noUncheckedIndexedAccess` on, no `any`, no non-null assertions | `tsconfig.base.json`, ESLint, `scripts/tests/type-safety.test.mjs` |
 | NFR-08 | Offline entry verification | cached signed payload; server authoritative | **open** — `GAP-01` |
-| NFR-09 | Multi-tenant isolation | per-club data isolation, branding, currency | **open** — `GAP-02` |
-| NFR-10 | Fine-grained staff roles | beyond `admin`/`gatekeeper`: per-club RBAC | **partial** — `GAP-03a` shipped |
+| NFR-09 | Multi-tenant isolation | per-club data isolation, branding, currency | **open** — `GAP-02`; ADR-002, C6–C7 |
+| NFR-10 | Fine-grained staff roles | beyond `admin`/`gatekeeper`: per-club RBAC | **partial** — `GAP-03a` shipped; per-tenant capability roles in ADR-001, C6 |
 | NFR-11 | Observability | structured logs (single JSON line, redacted), request IDs, error tracking, alerting | **open** — `GAP-04`; logger exists (`createLogger`, C4.11) |
-| NFR-12 | Multi-language/currency | per-tenant locale and currency | **open** — `GAP-05` |
+| NFR-12 | Multi-language/currency | per-tenant locale and currency | **open** — `GAP-05`; schema in C6/C7, UX in C10.2 |
 
 ### 4.1 Cross-cutting quality rules
 
@@ -326,7 +326,21 @@ implementation and a green proof (test/contract).
 
 ## 7. Open items
 
-The gaps section of `REQUIREMENTS.md` §6 is normative: `GAP-01`…`GAP-07` with
-the order fixed in `PLAN.md` (`GAP-02` → `GAP-03` → `GAP-04` → `GAP-05` →
-`GAP-01`/`GAP-06`). The account-model refinement of `GAP-03` (`profiles.role`
-→ `fans` + `staff_members` + `staff_roles`) is designed but not implemented.
+The gaps section of `REQUIREMENTS.md` §6 is normative: `GAP-01`…`GAP-10` with
+the execution order fixed in `PLAN.md`:
+
+- **C6–C7 (GAP-02, GAP-03)** — the account model and multi-tenancy series
+  `0040`–`0048`: per-tenant `staff_roles` with capability flags, global
+  identity, `tenant_id` + composite FKs, the RLS rewrite and the isolation
+  suite. Design: [`ADR-001`](adr/ADR-001-account-model.md),
+  [`ADR-002`](adr/ADR-002-multi-tenancy.md). Not yet implemented; the current
+  single-tenant behaviour above remains authoritative until each step lands.
+- **C8 (GAP-09)** — Stripe Connect (per-club connected accounts, platform fee,
+  per-account webhooks, refund ledger): [`ADR-003`](adr/ADR-003-stripe-connect.md).
+  GDPR export and tenant offboarding land before this cycle.
+- **C9 (GAP-10)** — the cross-tenant platform console and white-label app
+  delivery: [`ADR-004`](adr/ADR-004-white-label.md).
+- **C10 (GAP-04, GAP-05, GAP-01, GAP-06)** — observability, i18n/currency UX,
+  the offline pass cache and the hardware push proof.
+- **GAP-08** — ticket transfer/claim is explicitly out of scope; a buyer holds
+  every pass for their order until it is designed as its own feature.

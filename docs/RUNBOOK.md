@@ -81,6 +81,23 @@ production admin origin — CORS falls back to localhost defaults otherwise.
    pass renders and one `stripe_events` row exists.
 4. Scan the pass at a registered gate; undo it within 60 s.
 
+### 3.5 Tenant provisioning and white-label releases (planned — C6–C9)
+
+Not available yet; the procedure lands with the C6–C9 cycles and will be
+completed here before the first second-club deployment.
+
+1. `select provision_tenant('Club Name', 'club-slug', 'THB', 'th-TH');`
+   — idempotent; seeds `staff_roles` (`admin`, `gatekeeper`) and default
+   `app_settings`.
+2. Create the venue, zones and seats; invite the first admin
+   (`admin-users`), who grants the rest.
+3. Complete Stripe Connect onboarding for the club (`tenants.stripe_account_id`)
+   and set `application_fee_bps` in the platform console.
+4. Build the white-label app with the club's `slug` and push credentials
+   (`GAP-10`); `bootstrap` sets `app_metadata.tenant_id` at sign-in.
+5. Verify isolation: a second club's staff token must read 0 rows of this
+   club's commerce data (pgTAP T-01…T-24 shape, run against staging).
+
 ## 4. Key rotation
 
 All secrets rotate through Supabase secrets; none are committed.
@@ -96,6 +113,11 @@ All secrets rotate through Supabase secrets; none are committed.
 
 Rotate immediately after: any suspected leak, offboarding of anyone with
 dashboard access, and at least quarterly.
+
+Stripe Connect (C8): each club's `stripe_account_id` is configuration, not a
+secret — the platform `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` remain
+the only payment secrets, and the webhook resolves the tenant from the
+Connect event's `account` field.
 
 ## 5. Incident response
 

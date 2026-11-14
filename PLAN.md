@@ -37,7 +37,12 @@ capability the business model requires.
 | **C2 — Code hygiene & single source of truth** | Delete the dead contract cluster in `packages/shared`; one implementation of the QR contract, the error envelope and business constants; remove redundant files | ✅ complete |
 | **C3 — Flow-by-flow audit** | 29 user flows × 6 questions (entry, trust boundary, validation, failure path, audit, test proof) → findings table in [`docs/FLOW-AUDIT.md`](docs/FLOW-AUDIT.md), fixes as separate cycles | ✅ complete — audit done (F-01…F-23); every finding fixed |
 | **C4 — Clean-code standard** | Stricter compiler flags (`noUncheckedIndexedAccess`), lint rules, logging conventions, dead-code guard, dependency hygiene | ✅ complete — C4.1–C4.12: file coverage, sweep fixes, the type-safety standard (lint rules + the compiler flag), the local database gate, the authoritative availability view, the mobile test harness, the shared validation contracts, the atomic reschedule and refund, the MVP demo gate, the logging convention, and dependency hygiene (GAP-07) |
-| **C5 — B2B readiness** | Multi-tenancy, staff roles, observability, locale/currency (see below) | 🔄 in progress — **GAP-03a complete** (`admin` \| `gatekeeper` staff roles); GAP-02, GAP-04 and GAP-05 queued |
+| **C5 — B2B readiness** | Multi-tenancy, staff roles, observability, locale/currency (see below) | 🔄 in progress — **GAP-03a complete** (`admin` \| `gatekeeper` staff roles); C5.2–C5.4 (docs, ADRs, gaps) complete; GAP-02/GAP-03 moved into the C6–C7 migration series |
+| **C6 — Account model + tenancy foundation** | `0040`–`0042`: tenants + `minor_units()`, `provision_tenant()`, identity split, `tenant_id` + composite FKs (see below) | ⬜ queued — design frozen (ADR-001, ADR-002) |
+| **C7 — Commerce & gate restructure** | `0043`–`0048`: seats/prices/refunds money-units, gate ops, RLS rewrite, infra, sweeps, dual-write drop | ⬜ queued |
+| **C8 — Stripe Connect** | Per-club connected accounts, platform fee, per-account webhooks, refund ledger | ⬜ queued |
+| **C9 — Platform console + white-label** | Cross-tenant console, per-club app delivery, onboarding checklist | ⬜ queued |
+| **C10 — Remaining gaps** | GAP-04 observability, GAP-05 i18n/currency UX, GAP-01 offline pass, GAP-06 hardware push | ⬜ queued |
 
 ### Phase C delivery log
 
@@ -69,6 +74,9 @@ One line per cycle, newest last. The detail lives in the commit history and in
 | **C4.11** | One logging convention, one owner: `createLogger('<scope>')` in the shared package emits a single JSON line per event (`level`, `message`, `time`, `scope`, context), every value passes the redactor (secret keys `[redacted]`, `Error` → `{name, message, stack}`, depth capped), and the Edge Functions receive a **generated copy** instead of keeping a second hand-written redaction list. The four bare `console.error` sites are migrated, `no-console` is now absolute in both apps (no `allow`), and contracts LG-1…LG-4 keep it that way. | `packages/shared/src/{logging.ts,__tests__/logging.test.ts,index.ts}`, `scripts/sync-edge-schemas.mjs`, `supabase/functions/_shared/{logger.ts,refund.ts}`, `apps/admin/src/lib/audit.ts`, `apps/admin/src/app/dashboard/{error.tsx,scan/error.tsx}`, `apps/admin/eslint.config.mjs`, `apps/mobile/eslint.config.js`, `scripts/tests/logging.test.mjs`, `docs/ARCHITECTURE.md` |
 | **C4.12** | **GAP-07** — dependency hygiene: `expo install --check` found **18** SDK-58 patch drifts, `expo install --fix` applied them (58 lockfile entries changed — all patch-level, none added or removed), and the check itself became a gate: the `deps:check` script, a CI step, and contracts DD-1/DD-2 that keep both in place. | `apps/mobile/package.json`, `package-lock.json`, `.github/workflows/ci.yml`, `scripts/tests/dep-drift.test.mjs`, `docs/TESTING.md` |
 | **C5.1** | **GAP-03a** — staff roles are now exactly `admin` \| `gatekeeper` (D-20). `is_staff()` (admin or gatekeeper) is the gate-surface predicate while `is_admin()` stays admin-only; `scan_ticket`/`undo_scan` accept staff, refuse a scan filed under another user's id, and a gatekeeper may undo only their own scan. RLS opens exactly `gates` (read), the caller's own `scan_events` and the `tickets` they scanned. The role vocabulary has one owner (`packages/shared/src/roles.ts`, generated into the Edge copy), `requireStaff` is used only by the two gate functions, and the console admits staff but confines a gatekeeper to the gate surface with a role-filtered nav, a 3-role user selector and admin-only demo/aggregate tools hidden. Proven by 25 pgTAP assertions (SR-1…SR-5), Deno role tests (9), and contracts SR-1…SR-7 / AA-1…AA-7. | `supabase/migrations/0039_staff_roles.sql`, `supabase/tests/staff-roles.test.sql`, `packages/shared/src/{roles.ts,index.ts,entities.ts,schemas.ts}`, `supabase/functions/_shared/{roles.ts,auth.ts}`, `supabase/functions/{scan-ticket,scan-undo,admin-users}/index.ts`, `supabase/functions/tests/roles.test.ts`, `apps/admin/src/{proxy.ts,lib/auth.ts,lib/use-session.ts,app/dashboard/layout.tsx,app/dashboard/scan/page.tsx,app/dashboard/users/page.tsx,app/login/page.tsx,lib/queries/{users,scan,orders}.ts}`, `apps/mobile/src/lib/auth.ts`, `scripts/sync-edge-schemas.mjs`, `scripts/tests/{staff-roles,admin-access}.test.mjs`, `docs/{ARCHITECTURE,SECURITY,FLOW-AUDIT,REQUIREMENTS,FILE-INDEX}.md`, `README.md` |
+| **C5.2** | RUNBOOK + SRS: operational procedures and the detailed specification of every REQ/NFR/SC, both registered in the doc contracts. | `docs/RUNBOOK.md`, `docs/SRS.md`, `docs/FILE-INDEX.md`, `README.md` |
+| **C5.3** | ADR set for the B2B decisions: account model, multi-tenancy + composite FKs, Stripe Connect, white-label + platform console. | `docs/adr/ADR-001-account-model.md`, `docs/adr/ADR-002-multi-tenancy.md`, `docs/adr/ADR-003-stripe-connect.md`, `docs/adr/ADR-004-white-label.md`, `docs/FILE-INDEX.md`, `README.md` |
+| **C5.4** | GAP-08/09/10 registered and GAP-02/03/05 re-scoped onto the C6–C10 series; NFR plan references updated. | `PLAN.md`, `docs/REQUIREMENTS.md`, `docs/SRS.md` |
 
 ## Open work
 
@@ -76,13 +84,20 @@ One line per cycle, newest last. The detail lives in the commit history and in
 
 | Gap | What it needs | Why it blocks B2B | Order |
 |---|---|---|---|
-| **GAP-02** Multi-tenancy | `clubs` table, `club_id` on tenant tables, `is_club_member()` RLS helper, per-club settings/branding/currency, data migration, RLS rewrite | Every club must be isolated; one deployment = one customer today | 1 |
-| **GAP-03** Staff roles | `roles` + `permissions`, `user_roles(club_id, user_id, role)`, function-level authorization | ✅ **GAP-03a done (C5.1)** — `admin` \| `gatekeeper` with the gate surface scoped; per-club RBAC remains | 2 |
-| **GAP-04** Observability | structured logger with request IDs, error tracking, metrics push, alerting | Incidents are currently found by users | 3 |
-| **GAP-05** Locale & currency | per-club locale/currency, `money.ts` takes a currency | Multi-country clubs | 4 |
-| **GAP-01** Offline pass | cache the signed payload locally; server stays authoritative at scan time | Deferral decision — a venue with poor signal | 5 |
-| **GAP-06** Push on hardware | `eas build --profile development` + a real device test | Push is contract-tested but unproven on hardware | 5 |
+| **GAP-02** Multi-tenancy | `tenants` + `tenant_id` on every scoped table, composite FKs, `current_tenant()` / capability predicates, `provision_tenant()`, backfill (ADR-002) | Every club must be isolated; one deployment = one customer today | **C6–C7** — closes at the RLS step (`0045`) when the isolation suite is green |
+| **GAP-03** Staff roles | Per-tenant `staff_roles` with capability flags and `staff_members(id, tenant_id)` (ADR-001) | Roles must be per club, not global | **C6** — closes at the identity split (`0041`) |
+| **GAP-04** Observability | error tracking, tracing, alerting on top of the existing structured logs and `metrics` | Incidents are currently found by users | **C10.1** |
+| **GAP-05** Locale & currency | per-tenant `locale`/`currency` (schema lands in C6/C7) plus translations and formatting everywhere | Multi-country clubs | **schema C6, UX C10.2** |
+| **GAP-01** Offline pass | cache the signed payload locally; server stays authoritative at scan time | Deferral decision — a venue with poor signal | **C10.3** |
+| **GAP-06** Push on hardware | `eas build --profile development` + a real device test | Push is contract-tested but unproven on hardware | **C10.4** |
 | **GAP-07** Dependency drift | ✅ **done (C4.12)** — `expo install --check` is the `deps:check` script, runs in CI, and is contract-tested | SDK drift | — |
+| **GAP-08** Ticket transfer/claim | split buyer from holder on `tickets`, a claim flow and its RLS | Fans buy for friends, but the buyer currently holds every pass | **out of scope now** — revisit after C9 |
+| **GAP-09** GDPR export + tenant offboarding | per-tenant data export and erase procedure; privacy/retention document | A club leaving the platform needs a clean, auditable exit | **before C8** |
+| **GAP-10** White-label ops | per-club EAS project/bundle id, Expo push credentials, store listings, release checklist | One app per club multiplies release overhead | **C9.2** |
+
+Execution order: C5.2–C5.4 (docs, ADRs, gaps — done) → **C6** →
+**C7** → **C8** → **C9** → **C10**. The full sequencing with dependencies,
+risks and per-step gates is the master plan agreed on 2026-11-14.
 
 ### Deliberate non-goals
 
@@ -122,6 +137,14 @@ the archived history.
 | D-20 | Staff roles are exactly two for now — `admin` and `gatekeeper` | a gatekeeper may only scan and undo their own scans; anything richer belongs to the remainder of GAP-03 | active — **GAP-03a applied** (`0039`, `roles.ts`) |
 | D-21 | F-11 keeps the wire DTO and the auth schemas and deletes the rest | an unused contract is a contract that drifts; the shared package is the one source of truth | active |
 | D-22 | The pgTAP gate runs against the **local** stack, not the hosted project | a hosted run needs explicit consent for a production mutation; the local stack proves the same SQL with no production risk | active — **C4.4 applied** |
+| D-23 | Identity is **global**; authority is per tenant (`staff_members(id, tenant_id)`, per-tenant `staff_roles` with capability flags) | one login for every club; a person can be staff at one club and a fan at another; capabilities replace role-name predicates | active — design (ADR-001), implemented in `0041` |
+| D-24 | Multi-tenancy uses `tenant_id` on every scoped table plus **composite FKs** `(id, tenant_id)` | a cross-tenant reference becomes impossible at the database level, not merely forbidden by a policy | active — design (ADR-002), implemented in `0040`–`0042` |
+| D-25 | Public catalogue reads are **open**; commerce, identity and ops data stay tenant + user scoped | catalogue data is public by nature; JWT claims are per user, so a dual-club fan must not see the wrong feed after refresh | active — design (ADR-002 §6), lands with the `0045` RLS rewrite |
+| D-26 | Seats are physical inventory; occupancy is per `(match, seat)`; price per `(match, zone)`; **one ticket per seat** | a venue-level seat status would block every fixture; a venue-level price cannot price a derby differently | active — design, implemented in `0043` |
+| D-27 | Money is integer **minor units** plus a `currency` snapshot; `minor_units()` decides the scale | mixed units are a ×100 bug; zero-decimal currencies (JPY) break a hard-coded 100 | active — planned for C6 (`minor_units()` + shared scale helper) |
+| D-28 | Stripe **Connect**, one connected account per tenant; platform fee snapshotted on the order | the club is merchant of record; manual payouts do not scale | active — design (ADR-003), implemented in C8 |
+| D-29 | **White-label**: one mobile app and one console per club; `bootstrap` sets `app_metadata.tenant_id` | clubs buy a branded product; global identity is preserved across apps | active — design (ADR-004), implemented in C9 |
+| D-30 | The **platform console** is a cross-tenant control surface gated by `is_platform_admin()`; it never reads another club's row-level data | provisioning, fee rates and suspension are platform operations, not club operations | active — design (ADR-004), implemented in C9 |
 
 ## Errors / Notes
 

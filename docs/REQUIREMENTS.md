@@ -91,10 +91,10 @@ Supabase backend with Stripe payments and the Expo Push Service.
 | NFR-06 | Deterministic CI gates on every push | shipped | `.github/workflows/ci.yml` |
 | NFR-07 | Type safety: strict TS, no `any` | shipped | `tsconfig.base.json`, ESLint `no-explicit-any` |
 | NFR-08 | Offline entry verification without a network | **open** | `GAP-01` |
-| NFR-09 | Multi-tenant isolation | **open** | `GAP-02` — B2B blocker |
-| NFR-10 | Fine-grained staff roles beyond owner/admin | **partial** | `GAP-03a` delivered `admin` / `gatekeeper` (`0039`, `roles.ts`); per-club RBAC remains under `GAP-03` |
+| NFR-09 | Multi-tenant isolation | **open** | `GAP-02` — ADR-002; C6–C7 (`0040`–`0045`) |
+| NFR-10 | Fine-grained staff roles beyond owner/admin | **partial** | `GAP-03a` delivered `admin` / `gatekeeper` (`0039`, `roles.ts`); per-tenant capability roles designed in ADR-001 (C6) |
 | NFR-11 | Observability: structured logs, metrics, error tracking | **open** | `GAP-04` — B2B blocker |
-| NFR-12 | Multi-language and multi-currency | **open** | `GAP-05` — B2B blocker |
+| NFR-12 | Multi-language and multi-currency | **open** | `GAP-05` — schema (`tenants.locale`/`currency`) in C6/C7, UX in C10.2 |
 
 ## 4. Scope constraints (from the proposal)
 
@@ -159,12 +159,15 @@ tracked decision, not an accident.
 | ID | Gap | Impact | Plan |
 |---|---|---|---|
 | **GAP-01** | **Offline pass verification.** The signed QR payload is fetched over the network, so a pass cannot be presented without connectivity. The proposal's SC-08 wants issued passes cached locally. | Supporter at a venue with poor signal cannot show the pass. | Open — deliberately deferred; the system is otherwise sound. Implementation must keep the server authoritative at scan time and only cache the *payload*. |
-| **GAP-02** | **No multi-tenancy.** One club per deployment; branding, currency and staff are global. | Blocks the B2B model. | B2B hardening track, phase 1 (`PLAN.md`). |
-| **GAP-03** | **Staff roles are a fixed pair.** `GAP-03a` delivered the two-role scope (`admin` \| `gatekeeper`, migration `0039`): a gatekeeper may scan and undo only their own scans and is confined to the gate surface. Roles are still global, not per-club. | Gate staff no longer hold refund/user authority, but a club cannot define its own roles or scope a staff member to one venue/tenant. | B2B hardening track, phase 2 — `GAP-03a` complete, per-club RBAC open. |
-| **GAP-04** | **Observability is thin.** Structured logs and metrics exist, but there is no error tracking, tracing or alerting. | Incidents are found by users, not by monitoring. | B2B hardening track, phase 3. |
-| **GAP-05** | **One locale, one currency.** English + THB only; the unused English string table was removed in Phase C2, so localization has to be rebuilt per tenant. | Multi-country clubs need per-tenant locale/currency. | B2B hardening track, phase 4. |
-| **GAP-06** | **The EAS dev build has never been exercised end to end.** Push code is contract-tested, but no APK has been built and no push delivered on a device. | Push is unproven on hardware. | Manual follow-up: `eas build --profile development` + `expo.dev/notifications`. |
-| **GAP-07** | **17 packages are one patch behind the Expo SDK's expected versions** (`expo-doctor` check fails). | Upgrade friction; possible SDK drift. | Separate dependency-bump cycle — deliberately not mixed into feature work. |
+| **GAP-02** | **No multi-tenancy.** One club per deployment; branding, currency and staff are global. | Blocks the B2B model. | C6–C7 — ADR-002; closes at `0045` when the tenant-isolation pgTAP suite is green. |
+| **GAP-03** | **Staff roles are a fixed pair.** `GAP-03a` delivered the two-role scope (`admin` \| `gatekeeper`, migration `0039`): a gatekeeper may scan and undo only their own scans and is confined to the gate surface. Roles are still global, not per-club. | Gate staff no longer hold refund/user authority, but a club cannot define its own roles or scope a staff member to one venue/tenant. | C6 — ADR-001; per-tenant capability roles and `staff_members(id, tenant_id)` land in `0041`. |
+| **GAP-04** | **Observability is thin.** Structured logs and metrics exist, but there is no error tracking, tracing or alerting. | Incidents are found by users, not by monitoring. | C10.1. |
+| **GAP-05** | **One locale, one currency.** English + THB only; the unused English string table was removed in Phase C2, so localization has to be rebuilt per tenant. | Multi-country clubs need per-tenant locale/currency. | Schema (`tenants.locale`/`currency`) in C6/C7; UX in C10.2. |
+| **GAP-06** | **The EAS dev build has never been exercised end to end.** Push code is contract-tested, but no APK has been built and no push delivered on a device. | Push is unproven on hardware. | C10.4 — `eas build --profile development` + `expo.dev/notifications`. |
+| **GAP-07** | **17 packages are one patch behind the Expo SDK's expected versions** (`expo-doctor` check fails). | Upgrade friction; possible SDK drift. | ✅ closed in C4.12 (`deps:check` is a CI gate). |
+| **GAP-08** | **No ticket transfer/claim.** A fan who buys four seats holds all four passes in their own account; friends cannot claim their own pass. | Buying for friends works at the gate (four QRs) but not in the app. | Out of scope now — revisit after C9; needs buyer/holder split on `tickets`. |
+| **GAP-09** | **No GDPR export or tenant offboarding.** `delete-account` wipes one user's rows; a club leaving the platform has no export/erase procedure. | Enterprise clubs require a clean, auditable exit. | Before C8 — privacy/retention document plus the procedure. |
+| **GAP-10** | **White-label release overhead is unproven.** One app per club means per-club EAS projects, bundle ids, Expo push credentials and store listings. | The delivery model multiplies release work. | C9.2 — onboarding checklist + first second-tenant build. |
 
 ## 7. Change control
 

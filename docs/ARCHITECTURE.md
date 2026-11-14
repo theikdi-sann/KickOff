@@ -142,6 +142,28 @@ supabase/
 | Nothing but admins reads `audit_logs` / `scan_events` | RLS policies | `rls.test.sql` |
 | Only admins write `audit_logs` | `0037` grant + policy; `0038` RPCs write their own rows atomically | `reschedule-audit.test.sql` + `atomicity.test.sql` |
 
+### 3.1 Target model (C6–C7 — designed, not yet implemented)
+
+The B2B account and tenancy model agreed on 2026-11-14 replaces the
+single-tenant shape above. It is delivered as the migration series
+`0040`–`0048`; until a step lands, the current tables stay authoritative.
+
+| Group | Tables | Invariant |
+|---|---|---|
+| Tenancy | `tenants` | one row per club; `slug` binds the white-label app; `status = 'active'` gates every predicate |
+| Identity | `profiles`, `fans`, `staff_members`, `staff_roles` | identity is global; authority is per `(tenant, profile)`; capability flags (`can_manage_staff`, `can_operate_gate`) drive every predicate |
+| Catalogue | `venues`, `matches`, `zones`, `seats`, `match_zone_prices` | seats are physical inventory (no status); price is per `(match, zone)` |
+| Commerce | `orders`, `order_seats`, `seat_holds`, `refunds` | occupancy is per `(match, seat)`; one ticket per seat; refunds are a ledger, not a status |
+| Access | `gates`, `match_gates`, `scan_events` | a gate is physical per venue and assigned per matchday; the scan log is append-only |
+| Engagement | `news_items`, `device_tokens` | published-only reads; a device token belongs to a person, not a club |
+
+Every tenant-scoped table carries `tenant_id` and composite FKs
+`(id, tenant_id)` — a cross-tenant reference is impossible at the database
+level. Decisions: [`ADR-001`](adr/ADR-001-account-model.md),
+[`ADR-002`](adr/ADR-002-multi-tenancy.md),
+[`ADR-003`](adr/ADR-003-stripe-connect.md),
+[`ADR-004`](adr/ADR-004-white-label.md).
+
 ## 4. The flows that matter
 
 ### 4.1 Buy → pay → pass

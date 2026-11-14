@@ -80,6 +80,13 @@ itself (`\getenv`) and quotes it (`:'name'`), and the connection string the
 runner hands to `psql` carries no password at all. A password containing a
 quote therefore cannot break the statement.
 
+**Tenant isolation (C7, planned).** The multi-tenant series adds a pgTAP
+suite (T-01…T-24): for every tenant-scoped table, a second club's user must
+read 0 rows and its write must affect 0 rows or raise; a cross-tenant
+composite-FK insert must raise a foreign-key error even as the service role.
+The harness sets `request.jwt.claims` per simulated user, exactly as
+`rls-auth.test.sql` already does.
+
 ## 4. Edge Functions
 
 Unit tests (no network required for most suites):

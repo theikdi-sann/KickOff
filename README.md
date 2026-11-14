@@ -302,7 +302,9 @@ Sales close **15 minutes before kick-off**; unpaid orders expire after
 │   ├── tests/                   # pgTAP suites (RLS, expiry, concurrency)
 │   └── seed.sql
 ├── scripts/                     # seed-demo, pgTAP runner, MVP gate, tests
-├── docs/                        # REQUIREMENTS, ARCHITECTURE, SECURITY, TESTING, BRAND
+├── docs/                        # REQUIREMENTS, SRS, ARCHITECTURE, SECURITY,
+│                                #   RUNBOOK, TESTING, BRAND
+│   ├── adr/                     # architecture decision records (ADR-001…004)
 │   └── archive/                 # archived plan history
 ├── maestro/flows/               # buy/QR mobile smoke
 ├── PLAN.md                      # delivery plan and decisions (SSOT)
@@ -443,6 +445,10 @@ Stripe mode, and store deployment via EAS.
 | [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | what the product must do, traceability, known gaps |
 | [`docs/SRS.md`](docs/SRS.md) | detailed specification of every requirement with acceptance criteria |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | how it is built: layers, data model, flows, standards |
+| [`docs/adr/ADR-001-account-model.md`](docs/adr/ADR-001-account-model.md) | account model: profiles, fans, staff_members, staff_roles |
+| [`docs/adr/ADR-002-multi-tenancy.md`](docs/adr/ADR-002-multi-tenancy.md) | tenancy: `tenants`, `tenant_id`, composite FKs, open-read catalogue |
+| [`docs/adr/ADR-003-stripe-connect.md`](docs/adr/ADR-003-stripe-connect.md) | payments: Connect accounts, platform fee, webhook tenancy |
+| [`docs/adr/ADR-004-white-label.md`](docs/adr/ADR-004-white-label.md) | white-label delivery and the cross-tenant platform console |
 | [`docs/FLOW-AUDIT.md`](docs/FLOW-AUDIT.md) | the flow-by-flow audit: 29 flows, findings and severities |
 | [`docs/FILE-INDEX.md`](docs/FILE-INDEX.md) | every file in the repository and the verdict on it |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | RLS matrix, secrets, payments, QR, audit, ops |
