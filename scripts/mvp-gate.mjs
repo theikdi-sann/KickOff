@@ -160,7 +160,7 @@ try {
   await rest('gates', {
     token: adminToken,
     method: 'POST',
-    body: { id: `${fixtureId}-gate`, name: 'Gate One', venue_id: 'v_kickoff', active: true },
+    body: { id: `${fixtureId}-gate`, name: `${fixtureId}-gate`, venue_id: 'v_kickoff', active: true },
   });
   await rest('match_gates', {
     token: adminToken,

@@ -104,6 +104,7 @@ before the suite is green again.
 | `apps/admin/src/lib/queries/orders.ts` | source | reviewed | React Query data access |
 | `apps/admin/src/lib/queries/scan.ts` | source | reviewed | React Query data access |
 | `apps/admin/src/lib/queries/settings.ts` | source | reviewed | React Query data access |
+| `apps/admin/src/lib/queries/tenant.ts` | source | reviewed | the admin's club resolver — `currentTenantId()` wraps the `current_tenant()` RPC so name lookups and upserts (0046) scope to the own club |
 | `apps/admin/src/lib/queries/users.ts` | source | reviewed | React Query data access |
 | `apps/admin/src/lib/queries/venues.ts` | source | reviewed | React Query data access |
 | `apps/admin/src/lib/query-client.ts` | source | reviewed | app library |
@@ -273,6 +274,7 @@ before the suite is green again.
 | `scripts/tests/sweep-fixes.test.mjs` | test | reviewed | repo contract test — fails when the repository drifts |
 | `scripts/tests/type-safety.test.mjs` | test | covered | contract test — no non-null assertion may return |
 | `scripts/tests/ui.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/uniques.test.mjs` | test | covered | contract test — C7.4 per-club uniques: the migration, the seed conflict targets and the admin/mvp-gate writers stay on the composite keys (UNI-1…UNI-4) |
 | `scripts/tests/venues.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `supabase/.env.example` | config | reviewed | Edge Function secrets template |
 | `supabase/.gitignore` | config | reviewed | local secrets ignore rules |
@@ -370,6 +372,7 @@ before the suite is green again.
 | `supabase/migrations/0043_sales_restructure.sql` | data | reviewed | migration — C7.1 drops `seats.status`, adds `match_zone_prices`, `refunds`, `*_minor_units` money, order snapshots and the derived occupancy RPCs/views |
 | `supabase/migrations/0044_gate_ops.sql` | data | reviewed | migration — C7.2 gates bind to `venues`, `match_gates` assignment join replaces `gates.match_id`, `scan_events` gains `match_id`/`operator_id`/`undone_by`, append-only trigger |
 | `supabase/migrations/0045_rls_rewrite.sql` | data | reviewed | migration — C7.3 RLS rewrite: capability-gated `is_admin()`/`is_staff()`/`is_gate_operator()`, `current_tenant()` default-club fallback, `tenant_id` defaults, the SECURITY.md §2.1 policy matrix, invoker/definer views |
+| `supabase/migrations/0046_per_club_uniques.sql` | data | reviewed | migration — C7.4 per-club uniques: `venues.name` and `gates.name` under `UNIQUE (tenant_id, name)`, `app_settings` to `PRIMARY KEY (tenant_id, key)`, duplicate pre-check for gates |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
@@ -388,5 +391,6 @@ before the suite is green again.
 | `supabase/tests/staff-roles.test.sql` | test | covered | pgTAP suite — GAP-03a staff roles, gate authority and RLS boundary (26 assertions) |
 | `supabase/tests/tenancy.test.sql` | test | covered | pgTAP suite — C6.3 tenant columns, composite FK isolation, backfill, tenant-led indexes (24 assertions) |
 | `supabase/tests/tenants.test.sql` | test | covered | pgTAP suite — C6.1 tenant row, claim resolution, scale parity, provisioning, branding-only reads and write denial (23 assertions) |
+| `supabase/tests/uniques.test.sql` | test | covered | pgTAP suite — C7.4 per-club uniques: the same name in two clubs, never twice in one, in the console/seed conflict shape (13 assertions) |
 | `supabase/tests/venues.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `tsconfig.base.json` | config | reviewed | shared TypeScript strictness |

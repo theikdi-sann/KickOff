@@ -72,7 +72,7 @@ the gate surface (admin or gatekeeper). Both read `app_metadata.role`, so a
 role change is applied everywhere at once. `supabase/tests/staff-roles.test.sql`
 asserts the boundary.
 
-### 2.1 Multi-tenant model (C6–C7 — `0040`–`0045` landed, `0046`–`0048` designed)
+### 2.1 Multi-tenant model (C6–C7 — `0040`–`0046` landed, `0047`–`0048` designed)
 
 The single-tenant matrix above is replaced by the tenant-scoped one below,
 live since `0045` (ADR-001, ADR-002):
@@ -101,10 +101,12 @@ live since `0045` (ADR-001, ADR-002):
   `current_tenant()` instead.
 - **Public catalogue** (`venues`, `matches`, `zones`, `seats`,
   `match_zone_prices`, published `news_items`) is open for SELECT, writes
-  remain tenant-scoped (ADR-002 §6). `tenants` exposes its branding columns
-  only (`id`, `name`, `slug`, `currency`, `locale`, `logo_url`,
-  `primary_color`, `status`); the platform fee and the Connect account stay
-  service-role.
+  remain tenant-scoped (ADR-002 §6). Names are per-club keys since `0046`
+  (`venues.name`, `gates.name`, the `app_settings` primary key), so one
+  club's "Main Gate" never collides with another's. `tenants` exposes its
+  branding columns only (`id`, `name`, `slug`, `currency`, `locale`,
+  `logo_url`, `primary_color`, `status`); the platform fee and the Connect
+  account stay service-role.
 - **Connect:** `stripe_events` resolves its tenant from the Connect event's
   `account`; the platform Stripe secret stays the only payment secret.
 

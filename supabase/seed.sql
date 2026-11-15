@@ -1,7 +1,7 @@
 -- Catalog seed (no customer data). Safe to run repeatedly.
 insert into public.venues (id, name, city, address)
 values ('v_kickoff', 'KickOff Arena', 'Bangkok', 'KickOff Stadium, Rama IX Road')
-on conflict (name) do nothing;
+on conflict (tenant_id, name) do nothing;
 
 insert into public.matches
   (id, opponent, opponent_short, kickoff_at, competition, home_away, status,
@@ -120,4 +120,4 @@ values
   ('seat_hold_ttl_seconds', '600'::jsonb),
   ('kickoff_lock_minutes', '15'::jsonb),
   ('gate_undo_seconds', '60'::jsonb)
-on conflict (key) do nothing;
+on conflict (tenant_id, key) do nothing;

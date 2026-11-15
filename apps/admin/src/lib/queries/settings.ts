@@ -156,7 +156,7 @@ export function useUpdateSettings() {
         .from("app_settings")
         .upsert(
           rows.map((row) => ({ ...row, updated_by: updatedBy })),
-          { onConflict: "key" },
+          { onConflict: "tenant_id,key" },
         );
       if (error) throw new Error(error.message);
 

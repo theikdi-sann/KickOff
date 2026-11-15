@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AUDIT_ACTIONS, recordAudit } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/client";
+import { currentTenantId } from "@/lib/queries/tenant";
 
 export interface AdminVenueInput {
   name: string;
@@ -14,14 +15,18 @@ function client() {
   return createClient();
 }
 
-/** Every venue, ordered for the management table and the match-form picker. */
+/** Every venue of this club, ordered for the management table and the picker. */
 export function useVenues() {
   return useQuery({
     queryKey: ["admin-venues"],
     queryFn: async () => {
+      // 0046 scopes the list to the own club: the catalogue read policy is
+      // deliberately open, so another club's venue would show up here.
+      const tenantId = await currentTenantId();
       const { data, error } = await client()
         .from("venues")
         .select("*")
+        .eq("tenant_id", tenantId)
         .order("name", { ascending: true });
       if (error) throw new Error(error.message);
       return data ?? [];

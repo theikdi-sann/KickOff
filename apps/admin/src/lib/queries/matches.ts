@@ -11,6 +11,7 @@ import {
 } from "@kickoff/shared";
 import { AUDIT_ACTIONS, changedFields, recordAudit } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/client";
+import { currentTenantId } from "@/lib/queries/tenant";
 
 export interface AdminMatchInput {
   opponent: string;
@@ -45,17 +46,21 @@ function client() {
  */
 async function resolveVenueId(name: string): Promise<string> {
   const db = client();
+  // Per-club uniques (0046): "the same name" is only unambiguous inside
+  // this session's club — two clubs may hold a venue with one name.
+  const tenantId = await currentTenantId();
   const { data: existing, error: lookupError } = await db
     .from("venues")
     .select("id")
     .eq("name", name)
+    .eq("tenant_id", tenantId)
     .maybeSingle();
   if (lookupError) throw new Error(lookupError.message);
   if (existing) return existing.id;
 
   const { data: created, error: createError } = await db
     .from("venues")
-    .upsert({ name }, { onConflict: "name", ignoreDuplicates: true })
+    .upsert({ name }, { onConflict: "tenant_id,name", ignoreDuplicates: true })
     .select("id")
     .maybeSingle();
   if (createError) throw new Error(createError.message);
@@ -66,6 +71,7 @@ async function resolveVenueId(name: string): Promise<string> {
     .from("venues")
     .select("id")
     .eq("name", name)
+    .eq("tenant_id", tenantId)
     .single();
   if (racedError) throw new Error(racedError.message);
   return raced.id;
