@@ -72,15 +72,17 @@ the gate surface (admin or gatekeeper). Both read `app_metadata.role`, so a
 role change is applied everywhere at once. `supabase/tests/staff-roles.test.sql`
 asserts the boundary.
 
-### 2.1 Target multi-tenant model (C6–C7 — `0040`–`0044` landed, the rest designed)
+### 2.1 Multi-tenant model (C6–C7 — `0040`–`0045` landed, `0046`–`0048` designed)
 
-The single-tenant matrix above is replaced by a tenant-scoped one in the
-`0040`–`0045` series (ADR-001, ADR-002):
+The single-tenant matrix above is replaced by the tenant-scoped one below,
+live since `0045` (ADR-001, ADR-002):
 
 - **Helpers:** `current_tenant()` reads `app_metadata.tenant_id` and resolves
-  only `status = 'active'` tenants; `is_admin()` / `is_gate_operator()` are
-  tenant-scoped capability checks on `staff_members` + `staff_roles`;
-  `is_platform_admin()` gates the cross-tenant console.
+  only `status = 'active'` tenants — a missing or empty claim falls back to
+  the default club (the single-club bridge), a present claim stays strict;
+  `is_admin()` / `is_staff()` / `is_gate_operator()` are tenant-scoped
+  capability checks on `staff_members` + `staff_roles`; `is_platform_admin()`
+  gates the cross-tenant console and arrives with C9.
 - **Scoped tables** (`orders`, `order_seats`, `tickets`, `seat_holds`,
   `refunds`, `scan_events`, `staff_members`, `staff_roles`, `app_settings`,
   `audit_logs`) require `tenant_id = current_tenant()` **and** the row
@@ -89,11 +91,14 @@ The single-tenant matrix above is replaced by a tenant-scoped one in the
   deny-by-default; `create_hold`, `create_order_from_hold`,
   `mark_order_paid`, `mark_order_refunded`, `scan_ticket` and `undo_scan`
   remain the only writers.
-- **Append-only evidence:** UPDATE/DELETE are revoked from `authenticated` on
-  `audit_logs` and `scan_events`; the undo columns change only inside
-  `scan_undo()`.
-- **Views** are recreated with `security_invoker = true` so the underlying
-  RLS applies per row (`order_receipt_view` carries holder PII).
+- **Append-only evidence:** insert/update/delete are revoked from the API
+  roles on `scan_events`, update/delete on `audit_logs`; the undo columns
+  change only inside `undo_scan()`.
+- **Views:** `order_receipt_view` and `match_sales_summary` run with
+  `security_invoker = true` so the underlying RLS applies per row (the
+  receipt carries holder PII); `zone_availability` and `seat_availability`
+  stay `SECURITY DEFINER` for the public seat map, each scoped by
+  `current_tenant()` instead.
 - **Public catalogue** (`venues`, `matches`, `zones`, `seats`,
   `match_zone_prices`, published `news_items`) is open for SELECT, writes
   remain tenant-scoped (ADR-002 §6). `tenants` exposes its branding columns

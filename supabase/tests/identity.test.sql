@@ -56,11 +56,14 @@ select is(
 );
 
 -- ── fixtures ────────────────────────────────────────────────────────────────
+-- scan-concurrency commits its fixtures before its workers run; a run that
+-- dies before its cleanup leaves `d2` behind, so tolerate a pre-existing row.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'staff@kickoff.test'),
   ('00000000-0000-0000-0000-0000000000d2', 'gate@kickoff.test'),
   ('00000000-0000-0000-0000-0000000000d3', 'fan@kickoff.test'),
-  ('00000000-0000-0000-0000-0000000000d4', 'root@kickoff.test');
+  ('00000000-0000-0000-0000-0000000000d4', 'root@kickoff.test')
+on conflict (id) do nothing;
 
 -- ── the dual-write bridge ───────────────────────────────────────────────────
 update public.profiles set role = 'admin'

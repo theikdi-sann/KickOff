@@ -10,6 +10,11 @@ select col_type_is('public', 'match_zone_prices', 'price_minor_units', 'integer'
 insert into auth.users (id, email)
 values ('00000000-0000-0000-0000-0000000000aa', 'tap@kickoff.test');
 
+-- 0045 gates scan_ticket on is_gate_operator(): the scanner needs a
+-- membership row at the default club, not just an admin claim.
+update public.profiles set role = 'admin'
+  where id = '00000000-0000-0000-0000-0000000000aa';
+
 -- Kick-off inside the ±2h scan window, otherwise the scan is rejected as
 -- "the gates are not open yet".
 insert into public.matches (id, opponent, opponent_short, kickoff_at)

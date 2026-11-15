@@ -938,6 +938,9 @@ isOneToOne: false
 "is_empty":
 { Args: { "": string }; Returns: string
                            },
+"is_gate_operator":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "is_staff":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },

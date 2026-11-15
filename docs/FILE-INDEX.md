@@ -9,7 +9,7 @@ before the suite is green again.
 - **Enforced by:** `scripts/tests/file-coverage.test.mjs` (FI-1 … FI-7).
 - **Kept in step by:** `node scripts/build-file-index.mjs --check` (CI) and
   `--sync` (adds new files as `unreviewed`, so they must be reviewed).
-- **Last verified:** 2026-11-13 · **Owner:** engineering
+- **Last verified:** 2026-11-15 · **Owner:** engineering
 - **Related:** [`FLOW-AUDIT.md`](FLOW-AUDIT.md) (the flow findings) ·
   [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`PLAN.md`](../PLAN.md)
 
@@ -369,6 +369,7 @@ before the suite is green again.
 | `supabase/migrations/0042_tenancy_columns.sql` | data | reviewed | migration — C6.3 `tenant_id` columns, `UNIQUE (id, tenant_id)`, composite FKs, tenant-led indexes, view embeds restored |
 | `supabase/migrations/0043_sales_restructure.sql` | data | reviewed | migration — C7.1 drops `seats.status`, adds `match_zone_prices`, `refunds`, `*_minor_units` money, order snapshots and the derived occupancy RPCs/views |
 | `supabase/migrations/0044_gate_ops.sql` | data | reviewed | migration — C7.2 gates bind to `venues`, `match_gates` assignment join replaces `gates.match_id`, `scan_events` gains `match_id`/`operator_id`/`undone_by`, append-only trigger |
+| `supabase/migrations/0045_rls_rewrite.sql` | data | reviewed | migration — C7.3 RLS rewrite: capability-gated `is_admin()`/`is_staff()`/`is_gate_operator()`, `current_tenant()` default-club fallback, `tenant_id` defaults, the SECURITY.md §2.1 policy matrix, invoker/definer views |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
@@ -376,6 +377,7 @@ before the suite is green again.
 | `supabase/tests/hold-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/hold-ttl.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/identity.test.sql` | test | covered | pgTAP suite — C6.2 role seeding, dual-write bridge, membership integrity, fan/staff RLS (21 assertions) |
+| `supabase/tests/isolation.test.sql` | test | covered | pgTAP suite — C7.3 tenant isolation: cross-tenant reads and writes per scoped table under `authenticated` (24 assertions) |
 | `supabase/tests/order-expiry.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/reschedule-audit.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/rls-auth.test.sql` | data | covered | pgTAP suite — asserts the database contract |

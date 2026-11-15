@@ -23,7 +23,8 @@ the state and traceability); this document carries the detail.
 KickOff lets a football club sell match tickets online, issue tamper-evident
 digital passes and run gate entry, while supporters use a mobile app and club
 staff use a web console. As a **B2B platform** it will be sold to many clubs
-(each a tenant); the current build is single-club (`SC-01`, `GAP-02`).
+(each a tenant); since `0045` the build enforces per-club isolation
+(`SC-01` lifted, `GAP-02` closed).
 
 ### 1.2 System boundaries
 
@@ -245,7 +246,7 @@ Each NFR states the measurable target and the enforcement mechanism.
 | NFR-06 | Deterministic CI on every push | the CI job list is itself contract-tested | `.github/workflows/ci.yml`; `scripts/tests/ci.test.mjs` |
 | NFR-07 | Type safety | strict TS, `noUncheckedIndexedAccess` on, no `any`, no non-null assertions | `tsconfig.base.json`, ESLint, `scripts/tests/type-safety.test.mjs` |
 | NFR-08 | Offline entry verification | cached signed payload; server authoritative | **open** — `GAP-01` |
-| NFR-09 | Multi-tenant isolation | per-club data isolation, branding, currency | **open** — `GAP-02`; ADR-002, C6–C7 |
+| NFR-09 | Multi-tenant isolation | per-club data isolation, branding, currency | **shipped** — `GAP-02` closed at `0045` (isolation suite green); ADR-002, C6–C7 |
 | NFR-10 | Fine-grained staff roles | beyond `admin`/`gatekeeper`: per-club RBAC | **partial** — `GAP-03a` shipped; `0041` made roles per-tenant with capability flags (C6.2) |
 | NFR-11 | Observability | structured logs (single JSON line, redacted), request IDs, error tracking, alerting | **open** — `GAP-04`; logger exists (`createLogger`, C4.11) |
 | NFR-12 | Multi-language/currency | per-tenant locale and currency | **open** — `GAP-05`; schema in C6/C7, UX in C10.2 |
@@ -314,7 +315,7 @@ Layered per [`TESTING.md`](TESTING.md):
 |---|---|---|
 | Repo contracts | `node --test scripts/tests/` | `npm test` |
 | Shared + mobile unit | Vitest / jest-expo | `npm test` |
-| Database | pgTAP via `scripts/run-pgtap.sh` (251 assertions / 17 suites) | `db:test` |
+| Database | pgTAP via `scripts/run-pgtap.sh` (275 assertions / 18 suites) | `db:test` |
 | Edge Functions | Deno lint + tests | `functions:check`, CI |
 | Browser demo gate | `scripts/mvp-gate.mjs` (15/15) | manual/CI |
 | Auth E2E | Playwright against hosted project | manual `workflow_dispatch` |
@@ -336,10 +337,14 @@ the execution order fixed in `PLAN.md`:
   [`ADR-002`](adr/ADR-002-multi-tenancy.md). `0040` (the `tenants` row,
   `current_tenant()`, `minor_units()` and `provision_tenant()`), `0041`
   (global `fans`, per-tenant `staff_roles` with capability flags,
-  `staff_members`, and the legacy `profiles.role` dual-write bridge) and `0042`
+  `staff_members`, and the legacy `profiles.role` dual-write bridge), `0042`
   (`tenant_id` on every scoped table, composite foreign keys, tenant-led
-  indexes) have landed; the rest is not yet implemented, so the current
-  single-tenant behaviour above remains authoritative until each step lands.
+  indexes), `0043` (the commerce restructure in minor units), `0044`
+  (venue-bound gates and the append-only scan log) and `0045` (the RLS
+  rewrite: capability-gated helpers, the tenant-scoped policy matrix and the
+  T-01…T-24 isolation suite) have landed; `0046`–`0048` (per-club uniques,
+  the sweeps and the `profiles.role` dual-write drop) are not yet
+  implemented, so those bridge rows above still apply until each step lands.
 - **C8 (GAP-09)** — Stripe Connect (per-club connected accounts, platform fee,
   per-account webhooks, refund ledger): [`ADR-003`](adr/ADR-003-stripe-connect.md).
   GDPR export and tenant offboarding land before this cycle.

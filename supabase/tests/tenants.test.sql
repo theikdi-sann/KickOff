@@ -34,7 +34,16 @@ select is(
 );
 
 -- ── current_tenant() ────────────────────────────────────────────────────────
-select ok(public.current_tenant() is null, 'no claim means no tenant');
+-- No claim yet: every session carries none until the white-label `bootstrap`
+-- writes one (ADR-004), so absence resolves to the club this deployment
+-- serves — otherwise the single-club product would deny itself every row
+-- (0045). A claim that *is* present stays strict; the two cases below pin
+-- that boundary.
+select is(
+  public.current_tenant(),
+  '00000000-0000-0000-0000-000000000001'::uuid,
+  'no claim means the club this deployment serves'
+);
 
 select set_config(
   'request.jwt.claims',

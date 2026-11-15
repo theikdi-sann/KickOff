@@ -9,7 +9,7 @@ gate locally it will break the build.
 |---|---|---|
 | Workspace unit tests | `npm test` | shared schemas/format/i18n/greeting (Vitest), admin node tests, mobile Jest tests, repo script tests |
 | Typecheck + lint | `npm run check` | TypeScript across shared/mobile/admin, ESLint |
-| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning, identity split, tenancy columns, sales restructure, gate ops (251 assertions, 17 suites) |
+| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning, identity split, tenancy columns, sales restructure, gate ops, tenant isolation (275 assertions, 18 suites) |
 | Edge Functions (unit) | `cd supabase/functions && deno test --allow-env --allow-net tests/` | HMAC, config, error mapping, metrics helpers |
 | Edge Functions (integration) | `RUN_INTEGRATION=1 deno test --allow-env --allow-net tests/` | real checkout → webhook → ticket → receipt, scan/undo |
 | Functions typecheck | `npm run functions:check` | `deno check` on every `supabase/functions/*/index.ts` |
@@ -58,7 +58,7 @@ The script prefers a local Supabase/Docker instance and falls back to running
 the same SQL against the hosted project when Docker is unavailable. It applies
 the `supabase/tests/*.sql` suites and reports pass/fail per assertion.
 
-**251 assertions across 17 suites**, verified against the local stack on
+**275 assertions across 18 suites**, verified against the local stack on
 2026-11-15: constraints, hold concurrency, hold TTL, order expiry, reschedule
 audit, RLS (auth + anonymous), scan concurrency, seat reservation, venues, the
 F-07 atomicity suite (reschedule and refund), the GAP-03a staff-role suite
@@ -69,8 +69,16 @@ suite (`tenants`, `current_tenant()`, `minor_units()`,
 tenancy suite (`tenant_id` columns, composite foreign keys, tenant-led
 indexes), the C7.1 sales suite (derived seat occupancy without
 `seats.status`, `match_zone_prices`, the refund ledger, order snapshots),
-and the C7.2 gate-ops suite (venue-bound gates, the `match_gates` assignment
-join, the scan/undo audit columns and the append-only scan log).
+the C7.2 gate-ops suite (venue-bound gates, the `match_gates` assignment
+join, the scan/undo audit columns and the append-only scan log) and the
+C7.3 isolation suite (T-01…T-24 — a cross-tenant read and a cross-tenant
+write per scoped table).
+
+Read assertions run under `set local role authenticated`: the runner's
+`postgres` session bypasses RLS, so a policy can only be proven from a role
+it applies to. The claims in the pre-existing suites carry no `tenant_id`,
+which is exactly what exercises `current_tenant()`'s default-club fallback;
+only the isolation suite sets a tenant claim.
 
 **Why the runner exists.** The two concurrency suites open their worker
 sessions through `dblink`, which reconnects over the network. Both the local

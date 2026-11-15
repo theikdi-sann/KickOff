@@ -13,8 +13,8 @@
 --                fixtures per gate, cascades, and a gate with no fixture
 --                still refuses scans
 --   GO-20..GO-28 scan/undo write the new columns: the fixture admitted for,
---                the operator's membership row (only when one exists) and
---                the undoer
+--                the operator's membership row and the undoer; a claim
+--                without a membership cannot scan at all (GO-25)
 --   GO-29..GO-36 the log is append-only — no direct edit, while foreign-key
 --                cascades and an explicit maintenance session are the only
 --                ways rows leave it
@@ -23,8 +23,9 @@ begin;
 select plan(38);
 
 -- ── fixtures ────────────────────────────────────────────────────────────────
--- A gatekeeper with a membership row and an admin account that has none: the
--- operator id must be recorded only for the first one.
+-- A gatekeeper with a membership row, and an admin account that starts
+-- without one: the admin claim alone must not open the gate (GO-25); GO-26
+-- gives the account the membership its role implies and scans for real.
 insert into auth.users (id, email, raw_app_meta_data) values
   ('00000000-0000-0000-0000-0000000000f1', 'go.gatekeeper@kickoff.test',
    '{"role":"gatekeeper"}'::jsonb),
@@ -298,17 +299,23 @@ select set_config(
   true
 );
 
+select throws_ok(
+  $$select public.scan_ticket('go-ticket-2', 'go-gate-main',
+      '00000000-0000-0000-0000-0000000000f2', 'go-key-3')$$,
+  '42501', null,
+  'GO-25 an admin claim without a membership cannot scan'
+);
+
+-- The role implies the membership; give the account one and the same key
+-- scans for real (GO-30..GO-34 depend on this event existing).
+update public.profiles set role = 'admin'
+  where id = '00000000-0000-0000-0000-0000000000f2';
+
 select is(
   (public.scan_ticket('go-ticket-2', 'go-gate-main',
      '00000000-0000-0000-0000-0000000000f2', 'go-key-3') ->> 'code'),
   'valid',
-  'GO-25 an admin without a membership can still scan'
-);
-
-select is(
-  (select operator_id from public.scan_events where idempotency_key = 'go-key-3'),
-  null::uuid,
-  'GO-26 no membership row, no operator recorded'
+  'GO-26 with a membership, the admin scans'
 );
 
 select set_config(

@@ -26,6 +26,11 @@ insert into auth.users (id, email) values
 update public.profiles set role = 'admin'
   where id = '00000000-0000-0000-0000-0000000000c1';
 
+-- 0045 reads is_admin()/is_staff() from membership rows, so the gatekeeper
+-- fixture needs one before SR-2 can ask about it.
+update public.profiles set role = 'gatekeeper'
+  where id = '00000000-0000-0000-0000-0000000000c2';
+
 -- ── SR-1 the helper exists ──────────────────────────────────────────────────
 select has_function(
   'public', 'is_staff', array[]::text[],

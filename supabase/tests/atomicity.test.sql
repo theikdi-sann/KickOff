@@ -63,6 +63,27 @@ insert into public.tickets (id, order_id, order_seat_id, user_id, match_id, seat
   ('atm-ticket-2', 'atm-order-2', 'atm-os-2',
    '00000000-0000-0000-0000-0000000000a2', 'atm-match', 'atm-seat-2', 'used');
 
+-- audit_logs.actor_id → auth.users can no longer fail for an admin: 0041
+-- made a membership imply an auth.users row, and is_admin() needs a
+-- membership. The suite injects the same SQLSTATE the FK would raise for
+-- this one reason, so F07-4/F07-5 still pin the reschedule and its audit
+-- row to a single transaction.
+create function pg_temp.refuse_no_actor_audit()
+returns trigger
+language plpgsql
+as $$
+begin
+  raise exception 'audit_logs.actor_id references auth.users(id)'
+    using errcode = '23503';
+end;
+$$;
+
+create trigger audit_refuses_no_actor
+before insert on public.audit_logs
+for each row
+when (new.metadata ->> 'reason' = 'No actor')
+execute function pg_temp.refuse_no_actor_audit();
+
 -- ── reschedule: one call, one transaction ───────────────────────────────────
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000a1', true);
 select set_config(
@@ -94,15 +115,8 @@ select throws_ok(
 );
 
 -- 4. If the audit row cannot be written, the kickoff move goes with it.
-select set_config(
-  'request.jwt.claim.sub',
-  '00000000-0000-0000-0000-0000000000de', true
-);
-select set_config(
-  'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-0000000000de","role":"authenticated","app_metadata":{"role":"admin"}}',
-  true
-);
+-- The fixture trigger refuses this exact reason with the SQLSTATE the
+-- audit FK would raise (see the fixtures above).
 select throws_ok(
   $$select public.admin_update_match('atm-match', '{"kickoff_at":"2026-11-25T19:30:00+07:00"}', 'No actor')$$,
   '23503', null,
@@ -116,13 +130,10 @@ select is(
   'F07-5 the failed audit write rolled the kickoff back'
 );
 
--- Restore the real admin identity for the happy path.
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000a1', true);
-select set_config(
-  'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","app_metadata":{"role":"admin"}}',
-  true
-);
+-- The injected audit failure has served its purpose; F07-6 writes a real row.
+reset role;
+drop trigger audit_refuses_no_actor on public.audit_logs;
+set local role authenticated;
 
 -- 6. One call moves the fixture and reports the venue name back.
 select ok(

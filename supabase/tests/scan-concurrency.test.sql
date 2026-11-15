@@ -11,6 +11,11 @@ values (
 )
 on conflict (id) do nothing;
 
+-- 0045 gates scan_ticket on is_gate_operator(): the racing scanner needs a
+-- membership row, not just the admin claim the workers present.
+update public.profiles set role = 'admin'
+  where id = '00000000-0000-0000-0000-0000000000d2';
+
 insert into public.matches (id, opponent, opponent_short, kickoff_at, status)
 values ('scan-race-match', 'Race FC', 'RAC', now() + interval '1 hour', 'upcoming')
 on conflict (id) do nothing;
