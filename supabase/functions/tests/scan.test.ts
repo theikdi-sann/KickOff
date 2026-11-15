@@ -31,8 +31,16 @@ async function assignGate(
   await rest(env, `gates?id=eq.${GATE}`, {
     token: env.service,
     method: "PATCH",
-    body: { match_id: matchId, active: true },
+    body: { active: true },
     prefer: "return=minimal",
+  });
+  // The fixture lives in match_gates (0044), and the seed may already have
+  // made this assignment — repeating it must not be a conflict.
+  await rest(env, `match_gates?on_conflict=match_id,gate_id`, {
+    token: env.service,
+    method: "POST",
+    body: { match_id: matchId, gate_id: GATE },
+    prefer: "resolution=ignore-duplicates,return=minimal",
   });
 }
 

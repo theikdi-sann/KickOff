@@ -68,7 +68,7 @@ Supabase backend with Stripe payments and the Expo Push Service.
 | REQ-17 | Configure zones, rows, seats and prices | shipped | `zone-editor`, per-zone pricing |
 | REQ-18 | Manage venues (add/delete grounds) | shipped | normalized `venues` table |
 | REQ-19 | Move a kickoff with reschedule rules and a stored reason | shipped | upcoming-only, future, outside lock window, never earlier, ≤10 days, reason required |
-| REQ-20 | Register gates and assign them to fixtures | shipped | `gates` + `gates_matches` |
+| REQ-20 | Register gates and assign them to fixtures | shipped | `gates` (venue-bound) + `match_gates` |
 | REQ-21 | Validate a pass by camera scan or manual code | shipped | `scan-ticket`, signed payload, fixture + window checks |
 | REQ-22 | Undo an accepted scan within 60 s | shipped | `scan-undo`, admin only, audited |
 | REQ-23 | Work at the gate without connectivity (offline queue) | shipped | `offline-queue`, idempotency keys |

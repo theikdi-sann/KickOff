@@ -15,7 +15,6 @@ const bodySchema = z.object({ gateId: z.string().min(1).max(64) });
 interface GateRow {
   id: string;
   name: string;
-  match_id: string | null;
   active: boolean;
 }
 
@@ -34,25 +33,32 @@ async function handler(request: Request): Promise<Response> {
 
   const { data: gate, error: gateError } = await db
     .from("gates")
-    .select("id,name,match_id,active")
+    .select("id,name,active")
     .eq("id", gateId)
     .maybeSingle<GateRow>();
   if (gateError) throw gateError;
   if (!gate) throw new AppError("not_found", "Gate not found");
   if (!gate.active) throw new AppError("conflict", "Gate is inactive");
-  if (!gate.match_id) throw new AppError("conflict", "Gate has no fixture assigned");
+
+  // A gate is physical; the fixtures it admits are match_gates rows (0044).
+  const { data: assignments, error: assignmentError } = await db
+    .from("match_gates")
+    .select("match_id")
+    .eq("gate_id", gate.id);
+  if (assignmentError) throw assignmentError;
+  if (!assignments?.length) throw new AppError("conflict", "Gate has no fixture assigned");
 
   const { data: ticket, error } = await db
     .from("tickets")
     .select("id,match_id,order_id,qr_nonce")
-    .eq("match_id", gate.match_id)
+    .in("match_id", assignments.map((row) => row.match_id))
     .eq("status", "valid")
     .order("issued_at", { ascending: true })
     .limit(1)
     .maybeSingle<TicketSecret>();
   if (error) throw error;
   if (!ticket) {
-    throw new AppError("conflict", "No valid ticket is available for this fixture");
+    throw new AppError("conflict", "No valid ticket is available for an assigned fixture");
   }
 
   const canonical = ticketQrSigningPayload({

@@ -93,13 +93,23 @@ values
    'Club News', '2026-10-20T11:15:00+07:00', 3, array['#065F46', '#022C22']::text[])
 on conflict (id) do nothing;
 
-insert into public.gates (id, name, match_id, active)
+-- The four stadium entrances stand at the home ground and admit the seeded
+-- home fixture; further fixtures are assigned on the gates screen.
+insert into public.gates (id, name, venue_id, active)
 values
-  ('gate-1', 'North Gate', 'm-bkk', true),
-  ('gate-2', 'East Gate', 'm-bkk', true),
-  ('gate-3', 'VIP Gate', 'm-bkk', true),
-  ('gate-4', 'Away Gate', 'm-bkk', true)
+  ('gate-1', 'North Gate', 'v_kickoff', true),
+  ('gate-2', 'East Gate', 'v_kickoff', true),
+  ('gate-3', 'VIP Gate', 'v_kickoff', true),
+  ('gate-4', 'Away Gate', 'v_kickoff', true)
 on conflict (id) do nothing;
+
+insert into public.match_gates (match_id, gate_id)
+values
+  ('m-bkk', 'gate-1'),
+  ('m-bkk', 'gate-2'),
+  ('m-bkk', 'gate-3'),
+  ('m-bkk', 'gate-4')
+on conflict (match_id, gate_id) do nothing;
 
 insert into public.app_settings (key, value)
 values

@@ -42,7 +42,7 @@ staff use a web console. As a **B2B platform** it will be sold to many clubs
 | Actor | Surface | Trust level | Authority |
 |---|---|---|---|
 | Supporter | mobile app | untrusted | own profile, own orders/tickets/holds only |
-| Gate staff (`gatekeeper`) | console scanner | elevated, scoped | `gates` read, own `scan_events`, tickets they scanned |
+| Gate staff (`gatekeeper`) | console scanner | elevated, scoped | `gates` + `match_gates` read, own `scan_events`, tickets they scanned |
 | Club administrator (`admin`) | console | elevated | full staff surface incl. fixtures, refunds, users |
 | Platform operator | infrastructure | cross-tenant | service role only via Edge Functions / migrations |
 | Scheduler | `pg_cron` | service identity | reminder fan-out only; guarded by secret |
@@ -314,7 +314,7 @@ Layered per [`TESTING.md`](TESTING.md):
 |---|---|---|
 | Repo contracts | `node --test scripts/tests/` | `npm test` |
 | Shared + mobile unit | Vitest / jest-expo | `npm test` |
-| Database | pgTAP via `scripts/run-pgtap.sh` (211 assertions / 16 suites) | `db:test` |
+| Database | pgTAP via `scripts/run-pgtap.sh` (251 assertions / 17 suites) | `db:test` |
 | Edge Functions | Deno lint + tests | `functions:check`, CI |
 | Browser demo gate | `scripts/mvp-gate.mjs` (15/15) | manual/CI |
 | Auth E2E | Playwright against hosted project | manual `workflow_dispatch` |

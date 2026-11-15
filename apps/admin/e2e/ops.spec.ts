@@ -65,13 +65,19 @@ async function ensureGate(page: Page): Promise<string> {
   await page.getByLabel("Gate code").fill(E2E_GATE_ID);
   await page.getByLabel("Display name").fill(E2E_GATE_NAME);
 
-  const fixture = page.getByLabel("Assigned fixture");
-  const seeded = fixture.locator("option", { hasText: "Bangkok Rovers" }).first();
-  const value =
-    (await seeded.count()) > 0
-      ? await seeded.getAttribute("value")
-      : await fixture.locator("option").nth(1).getAttribute("value");
-  if (value) await fixture.selectOption(value);
+  // A gate stands at a venue (0044); the seeded ground is the first option.
+  await page.getByLabel("Venue", { exact: true }).selectOption({ index: 1 });
+
+  // Assign a fixture: the seeded home fixture when it exists, otherwise the
+  // first one on the list (the first checkbox in the list is the "Active"
+  // switch only if no fixtures exist, hence the " · " separator in the label).
+  const seeded = page.getByRole("checkbox", { name: /Bangkok Rovers/ });
+  const anyFixture = page.getByRole("checkbox", { name: / · / });
+  if ((await seeded.count()) > 0) {
+    await seeded.first().check();
+  } else if ((await anyFixture.count()) > 0) {
+    await anyFixture.first().check();
+  }
 
   await page.getByRole("button", { name: "Create gate" }).click();
   await expect(page.getByText(E2E_GATE_ID, { exact: true })).toBeVisible();

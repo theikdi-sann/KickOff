@@ -113,24 +113,56 @@ isOneToOne: true
                   ]
                 },"gates": {
                   Row: {
-                    "active": boolean,"created_at": string,"id": string,"match_id": string | null,"name": string,"tenant_id": string,"updated_at": string
+                    "active": boolean,"created_at": string,"id": string,"name": string,"tenant_id": string,"updated_at": string,"venue_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "active"?: boolean,"created_at"?: string,"id": string,"match_id"?: string | null,"name": string,"tenant_id"?: string,"updated_at"?: string
+                    "active"?: boolean,"created_at"?: string,"id": string,"name": string,"tenant_id"?: string,"updated_at"?: string,"venue_id": string
                   }
                   Update: {
-                    "active"?: boolean,"created_at"?: string,"id"?: string,"match_id"?: string | null,"name"?: string,"tenant_id"?: string,"updated_at"?: string
+                    "active"?: boolean,"created_at"?: string,"id"?: string,"name"?: string,"tenant_id"?: string,"updated_at"?: string,"venue_id"?: string
                   }
                   Relationships: [
                     {
-      foreignKeyName: "gates_match_id_fkey"
+      foreignKeyName: "gates_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "gates_venue_id_fkey"
+      columns: ["venue_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "venues"
+      referencedColumns: ["id","tenant_id"]
+    }
+                  ]
+                },"match_gates": {
+                  Row: {
+                    "created_at": string,"gate_id": string,"match_id": string,"tenant_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"gate_id": string,"match_id": string,"tenant_id"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"gate_id"?: string,"match_id"?: string,"tenant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "match_gates_gate_id_fkey"
+      columns: ["gate_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "gates"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "match_gates_match_id_fkey"
       columns: ["match_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "matches"
       referencedColumns: ["id","tenant_id"]
     },{
-      foreignKeyName: "gates_tenant_id_fkey"
+      foreignKeyName: "match_gates_tenant_id_fkey"
       columns: ["tenant_id"]
 isOneToOne: false
       referencedRelation: "tenants"
@@ -359,14 +391,14 @@ isOneToOne: false
                   ]
                 },"scan_events": {
                   Row: {
-                    "admin_id": string,"created_at": string,"gate_id": string,"id": string,"idempotency_key": string,"raw_hash": string,"result": Database["public"]['Enums']["scan_result"],"tenant_id": string,"ticket_id": string | null,"undone_at": string | null
+                    "admin_id": string,"created_at": string,"gate_id": string,"id": string,"idempotency_key": string,"match_id": string | null,"operator_id": string | null,"raw_hash": string,"result": Database["public"]['Enums']["scan_result"],"tenant_id": string,"ticket_id": string | null,"undone_at": string | null,"undone_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "admin_id": string,"created_at"?: string,"gate_id": string,"id"?: string,"idempotency_key": string,"raw_hash": string,"result": Database["public"]['Enums']["scan_result"],"tenant_id"?: string,"ticket_id"?: string | null,"undone_at"?: string | null
+                    "admin_id": string,"created_at"?: string,"gate_id": string,"id"?: string,"idempotency_key": string,"match_id"?: string | null,"operator_id"?: string | null,"raw_hash": string,"result": Database["public"]['Enums']["scan_result"],"tenant_id"?: string,"ticket_id"?: string | null,"undone_at"?: string | null,"undone_by"?: string | null
                   }
                   Update: {
-                    "admin_id"?: string,"created_at"?: string,"gate_id"?: string,"id"?: string,"idempotency_key"?: string,"raw_hash"?: string,"result"?: Database["public"]['Enums']["scan_result"],"tenant_id"?: string,"ticket_id"?: string | null,"undone_at"?: string | null
+                    "admin_id"?: string,"created_at"?: string,"gate_id"?: string,"id"?: string,"idempotency_key"?: string,"match_id"?: string | null,"operator_id"?: string | null,"raw_hash"?: string,"result"?: Database["public"]['Enums']["scan_result"],"tenant_id"?: string,"ticket_id"?: string | null,"undone_at"?: string | null,"undone_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -374,6 +406,18 @@ isOneToOne: false
       columns: ["gate_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "gates"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "scan_events_match_id_fkey"
+      columns: ["match_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "matches"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "scan_events_operator_id_fkey"
+      columns: ["operator_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "staff_members"
       referencedColumns: ["id","tenant_id"]
     },{
       foreignKeyName: "scan_events_tenant_id_fkey"
@@ -386,6 +430,12 @@ isOneToOne: false
       columns: ["ticket_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "tickets"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "scan_events_undone_by_fkey"
+      columns: ["undone_by","tenant_id"]
+isOneToOne: false
+      referencedRelation: "staff_members"
       referencedColumns: ["id","tenant_id"]
     }
                   ]

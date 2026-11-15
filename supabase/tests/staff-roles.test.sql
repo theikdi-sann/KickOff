@@ -11,10 +11,11 @@
 --   SR-3  `profiles.role` accepts `gatekeeper` and still rejects anything else
 --   SR-4  a gatekeeper may scan and undo their own scan — never another's, and
 --         never under another user's name
---   SR-5  the gatekeeper's RLS boundary is the gate: gates are readable, the
---         scan log is own-rows-only, and every admin-only table stays closed
+--   SR-5  the gatekeeper's RLS boundary is the gate: gates and their fixture
+--         assignments are readable, the scan log is own-rows-only, and every
+--         admin-only table stays closed
 begin;
-select plan(25);
+select plan(26);
 
 -- ── fixtures ────────────────────────────────────────────────────────────────
 insert into auth.users (id, email) values
@@ -112,8 +113,13 @@ insert into public.tickets (id, order_id, order_seat_id, user_id, match_id, seat
   ('staff-ticket-2', 'staff-order', 'staff-os-2',
    '00000000-0000-0000-0000-0000000000c3', 'staff-match', 'staff-seat-2', 'valid');
 
-insert into public.gates (id, name, match_id, active)
-values ('staff-gate', 'Gate A', 'staff-match', true);
+-- A gate stands at a venue (0044); the fixture it serves is an assignment
+-- row in match_gates, not a column on the gate.
+insert into public.gates (id, name, venue_id, active)
+values ('staff-gate', 'Gate A', 'v_kickoff', true);
+
+insert into public.match_gates (match_id, gate_id)
+values ('staff-match', 'staff-gate');
 
 -- Gatekeeper A admits a valid pass.
 select set_config(
@@ -317,6 +323,14 @@ select is(
   (select count(*) from public.tickets where id = 'staff-ticket-2'),
   0::bigint,
   'SR-5g a gatekeeper cannot read a ticket they never scanned'
+);
+
+-- The scanner console shows which fixtures a gate serves, so the assignment
+-- join is part of the same boundary as the registry itself.
+select is(
+  (select count(*) from public.match_gates where gate_id = 'staff-gate'),
+  1::bigint,
+  'SR-5h a gatekeeper reads the fixture assigned to a gate'
 );
 
 reset role;

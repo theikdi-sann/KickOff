@@ -280,7 +280,7 @@ function SettingsForm({ settings, gateCount }: { settings: ClubSettings; gateCou
             </div>
             <p className="mt-4 text-3xl font-bold text-slate-900">{gateCount}</p>
             <p className="mt-1 text-[11px] text-slate-500">
-              Configured entrances. Each gate admits exactly one fixture.
+              Configured entrances. Each gate admits the fixtures assigned to it.
             </p>
           </section>
 

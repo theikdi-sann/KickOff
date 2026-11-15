@@ -297,7 +297,7 @@ Sales close **15 minutes before kick-off**; unpaid orders expire after
 │                                #   date formatting, theme tokens, QR contract,
 │                                #   English string table, Bangkok greeting
 ├── supabase/
-│   ├── migrations/              # 43 migrations: schema, RLS, RPCs, cron, seeds
+│   ├── migrations/              # 44 migrations: schema, RLS, RPCs, cron, seeds
 │   ├── functions/               # 16 Edge Functions + _shared helpers
 │   ├── tests/                   # pgTAP suites (RLS, expiry, concurrency)
 │   └── seed.sql
@@ -375,7 +375,8 @@ passes need an explicit override).
 
 **Passes and gates.** `ticket-qr` signs `KICKOFF-V2:{…}` with HMAC over
 `ticket|match|order|nonce`, so a modified or stale payload is rejected.
-`scan-ticket` checks the gate's assigned fixture, the pass status, and the
+`scan-ticket` checks that the gate admits the pass's fixture (the `match_gates`
+assignment), the pass status, and the
 **−2h/+2h** window, then marks the pass used and writes a `scan_events` row.
 `Idempotency-Key` makes offline replays safe; `scan-undo` restores a pass within
 60 seconds. `scan-demo` issues a real signed pass for staff demonstrations.

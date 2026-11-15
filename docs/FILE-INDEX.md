@@ -368,9 +368,11 @@ before the suite is green again.
 | `supabase/migrations/0041_identity_split.sql` | data | reviewed | migration — C6.2 global identity (`fans`), per-tenant `staff_roles` + `staff_members`, legacy `profiles.role` dual-write bridge |
 | `supabase/migrations/0042_tenancy_columns.sql` | data | reviewed | migration — C6.3 `tenant_id` columns, `UNIQUE (id, tenant_id)`, composite FKs, tenant-led indexes, view embeds restored |
 | `supabase/migrations/0043_sales_restructure.sql` | data | reviewed | migration — C7.1 drops `seats.status`, adds `match_zone_prices`, `refunds`, `*_minor_units` money, order snapshots and the derived occupancy RPCs/views |
+| `supabase/migrations/0044_gate_ops.sql` | data | reviewed | migration — C7.2 gates bind to `venues`, `match_gates` assignment join replaces `gates.match_id`, `scan_events` gains `match_id`/`operator_id`/`undone_by`, append-only trigger |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
+| `supabase/tests/gate-ops.test.sql` | test | covered | pgTAP suite — C7.2 venue-bound gates, fixture assignment join, scan/undo audit columns, append-only log (38 assertions) |
 | `supabase/tests/hold-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/hold-ttl.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/identity.test.sql` | test | covered | pgTAP suite — C6.2 role seeding, dual-write bridge, membership integrity, fan/staff RLS (21 assertions) |
@@ -381,8 +383,8 @@ before the suite is green again.
 | `supabase/tests/sales.test.sql` | test | covered | pgTAP suite — C7.1 derived occupancy, per-match pricing, order snapshots, refund ledger, one-live-ticket-per-seat (28 assertions) |
 | `supabase/tests/scan-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/seat-reservation.test.sql` | data | covered | pgTAP suite — asserts the database contract |
-| `supabase/tests/staff-roles.test.sql` | test | covered | pgTAP suite — GAP-03a staff roles, gate authority and RLS boundary (25 assertions) |
-| `supabase/tests/tenancy.test.sql` | test | covered | pgTAP suite — C6.3 tenant columns, composite FK isolation, backfill, tenant-led indexes (23 assertions) |
+| `supabase/tests/staff-roles.test.sql` | test | covered | pgTAP suite — GAP-03a staff roles, gate authority and RLS boundary (26 assertions) |
+| `supabase/tests/tenancy.test.sql` | test | covered | pgTAP suite — C6.3 tenant columns, composite FK isolation, backfill, tenant-led indexes (24 assertions) |
 | `supabase/tests/tenants.test.sql` | test | covered | pgTAP suite — C6.1 tenant row, claim resolution, scale parity, provisioning, branding-only reads and write denial (23 assertions) |
 | `supabase/tests/venues.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `tsconfig.base.json` | config | reviewed | shared TypeScript strictness |

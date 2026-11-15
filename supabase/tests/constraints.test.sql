@@ -25,9 +25,12 @@ insert into public.seats (id, zone_id, row_label, number)
 values ('test-seat', 'test-zone', 'A', 1);
 
 -- The gate must be assigned to this fixture: scan_ticket derives wrong_match
--- from gates.match_id (F-4).
-insert into public.gates (id, name, match_id, active)
-values ('test-gate', 'Test Gate', 'test-match', true);
+-- from the match_gates join (0044 — the assignment moved off the gate).
+insert into public.gates (id, name, venue_id, active)
+values ('test-gate', 'Test Gate', 'v_kickoff', true);
+
+insert into public.match_gates (match_id, gate_id)
+values ('test-match', 'test-gate');
 
 select throws_ok(
   $$ insert into public.seats (id, zone_id, row_label, number)

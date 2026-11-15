@@ -9,14 +9,14 @@
 --     while a row cannot point at another club's parent;
 --   * the hot lookup indexes lead with `tenant_id` for the 0045 RLS predicates.
 begin;
-select plan(23);
+select plan(24);
 
 -- ── structure ───────────────────────────────────────────────────────────────
 select is(
   (select count(*)
      from (values
        ('venues'), ('matches'), ('zones'), ('seats'), ('gates'),
-       ('news_items'), ('orders'), ('order_seats'), ('tickets'),
+       ('match_gates'), ('news_items'), ('orders'), ('order_seats'), ('tickets'),
        ('seat_holds'), ('scan_events'), ('audit_logs'), ('app_settings')
      ) as scoped(name)
     where not exists (
@@ -36,7 +36,7 @@ select is(
   (select count(*)
      from (values
        ('venues'), ('matches'), ('zones'), ('seats'), ('gates'),
-       ('news_items'), ('orders'), ('order_seats'), ('tickets'),
+       ('match_gates'), ('news_items'), ('orders'), ('order_seats'), ('tickets'),
        ('seat_holds'), ('scan_events'), ('audit_logs'), ('app_settings')
      ) as scoped(name)
     where not exists (
@@ -108,26 +108,24 @@ select ok(
 select ok(
   exists (
     select 1 from pg_constraint
-    where conrelid = 'public.gates'::regclass
-      and conname = 'gates_match_id_fkey'
+    where conrelid = 'public.match_gates'::regclass
+      and conname = 'match_gates_match_id_fkey'
       and confrelid = 'public.matches'::regclass
       and array_length(conkey, 1) = 2
   ),
-  'gates → matches is a composite foreign key'
+  'match_gates → matches is a composite foreign key'
 );
 
 select ok(
   exists (
     select 1 from pg_constraint
-    where conrelid = 'public.gates'::regclass
-      and conname = 'gates_match_id_fkey'
-      and confdeltype = 'n'
-      and confdelsetcols = array[
-        (select attnum from pg_attribute
-          where attrelid = 'public.gates'::regclass and attname = 'match_id')
-      ]
+    where conrelid = 'public.match_gates'::regclass
+      and conname = 'match_gates_gate_id_fkey'
+      and confrelid = 'public.gates'::regclass
+      and array_length(conkey, 1) = 2
+      and confdeltype = 'c'
   ),
-  'deleting a match clears only the gate''s match_id, not its tenant_id'
+  'match_gates → gates is a composite foreign key that cascades with its gate'
 );
 
 select ok(
@@ -182,9 +180,10 @@ select is(
     where conrelid = 'public.scan_events'::regclass
       and contype = 'f'
       and array_length(conkey, 1) = 2
-      and confrelid in ('public.tickets'::regclass, 'public.gates'::regclass)),
-  2::bigint,
-  'scan_events has two composite foreign keys'
+      and confrelid in ('public.tickets'::regclass, 'public.gates'::regclass,
+                        'public.matches'::regclass, 'public.staff_members'::regclass)),
+  5::bigint,
+  'scan_events links ticket, gate, fixture, operator and undoer by composite foreign keys'
 );
 
 select ok(
@@ -254,16 +253,34 @@ select is(
   'a same-club reference is accepted'
 );
 
-insert into public.gates (id, name, match_id, tenant_id)
-values ('tap-gate-second', 'Gate B', 'tap-match-second',
+insert into public.gates (id, name, venue_id, tenant_id)
+values ('tap-gate-second', 'Gate B', 'tap-venue-second',
         '00000000-0000-0000-0000-0000000000e2');
+
+insert into public.match_gates (match_id, gate_id, tenant_id)
+values ('tap-match-second', 'tap-gate-second',
+        '00000000-0000-0000-0000-0000000000e2');
+
+-- A club cannot assign another club's fixture to one of its own gates: the
+-- join key carries the tenant on both legs.
+insert into public.gates (id, name, venue_id, tenant_id)
+values ('tap-gate-default', 'Default Club Gate', 'tap-venue-default',
+        '00000000-0000-0000-0000-000000000001');
+
+select throws_ok(
+  $$ insert into public.match_gates (match_id, gate_id, tenant_id)
+     values ('tap-match-second', 'tap-gate-default',
+             '00000000-0000-0000-0000-000000000001') $$,
+  '23503', null,
+  'a club cannot assign another club''s fixture'
+);
 
 delete from public.matches where id = 'tap-match-second';
 
 select is(
-  (select match_id from public.gates where id = 'tap-gate-second'),
-  null::text,
-  'deleting a match clears the gate''s match but keeps the row'
+  (select count(*) from public.match_gates where gate_id = 'tap-gate-second'),
+  0::bigint,
+  'deleting a match clears its assignment but keeps the gate'
 );
 
 select is(

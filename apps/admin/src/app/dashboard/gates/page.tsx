@@ -13,19 +13,21 @@ import {
   type AdminGateInput,
 } from "@/lib/queries/gates";
 import { useMatches } from "@/lib/queries/matches";
-import { formatMatchDate, formatMatchTime } from "@kickoff/shared";
+import { useVenues } from "@/lib/queries/venues";
+import { formatMatchDate } from "@kickoff/shared";
 
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,31}$/;
 
 function emptyForm(): AdminGateInput {
-  return { id: "", name: "", matchId: null, active: true };
+  return { id: "", name: "", venueId: "", matchIds: [], active: true };
 }
 
 function formFrom(gate: AdminGate): AdminGateInput {
   return {
     id: gate.id,
     name: gate.name,
-    matchId: gate.matchId,
+    venueId: gate.venueId,
+    matchIds: gate.matchIds,
     active: gate.active,
   };
 }
@@ -33,6 +35,7 @@ function formFrom(gate: AdminGate): AdminGateInput {
 export default function GatesPage() {
   const { data: gates, isLoading, error } = useGates();
   const { data: matches } = useMatches();
+  const { data: venues } = useVenues();
   const createGate = useCreateGate();
   const updateGate = useUpdateGate();
   const deleteGate = useDeleteGate();
@@ -60,6 +63,15 @@ export default function GatesPage() {
     setFormError(null);
   };
 
+  const toggleMatch = (matchId: string) => {
+    setForm((current) => ({
+      ...current,
+      matchIds: current.matchIds.includes(matchId)
+        ? current.matchIds.filter((id) => id !== matchId)
+        : [...current.matchIds, matchId],
+    }));
+  };
+
   const submit = async () => {
     setFormError(null);
     if (!ID_PATTERN.test(form.id)) {
@@ -70,6 +82,10 @@ export default function GatesPage() {
       setFormError("Give the gate a name.");
       return;
     }
+    if (form.venueId === "") {
+      setFormError("Choose the venue this gate stands at.");
+      return;
+    }
 
     try {
       if (creating) {
@@ -77,7 +93,12 @@ export default function GatesPage() {
       } else if (editing) {
         await updateGate.mutateAsync({
           id: editing.id,
-          patch: { name: form.name.trim(), matchId: form.matchId, active: form.active },
+          patch: {
+            name: form.name.trim(),
+            venueId: form.venueId,
+            matchIds: form.matchIds,
+            active: form.active,
+          },
         });
       }
       close();
@@ -102,7 +123,7 @@ export default function GatesPage() {
       <SectionTitle
         eyebrow="Gate operations"
         title="Gates"
-        description="Each gate admits one fixture. The scanner reads this assignment, so a pass for another match is rejected as the wrong fixture."
+        description="Each gate is a turnstile at a venue. Assign every fixture it should admit — the scanner reads this list, so a pass for anything else is rejected as the wrong fixture."
         action={
           <div className="flex items-center gap-2">
             <Link href="/dashboard/scan" className="btn-ghost">
@@ -151,7 +172,8 @@ export default function GatesPage() {
               <thead className="border-b border-slate-200 bg-slate-50 text-[10px] uppercase tracking-[0.12em] text-slate-400">
                 <tr>
                   <th className="px-5 py-3 font-semibold">Gate</th>
-                  <th className="px-4 py-3 font-semibold">Assigned fixture</th>
+                  <th className="px-4 py-3 font-semibold">Venue</th>
+                  <th className="px-4 py-3 font-semibold">Assigned fixtures</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
                   <th className="px-4 py-3 font-semibold">Updated</th>
                   <th className="px-5 py-3 text-right font-semibold">Actions</th>
@@ -165,17 +187,24 @@ export default function GatesPage() {
                       <p className="font-mono text-[10px] text-slate-400">{gate.id}</p>
                     </td>
                     <td className="px-4 py-3.5 text-xs text-slate-600">
-                      {gate.matchId ? (
-                        <>
-                          <p className="font-medium text-slate-700">{gate.matchLabel}</p>
-                          {gate.kickoffAt ? (
-                            <p className="text-[10px] text-slate-400">
-                              {formatMatchDate(gate.kickoffAt)} · {formatMatchTime(gate.kickoffAt)}
-                            </p>
-                          ) : null}
-                        </>
-                      ) : (
+                      {gate.venueName ?? gate.venueId}
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-slate-600">
+                      {gate.matchLabels.length === 0 ? (
                         <span className="text-amber-600">No fixture assigned</span>
+                      ) : (
+                        <ul className="space-y-0.5">
+                          {gate.matchLabels.slice(0, 3).map((label, index) => (
+                            <li key={gate.matchIds[index]} className="font-medium text-slate-700">
+                              {label}
+                            </li>
+                          ))}
+                          {gate.matchLabels.length > 3 ? (
+                            <li className="text-[10px] text-slate-400">
+                              +{gate.matchLabels.length - 3} more
+                            </li>
+                          ) : null}
+                        </ul>
                       )}
                     </td>
                     <td className="px-4 py-3.5">
@@ -198,7 +227,7 @@ export default function GatesPage() {
                         <button
                           type="button"
                           onClick={() => remove(gate)}
-                          className="grid h-7 w-7 place-items-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                          className="grid h-7 w-7 place-items-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-400"
                           aria-label={`Delete ${gate.name}`}>
                           <Trash2 size={11} />
                         </button>
@@ -216,7 +245,7 @@ export default function GatesPage() {
         open={creating || editing !== null}
         onClose={close}
         title={creating ? "New gate" : "Edit gate"}
-        description="A gate admits exactly one fixture and records every scan against this code."
+        description="A gate stands at one venue and admits every fixture assigned to it. Each scan is recorded against this code."
         footer={
           <>
             <button type="button" onClick={close} className="btn-ghost">
@@ -259,21 +288,52 @@ export default function GatesPage() {
           </label>
 
           <label className="block">
-            <span className="label mb-1.5 block">Assigned fixture</span>
+            <span className="label mb-1.5 block">Venue</span>
             <select
-              value={form.matchId ?? ""}
-              onChange={(event) =>
-                setForm({ ...form, matchId: event.target.value === "" ? null : event.target.value })
-              }
+              value={form.venueId}
+              onChange={(event) => setForm({ ...form, venueId: event.target.value })}
               className="input">
-              <option value="">No fixture assigned</option>
-              {(matches ?? []).map((match) => (
-                <option key={match.id} value={match.id}>
-                  {match.opponent} · {formatMatchDate(match.kickoffAt)} ({match.status})
+              <option value="">Choose a venue…</option>
+              {(venues ?? []).map((venue) => (
+                <option key={venue.id} value={venue.id}>
+                  {venue.name}
+                  {venue.city ? ` · ${venue.city}` : ""}
                 </option>
               ))}
             </select>
+            <span className="mt-1 block text-[10px] text-slate-400">
+              Where this turnstile physically stands.
+            </span>
           </label>
+
+          <div className="block">
+            <span className="label mb-1.5 block">Assigned fixtures</span>
+            <div className="max-h-44 space-y-0.5 overflow-y-auto rounded-xl border border-slate-200 p-2">
+              {(matches ?? []).length === 0 ? (
+                <p className="px-1 py-2 text-xs text-slate-400">
+                  No fixtures yet — create one first.
+                </p>
+              ) : (
+                (matches ?? []).map((match) => (
+                  <label
+                    key={match.id}
+                    className="flex items-start gap-2 rounded-lg px-1 py-1 text-xs text-slate-600 hover:bg-slate-50">
+                    <input
+                      type="checkbox"
+                      checked={form.matchIds.includes(match.id)}
+                      onChange={() => toggleMatch(match.id)}
+                      className="mt-0.5"
+                    />
+                    {match.opponent} · {formatMatchDate(match.kickoffAt)} ({match.status})
+                  </label>
+                ))
+              )}
+            </div>
+            <span className="mt-1 block text-[10px] text-slate-400">
+              A gate may admit several fixtures; a pass for anything else is rejected as the wrong
+              fixture.
+            </span>
+          </div>
 
           <label className="flex items-start gap-2 text-xs text-slate-600">
             <input

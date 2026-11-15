@@ -102,13 +102,17 @@ const fixtureId = `gate-${Date.now()}`;
 const kickoffAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
 // Fixture rows must never outlive the run, pass or fail. Order matters:
-// scan_events → tickets → order_seats → orders → gates → seats → zones →
-// matches (each level references the one below).
+// tickets (cascading the scan log) → scan_events → order_seats → orders →
+// gates → seats → zones → matches (each level references the one below).
 const cleanupFixture = async () => {
   const orderRows = await rest(`orders?select=id&match_id=eq.${fixtureId}`, { token: SERVICE }).catch(() => []);
   const paths = [
-    `scan_events?gate_id=eq.${fixtureId}-gate`,
+    // The tickets go first: deleting them cascades the scan log away (an FK
+    // cascade is not an edit, so the append-only trigger in 0044 lets it
+    // through), and the gate cannot be deleted while a scan still references
+    // it. The explicit scan_events path below then matches no rows.
     ...(orderRows ?? []).map((o) => `tickets?order_id=eq.${o.id}`),
+    `scan_events?gate_id=eq.${fixtureId}-gate`,
     ...(orderRows ?? []).map((o) => `order_seats?order_id=eq.${o.id}`),
     ...(orderRows ?? []).map((o) => `orders?id=eq.${o.id}`),
     `gates?id=eq.${fixtureId}-gate`,
@@ -151,12 +155,19 @@ try {
     method: 'POST',
     body: { id: `${fixtureId}-A1`, zone_id: `${fixtureId}-zone`, row_label: 'A', number: 1 },
   });
+  // `matches.venue_id` defaults at the home ground, so the physical gate
+  // stands there too (0044); the fixture is assigned through match_gates.
   await rest('gates', {
     token: adminToken,
     method: 'POST',
-    body: { id: `${fixtureId}-gate`, name: 'Gate One', match_id: fixtureId, active: true },
+    body: { id: `${fixtureId}-gate`, name: 'Gate One', venue_id: 'v_kickoff', active: true },
   });
-  step('fixture + zone + seat + gate created', true, fixtureId);
+  await rest('match_gates', {
+    token: adminToken,
+    method: 'POST',
+    body: { match_id: fixtureId, gate_id: `${fixtureId}-gate` },
+  });
+  step('fixture + zone + seat + gate + assignment created', true, fixtureId);
 
   // 4. Fan holds the seat and starts Checkout.
   const hold = await rest('rpc/create_hold', {

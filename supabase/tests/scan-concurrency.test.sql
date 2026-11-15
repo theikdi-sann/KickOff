@@ -27,9 +27,13 @@ insert into public.seats (id, zone_id, row_label, number)
 values ('scan-race-seat', 'scan-race-zone', 'A', 1)
 on conflict (id) do nothing;
 
-insert into public.gates (id, name, match_id, active)
-values ('scan-race-gate', 'Race Gate', 'scan-race-match', true)
+insert into public.gates (id, name, venue_id, active)
+values ('scan-race-gate', 'Race Gate', 'v_kickoff', true)
 on conflict (id) do nothing;
+
+insert into public.match_gates (match_id, gate_id)
+values ('scan-race-match', 'scan-race-gate')
+on conflict (match_id, gate_id) do nothing;
 
 insert into public.orders (id, user_id, match_id, amount_minor_units, status)
 values (
@@ -177,8 +181,11 @@ select is(
   'the ticket ends up used'
 );
 
-delete from public.scan_events where gate_id = 'scan-race-gate';
+-- The ticket goes first: deleting it cascades the scan log away (a foreign-key
+-- cascade is not an edit, so the append-only trigger lets it through), and the
+-- gate cannot be removed while a scan still references it.
 delete from public.tickets where id = 'scan-race-ticket';
+delete from public.scan_events where gate_id = 'scan-race-gate';
 delete from public.order_seats where id = 'scan-race-seat-row';
 delete from public.orders where id = 'scan-race-order';
 delete from public.gates where id = 'scan-race-gate';

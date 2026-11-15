@@ -47,6 +47,7 @@ role bypasses RLS and is used only inside Edge Functions.
 | `seat_holds` | — | read own holds | read all |
 | `device_tokens` | — | CRUD own rows | — |
 | `gates` | — | — | read/write |
+| `match_gates` | — | read (staff) | read/write |
 | `scan_events` | — | — | read |
 | `audit_logs` | — | — | read |
 | `app_settings` | — | read | full write |
@@ -59,9 +60,11 @@ tickets and scans are created through `security definer` functions
 `supabase/tests/rls.test.sql` asserts the matrix above (pgTAP).
 
 A second staff role, `gatekeeper` (GAP-03a), is narrower than `admin`: it may
-read `gates`, its **own** `scan_events`, and the `tickets` rows of passes it
-scanned; every other row marked admin-only above stays closed. It may not read
-the audit trail, other profiles, or write the gate registry.
+read `gates`, the fixture assignments on `match_gates` (the scanner console
+shows which fixtures a gate serves), its **own** `scan_events`, and the
+`tickets` rows of passes it scanned; every other row marked admin-only above
+stays closed. It may not read the audit trail, other profiles, or write the
+gate registry or the assignments.
 
 Helpers: `public.is_admin()` reads the JWT claim and is the single predicate
 used by every admin policy; `public.is_staff()` is the broader predicate for
@@ -69,7 +72,7 @@ the gate surface (admin or gatekeeper). Both read `app_metadata.role`, so a
 role change is applied everywhere at once. `supabase/tests/staff-roles.test.sql`
 asserts the boundary.
 
-### 2.1 Target multi-tenant model (C6–C7 — `0040`–`0043` landed, the rest designed)
+### 2.1 Target multi-tenant model (C6–C7 — `0040`–`0044` landed, the rest designed)
 
 The single-tenant matrix above is replaced by a tenant-scoped one in the
 `0040`–`0045` series (ADR-001, ADR-002):
@@ -164,13 +167,25 @@ cross-tenant read returns 0 rows and a cross-tenant write errors.
 
 ## 6. Gate scanning & audit
 
-- `scan_ticket` enforces: gate exists and is active, gate is assigned to the
-  ticket's fixture (`wrong_match`), the fixture has not completed, and the
+- `scan_ticket` enforces: gate exists and is active, the gate admits at least
+  one fixture and is assigned to the ticket's fixture through `match_gates`
+  (`wrong_match`), the fixture has not completed, and the
   current time is within **kick-off −2h … +2h**.
 - Every attempt — valid, used, invalid, wrong fixture — writes a `scan_events`
-  row with the operator id, gate id and an `idempotency_key`. The SQL function
-  refuses a caller whose `p_admin_id` is not their own `auth.uid()`, so a scan
-  cannot be filed under another operator's name.
+  row with the gate id, the fixture it admitted for (`match_id`), the
+  operator's membership row (`operator_id`, null when the account holds none —
+  `admin_id` stays the accountable account identity) and an
+  `idempotency_key`. The SQL function refuses a caller whose `p_admin_id` is
+  not their own `auth.uid()`, so a scan cannot be filed under another
+  operator's name.
+- The log is **append-only** (`scan_events_append_only`): a row may be
+  inserted and may take its undo stamp (`undone_at`, `undone_by`) — nothing
+  else, and nothing at all once undone. Two exceptions are deliberate:
+  foreign-key cascades fire the trigger at depth ≥ 2 (the database is acting,
+  not an editor), and a maintenance purge requires the session flag
+  `kickoff.scan_events_maintenance = on` **and** a member of the table
+  owner's role — the flag alone is meaningless, since any session can set a
+  custom GUC.
 - `Idempotency-Key` (8–64 URL-safe characters) makes offline replays safe: the
   same key returns the original outcome instead of admitting twice.
 - `audit_logs` records privileged actions (refunds, account deletion, admin
