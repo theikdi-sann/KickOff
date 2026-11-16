@@ -9,16 +9,16 @@ import type {
   MatchStatus,
   NewsCategory,
   OrderStatus,
-  Role,
   ScanResultCode,
   TicketStatus,
 } from './entities';
+import type { StaffRole } from './roles';
 
 export interface ProfileDto {
   id: string;
   email: string;
   fullName: string;
-  role: Role;
+  role: StaffRole;
   phone?: string | null;
   joinedAt: IsoTimestamp;
 }

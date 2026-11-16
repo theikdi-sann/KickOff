@@ -12,8 +12,10 @@ values ('00000000-0000-0000-0000-0000000000aa', 'tap@kickoff.test');
 
 -- 0045 gates scan_ticket on is_gate_operator(): the scanner needs a
 -- membership row at the default club, not just an admin claim.
-update public.profiles set role = 'admin'
-  where id = '00000000-0000-0000-0000-0000000000aa';
+-- The membership is the authority (0048): the legacy profile column is gone.
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000aa',
+        '00000000-0000-0000-0000-000000000001', 'admin');
 
 -- Kick-off inside the ±2h scan window, otherwise the scan is rejected as
 -- "the gates are not open yet".

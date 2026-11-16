@@ -34,8 +34,10 @@ insert into auth.users (id, email, raw_app_meta_data) values
   ('00000000-0000-0000-0000-0000000000f3', 'go.fan@kickoff.test',
    '{"role":"customer"}'::jsonb);
 
-update public.profiles set role = 'gatekeeper'
-  where id = '00000000-0000-0000-0000-0000000000f1';
+-- The membership is the authority (0048): the legacy profile column is gone.
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000f1',
+        '00000000-0000-0000-0000-000000000001', 'gatekeeper');
 
 insert into public.venues (id, name)
 values ('go-venue', 'Gate Ops Arena')
@@ -306,10 +308,13 @@ select throws_ok(
   'GO-25 an admin claim without a membership cannot scan'
 );
 
--- The role implies the membership; give the account one and the same key
--- scans for real (GO-30..GO-34 depend on this event existing).
-update public.profiles set role = 'admin'
-  where id = '00000000-0000-0000-0000-0000000000f2';
+-- The membership is the authority (0048). A member may not grant one — the
+-- policy forbids it — so the fixture writes it as the owner.
+reset role;
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000f2',
+        '00000000-0000-0000-0000-000000000001', 'admin');
+set local role authenticated;
 
 select is(
   (public.scan_ticket('go-ticket-2', 'go-gate-main',

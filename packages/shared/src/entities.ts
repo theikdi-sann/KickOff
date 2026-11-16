@@ -4,21 +4,8 @@
  * the wire/UI contract. Use `dto.ts` for camelCase payloads sent to the apps.
  */
 
-import type { StaffRole } from './roles';
-
 export type IsoTimestamp = string;
 
-/**
- * `profiles.role` — the one role vocabulary, owned by `roles.ts`.
- *
- * Kept as an alias because the row/DTO types read better with a short name;
- * the values are never repeated here, so `gatekeeper` cannot be forgotten.
- *
- * The column itself is legacy: the authority lives in `staff_members` (the
- * database reads it) and in the JWT claim (the Edge guards read it). `0048`
- * drops the column.
- */
-export type Role = StaffRole;
 export type MatchStatus = 'upcoming' | 'live' | 'completed';
 export type OrderStatus = 'pending' | 'paid' | 'failed' | 'cancelled' | 'refunded';
 export type TicketStatus = 'valid' | 'used' | 'void';
@@ -32,7 +19,6 @@ export interface ProfileRow {
   id: string;
   email: string;
   full_name: string;
-  role: Role;
   phone: string | null;
   created_at: IsoTimestamp;
   updated_at: IsoTimestamp;

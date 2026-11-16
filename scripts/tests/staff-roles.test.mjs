@@ -218,13 +218,22 @@ test('SR-8 no second copy of the role vocabulary survives', () => {
   const entities = read('packages/shared/src/entities.ts');
   assert.doesNotMatch(
     entities,
-    /export type Role = 'customer' \| 'admin'/,
-    'entities.ts must not declare its own role union',
+    /export type Role =/,
+    'entities.ts must not declare a role type — the profile row carries no role (0048)',
   );
-  assert.match(
+  assert.doesNotMatch(
     entities,
+    /role: Role/,
+    'the profile row must not carry a role column — the membership is the authority',
+  );
+
+  // The DTO still carries a role — the app's own role, read from the JWT
+  // claim — and it must use the shared vocabulary.
+  const dto = read('packages/shared/src/dto.ts');
+  assert.match(
+    dto,
     /StaffRole/,
-    'the profile row must use the shared staff role type',
+    'the profile DTO must use the shared staff role type',
   );
 
   const mobileAuth = read('apps/mobile/src/lib/auth.ts');
@@ -280,6 +289,45 @@ test('SR-9 no application code reads the legacy role column any more', () => {
     functionSource,
     /patch\.role\s*=/,
     'the admin-users function must not write the legacy role column any more',
+  );
+
+  // The shared package must not model a profile role either — the column is
+  // gone (0048), and the mapper must not pretend it exists.
+  const mappers = read('packages/shared/src/mappers.ts');
+  assert.doesNotMatch(
+    mappers,
+    /row\.role/,
+    'the shared mapper must not read a profile role column',
+  );
+});
+
+test('SR-12 the legacy column, its bridge and its guard are dropped', () => {
+  const migration = read('supabase/migrations/0048_drop_legacy_role.sql');
+
+  assert.match(
+    migration,
+    /alter table public\.profiles drop column if exists role/,
+    'the legacy role column must go',
+  );
+  assert.match(
+    migration,
+    /drop trigger if exists profiles_sync_staff_member on public\.profiles/,
+    'the dual-write bridge must go',
+  );
+  assert.match(
+    migration,
+    /drop trigger if exists profiles_prevent_role_escalation on public\.profiles/,
+    'the role guard must go with the column it protected',
+  );
+  assert.match(
+    migration,
+    /drop function if exists public\.sync_staff_member\(\)/,
+    'the bridge function must go',
+  );
+  assert.match(
+    migration,
+    /drop function if exists public\.prevent_role_escalation\(\)/,
+    'the guard function must go',
   );
 });
 

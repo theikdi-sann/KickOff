@@ -12,9 +12,13 @@ values (
 on conflict (id) do nothing;
 
 -- 0045 gates scan_ticket on is_gate_operator(): the racing scanner needs a
--- membership row, not just the admin claim the workers present.
-update public.profiles set role = 'admin'
-  where id = '00000000-0000-0000-0000-0000000000d2';
+-- membership row, not just the admin claim the workers present. The
+-- membership is the authority (0048) and the fixture is committed below, so
+-- the write has to tolerate a row a dead run left behind.
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000d2',
+        '00000000-0000-0000-0000-000000000001', 'admin')
+on conflict (id, tenant_id) do update set staff_role = excluded.staff_role;
 
 insert into public.matches (id, opponent, opponent_short, kickoff_at, status)
 values ('scan-race-match', 'Race FC', 'RAC', now() + interval '1 hour', 'upcoming')

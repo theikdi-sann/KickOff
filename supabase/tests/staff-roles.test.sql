@@ -23,13 +23,12 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000c2', 'staff.gate@kickoff.test'),
   ('00000000-0000-0000-0000-0000000000c3', 'staff.fan@kickoff.test');
 
-update public.profiles set role = 'admin'
-  where id = '00000000-0000-0000-0000-0000000000c1';
-
--- 0045 reads is_admin()/is_staff() from membership rows, so the gatekeeper
--- fixture needs one before SR-2 can ask about it.
-update public.profiles set role = 'gatekeeper'
-  where id = '00000000-0000-0000-0000-0000000000c2';
+-- The membership is the authority (0048): the legacy profile column is gone.
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000c1',
+        '00000000-0000-0000-0000-000000000001', 'admin'),
+       ('00000000-0000-0000-0000-0000000000c2',
+        '00000000-0000-0000-0000-000000000001', 'gatekeeper');
 
 -- ── SR-1 the helper exists ──────────────────────────────────────────────────
 select has_function(
@@ -61,36 +60,40 @@ select set_config(
 );
 select is(public.is_staff(), false, 'SR-2e a customer is not staff');
 
--- ── SR-3 the profile role vocabulary ────────────────────────────────────────
--- The service role writes the row; the point is the check constraint, not RLS.
-select lives_ok(
-  $$update public.profiles set role = 'gatekeeper'
-      where id = '00000000-0000-0000-0000-0000000000c2'$$,
-  'SR-3a profiles.role accepts gatekeeper'
+-- ── SR-3 the vocabulary lives in the club, not in a profile column ─────────
+-- 0048 drops `profiles.role` and its check constraint. The vocabulary is the
+-- club's own (`staff_roles`), and a membership may only name a role the club
+-- defines.
+select is(
+  (select count(*) from information_schema.columns
+    where table_schema = 'public' and table_name = 'profiles'
+      and column_name = 'role'),
+  0::bigint,
+  'SR-3a the profile carries no role column'
 );
 
 select is(
-  (select role from public.profiles where id = '00000000-0000-0000-0000-0000000000c2'),
-  'gatekeeper',
-  'SR-3b the gatekeeper row kept the new role'
+  (select count(*) from public.staff_roles
+    where tenant_id = '00000000-0000-0000-0000-000000000001'),
+  2::bigint,
+  'SR-3b the club defines the vocabulary: admin and gatekeeper'
 );
 
 select throws_ok(
-  $$update public.profiles set role = 'owner'
-      where id = '00000000-0000-0000-0000-0000000000c2'$$,
-  '23514', null,
-  'SR-3c an unknown role is still rejected'
+  $$insert into public.staff_members (id, tenant_id, staff_role)
+     values ('00000000-0000-0000-0000-0000000000c3',
+             '00000000-0000-0000-0000-000000000001', 'owner')$$,
+  '23503', null,
+  'SR-3c a membership may only name a role the club defines'
 );
 
 -- ── SR-4 the gate surface ───────────────────────────────────────────────────
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000c4', 'staff.gate2@kickoff.test');
 
-update public.profiles set role = 'gatekeeper'
-  where id in (
-    '00000000-0000-0000-0000-0000000000c2',
-    '00000000-0000-0000-0000-0000000000c4'
-  );
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000c4',
+        '00000000-0000-0000-0000-000000000001', 'gatekeeper');
 
 insert into public.matches (id, opponent, opponent_short, kickoff_at, status)
 values ('staff-match', 'Gate FC', 'GAT', now() + interval '30 minutes', 'upcoming');

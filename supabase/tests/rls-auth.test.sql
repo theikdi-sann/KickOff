@@ -7,7 +7,10 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000b2', 'bob@kickoff.test'),
   ('00000000-0000-0000-0000-0000000000b3', 'root@kickoff.test');
 
-update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000000b3';
+-- The membership is the authority (0048): the legacy profile column is gone.
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000b3',
+        '00000000-0000-0000-0000-000000000001', 'admin');
 
 insert into public.matches (id, opponent, opponent_short, kickoff_at)
 values ('tap-match', 'Tap FC', 'TAP', now() + interval '10 days');

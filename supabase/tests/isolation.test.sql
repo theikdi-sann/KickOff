@@ -30,16 +30,17 @@ select public.provision_tenant('Iso Second Club', 'iso-second');
 -- ── people ──────────────────────────────────────────────────────────────────
 -- Club-B staff arrive with no role claim on purpose: their authority is the
 -- `staff_members` row below, not anything on the token. The club-A staff
--- member is promoted through `profiles.role`, which is what the dual-write
--- bridge mirrors into a membership.
+-- member gets the same treatment — the membership is the authority (0048),
+-- so every fixture writes it directly.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f9', 'iso.admin.b@kickoff.test'),
   ('00000000-0000-0000-0000-0000000000f8', 'iso.gate.b@kickoff.test'),
   ('00000000-0000-0000-0000-0000000000f7', 'iso.fan.a@kickoff.test'),
   ('00000000-0000-0000-0000-0000000000f5', 'iso.staff.a@kickoff.test');
 
-update public.profiles set role = 'admin'
-  where id = '00000000-0000-0000-0000-0000000000f5';
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000f5',
+        '00000000-0000-0000-0000-000000000001', 'admin');
 
 insert into public.staff_members (id, tenant_id, staff_role)
 select u.id, t.id, u.claim

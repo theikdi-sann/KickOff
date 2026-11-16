@@ -11,7 +11,7 @@
 --   * members read only their own fan/staff rows, admins read the club's, and
 --     nobody writes the identity tables directly.
 begin;
-select plan(25);
+select plan(28);
 
 -- ── structure ───────────────────────────────────────────────────────────────
 select has_table('public', 'fans', 'fans table exists');
@@ -65,41 +65,61 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d4', 'root@kickoff.test')
 on conflict (id) do nothing;
 
--- ── the dual-write bridge ───────────────────────────────────────────────────
-update public.profiles set role = 'admin'
-where id = '00000000-0000-0000-0000-0000000000d1';
+-- ── the membership is the authority ─────────────────────────────────────────
+-- 0048 drops the legacy `profiles.role` column with its dual-write bridge:
+-- a membership is written directly now, and it is what the database reads.
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000d1',
+        '00000000-0000-0000-0000-000000000001', 'admin'),
+       ('00000000-0000-0000-0000-0000000000d2',
+        '00000000-0000-0000-0000-000000000001', 'admin');
 
 select is(
   (select staff_role from public.staff_members
     where id = '00000000-0000-0000-0000-0000000000d1'
       and tenant_id = '00000000-0000-0000-0000-000000000001'),
   'admin',
-  'promoting a profile creates its staff membership'
+  'a membership is written directly — no profile column is involved'
 );
 
-update public.profiles set role = 'gatekeeper'
-where id = '00000000-0000-0000-0000-0000000000d2';
-
-update public.profiles set role = 'admin'
-where id = '00000000-0000-0000-0000-0000000000d2';
-
 select is(
-  (select staff_role from public.staff_members
-    where id = '00000000-0000-0000-0000-0000000000d2'
-      and tenant_id = '00000000-0000-0000-0000-000000000001'),
-  'admin',
-  'a role change updates the existing membership'
-);
-
-update public.profiles set role = 'customer'
-where id = '00000000-0000-0000-0000-0000000000d1';
-
-select is(
-  (select count(*) from public.staff_members
-    where id = '00000000-0000-0000-0000-0000000000d1'),
+  (select count(*) from information_schema.columns
+    where table_schema = 'public' and table_name = 'profiles'
+      and column_name = 'role'),
   0::bigint,
-  'demoting a profile removes its staff membership'
+  'the legacy profiles.role column is gone'
 );
+
+select is(
+  (select count(*) from pg_trigger
+    where tgrelid = 'public.profiles'::regclass
+      and tgname in ('profiles_sync_staff_member', 'profiles_prevent_role_escalation')),
+  0::bigint,
+  'the dual-write bridge and the role guard are gone'
+);
+
+select is(
+  (select count(*) from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname in ('sync_staff_member', 'prevent_role_escalation')),
+  0::bigint,
+  'the bridge functions are gone'
+);
+
+-- The membership grants the authority…
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated","app_metadata":{"role":"admin"}}',
+  true
+);
+select is(public.is_admin(), true, 'the membership makes an admin');
+
+-- …and removing it takes the authority away again.
+delete from public.staff_members
+  where id = '00000000-0000-0000-0000-0000000000d1';
+
+select is(public.is_admin(), false, 'removing the membership removes the authority');
 
 -- ── integrity ───────────────────────────────────────────────────────────────
 select throws_ok(
@@ -240,10 +260,10 @@ select is(
 );
 
 select is(
-  (select role from public.profiles
+  (select count(*) from public.profiles
     where id = '00000000-0000-0000-0000-0000000000d4'),
-  'customer',
-  'the legacy column is left alone — it is no longer the authority'
+  1::bigint,
+  'the promotion writes no profile row — only the membership and the claim'
 );
 
 select * from finish();

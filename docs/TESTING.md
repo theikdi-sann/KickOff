@@ -9,7 +9,7 @@ gate locally it will break the build.
 |---|---|---|
 | Workspace unit tests | `npm test` | shared schemas/format/i18n/greeting (Vitest), admin node tests, mobile Jest tests, repo script tests |
 | Typecheck + lint | `npm run check` | TypeScript across shared/mobile/admin, ESLint |
-| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning, identity split, tenancy columns, sales restructure, gate ops, tenant isolation, per-club uniques (292 assertions, 19 suites) |
+| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning, identity split, tenancy columns, sales restructure, gate ops, tenant isolation, per-club uniques (295 assertions, 19 suites) |
 | Edge Functions (unit) | `cd supabase/functions && deno test --allow-env --allow-net tests/` | HMAC, config, error mapping, metrics helpers |
 | Edge Functions (integration) | `RUN_INTEGRATION=1 deno test --allow-env --allow-net tests/` | real checkout → webhook → ticket → receipt, scan/undo |
 | Functions typecheck | `npm run functions:check` | `deno check` on every `supabase/functions/*/index.ts` |
@@ -58,14 +58,14 @@ The script prefers a local Supabase/Docker instance and falls back to running
 the same SQL against the hosted project when Docker is unavailable. It applies
 the `supabase/tests/*.sql` suites and reports pass/fail per assertion.
 
-**292 assertions across 19 suites**, verified against the local stack on
-2026-11-16: constraints, hold concurrency, hold TTL, order expiry, reschedule
+**295 assertions across 19 suites**, verified against the local stack on
+2026-11-17: constraints, hold concurrency, hold TTL, order expiry, reschedule
 audit, RLS (auth + anonymous), scan concurrency, seat reservation, venues, the
 F-07 atomicity suite (reschedule and refund), the GAP-03a staff-role suite
 (`admin` / `gatekeeper` authority and the gate RLS boundary), the C6.1 tenant
 suite (`tenants`, `current_tenant()`, `minor_units()`,
 `provision_tenant()`), the C6.2 identity suite (`fans`, per-tenant
-`staff_roles`, `staff_members`, the legacy dual-write bridge and the
+`staff_roles`, `staff_members`, the membership as the authority and the
 service-role promotion helper), the C6.3
 tenancy suite (`tenant_id` columns, composite foreign keys, tenant-led
 indexes), the C7.1 sales suite (derived seat occupancy without

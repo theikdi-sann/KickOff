@@ -72,7 +72,7 @@ the gate surface (admin or gatekeeper). Both read `app_metadata.role`, so a
 role change is applied everywhere at once. `supabase/tests/staff-roles.test.sql`
 asserts the boundary.
 
-### 2.1 Multi-tenant model (C6–C7 — `0040`–`0047` landed, `0048` designed)
+### 2.1 Multi-tenant model (C6–C7 — `0040`–`0048` landed)
 
 The single-tenant matrix above is replaced by the tenant-scoped one below,
 live since `0045` (ADR-001, ADR-002):
@@ -127,8 +127,8 @@ cross-tenant read returns 0 rows and a cross-tenant write errors.
   (`staff_members` + `staff_roles`, §2.1); the Edge guards authorise on the
   *JWT claim* (`app_metadata.role`). Since `0047` the console and the
   `admin-users` function read and write the membership, and every promotion
-  writes both — so the legacy `profiles.role` column has no reader left and
-  drops with its trigger in `0048`.
+  writes both. The legacy `profiles.role` column, its dual-write trigger and
+  its guard are gone since `0048` — the column had no reader left.
 - `metrics` is the only machine endpoint. It requires
   `x-metrics-token: <METRICS_TOKEN>` and compares in constant time
   (`_shared/metrics.ts`); it is `GET` only and returns aggregates, never rows.

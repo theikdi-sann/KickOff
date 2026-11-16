@@ -22,6 +22,7 @@ import type {
   ZoneRow,
 } from './entities';
 import { CLUB_NAME, STADIUM } from './constants';
+import type { StaffRole } from './roles';
 import { brand } from './theme';
 
 function pair(colors: string[] | null, fallback: [string, string]): [string, string] {
@@ -243,14 +244,16 @@ export function toNewsDto(row: NewsRowLike): NewsDto {
   };
 }
 
-type ProfileRowLike = Omit<ProfileRow, 'role'> & { role: string };
-
-export function toProfileDto(row: ProfileRowLike): ProfileDto {
+/**
+ * The profile row carries no role (0048): the authority is the membership,
+ * and the app's own role travels in the JWT claim. The caller passes it.
+ */
+export function toProfileDto(row: ProfileRow, role: StaffRole): ProfileDto {
   return {
     id: row.id,
     email: row.email,
     fullName: row.full_name,
-    role: row.role === 'admin' ? 'admin' : 'customer',
+    role,
     phone: row.phone,
     joinedAt: row.created_at,
   };

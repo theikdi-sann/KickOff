@@ -56,7 +56,10 @@ select throws_ok(
 reset role;
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000e1', 'venadmin@kickoff.test');
-update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000000e1';
+-- The membership is the authority (0048): the legacy profile column is gone.
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000e1',
+        '00000000-0000-0000-0000-000000000001', 'admin');
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000e1', true);
 select set_config(
   'request.jwt.claims',

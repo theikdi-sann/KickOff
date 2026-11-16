@@ -33,8 +33,10 @@ $$;
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000a1', 'atomic.admin@kickoff.test'),
   ('00000000-0000-0000-0000-0000000000a2', 'atomic.fan@kickoff.test');
-update public.profiles set role = 'admin'
-  where id = '00000000-0000-0000-0000-0000000000a1';
+-- The membership is the authority (0048): the legacy profile column is gone.
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000a1',
+        '00000000-0000-0000-0000-000000000001', 'admin');
 
 insert into public.matches (id, opponent, opponent_short, kickoff_at)
 values ('atm-match', 'Original FC', 'ORI', '2026-11-20T18:00:00+07:00');

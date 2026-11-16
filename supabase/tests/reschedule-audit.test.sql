@@ -7,7 +7,10 @@ select plan(4);
 -- 1. An admin can insert a reschedule audit row.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f1', 'rsadmin@kickoff.test');
-update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000000f1';
+-- The membership is the authority (0048): the legacy profile column is gone.
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000f1',
+        '00000000-0000-0000-0000-000000000001', 'admin');
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000f1', true);
 select set_config(
   'request.jwt.claims',
