@@ -11,7 +11,7 @@
 --   * members read only their own fan/staff rows, admins read the club's, and
 --     nobody writes the identity tables directly.
 begin;
-select plan(21);
+select plan(25);
 
 -- ── structure ───────────────────────────────────────────────────────────────
 select has_table('public', 'fans', 'fans table exists');
@@ -209,5 +209,42 @@ select is(
 );
 
 reset role;
+
+-- ── the service-role promotion helper ───────────────────────────────────────
+-- 0047 moved the promotion off the legacy `profiles.role` column: it grants
+-- the membership the *database* authorises on and merges the JWT claim the
+-- *Edge guards* read, so a promotion can no longer half-apply.
+set local role service_role;
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+
+select lives_ok(
+  $$select public.grant_admin('root@kickoff.test')$$,
+  'the promotion helper runs for the service role'
+);
+
+reset role;
+
+select is(
+  (select staff_role from public.staff_members
+    where id = '00000000-0000-0000-0000-0000000000d4'
+      and tenant_id = '00000000-0000-0000-0000-000000000001'),
+  'admin',
+  'the promotion granted the membership the database reads'
+);
+
+select is(
+  (select raw_app_meta_data ->> 'role' from auth.users
+    where id = '00000000-0000-0000-0000-0000000000d4'),
+  'admin',
+  'the promotion merged the JWT claim the Edge guards read'
+);
+
+select is(
+  (select role from public.profiles
+    where id = '00000000-0000-0000-0000-0000000000d4'),
+  'customer',
+  'the legacy column is left alone — it is no longer the authority'
+);
+
 select * from finish();
 rollback;

@@ -1,18 +1,24 @@
 /**
  * The staff role contract — the one vocabulary every tier agrees on.
  *
- * A staff member's role lives in **two** places, and both must move together
- * (D-16):
+ * A staff member's authority lives in **two** places, and both must move
+ * together (D-23):
  *
- *   - `public.profiles.role` — the row the staff console reads and displays;
- *   - `auth.users.app_metadata.role` — the JWT claim that `public.is_admin()`,
- *     `public.is_staff()` and every Edge Function guard authorise on.
+ *   - `public.staff_members` (with `public.staff_roles`) — the membership the
+ *     *database* authorises on: `public.is_admin()`, `public.is_staff()` and
+ *     `public.is_gate_operator()` all read it at the caller's club;
+ *   - `auth.users.app_metadata.role` — the JWT claim every *Edge Function*
+ *     guard authorises on.
  *
- * Writing only the profile row changes what the console *shows* without
- * changing what the user *can do*: the promoted account still fails every
- * privilege check, and the demoted account keeps its access until its token
- * is refreshed. Both projections are therefore planned together here, so a
- * role change cannot be half-applied.
+ * Writing only one changes what the product can do, not what it shows: a
+ * membership without the claim still fails every Edge guard, and a claim
+ * without the membership still fails every database check. Both projections
+ * are therefore planned together here, so a role change cannot be
+ * half-applied.
+ *
+ * `public.profiles.role` was a third projection, kept alive by a dual-write
+ * trigger. It is legacy: the console and the `admin-users` function read the
+ * membership instead, and `0048` drops the column with its trigger.
  *
  * The vocabulary is exactly two staff roles (D-20): `admin` keeps every
  * privilege, `gatekeeper` may scan passes and undo their own scans. This file
@@ -42,24 +48,27 @@ export function isStaffRole(value: unknown): boolean {
 }
 
 /**
- * A role change, planned for both places the role lives.
+ * A role change, planned for both places the authority lives.
  */
 export interface StaffRolePlan {
-  /** Patch for `public.profiles` — what the console displays. */
-  profile: { role: StaffRole };
-  /** Patch for `auth.users` app metadata — what the guards authorise on. */
+  /**
+   * The membership write — `staff_members.staff_role` at the caller's club.
+   * `null` means no membership: the row is removed, not written.
+   */
+  membership: { staff_role: StaffRole | null };
+  /** Patch for `auth.users` app metadata — what the Edge guards authorise on. */
   auth: { app_metadata: { role: StaffRole } };
 }
 
 /**
- * Plans a role change for the profile row and the JWT claim together.
+ * Plans a role change for the membership and the JWT claim together.
  *
  * The two projections must never disagree, so they are derived from one
  * value instead of being written separately.
  */
 export function planStaffRoleUpdate(role: StaffRole): StaffRolePlan {
   return {
-    profile: { role },
+    membership: { staff_role: role === 'customer' ? null : role },
     auth: { app_metadata: { role } },
   };
 }

@@ -35,7 +35,6 @@ describe('profileFromUser', () => {
       id: 'usr-1',
       email: 'ada@club.test',
       full_name: 'Ada L.',
-      role: 'admin',
       phone: '+66 80 000 0000',
       created_at: '2026-02-01T00:00:00Z',
     });
@@ -44,7 +43,10 @@ describe('profileFromUser', () => {
       id: 'usr-1',
       email: 'ada@club.test',
       fullName: 'Ada L.',
-      role: 'admin',
+      // The role comes from the JWT claim, not from the profile row — the
+      // legacy `profiles.role` column goes with 0048. This user carries no
+      // claim, so it is a customer.
+      role: 'customer',
       phone: '+66 80 000 0000',
       initials: 'AL',
       joinedAt: '2026-02-01T00:00:00Z',
@@ -71,6 +73,15 @@ describe('profileFromUser', () => {
     } as unknown as User;
 
     expect(profileFromUser(admin).role).toBe('admin');
+  });
+
+  it('reads a gatekeeper from the JWT claim too', () => {
+    const gatekeeper = {
+      ...user,
+      app_metadata: { role: 'gatekeeper' },
+    } as unknown as User;
+
+    expect(profileFromUser(gatekeeper).role).toBe('gatekeeper');
   });
 
   it('falls back to the local part of the e-mail when there is no name', () => {

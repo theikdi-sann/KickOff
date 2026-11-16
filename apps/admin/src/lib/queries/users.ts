@@ -18,17 +18,21 @@ interface ProfileRow {
   id: string;
   email: string;
   full_name: string;
-  role: StaffRole;
   phone: string | null;
   created_at: string;
 }
 
-function toUser(row: ProfileRow): AdminUser {
+interface MembershipRow {
+  id: string;
+  staff_role: string;
+}
+
+function toUser(row: ProfileRow, role: StaffRole): AdminUser {
   return {
     id: row.id,
     email: row.email,
     fullName: row.full_name,
-    role: row.role,
+    role,
     phone: row.phone,
     joinedAt: row.created_at,
   };
@@ -39,15 +43,33 @@ export function useUsers(role?: StaffRole) {
     queryKey: ["admin-users", role ?? "all"],
     queryFn: async (): Promise<AdminUser[]> => {
       const supabase = createClient();
-      let query = supabase
-        .from("profiles")
-        .select("id,email,full_name,role,phone,created_at")
-        .order("created_at", { ascending: true });
-      if (role) query = query.eq("role", role);
 
-      const { data, error } = await query;
-      if (error) throw new Error(error.message);
-      return ((data ?? []) as ProfileRow[]).map(toUser);
+      // A person's role is their membership at this club — a profile row
+      // belongs to no club of its own, and the legacy `profiles.role` column
+      // goes with 0048. Both reads are scoped by RLS to the console's club.
+      const [profiles, memberships] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id,email,full_name,phone,created_at")
+          .order("created_at", { ascending: true }),
+        supabase.from("staff_members").select("id,staff_role"),
+      ]);
+
+      if (profiles.error) throw new Error(profiles.error.message);
+      if (memberships.error) throw new Error(memberships.error.message);
+
+      const roles = new Map(
+        ((memberships.data ?? []) as MembershipRow[]).map((membership) => [
+          membership.id,
+          membership.staff_role as StaffRole,
+        ]),
+      );
+
+      const users = ((profiles.data ?? []) as ProfileRow[]).map((row) =>
+        toUser(row, roles.get(row.id) ?? "customer"),
+      );
+
+      return role ? users.filter((user) => user.role === role) : users;
     },
   });
 }

@@ -270,7 +270,7 @@ before the suite is green again.
 | `scripts/tests/seeall.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/share.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/signup.test.mjs` | test | covered | contract test — fails when the repository drifts |
-| `scripts/tests/staff-roles.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/staff-roles.test.mjs` | test | covered | contract test — the staff role contract: the membership and the JWT claim move together, and no application code reads the legacy `profiles.role` column any more (SR-1…SR-11) |
 | `scripts/tests/sweep-fixes.test.mjs` | test | reviewed | repo contract test — fails when the repository drifts |
 | `scripts/tests/type-safety.test.mjs` | test | covered | contract test — no non-null assertion may return |
 | `scripts/tests/ui.test.mjs` | test | covered | contract test — fails when the repository drifts |
@@ -373,13 +373,14 @@ before the suite is green again.
 | `supabase/migrations/0044_gate_ops.sql` | data | reviewed | migration — C7.2 gates bind to `venues`, `match_gates` assignment join replaces `gates.match_id`, `scan_events` gains `match_id`/`operator_id`/`undone_by`, append-only trigger |
 | `supabase/migrations/0045_rls_rewrite.sql` | data | reviewed | migration — C7.3 RLS rewrite: capability-gated `is_admin()`/`is_staff()`/`is_gate_operator()`, `current_tenant()` default-club fallback, `tenant_id` defaults, the SECURITY.md §2.1 policy matrix, invoker/definer views |
 | `supabase/migrations/0046_per_club_uniques.sql` | data | reviewed | migration — C7.4 per-club uniques: `venues.name` and `gates.name` under `UNIQUE (tenant_id, name)`, `app_settings` to `PRIMARY KEY (tenant_id, key)`, duplicate pre-check for gates |
+| `supabase/migrations/0047_role_bridge_sweep.sql` | data | reviewed | migration — C7.4 role sweep: `grant_admin()` grants the membership and merges the JWT claim instead of writing the legacy `profiles.role` column (no table shape change) |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/gate-ops.test.sql` | test | covered | pgTAP suite — C7.2 venue-bound gates, fixture assignment join, scan/undo audit columns, append-only log (38 assertions) |
 | `supabase/tests/hold-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/hold-ttl.test.sql` | data | covered | pgTAP suite — asserts the database contract |
-| `supabase/tests/identity.test.sql` | test | covered | pgTAP suite — C6.2 role seeding, dual-write bridge, membership integrity, fan/staff RLS (21 assertions) |
+| `supabase/tests/identity.test.sql` | test | covered | pgTAP suite — C6.2 role seeding, dual-write bridge, membership integrity, fan/staff RLS, the service-role promotion helper (25 assertions) |
 | `supabase/tests/isolation.test.sql` | test | covered | pgTAP suite — C7.3 tenant isolation: cross-tenant reads and writes per scoped table under `authenticated` (24 assertions) |
 | `supabase/tests/order-expiry.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/reschedule-audit.test.sql` | data | covered | pgTAP suite — asserts the database contract |

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { writeAudit } from "../_shared/audit.ts";
-import { requireAdmin } from "../_shared/auth.ts";
+import { requireAdmin, type AuthContext } from "../_shared/auth.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
 import { planStaffRoleUpdate, staffRoleSchema, type StaffRole } from "../_shared/roles.ts";
@@ -30,17 +30,23 @@ type ProfileRow = {
   id: string;
   email: string;
   full_name: string;
-  role: StaffRole;
   phone: string | null;
   created_at: string;
 };
 
-function toDto(row: ProfileRow) {
+/** A membership at the caller's club — the authority the database reads. */
+type MembershipRow = {
+  id: string;
+  tenant_id: string;
+  staff_role: string;
+};
+
+function toDto(row: ProfileRow, role: StaffRole) {
   return {
     id: row.id,
     email: row.email,
     fullName: row.full_name,
-    role: row.role,
+    role,
     phone: row.phone,
     joinedAt: row.created_at,
   };
@@ -55,10 +61,81 @@ function idFromRequest(request: Request): string | null {
 }
 
 /**
+ * The club this call acts for.
+ *
+ * `context.client` carries the caller's JWT, so `current_tenant()` resolves
+ * the caller's club — the same value the database's RLS uses. The service
+ * client bypasses RLS, so the writes below must name the club explicitly.
+ */
+async function callerClub(context: AuthContext): Promise<string> {
+  const { data, error } = await context.client.rpc("current_tenant");
+  if (error) throw error;
+  if (!data) throw new AppError("internal", "The club of this session could not be resolved");
+  return data as string;
+}
+
+/**
+ * The club's memberships.
+ *
+ * Read through the caller's client, so RLS decides the scope: an admin reads
+ * the memberships of their own club and nobody else's. A person's role *is*
+ * their membership — a profile row belongs to no club of its own.
+ */
+async function clubMemberships(context: AuthContext): Promise<MembershipRow[]> {
+  const { data, error } = await context.client
+    .from("staff_members")
+    .select("id,tenant_id,staff_role");
+  if (error) throw error;
+  return (data ?? []) as MembershipRow[];
+}
+
+/**
+ * Writes the club's membership for a person.
+ *
+ * `null` removes it — a person without a membership is a customer. The
+ * membership is what `is_admin()`, `is_staff()` and `is_gate_operator()` read,
+ * so this is the write that changes what the account can do.
+ */
+async function writeMembership(
+  db: ReturnType<typeof serviceClient>,
+  tenantId: string,
+  userId: string,
+  staffRole: StaffRole | null,
+): Promise<void> {
+  if (staffRole === null) {
+    const { error } = await db
+      .from("staff_members")
+      .delete()
+      .eq("id", userId)
+      .eq("tenant_id", tenantId);
+    if (error) throw error;
+    return;
+  }
+
+  const { error } = await db
+    .from("staff_members")
+    .upsert(
+      { id: userId, tenant_id: tenantId, staff_role: staffRole },
+      { onConflict: "id,tenant_id" },
+    );
+  if (error) throw error;
+}
+
+/** Puts the membership back when the claim write fails. */
+async function restoreMembership(
+  db: ReturnType<typeof serviceClient>,
+  tenantId: string,
+  userId: string,
+  previousRole: StaffRole,
+): Promise<void> {
+  await writeMembership(db, tenantId, userId, previousRole === "customer" ? null : previousRole);
+}
+
+/**
  * Counts the admins that can actually act.
  *
- * `profiles.role = 'admin'` is only the display; an admin can act when their
- * JWT claim says `admin`. Counting the profile rows alone would let the club
+ * A membership says the account *may* act; the JWT claim says the Edge
+ * guards *will* let it. Counting the memberships alone would let the club
  * demote its last *usable* admin while an unusable one (for example an
  * account promoted before the claim was written) still carries the role.
  *
@@ -67,19 +144,20 @@ function idFromRequest(request: Request): string | null {
  */
 async function countUsableAdmins(
   db: ReturnType<typeof serviceClient>,
+  memberships: MembershipRow[],
   excludeUserId: string,
 ): Promise<number> {
-  const { data, error } = await db.from("profiles").select("id").eq("role", "admin");
-  if (error) throw error;
-
   let usable = 0;
-  for (const row of data ?? []) {
-    if (row.id === excludeUserId) continue;
-    const { data: user, error: userError } = await db.auth.admin.getUserById(row.id);
+
+  for (const membership of memberships) {
+    if (membership.staff_role !== "admin") continue;
+    if (membership.id === excludeUserId) continue;
+    const { data: user, error: userError } = await db.auth.admin.getUserById(membership.id);
     if (userError) continue;
     const claim = (user?.user.app_metadata as Record<string, unknown> | undefined)?.role;
     if (claim === "admin") usable += 1;
   }
+
   return usable;
 }
 
@@ -91,22 +169,44 @@ async function handler(request: Request): Promise<Response> {
     const { role, page, perPage } = validateQuery(request, listQuerySchema);
     const from = (page - 1) * perPage;
 
+    const memberships = await clubMemberships(context);
+    const roles = new Map(memberships.map((m) => [m.id, m.staff_role]));
+
     let query = db
       .from("profiles")
-      .select("id,email,full_name,role,phone,created_at", { count: "exact" })
+      .select("id,email,full_name,phone,created_at", { count: "exact" })
       .order("created_at", { ascending: true })
       .range(from, from + perPage - 1);
-    if (role) query = query.eq("role", role);
+
+    if (role && role !== "customer") {
+      // The people who hold this role — the membership names them.
+      const ids = memberships.filter((m) => m.staff_role === role).map((m) => m.id);
+      if (ids.length === 0) {
+        return ok({ items: [], page, perPage, total: 0 }, request);
+      }
+      query = query.in("id", ids);
+    } else if (role === "customer") {
+      // Everyone who holds no membership. The filter has to run in the
+      // database, or a page of people would silently lose the customers.
+      const memberIds = memberships.map((m) => m.id);
+      if (memberIds.length > 0) {
+        query = query.not("id", "in", `(${memberIds.map((id) => `"${id}"`).join(",")})`);
+      }
+    }
 
     const { data, count, error } = await query;
     if (error) throw error;
 
+    const items = ((data ?? []) as ProfileRow[])
+      .map((row) => toDto(row, (roles.get(row.id) as StaffRole | undefined) ?? "customer"))
+      .filter((item) => (role ? item.role === role : true));
+
     return ok(
       {
-        items: ((data ?? []) as ProfileRow[]).map(toDto),
+        items,
         page,
         perPage,
-        total: count ?? 0,
+        total: count ?? items.length,
       },
       request,
     );
@@ -123,66 +223,70 @@ async function handler(request: Request): Promise<Response> {
 
   const { data: target, error: targetError } = await db
     .from("profiles")
-    .select("id,email,full_name,role,phone,created_at")
+    .select("id,email,full_name,phone,created_at")
     .eq("id", targetId)
     .maybeSingle<ProfileRow>();
   if (targetError) throw targetError;
   if (!target) throw new AppError("not_found", "User not found");
 
-  if (target.role === "admin" && body.role !== undefined && body.role !== "admin") {
-    const usableAdmins = await countUsableAdmins(db, targetId);
+  const tenantId = await callerClub(context);
+  const memberships = await clubMemberships(context);
+  const currentRole =
+    (memberships.find((m) => m.id === targetId)?.staff_role as StaffRole | undefined) ?? "customer";
+
+  if (currentRole === "admin" && body.role !== undefined && body.role !== "admin") {
+    const usableAdmins = await countUsableAdmins(db, memberships, targetId);
     if (usableAdmins === 0) {
       throw new AppError("conflict", "At least one admin must remain");
     }
   }
 
   const patch: Record<string, unknown> = {};
-  if (body.role !== undefined) patch.role = body.role;
   if (body.fullName !== undefined) patch.full_name = body.fullName;
   if (body.phone !== undefined) patch.phone = body.phone;
 
-  const { data: updated, error: updateError } = await db
-    .from("profiles")
-    .update(patch)
-    .eq("id", targetId)
-    .select("id,email,full_name,role,phone,created_at")
-    .single<ProfileRow>();
-  if (updateError) throw updateError;
+  let updated: ProfileRow = target;
+  if (Object.keys(patch).length > 0) {
+    const { data, error } = await db
+      .from("profiles")
+      .update(patch)
+      .eq("id", targetId)
+      .select("id,email,full_name,phone,created_at")
+      .single<ProfileRow>();
+    if (error) throw error;
+    updated = data;
+  }
 
-  // The JWT claim is what every guard actually authorises on: `public.is_admin()`
-  // reads `app_metadata.role`, and so does every Edge Function guard. Without
-  // this write the role change is cosmetic — the console shows "ADMIN" while
-  // the account still fails every privilege check.
-  //
-  // Order matters: the profile row is written first and the claim second, so
-  // a failure can never leave an account with more access than its profile
-  // advertises. If the claim write fails, the profile row is restored and
-  // nothing is changed.
+  // The membership is the authority the database reads; the claim is what
+  // every Edge guard reads. Order matters: the membership is written first
+  // and the claim second, so a failure can never leave an account with more
+  // access than its claim advertises. If the claim write fails, the
+  // membership is restored and nothing is changed.
   let roleChanged = false;
   if (body.role !== undefined) {
     const plan = planStaffRoleUpdate(body.role);
-    const { error: claimError } = await db.auth.admin.updateUserById(targetId, {
-      app_metadata: plan.auth.app_metadata,
-    });
+    roleChanged = (plan.membership.staff_role ?? "customer") !== currentRole;
+
+    await writeMembership(db, tenantId, targetId, plan.membership.staff_role);
+
+    const { data: authUser, error: authError } = await db.auth.admin.getUserById(targetId);
+    const claimError = authError
+      ? authError
+      : (
+        await db.auth.admin.updateUserById(targetId, {
+          // Merge, never replace: a claim another tier owns (a tenant, say)
+          // must survive a role change.
+          app_metadata: {
+            ...((authUser?.user.app_metadata as Record<string, unknown> | undefined) ?? {}),
+            role: plan.auth.app_metadata.role,
+          },
+        })
+      ).error;
 
     if (claimError) {
-      // Restore the previous role so the profile never advertises more access
-      // than the account has. If even that fails, say so instead of claiming
-      // that nothing changed.
-      const { error: restoreError } = await db
-        .from("profiles")
-        .update({ role: target.role })
-        .eq("id", targetId);
-      if (restoreError) {
-        throw new AppError(
-          "internal",
-          "Could not update the staff role. The account still has no access — try again.",
-        );
-      }
+      await restoreMembership(db, tenantId, targetId, currentRole);
       throw new AppError("internal", "Could not update the staff role. Nothing was changed.");
     }
-
-    roleChanged = plan.profile.role !== target.role;
   }
 
   await writeAudit(
@@ -191,14 +295,18 @@ async function handler(request: Request): Promise<Response> {
       action: "admin.user.update",
       entity: "profiles",
       entityId: targetId,
-      metadata: { ...patch, role_claim_updated: body.role !== undefined },
+      metadata: {
+        ...patch,
+        ...(body.role !== undefined ? { role: body.role } : {}),
+        role_claim_updated: body.role !== undefined,
+      },
     },
     db,
   );
 
   return ok(
     {
-      ...toDto(updated),
+      ...toDto(updated, body.role ?? currentRole),
       // The claim travels in the access token, so an existing session keeps
       // the old role until the token is refreshed.
       roleAppliesAtNextSignIn: body.role !== undefined,

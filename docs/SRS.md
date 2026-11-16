@@ -315,7 +315,7 @@ Layered per [`TESTING.md`](TESTING.md):
 |---|---|---|
 | Repo contracts | `node --test scripts/tests/` | `npm test` |
 | Shared + mobile unit | Vitest / jest-expo | `npm test` |
-| Database | pgTAP via `scripts/run-pgtap.sh` (288 assertions / 19 suites) | `db:test` |
+| Database | pgTAP via `scripts/run-pgtap.sh` (292 assertions / 19 suites) | `db:test` |
 | Edge Functions | Deno lint + tests | `functions:check`, CI |
 | Browser demo gate | `scripts/mvp-gate.mjs` (15/15) | manual/CI |
 | Auth E2E | Playwright against hosted project | manual `workflow_dispatch` |
@@ -342,12 +342,13 @@ the execution order fixed in `PLAN.md`:
   indexes), `0043` (the commerce restructure in minor units), `0044`
   (venue-bound gates and the append-only scan log), `0045` (the RLS
   rewrite: capability-gated helpers, the tenant-scoped policy matrix and the
-  T-01…T-24 isolation suite) and `0046` (per-club uniques — `venues.name`,
+  T-01…T-24 isolation suite), `0046` (per-club uniques — `venues.name`,
   `gates.name` and the `app_settings` primary key move under `tenant_id`,
-  and the console/seed conflict targets move with them) have landed;
-  `0047`–`0048` (the sweeps and the `profiles.role` dual-write drop) are not
-  yet implemented, so those bridge rows above still apply until each step
-  lands.
+  and the console/seed conflict targets move with them) and `0047` (the role
+  sweep — every reader moved off the legacy `profiles.role` column onto the
+  membership, and the promotion helper writes membership and claim together)
+  have landed; `0048` (the `profiles.role` dual-write drop) is not yet
+  implemented, so that bridge row above still applies until it lands.
 - **C8 (GAP-09)** — Stripe Connect (per-club connected accounts, platform fee,
   per-account webhooks, refund ledger): [`ADR-003`](adr/ADR-003-stripe-connect.md).
   GDPR export and tenant offboarding land before this cycle.

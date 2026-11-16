@@ -13,6 +13,10 @@ export type IsoTimestamp = string;
  *
  * Kept as an alias because the row/DTO types read better with a short name;
  * the values are never repeated here, so `gatekeeper` cannot be forgotten.
+ *
+ * The column itself is legacy: the authority lives in `staff_members` (the
+ * database reads it) and in the JWT claim (the Edge guards read it). `0048`
+ * drops the column.
  */
 export type Role = StaffRole;
 export type MatchStatus = 'upcoming' | 'live' | 'completed';

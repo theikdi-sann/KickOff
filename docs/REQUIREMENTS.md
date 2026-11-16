@@ -92,7 +92,7 @@ Supabase backend with Stripe payments and the Expo Push Service.
 | NFR-07 | Type safety: strict TS, no `any` | shipped | `tsconfig.base.json`, ESLint `no-explicit-any` |
 | NFR-08 | Offline entry verification without a network | **open** | `GAP-01` |
 | NFR-09 | Multi-tenant isolation | **shipped** | `GAP-02` closed at `0045` — ADR-002; C6–C7 (`0040`–`0045`), isolation suite green |
-| NFR-10 | Fine-grained staff roles beyond owner/admin | **partial** | `GAP-03a` delivered `admin` / `gatekeeper` (`0039`, `roles.ts`); `0041` made roles per-tenant with capability flags (`staff_roles`, `staff_members`), closing GAP-03 |
+| NFR-10 | Fine-grained staff roles beyond owner/admin | **partial** | `GAP-03a` delivered `admin` / `gatekeeper` (`0039`, `roles.ts`); `0041` made roles per-tenant with capability flags (`staff_roles`, `staff_members`), closing GAP-03; `0047` moved every reader onto the membership and made the promotion helper write membership and claim together |
 | NFR-11 | Observability: structured logs, metrics, error tracking | **open** | `GAP-04` — B2B blocker |
 | NFR-12 | Multi-language and multi-currency | **open** | `GAP-05` — schema (`tenants.locale`/`currency`) in C6/C7, UX in C10.2 |
 

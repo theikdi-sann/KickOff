@@ -9,20 +9,22 @@ import {
   staffRoleSchema,
 } from "../_shared/roles.ts";
 
-Deno.test("a role change is planned for the profile row and the JWT claim together", () => {
+Deno.test("a role change is planned for the membership and the JWT claim together", () => {
   const plan = planStaffRoleUpdate("admin");
 
-  // `profiles.role` is what the staff console displays.
-  assertEquals(plan.profile.role, "admin");
-  // `app_metadata.role` is what `public.is_admin()` and every Edge Function
-  // guard actually read — a role change that skips it grants nothing.
+  // `staff_members` is what the database authorises on (`is_admin()`,
+  // `is_staff()`, `is_gate_operator()` all read the membership).
+  assertEquals(plan.membership.staff_role, "admin");
+  // `app_metadata.role` is what every Edge Function guard reads — a role
+  // change that skips it does not reach the gate surface.
   assertEquals(plan.auth.app_metadata.role, "admin");
 });
 
-Deno.test("a demotion is planned for the profile row and the JWT claim together", () => {
+Deno.test("a demotion plans the removal of the membership", () => {
   const plan = planStaffRoleUpdate("customer");
 
-  assertEquals(plan.profile.role, "customer");
+  // No membership is a customer: the row is removed, not written.
+  assertEquals(plan.membership.staff_role, null);
   assertEquals(plan.auth.app_metadata.role, "customer");
 });
 
@@ -33,14 +35,14 @@ Deno.test("the vocabulary is exactly customer, admin and gatekeeper", () => {
 Deno.test("a gatekeeper role change is planned for both projections", () => {
   const plan = planStaffRoleUpdate("gatekeeper");
 
-  assertEquals(plan.profile.role, "gatekeeper");
+  assertEquals(plan.membership.staff_role, "gatekeeper");
   assertEquals(plan.auth.app_metadata.role, "gatekeeper");
 });
 
 Deno.test("the two projections of a role change never disagree", () => {
   for (const role of STAFF_ROLES) {
     const plan = planStaffRoleUpdate(role);
-    assertEquals(plan.profile.role, plan.auth.app_metadata.role);
+    assertEquals(plan.membership.staff_role ?? "customer", plan.auth.app_metadata.role);
   }
 });
 

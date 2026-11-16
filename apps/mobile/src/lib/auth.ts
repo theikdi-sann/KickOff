@@ -1,5 +1,5 @@
 import type { User } from '@supabase/supabase-js';
-import type { StaffRole } from '@kickoff/shared';
+import { staffRoleOf, type StaffRole } from '@kickoff/shared';
 import { supabase } from './supabase';
 
 export interface AppProfile {
@@ -16,7 +16,6 @@ interface ProfileRow {
   id: string;
   email: string;
   full_name: string;
-  role: StaffRole;
   phone: string | null;
   created_at: string;
 }
@@ -45,7 +44,10 @@ export function profileFromUser(user: User, row?: ProfileRow | null): AppProfile
     id: user.id,
     email,
     fullName,
-    role: row?.role ?? ((user.app_metadata as Record<string, unknown>)?.role === 'admin' ? 'admin' : 'customer'),
+    // The role comes from the JWT claim the session carries. The legacy
+    // `profiles.role` column goes with 0048 — the club's membership is the
+    // authority, and the app reads the claim the same way the Edge guards do.
+    role: staffRoleOf((user.app_metadata as Record<string, unknown> | undefined)?.role) ?? 'customer',
     phone: row?.phone ?? undefined,
     initials: initialsFor(fullName),
     joinedAt: row?.created_at ?? user.created_at,
@@ -56,7 +58,7 @@ export function profileFromUser(user: User, row?: ProfileRow | null): AppProfile
 export async function loadProfile(user: User): Promise<AppProfile> {
   const { data } = await supabase
     .from('profiles')
-    .select('id,email,full_name,role,phone,created_at')
+    .select('id,email,full_name,phone,created_at')
     .eq('id', user.id)
     .maybeSingle<ProfileRow>();
   return profileFromUser(user, data);
@@ -168,7 +170,7 @@ export async function updateProfile(input: {
     .from('profiles')
     .update(patch)
     .eq('id', userData.user.id)
-    .select('id,email,full_name,role,phone,created_at')
+    .select('id,email,full_name,phone,created_at')
     .single<ProfileRow>();
   if (error) throw new Error(error.message);
   return profileFromUser(userData.user, data);
