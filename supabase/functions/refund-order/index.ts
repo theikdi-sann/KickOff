@@ -10,6 +10,7 @@ interface OrderRow {
   id: string;
   status: string;
   payment_intent_id: string | null;
+  tenant_id: string;
 }
 
 async function handler(request: Request): Promise<Response> {
@@ -19,7 +20,7 @@ async function handler(request: Request): Promise<Response> {
 
   const { data: order, error: orderError } = await db
     .from("orders")
-    .select("id,status,payment_intent_id")
+    .select("id,status,payment_intent_id,tenant_id")
     .eq("id", body.orderId)
     .maybeSingle<OrderRow>();
   if (orderError || !order) throw orderError ?? new AppError("not_found", "Order not found");
@@ -49,6 +50,16 @@ async function handler(request: Request): Promise<Response> {
     throw new AppError("conflict", "Order has no Stripe payment intent");
   }
 
+  // The refund must debit the account the charge lives on (ADR-003 §4): the
+  // club's connected account for a club that has one, the platform account
+  // for a club not onboarded yet.
+  const { data: club, error: clubError } = await db
+    .from("tenants")
+    .select("stripe_account_id")
+    .eq("id", order.tenant_id)
+    .maybeSingle<{ stripe_account_id: string | null }>();
+  if (clubError) throw clubError;
+
   // The money moves first, with an order-scoped idempotency key: if the
   // database half below fails, the admin's retry returns this same refund
   // from Stripe instead of creating a second one (F-07).
@@ -63,7 +74,10 @@ async function handler(request: Request): Promise<Response> {
         override_used_tickets: String(body.overrideUsedTickets),
       },
     },
-    { idempotencyKey: `refund_${order.id}` },
+    {
+      idempotencyKey: `refund_${order.id}`,
+      stripeAccount: club?.stripe_account_id ?? undefined,
+    },
   );
 
   // One call flips the order, voids the tickets, releases the seats and

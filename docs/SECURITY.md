@@ -152,16 +152,32 @@ cross-tenant read returns 0 rows and a cross-tenant write errors.
 - Checkout is created server-side (`stripe-checkout`) with **card only**
   (`allowed_payment_method_types: ["card"]`) and the configured price from the
   database — never from client input.
+- **Connect (ADR-003):** the session runs on the **club's connected account**
+  (`tenants.stripe_account_id`), so the club is the merchant of record; the
+  platform keeps its fee from the same charge
+  (`payment_intent_data.application_fee_amount`, computed by the database's
+  `application_fee_minor_units()` from `tenants.application_fee_bps` and
+  snapshotted to `orders.application_fee_amount`). The platform secret stays
+  the only payment secret — the account is named per call.
+- The **bridge**: a club without a connected account is not onboarded yet. It
+  keeps selling on the platform account with no platform fee, and its refunds
+  debit the same account. Onboarding (C9) gives it one.
 - `stripe-webhook` verifies the raw body with `stripe-signature` via
   `constructWebhookEvent` before parsing; unsigned or tampered payloads are
   rejected with 401.
+- The webhook resolves the club from the **Connect account the event
+  carries** (`tenant_for_stripe_account()`), and records the club, the
+  account and the payload on `stripe_events` — the payload for post-mortems
+  only, never re-trusted. A **suspended** club's events are acknowledged and
+  ignored: its money is not ours to move.
 - Webhook processing is idempotent: `stripe_events.id` is the primary key, so a
   replayed event is acknowledged without issuing duplicate tickets. Failed
   processing removes the marker so Stripe can retry.
 - Refunds (`refund-order`) require an admin JWT, refuse orders without a
   `payment_intent_id`, and refuse orders with used tickets unless
   `overrideUsedTickets` is explicitly set. Every refund is written to
-  `audit_logs`.
+  `audit_logs` — and it debits the **account the charge lives on** (the
+  club's connected account), so the money never leaves the wrong balance.
 - The client never sees a secret key; success is confirmed by the webhook, not
   by the return URL.
 

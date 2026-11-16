@@ -142,7 +142,7 @@ supabase/
 | Nothing but admins reads `audit_logs` / `scan_events` | RLS policies | `rls.test.sql` |
 | Only admins write `audit_logs` | `0037` grant + policy; `0038` RPCs write their own rows atomically | `reschedule-audit.test.sql` + `atomicity.test.sql` |
 
-### 3.1 Target model (C6–C7 — `0040`–`0048` landed, the rest designed)
+### 3.1 Target model (C6–C7 — `0040`–`0048` landed, `0049` landed)
 
 The B2B account and tenancy model agreed on 2026-11-14 replaces the
 single-tenant shape above. It is delivered as the migration series
@@ -187,6 +187,11 @@ ticket screen ──ticket-qr──▶ KICKOFF-V2 signed payload ──▶ QR re
 Failure paths that must never leave a seat stuck: payment abandoned → order
 expires → seats released; app dismissed mid-payment → hold survives until TTL;
 webhook retried → `stripe_events` dedupe → one ticket.
+
+The charge runs on the **club's own Stripe account** (Stripe Connect,
+[ADR-003](adr/ADR-003-stripe-connect.md)): the club is the merchant of record
+and the platform keeps its fee from the same charge. A club that is not
+onboarded yet keeps selling on the platform account — the bridge.
 
 ### 4.2 Gate scan
 

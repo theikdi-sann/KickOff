@@ -557,17 +557,23 @@ isOneToOne: false
                   ]
                 },"stripe_events": {
                   Row: {
-                    "created_at": string,"id": string,"processed_at": string,"type": string
+                    "account_id": string | null,"created_at": string,"id": string,"payload": Json | null,"processed_at": string,"tenant_id": string | null,"type": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id": string,"processed_at"?: string,"type": string
+                    "account_id"?: string | null,"created_at"?: string,"id": string,"payload"?: Json | null,"processed_at"?: string,"tenant_id"?: string | null,"type": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"processed_at"?: string,"type"?: string
+                    "account_id"?: string | null,"created_at"?: string,"id"?: string,"payload"?: Json | null,"processed_at"?: string,"tenant_id"?: string | null,"type"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "stripe_events_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"tenants": {
                   Row: {
@@ -808,6 +814,9 @@ isOneToOne: false
 "admin_update_match":
 { Args: { "p_match_id": string,"p_patch": Json,"p_reason"?: string }; Returns: Json
                            },
+"application_fee_minor_units":
+{ Args: { "p_amount_minor_units": number,"p_fee_bps": number }; Returns: number
+                           },
 "cancel_order":
 { Args: { "p_actor_id"?: string,"p_order_id": string }; Returns: Json
                            },
@@ -1000,6 +1009,9 @@ isOneToOne: false
 { Args: { "": string }; Returns: string
                            } |
 { Args: { "how_many": number,"why": string }; Returns: string
+                           },
+"tenant_for_stripe_account":
+{ Args: { "p_account_id": string }; Returns: string
                            },
 "throws_ok":
 { Args: { "": string }; Returns: string

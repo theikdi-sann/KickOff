@@ -15,26 +15,44 @@ export function stripeClient(): Stripe {
   return cached;
 }
 
+/**
+ * The connected account a Connect call acts on (ADR-003).
+ *
+ * The platform secret stays the only payment secret; the connected account
+ * is named per call, so the club is the merchant of record and its funds
+ * settle in its own Stripe account.
+ */
+export interface StripeAccountOptions {
+  /** The club's connected account. Omitted for a club not onboarded yet. */
+  stripeAccount?: string;
+}
+
+function requestOptions(options?: StripeAccountOptions): Stripe.RequestOptions | undefined {
+  return options?.stripeAccount ? { stripeAccount: options.stripeAccount } : undefined;
+}
+
 export function createCheckoutSession(
   params: Stripe.Checkout.SessionCreateParams,
+  options?: StripeAccountOptions,
 ): Promise<Stripe.Checkout.Session> {
-  return stripeClient().checkout.sessions.create(params);
+  return stripeClient().checkout.sessions.create(params, requestOptions(options));
 }
 
 export function retrieveCheckoutSession(
   sessionId: string,
+  options?: StripeAccountOptions,
 ): Promise<Stripe.Checkout.Session> {
-  return stripeClient().checkout.sessions.retrieve(sessionId);
+  // The Stripe SDK takes the resource params before the request options.
+  return stripeClient().checkout.sessions.retrieve(sessionId, undefined, requestOptions(options));
 }
 
 export function createRefund(
   params: Stripe.RefundCreateParams,
-  options?: { idempotencyKey?: string },
+  options?: { idempotencyKey?: string } & StripeAccountOptions,
 ): Promise<Stripe.Refund> {
-  return stripeClient().refunds.create(
-    params,
-    options?.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : undefined,
-  );
+  const request: Stripe.RequestOptions = { ...requestOptions(options) };
+  if (options?.idempotencyKey) request.idempotencyKey = options.idempotencyKey;
+  return stripeClient().refunds.create(params, request);
 }
 
 /** Verifies the `stripe-signature` header and returns the typed event. */

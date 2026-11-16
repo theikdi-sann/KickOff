@@ -15,6 +15,25 @@ interface MinimalOrder {
   payment_intent_id: string | null;
 }
 
+/**
+ * The club's connected account — the account a charge and its refund live on.
+ *
+ * A club without an account is not onboarded yet: its charge lives on the
+ * platform account, and so must its refund.
+ */
+async function clubAccountForOrder(
+  db: ReturnType<typeof serviceClient>,
+  orderId: string,
+): Promise<string | undefined> {
+  const { data, error } = await db
+    .from("orders")
+    .select("tenants(stripe_account_id)")
+    .eq("id", orderId)
+    .maybeSingle<{ tenants: { stripe_account_id: string | null } | null }>();
+  if (error) throw error;
+  return data?.tenants?.stripe_account_id ?? undefined;
+}
+
 async function markPaid(orderId: string, session: Stripe.Checkout.Session): Promise<void> {
   const db = serviceClient();
   const paymentIntent =
@@ -32,11 +51,15 @@ async function markPaid(orderId: string, session: Stripe.Checkout.Session): Prom
   // The order was cancelled/expired before payment landed: refund automatically.
   if (error.code === "P0001") {
     if (paymentIntent) {
-      await createRefund({
-        payment_intent: paymentIntent,
-        reason: "requested_by_customer",
-        metadata: { order_id: orderId, reason: "late_webhook" },
-      });
+      const stripeAccount = await clubAccountForOrder(db, orderId);
+      await createRefund(
+        {
+          payment_intent: paymentIntent,
+          reason: "requested_by_customer",
+          metadata: { order_id: orderId, reason: "late_webhook" },
+        },
+        { stripeAccount },
+      );
       await writeAudit({
         action: "stripe.late_payment_refund",
         entity: "orders",
@@ -133,10 +156,27 @@ async function handler(request: Request): Promise<Response> {
   const event = await constructWebhookEvent(rawBody, signature);
   const db = serviceClient();
 
+  // The Connect account on the event names the club (ADR-003 §3). A platform
+  // event carries no account — the order carries the club instead.
+  const accountId = event.account ?? null;
+  const { data: tenantId, error: tenantError } = await db.rpc("tenant_for_stripe_account", {
+    p_account_id: accountId,
+  });
+  if (tenantError) throw tenantError;
+  const tenant = typeof tenantId === "string" ? tenantId : null;
+
   const { data: inserted, error: insertError } = await db
     .from("stripe_events")
     .upsert(
-      { id: event.id, type: event.type },
+      {
+        id: event.id,
+        type: event.type,
+        tenant_id: tenant,
+        account_id: accountId,
+        // Stored for post-mortems only — the ledger is never re-trusted as a
+        // source of truth for the event.
+        payload: event as unknown as Record<string, unknown>,
+      },
       { onConflict: "id", ignoreDuplicates: true },
     )
     .select("id");
@@ -144,6 +184,22 @@ async function handler(request: Request): Promise<Response> {
 
   if (!inserted || inserted.length === 0) {
     return ok({ received: true, replayed: true }, request);
+  }
+
+  // A suspended club's money is not ours to move: the event is acknowledged
+  // and ignored (ADR-003 §3). The reconciliation sweep (GAP-04) is what
+  // catches a payment that arrived after the suspension.
+  if (tenant) {
+    const { data: club, error: clubError } = await db
+      .from("tenants")
+      .select("status")
+      .eq("id", tenant)
+      .maybeSingle<{ status: string }>();
+    if (clubError) throw clubError;
+    if (club?.status === "suspended") {
+      logger.warn("webhook.suspended_club_ignored", { eventId: event.id, tenantId: tenant });
+      return ok({ received: true, ignored: true }, request);
+    }
   }
 
   try {

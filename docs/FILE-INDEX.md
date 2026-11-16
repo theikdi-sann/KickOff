@@ -247,6 +247,7 @@ before the suite is green again.
 | `scripts/tests/audit-coverage.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/availability.test.mjs` | test | covered | contract test — availability comes from the view, not the layout |
 | `scripts/tests/ci.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/connect.test.mjs` | test | covered | contract test — C8.1 Stripe Connect: the checkout, the webhook and the refund run on the club's connected account (CN-1…CN-7) |
 | `scripts/tests/db-gate.test.mjs` | test | covered | contract test — the pgTAP gate must run locally |
 | `scripts/tests/dep-drift.test.mjs` | test | covered | contract test — the Expo SDK compatibility check runs in CI (GAP-07) |
 | `scripts/tests/docs.test.mjs` | test | covered | contract test — fails when the repository drifts |
@@ -375,9 +376,11 @@ before the suite is green again.
 | `supabase/migrations/0046_per_club_uniques.sql` | data | reviewed | migration — C7.4 per-club uniques: `venues.name` and `gates.name` under `UNIQUE (tenant_id, name)`, `app_settings` to `PRIMARY KEY (tenant_id, key)`, duplicate pre-check for gates |
 | `supabase/migrations/0047_role_bridge_sweep.sql` | data | reviewed | migration — C7.4 role sweep: `grant_admin()` grants the membership and merges the JWT claim instead of writing the legacy `profiles.role` column (no table shape change) |
 | `supabase/migrations/0048_drop_legacy_role.sql` | data | reviewed | migration — C7.4 drops the legacy `profiles.role` column with its dual-write trigger and its role guard; the authority stays in `staff_members` + `staff_roles` and the JWT claim |
+| `supabase/migrations/0049_stripe_connect.sql` | data | reviewed | migration — C8.1 Stripe Connect: the event ledger learns its club (`tenant_id`, `account_id`, `payload`), one connected account per club, the platform fee (`application_fee_minor_units`) and the account resolver (`tenant_for_stripe_account`) |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
+| `supabase/tests/connect.test.sql` | test | covered | pgTAP suite — C8.1 Stripe Connect: the platform fee in minor units, the club a connected account belongs to, the event ledger (13 assertions) |
 | `supabase/tests/gate-ops.test.sql` | test | covered | pgTAP suite — C7.2 venue-bound gates, fixture assignment join, scan/undo audit columns, append-only log (38 assertions) |
 | `supabase/tests/hold-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/hold-ttl.test.sql` | data | covered | pgTAP suite — asserts the database contract |

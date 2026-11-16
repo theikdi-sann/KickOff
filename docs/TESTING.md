@@ -9,7 +9,7 @@ gate locally it will break the build.
 |---|---|---|
 | Workspace unit tests | `npm test` | shared schemas/format/i18n/greeting (Vitest), admin node tests, mobile Jest tests, repo script tests |
 | Typecheck + lint | `npm run check` | TypeScript across shared/mobile/admin, ESLint |
-| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning, identity split, tenancy columns, sales restructure, gate ops, tenant isolation, per-club uniques (295 assertions, 19 suites) |
+| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning, identity split, tenancy columns, sales restructure, gate ops, tenant isolation, per-club uniques, Stripe Connect (308 assertions, 20 suites) |
 | Edge Functions (unit) | `cd supabase/functions && deno test --allow-env --allow-net tests/` | HMAC, config, error mapping, metrics helpers |
 | Edge Functions (integration) | `RUN_INTEGRATION=1 deno test --allow-env --allow-net tests/` | real checkout → webhook → ticket → receipt, scan/undo |
 | Functions typecheck | `npm run functions:check` | `deno check` on every `supabase/functions/*/index.ts` |
@@ -58,7 +58,7 @@ The script prefers a local Supabase/Docker instance and falls back to running
 the same SQL against the hosted project when Docker is unavailable. It applies
 the `supabase/tests/*.sql` suites and reports pass/fail per assertion.
 
-**295 assertions across 19 suites**, verified against the local stack on
+**308 assertions across 20 suites**, verified against the local stack on
 2026-11-17: constraints, hold concurrency, hold TTL, order expiry, reschedule
 audit, RLS (auth + anonymous), scan concurrency, seat reservation, venues, the
 F-07 atomicity suite (reschedule and refund), the GAP-03a staff-role suite
@@ -75,7 +75,8 @@ join, the scan/undo audit columns and the append-only scan log), the C7.3
 isolation suite (T-01…T-24 — a cross-tenant read and a cross-tenant write
 per scoped table) and the C7.4 uniques suite (U-1…U-13 — the same name may
 exist in two clubs, never twice in one, in the exact shape the console and
-the seed write).
+the seed write) and the C8.1 Connect suite (CN-1…CN-13 — the platform fee in
+minor units, the club a connected account belongs to, and the event ledger).
 
 Read assertions run under `set local role authenticated`: the runner's
 `postgres` session bypasses RLS, so a policy can only be proven from a role

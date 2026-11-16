@@ -315,7 +315,7 @@ Layered per [`TESTING.md`](TESTING.md):
 |---|---|---|
 | Repo contracts | `node --test scripts/tests/` | `npm test` |
 | Shared + mobile unit | Vitest / jest-expo | `npm test` |
-| Database | pgTAP via `scripts/run-pgtap.sh` (295 assertions / 19 suites) | `db:test` |
+| Database | pgTAP via `scripts/run-pgtap.sh` (308 assertions / 20 suites) | `db:test` |
 | Edge Functions | Deno lint + tests | `functions:check`, CI |
 | Browser demo gate | `scripts/mvp-gate.mjs` (15/15) | manual/CI |
 | Auth E2E | Playwright against hosted project | manual `workflow_dispatch` |
@@ -352,7 +352,9 @@ the execution order fixed in `PLAN.md`:
   above are gone with it.
 - **C8 (GAP-09)** — Stripe Connect (per-club connected accounts, platform fee,
   per-account webhooks, refund ledger): [`ADR-003`](adr/ADR-003-stripe-connect.md).
-  GDPR export and tenant offboarding land before this cycle.
+  The plumbing (C8.1) landed first — it changes nothing while no club holds a
+  connected account. GDPR export and tenant offboarding must land before a
+  club is onboarded onto its own account.
 - **C9 (GAP-10)** — the cross-tenant platform console and white-label app
   delivery: [`ADR-004`](adr/ADR-004-white-label.md).
 - **C10 (GAP-04, GAP-05, GAP-01, GAP-06)** — observability, i18n/currency UX,
