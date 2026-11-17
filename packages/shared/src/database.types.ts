@@ -577,14 +577,14 @@ isOneToOne: false
                   ]
                 },"tenants": {
                   Row: {
-                    "application_fee_bps": number,"created_at": string,"currency": string,"id": string,"locale": string,"logo_url": string | null,"name": string,"primary_color": string,"slug": string,"status": Database["public"]['Enums']["tenant_status"],"stripe_account_id": string | null,"updated_at": string
+                    "application_fee_bps": number,"created_at": string,"currency": string,"erased_at": string | null,"id": string,"locale": string,"logo_url": string | null,"name": string,"offboarded_at": string | null,"primary_color": string,"slug": string,"status": Database["public"]['Enums']["tenant_status"],"stripe_account_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "application_fee_bps"?: number,"created_at"?: string,"currency"?: string,"id"?: string,"locale"?: string,"logo_url"?: string | null,"name": string,"primary_color"?: string,"slug": string,"status"?: Database["public"]['Enums']["tenant_status"],"stripe_account_id"?: string | null,"updated_at"?: string
+                    "application_fee_bps"?: number,"created_at"?: string,"currency"?: string,"erased_at"?: string | null,"id"?: string,"locale"?: string,"logo_url"?: string | null,"name": string,"offboarded_at"?: string | null,"primary_color"?: string,"slug": string,"status"?: Database["public"]['Enums']["tenant_status"],"stripe_account_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "application_fee_bps"?: number,"created_at"?: string,"currency"?: string,"id"?: string,"locale"?: string,"logo_url"?: string | null,"name"?: string,"primary_color"?: string,"slug"?: string,"status"?: Database["public"]['Enums']["tenant_status"],"stripe_account_id"?: string | null,"updated_at"?: string
+                    "application_fee_bps"?: number,"created_at"?: string,"currency"?: string,"erased_at"?: string | null,"id"?: string,"locale"?: string,"logo_url"?: string | null,"name"?: string,"offboarded_at"?: string | null,"primary_color"?: string,"slug"?: string,"status"?: Database["public"]['Enums']["tenant_status"],"stripe_account_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -912,6 +912,9 @@ isOneToOne: false
                            } |
 { Args: { "": string }; Returns: string[]
                            },
+"erase_tenant":
+{ Args: { "p_tenant_id": string }; Returns: Json
+                           },
 "expire_pending_orders":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
@@ -967,6 +970,9 @@ isOneToOne: false
                            },
 "mark_order_refunded":
 { Args: { "p_actor_id": string,"p_order_id": string,"p_override_used_tickets"?: boolean,"p_reason"?: string,"p_refund_id": string }; Returns: Json
+                           },
+"mark_tenant_offboarded":
+{ Args: { "p_tenant_id": string }; Returns: undefined
                            },
 "minor_units":
 { Args: { "p_currency": string }; Returns: number

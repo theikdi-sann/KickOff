@@ -387,11 +387,13 @@ before the suite is green again.
 | `supabase/migrations/0049_stripe_connect.sql` | data | reviewed | migration — C8.1 Stripe Connect: the event ledger learns its club (`tenant_id`, `account_id`, `payload`), one connected account per club, the platform fee (`application_fee_minor_units`) and the account resolver (`tenant_for_stripe_account`) |
 | `supabase/migrations/0050_rpc_nullable_args.sql` | data | reviewed | migration — GAP-09.0: `mark_order_paid`'s payment-intent and `tenant_for_stripe_account`'s account parameters say `default null`, so the generated types describe the calls the webhook legitimately makes |
 | `supabase/migrations/0051_tenant_export.sql` | data | reviewed | migration — GAP-09.4: the service-role-only `export_tenant()` — one club's full archive from a structural registry, audited (`tenant.export`), unknown club raises |
+| `supabase/migrations/0052_tenant_erase.sql` | data | reviewed | migration — GAP-09.5: `mark_tenant_offboarded()` (the human money gate, audited) and `erase_tenant()` (refuses until offboarded, purges every scoped table child-first through the scan-log maintenance path, keeps the `tenants` row as the tombstone) |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/connect.test.sql` | test | covered | pgTAP suite — C8.1 Stripe Connect: the platform fee in minor units, the club a connected account belongs to, the event ledger; 0050's omittable payment-intent and account parameters (16 assertions) |
 | `supabase/tests/tenant-export.test.sql` | test | covered | pgTAP suite — GAP-09.4 the per-tenant export: structural coverage of every tenant-scoped table, isolation, service-role-only, audited (9 assertions) |
+| `supabase/tests/tenant-erase.test.sql` | test | covered | pgTAP suite — GAP-09.5 the tenant erase: the human gate, structural coverage, isolation, the tombstone, idempotence (11 assertions) |
 | `supabase/tests/gate-ops.test.sql` | test | covered | pgTAP suite — C7.2 venue-bound gates, fixture assignment join, scan/undo audit columns, append-only log (38 assertions) |
 | `supabase/tests/hold-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/hold-ttl.test.sql` | data | covered | pgTAP suite — asserts the database contract |
