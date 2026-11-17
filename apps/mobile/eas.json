@@ -5,12 +5,18 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EAS_PROJECT_ID": "6f1ad5f2-435e-4d40-ae54-50772a22bdcb"
+      }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EAS_PROJECT_ID": "6f1ad5f2-435e-4d40-ae54-50772a22bdcb"
       }
     },
     "production": {

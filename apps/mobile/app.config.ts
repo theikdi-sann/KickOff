@@ -19,6 +19,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: 'light',
   android: {
     package: 'app.kickoff.fan',
+    // Firebase Cloud Messaging (C10.4, GAP-06). Expo's config plugin copies
+    // this file into the native project and applies the google-services
+    // Gradle plugin; without it `FirebaseMessaging.getInstance()` throws and
+    // the app never obtains a push token. It holds public identifiers only
+    // (package name, API key), so it is committed — a white-label build
+    // points GOOGLE_SERVICES_FILE at its own club's file.
+    googleServicesFile: process.env.GOOGLE_SERVICES_FILE || './google-services.json',
     adaptiveIcon: {
       backgroundColor: brand.night,
       foregroundImage: './assets/images/android-icon-foreground.png',

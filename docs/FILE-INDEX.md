@@ -135,6 +135,7 @@ before the suite is green again.
 | `apps/mobile/assets/images/splash-icon.png` | asset | asset | app icon — referenced by the app config |
 | `apps/mobile/eas.json` | config | reviewed | EAS build profiles |
 | `apps/mobile/eslint.config.js` | source | reviewed | source |
+| `apps/mobile/google-services.json` | config | reviewed | FCM client config (C10.4): public identifiers only — package name matches `android.package`; wired through `android.googleServicesFile` and committed because the build needs it |
 | `apps/mobile/jest.setup.ts` | config | reviewed | mobile test setup — pins the Supabase env to localhost |
 | `apps/mobile/package.json` | config | reviewed | mobile app manifest |
 | `apps/mobile/src/app/(auth)/_layout.tsx` | source | reviewed | supporter app screen |
@@ -285,6 +286,7 @@ before the suite is green again.
 | `scripts/tests/phaseb.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/phaseb0.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/platform-console.test.mjs` | test | covered | contract test — C9 across three tiers: vocabulary + generated copy, Edge guards, bootstrap, stripe-onboard, console gating, mobile binding (PC-1…PC-9) |
+| `scripts/tests/push-hardware.test.mjs` | test | covered | contract test — C10.4: the Firebase config is wired and its package matches, the EAS project id survives the build upload, the service-account key is ignored, and RUNBOOK §11 documents the hardware proof (PUSH-HW-1…PUSH-HW-6) |
 | `scripts/tests/push.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/readme.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/redirects.test.mjs` | test | covered | contract test — fails when the repository drifts |

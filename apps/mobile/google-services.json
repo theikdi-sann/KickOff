@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "103216718432",
+    "project_id": "kickoff-3dc6f",
+    "storage_bucket": "kickoff-3dc6f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:103216718432:android:b47a92a4b71e914ed99905",
+        "android_client_info": {
+          "package_name": "app.kickoff.fan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgNg8mC1nEuV2K_fdUb-q0eTWZXBE2ynE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

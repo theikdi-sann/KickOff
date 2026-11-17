@@ -32,7 +32,10 @@ Runs every workspace `test` script, then the repository script tests:
   by the preset; `jest.setup.ts` pins the Supabase env to localhost so a unit
   test can never reach a real project. CI runs this workspace too.
 - `scripts/tests/*.test.mjs` are source-level contract tests run with
-  `node --test scripts/tests/`. The Phase 11 mobile contracts (Maestro flow,
+  `node --test scripts/tests/`. The C10.4 push-hardware contracts
+  (`PUSH-HW-1…PUSH-HW-6`) pin the client/server push configuration and the
+  hardware procedure in `RUNBOOK` §11 — they cannot prove delivery, which is
+  why `GAP-06` stays open until a device run is recorded. The Phase 11 mobile contracts (Maestro flow,
   tab a11y, analytics adapters, settings confirms) are still asserted here.
 
 Run a single file:

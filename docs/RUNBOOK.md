@@ -103,7 +103,8 @@ Rules:
 
 ```bash
 npm run build:admin                      # must pass before deploy (CI also gates it)
-npx eas build --profile production       # mobile; development profile for push testing (GAP-06)
+npx eas build --profile production       # mobile; for push testing use the development
+                                         # profile and follow §11 (GAP-06)
 ```
 
 Set the production `ALLOWED_ORIGINS` / `ADMIN_APP_URL` Edge secrets to the
@@ -451,3 +452,96 @@ Suspension keeps every row; `current_tenant()` resolves no tenant for the
 club's staff and fans, so both apps lose access. Restoring reverses it. Both
 directions are audited, and the registry shows suspended clubs precisely so
 one can be restored.
+
+## 11. Hardware push proof (GAP-06)
+
+Every layer below the device is contract-tested (`scripts/tests/push.test.mjs`,
+PUSH-1…PUSH-9). What this procedure proves is the round trip a simulator
+cannot: **build → install → permission → token → delivery**. Run it once per
+platform, and again whenever the Firebase project, the app package or the
+EAS project changes.
+
+### 11.1 Prerequisites
+
+- [ ] An EAS account with access to the project; `EAS_PROJECT_ID` is set in
+      `apps/mobile/eas.json` under `build.<profile>.env`. It must live there,
+      not only in `.env`: `apps/mobile/.env` is gitignored, and EAS uploads
+      the project *respecting* `.gitignore`, so a value that exists only in
+      `.env` is absent on the build server — the APK then bakes
+      `extra.eas.projectId: undefined` and the app reports
+      *"EAS_PROJECT_ID is missing"*.
+- [ ] `apps/mobile/google-services.json` is committed and its
+      `client_info.android_client_info.package_name` matches
+      `android.package` (`app.kickoff.fan`). A mismatch makes Firebase return
+      `403 PERMISSION_DENIED` and no token is ever issued.
+- [ ] The **FCM V1 service-account key** is uploaded to EAS — this is the
+      server side, and it is what actually delivers the notification:
+      `npx eas-cli@latest credentials` → Android → *Google Service Account* →
+      *Set up … FCM V1* → upload. The downloaded
+      `*firebase-adminsdk*.json` is a real secret: it is gitignored and must
+      never be committed.
+- [ ] A **physical** device. Expo Go cannot receive push since SDK 53, and
+      simulators/emulators cannot register.
+
+### 11.2 Build the development client
+
+```bash
+cd apps/mobile
+npx eas-cli@latest login
+npx eas-cli@latest build --profile development --platform android
+```
+
+The `development` profile builds a dev client (`expo-dev-client`,
+`distribution: internal`). Internally distributed Android artifacts must be
+APKs, which `PUSH-2b` pins — an `.aab` cannot be installed from the build URL.
+
+iOS is the same command with `--platform ios`, plus an APNs key uploaded to
+EAS instead of FCM.
+
+### 11.3 Install and register the device
+
+1. Open the build's artifact URL **on the phone** and install it.
+2. Launch the **installed app**, not Expo Go. The Settings screen shows the
+   refusal reason when the runtime is wrong, so a wrong launch is caught here
+   rather than at the token call.
+3. Sign in with the demo fan account.
+4. Settings → notifications: grant the permission when prompted. The
+   registered token appears once `registerPushToken()` succeeds, and the row
+   exists in `devices` for that fan.
+
+### 11.4 Deliver the test push
+
+- [ ] `https://expo.dev/notifications` → paste the token → send a test
+      notification (or the project's dashboard *Send a notification*), **or**
+      `POST https://exp.host/--/api/v2/push/send` with
+      `{"to": "<token>", "title": "KickOff", "body": "Hardware push proof"}`.
+
+The kickoff-reminder path uses the same token, so a test push that arrives
+proves `send-kickoff-reminders` can reach the device too.
+
+### 11.5 What green looks like
+
+All five, observed once:
+
+- [ ] The build finishes and its artifact installs on the device.
+- [ ] The app runs as the installed dev client (Settings shows no
+      push-unavailable reason).
+- [ ] The OS permission dialog appears and is granted.
+- [ ] A push token is obtained and registered (`devices` row or on screen).
+- [ ] The test notification arrives **with the app backgrounded**, in the
+      notification tray.
+
+Record the evidence in the release ticket: build URL, device model and OS
+version, token prefix, and the push receipt from `expo.dev/notifications`.
+That evidence — not this procedure — is what closes `GAP-06`.
+
+### 11.6 When it fails
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Settings says *EAS_PROJECT_ID is missing* | The APK was built without the profile env | Rebuild after §11.1's first box |
+| Settings says *Expo Go cannot receive push* | Launched in Expo Go | Install and open the dev-client APK |
+| Settings says *needs a physical device* | Simulator/emulator | Use real hardware |
+| Native log: *Unable to get Firebase Messaging instance* | `googleServicesFile` unwired, or the file's package ≠ `android.package` | §11.1 boxes 2 |
+| Token obtained, no notification | FCM V1 key missing, or the API key in `google-services.json` is restricted | Upload the key; allow **FCM Registration API** and **Firebase Installations API** in Google Cloud, and use the Play *App signing* SHA-1, not the upload key's |
+| Notification only while the app is open | Background delivery never configured | Check the channel and the FCM key above |
