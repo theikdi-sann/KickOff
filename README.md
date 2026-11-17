@@ -12,7 +12,7 @@ mock data layer.
   profile, settings and push notifications.
 - **Admin console** (Next.js 16) — fixtures and seating inventory, gates,
   scanner, orders, refunds, CSV export, news, users, settings and TOTP.
-- **Backend** (Supabase) — Postgres with row-level security, 19 Edge Functions,
+- **Backend** (Supabase) — Postgres with row-level security, 20 Edge Functions,
   Stripe webhooks, signed QR passes, audit logs, scheduled reminders and a
   token-guarded metrics endpoint.
 
@@ -297,7 +297,7 @@ Sales close **15 minutes before kick-off**; unpaid orders expire after
 │                                #   date formatting, theme tokens, QR contract,
 │                                #   English string table, Bangkok greeting
 ├── supabase/
-│   ├── migrations/              # 54 migrations: schema, RLS, RPCs, cron, seeds
+│   ├── migrations/              # 55 migrations: schema, RLS, RPCs, cron, seeds
 │   ├── functions/               # 16 Edge Functions + _shared helpers
 │   ├── tests/                   # pgTAP suites (RLS, expiry, concurrency)
 │   └── seed.sql

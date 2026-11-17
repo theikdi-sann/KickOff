@@ -118,3 +118,22 @@ Deno.test("serveJson() catches thrown errors into the envelope", async () => {
   assertEquals(body.ok, false);
   assertEquals(body.error.code, "not_found");
 });
+
+Deno.test("fail() gives the envelope and the header the same request id", async () => {
+  // One id across every tier (C10.1): with no incoming header, `fail()`
+  // minted one uuid for the envelope and a second for the header — the
+  // record, the envelope and the header could never be grepped together.
+  const response = fail(new AppError("internal", "boom"), request());
+  const body = await response.json() as { error: { requestId?: string } };
+  assertEquals(body.error.requestId, response.headers.get("x-request-id"));
+});
+
+Deno.test("fail() reuses the incoming request id everywhere", async () => {
+  const response = fail(
+    new AppError("internal", "boom"),
+    request("/", { headers: { "x-request-id": "req-7" } }),
+  );
+  const body = await response.json() as { error: { requestId?: string } };
+  assertEquals(body.error.requestId, "req-7");
+  assertEquals(response.headers.get("x-request-id"), "req-7");
+});

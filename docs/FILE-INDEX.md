@@ -272,6 +272,7 @@ before the suite is green again.
 | `scripts/tests/mobile-tests.test.mjs` | test | covered | contract test — the mobile Jest harness is real and CI runs it |
 | `scripts/tests/money-format.test.mjs` | test | covered | contract test — one money formatter and its Edge copies: `money.ts` self-contained, `formatTHB` delegates, satang vocabulary gone, the receipt on the order's currency and club timezone, the generated copies fresh (MF-1…MF-7) |
 | `scripts/tests/mvp-gate.test.mjs` | test | covered | contract test — the MVP demo gate drives Stripe's current checkout (MG-1…MG-5) |
+| `scripts/tests/observability.test.mjs` | test | covered | contract test — C10.1: the recorder wiring, the 5xx boundary, the optional alert channel, the cooldown, the metrics counts, the sweep's cron + secret and the retention job (OBS-1…OBS-7) |
 | `scripts/tests/phase11.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/phaseb.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/phaseb0.test.mjs` | test | covered | contract test — fails when the repository drifts |
@@ -307,6 +308,7 @@ before the suite is green again.
 | `supabase/functions/_shared/logger.ts` | source | generated | GENERATED from packages/shared/src/logging.ts — do not edit |
 | `supabase/functions/_shared/metrics.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/money.ts` | source | generated | GENERATED from packages/shared/src/money.ts — do not edit; the receipt formats the order's currency with it (C8.2b) |
+| `supabase/functions/_shared/observability.ts` | source | reviewed | Edge Function helper — the error recorder: classify, record (never throws), cooldown-gated Slack-compatible alerting, the reconciliation verdict (C10.1) |
 | `supabase/functions/_shared/platform.ts` | source | generated | GENERATED from packages/shared/src/platform.ts — do not edit; the Edge guards and `bootstrap` read the same vocabulary the console does |
 | `supabase/functions/_shared/probe.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/qr.ts` | source | reviewed | Edge Function helper |
@@ -329,6 +331,7 @@ before the suite is green again.
 | `supabase/functions/metrics/index.ts` | source | reviewed | Edge Function |
 | `supabase/functions/orders-aggregate/index.ts` | source | reviewed | Edge Function |
 | `supabase/functions/receipt/index.ts` | source | reviewed | Edge Function — the PDF receipt: amounts in the order's snapshotted currency, dates in the club's timezone (C8.2b/C8.2d) |
+| `supabase/functions/reconcile-payments/index.ts` | source | reviewed | Edge Function — the cron reconciliation sweep: asks Stripe about orders that never settled, records an incident for a human, never moves money (GAP-04, the C8.1 leftover) |
 | `supabase/functions/refund-order/index.ts` | source | reviewed | Edge Function |
 | `supabase/functions/scan-demo/index.ts` | source | reviewed | Edge Function |
 | `supabase/functions/scan-ticket/index.ts` | source | reviewed | Edge Function |
@@ -344,6 +347,7 @@ before the suite is green again.
 | `supabase/functions/tests/hmac.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/http.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/metrics.test.ts` | test | covered | contract test — fails when the repository drifts |
+| `supabase/functions/tests/observability.test.ts` | test | covered | Deno test — failure classification, the 5xx predicate, the alert cooldown, the alert text and the unsettled-payment verdict |
 | `supabase/functions/tests/orders.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/platform.test.ts` | test | covered | Deno test — the generated platform vocabulary under Deno's module rules |
 | `supabase/functions/tests/probe.test.ts` | test | reviewed | unit test — the probe depth needs the token |
@@ -406,6 +410,7 @@ before the suite is green again.
 | `supabase/migrations/0052_tenant_erase.sql` | data | reviewed | migration — GAP-09.5: `mark_tenant_offboarded()` (the human money gate, audited) and `erase_tenant()` (refuses until offboarded, purges every scoped table child-first through the scan-log maintenance path, keeps the `tenants` row as the tombstone) |
 | `supabase/migrations/0053_tenant_timezone.sql` | data | reviewed | migration — C8.2c: `tenants.timezone` (default `Asia/Bangkok`, member-readable), `provision_tenant()` gains a validated `p_timezone` against `pg_timezone_names` |
 | `supabase/migrations/0054_platform.sql` | data | reviewed | migration — C9: `platform_admins`, `is_platform_admin()`/`is_platform_operator()`, `set_platform_admin()` (service-role only, merges both projections), `platform_tenants()`, `set_tenant_status()`, `set_application_fee_bps()` (guarded + audited), `provision_tenant()` gains the guard |
+| `supabase/migrations/0055_observability.sql` | data | reviewed | migration — C10.1: `error_events` (RLS, no policies, service-role only), the generated sweep secret in `app_secrets`, the retention cron and the `*/15` reconciliation cron (URL from `app_settings`) |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/connect.test.sql` | test | covered | pgTAP suite — C8.1 Stripe Connect: the platform fee in minor units, the club a connected account belongs to, the event ledger; 0050's omittable payment-intent and account parameters (16 assertions) |
@@ -415,6 +420,7 @@ before the suite is green again.
 | `supabase/tests/hold-ttl.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/identity.test.sql` | test | covered | pgTAP suite — C6.2 membership as the authority, the legacy column and its bridge gone, membership integrity, fan/staff RLS, the service-role promotion helper (28 assertions) |
 | `supabase/tests/isolation.test.sql` | test | covered | pgTAP suite — C7.3 tenant isolation: cross-tenant reads and writes per scoped table under `authenticated` (24 assertions) |
+| `supabase/tests/observability.test.sql` | data | covered | pgTAP suite — OE-1…OE-9: the record's lockdown and the two scheduled jobs |
 | `supabase/tests/order-expiry.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/platform.test.sql` | data | covered | pgTAP suite — PF-1…PF-28: the grant/refusal, the registry, status and fee guards, provisioning |
 | `supabase/tests/reschedule-audit.test.sql` | data | covered | pgTAP suite — asserts the database contract |

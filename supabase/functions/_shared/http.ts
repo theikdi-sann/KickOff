@@ -1,4 +1,5 @@
 import { AppError, toApiError } from "./errors.ts";
+import { recordFailure } from "./observability.ts";
 
 const DEFAULT_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"];
 const ALLOWED_METHODS = "GET, POST, PATCH, DELETE, OPTIONS";
@@ -40,11 +41,13 @@ export function corsHeaders(request: Request): Headers {
   return headers;
 }
 
-function baseHeaders(request: Request): Headers {
+function baseHeaders(request: Request, id?: string): Headers {
   const headers = corsHeaders(request);
   headers.set("content-type", "application/json; charset=utf-8");
   headers.set("cache-control", "no-store");
-  headers.set("x-request-id", requestId(request));
+  // `id` lets a caller that already minted the id (see `fail`) echo exactly
+  // that one — requestId() would otherwise mint a second uuid for the header.
+  headers.set("x-request-id", id ?? requestId(request));
   return headers;
 }
 
@@ -57,7 +60,13 @@ export function ok<T>(data: T, request: Request, status = 200): Response {
 export function fail(thrown: unknown, request: Request): Response {
   const id = requestId(request);
   const { status, error } = toApiError(thrown, id);
-  return new Response(JSON.stringify({ ok: false, error }), { status, headers: baseHeaders(request) });
+  // One id, computed once: the envelope's requestId, the x-request-id header
+  // and the durable error record (C10.1) are the same string, so a caller
+  // can grep all three with one value.
+  return new Response(JSON.stringify({ ok: false, error }), {
+    status,
+    headers: baseHeaders(request, id),
+  });
 }
 
 /** Throws a 405 AppError unless the method is allowed. */
@@ -88,7 +97,13 @@ export function serveJson(
       guardMethod(request, allowed);
       return await handler(request);
     } catch (error) {
-      return fail(error, request);
+      const response = fail(error, request);
+      // Error tracking (C10.1): the durable record carries the same request
+      // id the response just built, so record, envelope and header can never
+      // disagree. `recordFailure` never throws — a broken recorder must not
+      // mask the failure being recorded.
+      await recordFailure(error, request, response.headers.get("x-request-id"));
+      return response;
     }
   };
 }

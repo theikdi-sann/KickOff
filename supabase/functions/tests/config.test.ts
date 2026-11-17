@@ -13,6 +13,7 @@ const KEYS = [
   "ADMIN_APP_URL",
   "MOBILE_DEEP_LINK",
   "ALLOWED_ORIGINS",
+  "ALERT_WEBHOOK_URL",
 ] as const;
 
 const original = new Map(KEYS.map((key) => [key, Deno.env.get(key)]));
@@ -70,6 +71,23 @@ Deno.test("config", async (t) => {
       Deno.env.set("SUPABASE_URL", "not-a-url");
       resetEnvCache();
       assertThrows(() => getEnv(), Error);
+    });
+
+    await t.step("accepts an environment with no alert channel", () => {
+      // The webhook is optional (C10.1): local runs and CI record without
+      // shouting, and `setValidEnv` deliberately never sets one.
+      setValidEnv();
+      const env = getEnv();
+      assertEquals(env.ALERT_WEBHOOK_URL, undefined);
+    });
+
+    await t.step("rejects an invalid alert webhook url", () => {
+      setValidEnv();
+      Deno.env.set("ALERT_WEBHOOK_URL", "not-a-url");
+      resetEnvCache();
+      assertThrows(() => getEnv(), Error, "ALERT_WEBHOOK_URL");
+      Deno.env.delete("ALERT_WEBHOOK_URL");
+      resetEnvCache();
     });
   } finally {
     restoreEnv();

@@ -15,6 +15,10 @@ const envSchema = z.object({
   ADMIN_APP_URL: z.url(),
   MOBILE_DEEP_LINK: z.string().min(1),
   ALLOWED_ORIGINS: z.string().optional(),
+  // The alert channel (C10.1): optional on purpose — local runs and CI
+  // record incidents without shouting; a deployment sets a Slack-compatible
+  // webhook to page a human.
+  ALERT_WEBHOOK_URL: z.url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -91,6 +91,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"error_events": {
+                  Row: {
+                    "code": string,"context": Json | null,"created_at": string,"id": string,"message": string,"request_id": string | null,"source": string,"status": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "code": string,"context"?: Json | null,"created_at"?: string,"id"?: string,"message": string,"request_id"?: string | null,"source": string,"status"?: number | null
+                  }
+                  Update: {
+                    "code"?: string,"context"?: Json | null,"created_at"?: string,"id"?: string,"message"?: string,"request_id"?: string | null,"source"?: string,"status"?: number | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"fans": {
                   Row: {
                     "created_at": string,"id": string

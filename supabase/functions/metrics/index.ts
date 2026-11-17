@@ -3,6 +3,7 @@ import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
 import { logger } from "../_shared/logger.ts";
 import { countHoldConflicts, failedScans, metricsTokenMatches } from "../_shared/metrics.ts";
+import { UNSETTLED_CODE } from "../_shared/observability.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 
 /** Uptime/alerting snapshot (P11-18). Scans and holds are windowed; orders are totals. */
@@ -36,7 +37,7 @@ async function handler(request: Request): Promise<Response> {
   const db = serviceClient();
   const since = new Date(Date.now() - WINDOW_MS).toISOString();
 
-  const [orderCounts, scanCounts, holdsResult] = await Promise.all([
+  const [orderCounts, scanCounts, holdsResult, errorCount, unsettledCount] = await Promise.all([
     Promise.all(
       ORDER_STATUSES.map((status) =>
         exactCount(
@@ -56,6 +57,18 @@ async function handler(request: Request): Promise<Response> {
       ),
     ),
     db.from("seat_holds").select("seat_id").gte("created_at", since),
+    // The alertable numbers (C10.1): incidents recorded in the window, and
+    // the ones a human still has to settle — the C8.1 leftover, scraped.
+    exactCount(
+      db.from("error_events").select("id", { head: true, count: "exact" }).gte("created_at", since),
+    ),
+    exactCount(
+      db
+        .from("error_events")
+        .select("id", { head: true, count: "exact" })
+        .eq("code", UNSETTLED_CODE)
+        .gte("created_at", since),
+    ),
   ]);
 
   if (holdsResult.error) throw new Error(holdsResult.error.message);
@@ -87,6 +100,12 @@ async function handler(request: Request): Promise<Response> {
       holds: {
         created: holds.length,
         conflicts: countHoldConflicts(holds.map((hold) => hold.seat_id)),
+      },
+      errors: {
+        total: errorCount,
+      },
+      reconciliation: {
+        unsettled: unsettledCount,
       },
     },
     request,

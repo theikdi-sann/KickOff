@@ -34,6 +34,42 @@ rest. Only `*.env.example` templates are committed.
 Alert signals (per `SECURITY.md` §9): `scans.failed` spikes, `holds.conflicts`,
 order-status drift, 5xx/429 spikes, `stripe_events` rows with failures.
 
+### 2.1 Error tracking and alerting (C10.1, GAP-04)
+
+Every server-side failure (5xx) is recorded in `error_events` with the same
+`request_id` the response envelope and the `x-request-id` header carried —
+one id greps the table, the envelope and the log line. Records are pruned
+after 30 days (`xclub-prune-error-events`); client errors (4xx) are never
+recorded, so the table stays signal.
+
+To page a human, set the Slack-compatible channel (optional — without it
+incidents are still recorded, which is what local runs and CI rely on):
+
+```bash
+npx supabase secrets set ALERT_WEBHOOK_URL=https://hooks.slack.com/services/…
+```
+
+The cooldown is 30 minutes per function+code: a failing function pages once,
+not ninety times, while every occurrence keeps its row.
+
+**Payment reconciliation.** `xclub-reconcile-payments` runs every fifteen
+minutes and asks Stripe about orders that never settled — the C8.1 case: a
+payment captured for a suspended club, or a webhook that never arrived. It
+records a `payment_unsettled` incident for a human and **never moves money
+itself** (the same rule as §9.1's money gate). Enable it once per
+deployment; the job is a no-op until the URL exists:
+
+```sql
+insert into app_settings (key, value)
+values ('reconciliation_url',
+        '"https://<project-ref>.supabase.co/functions/v1/reconcile-payments"')
+on conflict (key) do update set value = excluded.value;
+```
+
+Watch both through `GET /functions/v1/metrics`: `errors.total` (24h) and
+`reconciliation.unsettled` (the number of payments still waiting for a
+human).
+
 ## 3. Deploy
 
 ### 3.1 Edge Functions
