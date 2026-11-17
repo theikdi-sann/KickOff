@@ -29,6 +29,14 @@ export const CONTRACTS = [
     source: 'packages/shared/src/roles.ts',
     target: 'supabase/functions/_shared/roles.ts',
   },
+  {
+    // The generated database types are what makes an Edge write to a column
+    // that no longer exists a compile error instead of a runtime PGRST204 —
+    // the delete-account bug (GAP-09.0). The canonical source is the output of
+    // `npm run db:types`; the deployed copy keeps the Edge tree self-contained.
+    source: 'packages/shared/src/database.types.ts',
+    target: 'supabase/functions/_shared/database.types.ts',
+  },
 ];
 
 /**

@@ -960,7 +960,7 @@ isOneToOne: false
 { Args: { "": string }; Returns: string
                            },
 "mark_order_paid":
-{ Args: { "p_order_id": string,"p_payment_intent_id": string,"p_session_id": string }; Returns: Json
+{ Args: { "p_order_id": string,"p_payment_intent_id"?: string,"p_session_id": string }; Returns: Json
                            },
 "mark_order_refunded":
 { Args: { "p_actor_id": string,"p_order_id": string,"p_override_used_tickets"?: boolean,"p_reason"?: string,"p_refund_id": string }; Returns: Json
@@ -1011,7 +1011,7 @@ isOneToOne: false
 { Args: { "how_many": number,"why": string }; Returns: string
                            },
 "tenant_for_stripe_account":
-{ Args: { "p_account_id": string }; Returns: string
+{ Args: { "p_account_id"?: string }; Returns: string
                            },
 "throws_ok":
 { Args: { "": string }; Returns: string

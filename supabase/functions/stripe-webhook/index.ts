@@ -41,11 +41,14 @@ async function markPaid(orderId: string, session: Stripe.Checkout.Session): Prom
       ? session.payment_intent
       : session.payment_intent?.id ?? null;
 
-  const { error } = await db.rpc("mark_order_paid", {
-    p_order_id: orderId,
-    p_session_id: session.id,
-    p_payment_intent_id: paymentIntent,
-  });
+  // A checkout event without a payment intent is a legitimate call: the
+  // database coalesces it away (`0050` makes the parameter say so).
+  const { error } = await db.rpc(
+    "mark_order_paid",
+    paymentIntent
+      ? { p_order_id: orderId, p_session_id: session.id, p_payment_intent_id: paymentIntent }
+      : { p_order_id: orderId, p_session_id: session.id },
+  );
   if (!error) return;
 
   // The order was cancelled/expired before payment landed: refund automatically.
@@ -157,11 +160,13 @@ async function handler(request: Request): Promise<Response> {
   const db = serviceClient();
 
   // The Connect account on the event names the club (ADR-003 §3). A platform
-  // event carries no account — the order carries the club instead.
+  // event carries no account — the order carries the club instead, so the
+  // resolver is called without one (`0050`).
   const accountId = event.account ?? null;
-  const { data: tenantId, error: tenantError } = await db.rpc("tenant_for_stripe_account", {
-    p_account_id: accountId,
-  });
+  const { data: tenantId, error: tenantError } = await db.rpc(
+    "tenant_for_stripe_account",
+    accountId ? { p_account_id: accountId } : {},
+  );
   if (tenantError) throw tenantError;
   const tenant = typeof tenantId === "string" ? tenantId : null;
 
@@ -174,8 +179,9 @@ async function handler(request: Request): Promise<Response> {
         tenant_id: tenant,
         account_id: accountId,
         // Stored for post-mortems only — the ledger is never re-trusted as a
-        // source of truth for the event.
-        payload: event as unknown as Record<string, unknown>,
+        // source of truth for the event. The raw body is the payload: the
+        // event object is not JSON-representable as typed by Stripe's SDK.
+        payload: JSON.parse(rawBody),
       },
       { onConflict: "id", ignoreDuplicates: true },
     )

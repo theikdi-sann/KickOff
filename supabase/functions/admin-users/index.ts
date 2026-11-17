@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { writeAudit } from "../_shared/audit.ts";
 import { requireAdmin, type AuthContext } from "../_shared/auth.ts";
+import type { Database } from "../_shared/database.types.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
 import { planStaffRoleUpdate, staffRoleSchema, type StaffRole } from "../_shared/roles.ts";
@@ -241,7 +242,7 @@ async function handler(request: Request): Promise<Response> {
     }
   }
 
-  const patch: Record<string, unknown> = {};
+  const patch: Database["public"]["Tables"]["profiles"]["Update"] = {};
   if (body.fullName !== undefined) patch.full_name = body.fullName;
   if (body.phone !== undefined) patch.phone = body.phone;
 

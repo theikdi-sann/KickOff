@@ -27,13 +27,16 @@ async function handler(request: Request): Promise<Response> {
   const { error: authError } = await db.auth.admin.deleteUser(targetId, true);
   if (authError) throw authError;
 
+  // The profile row is scrubbed in place — the column set below is exactly
+  // what `profiles` still has: `role` was dropped with `0048`, and writing it
+  // here failed the update at runtime (GAP-09.0). A full erasure schedule
+  // belongs to GAP-09.3.
   const { error: profileError } = await db
     .from("profiles")
     .update({
       email: `deleted+${targetId}@kickoff.invalid`,
       full_name: "Deleted account",
       phone: null,
-      role: "customer",
     })
     .eq("id", targetId);
   if (profileError) throw profileError;

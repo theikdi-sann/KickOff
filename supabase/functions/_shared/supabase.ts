@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+import type { Database } from "./database.types.ts";
 import { getEnv } from "./config.ts";
 
 const AUTH_OPTIONS = {
@@ -8,19 +9,24 @@ const AUTH_OPTIONS = {
   detectSessionInUrl: false,
 } as const;
 
-/** Service-role client. Never expose this to a client bundle. */
-export function serviceClient(): SupabaseClient {
+/**
+ * The Edge clients are typed against the generated schema so that a write to
+ * a column the database no longer has fails `deno check` — not production
+ * (GAP-09.0: `delete-account` wrote `profiles.role` after `0048` dropped it,
+ * and PostgREST refused the update at runtime).
+ */
+export function serviceClient(): SupabaseClient<Database> {
   const env = getEnv();
-  return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+  return createClient<Database>(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: AUTH_OPTIONS,
     global: { headers: { "x-client-info": "kickoff-edge" } },
   });
 }
 
 /** Anon client that forwards the caller's JWT so RLS applies. */
-export function userClient(accessToken: string): SupabaseClient {
+export function userClient(accessToken: string): SupabaseClient<Database> {
   const env = getEnv();
-  return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+  return createClient<Database>(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
     auth: AUTH_OPTIONS,
     global: {
       headers: {

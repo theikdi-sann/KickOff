@@ -14,7 +14,7 @@
 --   CN-10..CN-12 the event ledger — the club, the account, the payload
 --   CN-13       the bridge: a club without an account is still a club
 begin;
-select plan(13);
+select plan(16);
 
 -- ── fixtures: a connected club and a plain one ──────────────────────────────
 insert into public.tenants (name, slug, currency, stripe_account_id, application_fee_bps)
@@ -115,6 +115,31 @@ select is(
   (select stripe_account_id from public.tenants where slug = 'plain-fc'),
   null::text,
   'CN-13 a club without a connected account is still a club'
+);
+
+-- ── CN-14..CN-16 the parameters that accept null say so (0050, GAP-09.0) ────
+-- The webhook resolves a platform event with no Connect account and marks an
+-- order paid after a checkout event without a payment intent. Both are
+-- deliberate calls; the parameters are omittable, which is what makes the
+-- generated TypeScript types honest.
+select is(
+  public.tenant_for_stripe_account(),
+  null::uuid,
+  'CN-14 a platform event (no account) resolves to no club — the parameter is omittable'
+);
+
+select is(
+  public.tenant_for_stripe_account(null),
+  null::uuid,
+  'CN-15 an explicit null account resolves to no club'
+);
+
+-- Callable without the payment intent: the default applies, so the body runs
+-- and the (missing) order is what raises — not a missing function.
+select throws_ok(
+  $$select public.mark_order_paid('no-such-order', 'cs_test')$$,
+  'P0002', null,
+  'CN-16 mark_order_paid is callable without a payment intent'
 );
 
 select * from finish();

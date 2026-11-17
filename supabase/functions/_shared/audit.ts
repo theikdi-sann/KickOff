@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import type { Json } from "./database.types.ts";
 import { AppError } from "./errors.ts";
 import { logger } from "./logger.ts";
 import { serviceClient } from "./supabase.ts";
@@ -9,7 +10,9 @@ export interface AuditEntry {
   action: string;
   entity: string;
   entityId?: string | null;
-  metadata?: Record<string, unknown>;
+  // `Json` — the column's real type, not `Record<string, unknown>`: the typed
+  // client rejects a value the database would refuse (GAP-09.0).
+  metadata?: Json;
 }
 
 /** Appends an immutable audit row. Throws if the write fails. */
