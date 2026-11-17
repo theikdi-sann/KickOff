@@ -12,6 +12,9 @@
 //         formatTHB delegates to formatMoney
 //   MF-3  the satang vocabulary is gone from the source
 //   MF-4  the formatter's tests cover the three scales
+//   MF-5  the deployed Edge money copy is generated, never hand-edited
+//   MF-6  the receipt formats with formatMoney and the order's own currency —
+//         no private `thb()` and no hardcoded THB
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -23,6 +26,8 @@ const read = (path) => readFileSync(resolve(root, path), 'utf8');
 const MONEY = 'packages/shared/src/money.ts';
 const FORMAT = 'packages/shared/src/format.ts';
 const TESTS = 'packages/shared/src/__tests__/money.test.ts';
+const DEPLOYED_MONEY = 'supabase/functions/_shared/money.ts';
+const RECEIPT = 'supabase/functions/receipt/index.ts';
 
 test('MF-1 money.ts is self-contained so the Edge copy can be generated', () => {
   const source = read(MONEY);
@@ -76,4 +81,37 @@ test('MF-4 the formatter tests cover the three scales', () => {
   assert.match(tests, /formatMoney\(150000, 'THB'\)/, 'THB (scale 2)');
   assert.match(tests, /formatMoney\(1500, 'JPY'\)/, 'JPY (scale 0)');
   assert.match(tests, /formatMoney\(1500500, 'KWD'\)/, 'KWD (scale 3)');
+});
+
+test('MF-5 the deployed Edge money copy is generated, never hand-edited', async () => {
+  const { generate } = await import('../../scripts/sync-edge-schemas.mjs');
+  const expected = generate(read(MONEY), MONEY);
+
+  assert.equal(
+    read(DEPLOYED_MONEY),
+    expected,
+    `${DEPLOYED_MONEY} is stale — run: node scripts/sync-edge-schemas.mjs`,
+  );
+});
+
+test('MF-6 the receipt formats with formatMoney and the order currency', () => {
+  const receipt = read(RECEIPT);
+
+  assert.match(
+    receipt,
+    /import \{ formatMoney \} from "\.\.\/_shared\/money\.ts";/,
+    'the receipt must use the generated formatter, not a private one',
+  );
+  // The order's own currency (0043 snapshots it on the view) — not a
+  // hardcoded THB: the receipt row type must carry it, and the formatter
+  // must take it from the row.
+  assert.match(receipt, /currency: string/, 'the receipt row must carry the order currency');
+  assert.match(
+    receipt,
+    /formatMoney\([^,]+,\s*receipt\.currency\)/,
+    'the receipt must format with the order currency',
+  );
+  assert.doesNotMatch(receipt, /function thb\(/, 'the private thb() formatter is gone');
+  assert.doesNotMatch(receipt, /\/ *100\b/, 'no hardcoded scale division');
+  assert.doesNotMatch(receipt, /"THB /, 'no hardcoded THB label');
 });

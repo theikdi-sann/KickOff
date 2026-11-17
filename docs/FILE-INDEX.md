@@ -296,6 +296,7 @@ before the suite is green again.
 | `supabase/functions/_shared/http.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/logger.ts` | source | generated | GENERATED from packages/shared/src/logging.ts — do not edit |
 | `supabase/functions/_shared/metrics.ts` | source | reviewed | Edge Function helper |
+| `supabase/functions/_shared/money.ts` | source | generated | GENERATED from packages/shared/src/money.ts — do not edit; the receipt formats the order's currency with it (C8.2b) |
 | `supabase/functions/_shared/probe.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/qr.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/rate-limit.ts` | source | reviewed | Edge Function helper |

@@ -4,6 +4,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { isAdmin, requireUser } from "../_shared/auth.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
+import { formatMoney } from "../_shared/money.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { validateBody } from "../_shared/validate.ts";
 
@@ -22,6 +23,7 @@ interface ReceiptRow {
   order_id: string;
   user_id: string;
   amount_minor_units: number;
+  currency: string;
   status: string;
   created_at: string;
   paid_at: string | null;
@@ -32,11 +34,6 @@ interface ReceiptRow {
   kickoff_at: string;
   venue: string;
   seats: ReceiptSeat[];
-}
-
-function thb(satang: number): string {
-  const baht = satang / 100;
-  return `THB ${baht.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function longDate(iso: string): string {
@@ -116,7 +113,13 @@ async function handler(request: Request): Promise<Response> {
       font,
       color: ink,
     });
-    page.drawText(thb(seat.priceMinorUnits), { x: 430, y, size: 10, font, color: ink });
+    page.drawText(formatMoney(seat.priceMinorUnits, receipt.currency), {
+      x: 430,
+      y,
+      size: 10,
+      font,
+      color: ink,
+    });
     y -= 18;
   }
 
@@ -127,13 +130,19 @@ async function handler(request: Request): Promise<Response> {
   page.drawLine({ start: { x: 48, y }, end: { x: 547, y }, thickness: 1, color: rgb(0.88, 0.9, 0.92) });
   y -= 24;
   page.drawText("Net", { x: 360, y, size: 10, font, color: muted });
-  page.drawText(thb(net), { x: 450, y, size: 10, font, color: ink });
+  page.drawText(formatMoney(net, receipt.currency), { x: 450, y, size: 10, font, color: ink });
   y -= 18;
   page.drawText("VAT 7% (included)", { x: 360, y, size: 10, font, color: muted });
-  page.drawText(thb(vat), { x: 450, y, size: 10, font, color: ink });
+  page.drawText(formatMoney(vat, receipt.currency), { x: 450, y, size: 10, font, color: ink });
   y -= 22;
   page.drawText("Total", { x: 360, y, size: 12, font: bold, color: ink });
-  page.drawText(thb(receipt.amount_minor_units), { x: 450, y, size: 12, font: bold, color: green });
+  page.drawText(formatMoney(receipt.amount_minor_units, receipt.currency), {
+    x: 450,
+    y,
+    size: 12,
+    font: bold,
+    color: green,
+  });
 
   y -= 54;
   page.drawText(

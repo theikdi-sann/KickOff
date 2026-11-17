@@ -37,6 +37,14 @@ export const CONTRACTS = [
     source: 'packages/shared/src/database.types.ts',
     target: 'supabase/functions/_shared/database.types.ts',
   },
+  {
+    // The money formatter is one owner across the apps and the Edge
+    // functions (C8.2b): `money.ts` is deliberately self-contained so this
+    // copy stays valid under Deno's module resolution — the receipt PDF must
+    // format the order's currency exactly as the apps do (MF-1/MF-5).
+    source: 'packages/shared/src/money.ts',
+    target: 'supabase/functions/_shared/money.ts',
+  },
 ];
 
 /**
