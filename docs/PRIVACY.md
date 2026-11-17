@@ -49,7 +49,7 @@ Personal data by table (the columns that name or reach a person):
 | `auth.users` | email, metadata | **SCRUB** | soft-deleted via the admin API at account deletion |
 | `fans` | — (a link to `profiles`) | **RETAIN** | carries no data of its own |
 | `device_tokens` | Expo push token | **ERASE** | also swept after 90 days without use |
-| `seat_holds` | `user_id` | **ERASE** | active holds are released at deletion; expired holds are already inert |
+| `seat_holds` | `user_id` | **ERASE** | erased at deletion — no other row references a hold |
 | `orders` | `user_id`; `stripe_session_id`/`payment_intent_id`/`payment_ref` | **RETAIN** | financial record; the buyer reference becomes a pseudonym once the profile is scrubbed |
 | `order_seats` | — | **RETAIN** | financial record |
 | `tickets` | `user_id` | **RETAIN** | the pass is the safety record at the gate; holder reference pseudonymous after SCRUB |
