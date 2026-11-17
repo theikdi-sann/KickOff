@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   CalendarDays,
   ChevronRight,
   DoorOpen,
+  Globe,
   LayoutDashboard,
   LogOut,
   MapPin,
@@ -20,10 +21,14 @@ import {
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 import { Logo } from "@/components/logo";
 import { Badge } from "@/components/ui";
 import { useSessionGuard, useSignOut } from "@/lib/use-session";
 import { cn, displayName, initialsFor } from "@/lib/utils";
+
+/** The platform console's surface (ADR-004 §3) — the platform claim only. */
+const PLATFORM_SURFACE = "/dashboard/platform";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -38,6 +43,12 @@ const navItems = [
   { href: "/dashboard/settings/mfa", label: "Security", icon: ShieldCheck },
 ];
 
+// The cross-club console is a separate surface, not a club screen: it is
+// shown only for the platform claim, never to club staff (ADR-004 §3).
+const platformNavItems = [
+  { href: PLATFORM_SURFACE, label: "Platform", icon: Globe, exact: true },
+];
+
 const pageTitles: Record<string, string> = {
   "/dashboard": "Overview",
   "/dashboard/matches": "Matches & seating",
@@ -48,10 +59,25 @@ const pageTitles: Record<string, string> = {
   "/dashboard/users": "Users",
   "/dashboard/settings": "Settings",
   "/dashboard/settings/mfa": "Security",
+  "/dashboard/platform": "Platform",
 };
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const session = useSessionGuard({ requireStaff: true });
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const onPlatformSurface =
+    pathname === PLATFORM_SURFACE || pathname.startsWith(`${PLATFORM_SURFACE}/`);
+  // A platform-only operator's console is the platform surface. The proxy
+  // already routes them; this is the same rule for a cached page.
+  const platformOnly = session.isPlatform && !session.isStaff;
+
+  useEffect(() => {
+    if (session.status === "authenticated" && platformOnly && !onPlatformSurface) {
+      router.replace(PLATFORM_SURFACE);
+    }
+  }, [session.status, platformOnly, onPlatformSurface, router]);
 
   if (session.status !== "authenticated" || !session.user) {
     return (
@@ -68,10 +94,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // The console shell must never render for an account without a staff
-  // claim — the proxy already refuses it, and this keeps the boundary in the
-  // client too (a cached page must not flash the console either).
-  if (!session.isStaff) {
+  // The console shell must never render for an account with no console
+  // authority — the proxy already refuses it, and this keeps the boundary in
+  // the client too (a cached page must not flash the console either).
+  if (!session.isStaff && !session.isPlatform) {
     return (
       <div className="grid min-h-screen place-items-center bg-app px-6">
         <div className="max-w-md text-center">
@@ -87,27 +113,57 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  return <AdminShell user={session.user} isAdmin={session.isAdmin}>{children}</AdminShell>;
+  // While a platform-only operator is being routed to their surface, their
+  // club page must not render even for a frame.
+  if (platformOnly && !onPlatformSurface) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-app">
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+          Opening the platform console…
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <AdminShell
+      user={session.user}
+      isAdmin={session.isAdmin}
+      isStaff={session.isStaff}
+      isPlatform={session.isPlatform}>
+      {children}
+    </AdminShell>
+  );
 }
 
 function AdminShell({
   children,
   user,
   isAdmin,
+  isStaff,
+  isPlatform,
 }: {
   children: ReactNode;
   user: User;
   isAdmin: boolean;
+  isStaff: boolean;
+  isPlatform: boolean;
 }) {
   const pathname = usePathname();
   const signOut = useSignOut();
   const name = displayName(user);
   const initials = initialsFor(name);
   const email = user.email ?? "";
-  // A gatekeeper's console is the gate surface. Filtering here is defence in
-  // depth: the proxy already confines them, and the links must not advertise
-  // screens they cannot open.
-  const visibleNav = isAdmin ? navItems : navItems.filter((item) => item.href === "/dashboard/scan");
+  // A gatekeeper's console is exactly the gate surface. Filtering here is
+  // defence in depth: the proxy already confines them, and the links must
+  // not advertise screens they cannot open. The platform surface is the
+  // mirror image — it appears only for the platform claim, and a
+  // platform-only operator sees it alone (ADR-004 §3).
+  const clubNav = isAdmin ? navItems : navItems.filter((item) => item.href === "/dashboard/scan");
+  const visibleNav = [
+    ...(isStaff ? clubNav : []),
+    ...(isPlatform ? platformNavItems : []),
+  ];
   const currentTitle =
     Object.entries(pageTitles)
       .sort((a, b) => b[0].length - a[0].length)
@@ -164,7 +220,7 @@ function AdminShell({
               <p className="truncate text-xs font-semibold text-white">{name}</p>
               <p className="truncate text-[10px] text-emerald-100/45">{email}</p>
               <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gold/70">
-                {isAdmin ? "Admin" : "Gatekeeper"}
+                {isAdmin ? "Admin" : isStaff ? "Gatekeeper" : "Platform"}
               </p>
             </div>
           </div>

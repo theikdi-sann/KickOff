@@ -5,8 +5,8 @@
 --   * `current_tenant()` resolves the JWT claim, refuses a suspended club and
 --     ignores a malformed claim instead of raising;
 --   * `minor_units()` agrees with the shared scale for every currency;
---   * `provision_tenant()` is idempotent, service-role only and validates
---     the club's time zone (0053);
+--   * `provision_tenant()` is idempotent, platform-operator only (0054) and
+--     validates the club's time zone (0053);
 --   * `tenants` is read-only for members (no write grant, no write policy).
 begin;
 select plan(27);
@@ -112,6 +112,18 @@ select throws_ok(
 );
 
 -- ── provision_tenant() ──────────────────────────────────────────────────────
+-- A member is refused by the guard inside (0054) — behaviourally, not by an
+-- ACL: the console holds EXECUTE so a platform admin can provision, and the
+-- guard is what keeps a plain member out.
+select throws_ok(
+  $$select public.provision_tenant('Rogue FC', 'rogue-fc')$$,
+  '42501', null,
+  'provision_tenant refuses a member'
+);
+
+-- Provisioning is a platform operation (0054): the service role runs it.
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+
 select is(
   public.provision_tenant('Second FC', 'second-fc'),
   public.provision_tenant('Second FC', 'second-fc'),
@@ -122,15 +134,6 @@ select is(
   (select count(*) from public.tenants where slug = 'second-fc'),
   1::bigint,
   're-provisioning does not create a second club'
-);
-
-select ok(
-  not has_function_privilege(
-    'authenticated',
-    'public.provision_tenant(text,text,text,text,text)',
-    'execute'
-  ),
-  'provision_tenant is not callable by a member'
 );
 
 select ok(

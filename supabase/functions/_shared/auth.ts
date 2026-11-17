@@ -1,6 +1,7 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 import { AppError } from "./errors.ts";
+import { isPlatformMetadata } from "./platform.ts";
 import { isAdminRole, isStaffRole } from "./roles.ts";
 import { userClient } from "./supabase.ts";
 
@@ -27,6 +28,18 @@ export function isAdmin(user: User): boolean {
 export function isStaff(user: User): boolean {
   const appMetadata = user.app_metadata as Record<string, unknown> | undefined;
   return isStaffRole(appMetadata?.role);
+}
+
+/**
+ * True for a platform operator — the claim `set_platform_admin` writes to
+ * both projections (0054), read through the shared vocabulary so the key
+ * cannot drift from the console's or the database's.
+ *
+ * This is *not* club authority: a club admin is not a platform operator, and
+ * a platform operator holds no club staff role unless they also have one.
+ */
+export function isPlatformAdmin(user: User): boolean {
+  return isPlatformMetadata(user.app_metadata);
 }
 
 /** Validates the caller's JWT with Supabase Auth and returns a scoped client. */
@@ -61,6 +74,22 @@ export async function requireStaff(request: Request): Promise<AuthContext> {
   const context = await requireUser(request);
   if (!isStaff(context.user)) {
     throw new AppError("forbidden", "Staff access required");
+  }
+  return context;
+}
+
+/**
+ * Requires a signed-in platform operator (ADR-004 §3).
+ *
+ * Only the platform Edge surface may use this guard: provisioning, fee rates
+ * and Stripe onboarding act across clubs, and club staff authority
+ * (`requireAdmin`) is deliberately scoped to one club — it must never
+ * satisfy this.
+ */
+export async function requirePlatformAdmin(request: Request): Promise<AuthContext> {
+  const context = await requireUser(request);
+  if (!isPlatformAdmin(context.user)) {
+    throw new AppError("forbidden", "Platform access required");
   }
   return context;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
-import { isAdminRole, isStaffRole, staffRoleOf, type StaffRole } from "@kickoff/shared";
+import { isAdminRole, isPlatformMetadata, isStaffRole, staffRoleOf, type StaffRole } from "@kickoff/shared";
 import { identify, reset, track } from "@/lib/analytics";
 import { createClient } from "@/lib/supabase/client";
 
@@ -21,6 +21,19 @@ export function isAdminUser(user: User | null | undefined): boolean {
 export function isStaffUser(user: User | null | undefined): boolean {
   const metadata = user?.app_metadata as Record<string, unknown> | undefined;
   return isStaffRole(metadata?.role);
+}
+
+/**
+ * True for a platform operator — the claim `set_platform_admin` writes to
+ * both projections (0054).
+ *
+ * Deliberately *not* club authority: a club admin is not a platform
+ * operator, and a platform operator holds no club staff role unless the
+ * membership says so. The read goes through the shared vocabulary so the
+ * key cannot drift from the Edge guards' or the database's.
+ */
+export function isPlatformUser(user: User | null | undefined): boolean {
+  return isPlatformMetadata(user?.app_metadata);
 }
 
 export async function signIn(email: string, password: string): Promise<User> {

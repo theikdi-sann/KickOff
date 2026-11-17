@@ -81,16 +81,15 @@ production admin origin — CORS falls back to localhost defaults otherwise.
    pass renders and one `stripe_events` row exists.
 4. Scan the pass at a registered gate; undo it within 60 s.
 
-### 3.5 Tenant provisioning and white-label releases (planned — C6–C9)
+### 3.5 Tenant provisioning and white-label releases
 
-`provision_tenant()` and the `tenants` row exist (migration `0040`), and it
-seeds the per-club `staff_roles` vocabulary (`0041`); default `app_settings`
-seeding arrives in `0042`. The full procedure lands with the C6–C9 cycles and
-will be completed here before the first second-club deployment.
+The full procedure is [`§10 Club onboarding`](#10-club-onboarding-a-clubs-go-live)
+— provision, set the fee, Connect onboarding, build the white-label app,
+verify. The short version:
 
-1. `select provision_tenant('Club Name', 'club-slug', 'THB', 'th-TH');`
-   — idempotent by slug; seeds `staff_roles` (`admin`, `gatekeeper`) and default
-   `app_settings` once `0042` lands.
+1. `select public.provision_tenant('Club Name', 'club-slug', 'THB', 'th-TH');`
+   — platform-operator only (`0054`); idempotent by slug; seeds `staff_roles`
+   (`admin`, `gatekeeper`) and default `app_settings`.
 2. Create the venue, zones and seats; invite the first admin
    (`admin-users`), who grants the rest.
 3. Complete Stripe Connect onboarding for the club (`tenants.stripe_account_id`)
@@ -307,3 +306,112 @@ select count(*) from audit_logs where action = 'tenant.erased'
 
 The remaining `tenants` row is the tombstone — the club existed and the
 erase happened — and is kept on purpose: it is the record, not the data.
+
+## 10. Club onboarding (a club's go-live)
+
+This is the `GAP-10` checklist: one club per app build means every club
+repeats these steps once. The platform console does the writes; each one is
+audited (`tenant.status_changed`, `tenant.fee_changed`, `tenant.onboarded`),
+and every guarded write refuses any caller that is not a platform operator
+or the service role (`0054`).
+
+**Prerequisites**
+
+- [ ] The Stripe key is test-mode (`sk_test_…`) — `getEnv()` refuses anything
+      else (D-08). Going live is a key rotation (§4), not a code change.
+- [ ] You hold the platform authority:
+      `select public.is_platform_admin();` → `true` for your account, or you
+      are in a psql session as the service role (`set local role service_role;`).
+
+### 10.1 Grant the platform authority (once per operator)
+
+```sql
+-- As the service role. Writes both projections together: the membership row
+-- and the `app_metadata.platform` claim the console proxy and the Edge
+-- guards read. `false` revokes exactly those two.
+select public.set_platform_admin('<auth user uuid>', true);
+```
+
+Nothing else may write either projection — the table has RLS and no policy,
+and `set_platform_admin()` is service-role only.
+
+### 10.2 Provision the club
+
+Platform console → **Platform** → *Provision a club* (name, slug, currency),
+or directly as an operator:
+
+```sql
+select public.provision_tenant('South London FC', 'south-london-fc',
+                               'GBP', 'en-GB', 'Europe/London');
+```
+
+- [ ] The **slug is permanent** — it is what the white-label build binds to
+      at sign-in. Lowercase, single hyphens (the database refuses anything
+      else).
+- [ ] The club's currency, locale and time zone are set (they drive money
+      formatting and every kickoff time in both apps — C8.2).
+
+### 10.3 Staff the club
+
+Sign in as the first club admin (invite via `admin-users`), then create the
+venue, zones and seats and invite the rest. This is club authority
+(`staff_members`), never platform authority — the two do not substitute for
+each other.
+
+### 10.4 Set the platform fee
+
+Platform console → the club's row → fee in **basis points** (0–10000 = 0–100%).
+The database bounds and audits it (`tenant.fee_changed`); the order snapshots
+it at checkout, so changing it never re-prices a sale already made.
+
+### 10.5 Connect the club's Stripe account
+
+Platform console → the club's row → country → **Onboard**. The function
+creates the Express account once (`tenants.stripe_account_id`), audits the
+onboarding and returns Stripe's hosted link; complete the form in the tab it
+opens. Clicking again **resumes** the same account — it never creates a
+second one.
+
+- [ ] The row shows **Account created** as soon as the link is issued.
+      Stripe *activates* the account when the owner submits the hosted form
+      — confirm the activation in the Stripe dashboard (this console records
+      the account id, not Stripe's activation state).
+
+### 10.6 Build the white-label app
+
+Set the build-time configuration and push credentials (per-club EAS project,
+bundle id — `GAP-10`):
+
+```
+EXPO_PUBLIC_CLUB_SLUG=south-london-fc
+```
+
+At sign-in the app calls `bootstrap`, which writes `app_metadata.tenant_id`
+for the session. Verify the binding:
+
+```sql
+select raw_app_meta_data ->> 'tenant_id'
+from auth.users where email = '<fan or operator email>';
+-- <the club's uuid>
+```
+
+### 10.7 Verify before announcing
+
+- [ ] The fan app shows **this** club's catalogue after sign-in (not the
+      deployment's default club).
+- [ ] A test checkout settles on the club's connected account — the order's
+      fee matches §10.4 and `stripe-webhook` resolves the club from the
+      event's account.
+- [ ] The club's admin is refused the platform console: `/dashboard/platform`
+      redirects with `error=not-platform`.
+- [ ] Isolation holds: the second club's staff token reads 0 rows of this
+      club's commerce data (the pgTAP T-01…T-24 shape, run against staging).
+
+### 10.8 Suspending and restoring
+
+Platform console → the club's row → **Suspend** (confirmed) / **Restore**.
+
+Suspension keeps every row; `current_tenant()` resolves no tenant for the
+club's staff and fans, so both apps lose access. Restoring reverses it. Both
+directions are audited, and the registry shows suspended clubs precisely so
+one can be restored.

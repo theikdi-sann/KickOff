@@ -362,8 +362,11 @@ the execution order fixed in `PLAN.md`:
   the erase behind the human money gate all landed, so a club can now be
   onboarded onto its own account with a clean exit available (the onboarding
   itself belongs to C9).
-- **C9 (GAP-10)** — the cross-tenant platform console and white-label app
-  delivery: [`ADR-004`](adr/ADR-004-white-label.md).
+- **C9 (GAP-10)** — delivered: the cross-tenant platform console (registry,
+  suspend/restore, platform fee, provisioning — `0054`), the white-label
+  `bootstrap` binding and Stripe Connect onboarding:
+  [`ADR-004`](adr/ADR-004-white-label.md). The per-club release overhead
+  itself remains `GAP-10`.
 - **C10 (GAP-04, GAP-05, GAP-01, GAP-06)** — observability, i18n/currency UX,
   the offline pass cache and the hardware push proof.
 - **GAP-08** — ticket transfer/claim is explicitly out of scope; a buyer holds

@@ -41,6 +41,9 @@ select is(
 );
 
 -- ── provisioning seeds the vocabulary ───────────────────────────────────────
+-- 0054: provisioning is a platform operation — the service role runs it.
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+
 select is(
   public.provision_tenant('Identity FC', 'identity-fc'),
   public.provision_tenant('Identity FC', 'identity-fc'),

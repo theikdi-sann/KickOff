@@ -24,7 +24,10 @@ select plan(24);
 -- ── the second club ─────────────────────────────────────────────────────────
 -- Provisioned through the real entry point so its `admin` / `gatekeeper`
 -- vocabulary (capability flags) comes into existence the same way it would
--- for a paying customer.
+-- for a paying customer. 0054: that entry point is platform-operator only,
+-- so the suite runs it as the service role (a claim with no `tenant_id`
+-- leaves `current_tenant()` on the default club, as an absent claim does).
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 select public.provision_tenant('Iso Second Club', 'iso-second');
 
 -- ── people ──────────────────────────────────────────────────────────────────

@@ -335,6 +335,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"platform_admins": {
+                  Row: {
+                    "granted_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "granted_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "granted_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"profiles": {
                   Row: {
                     "created_at": string,"email": string,"full_name": string,"id": string,"phone": string | null,"updated_at": string
@@ -956,6 +970,12 @@ isOneToOne: false
 "is_gate_operator":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"is_platform_admin":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_platform_operator":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "is_staff":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
@@ -1000,6 +1020,30 @@ isOneToOne: false
 "pgtap_version":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"platform_tenants":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "application_fee_bps": number,
+"created_at": string,
+"currency": string,
+"erased_at": string | null,
+"id": string,
+"locale": string,
+"logo_url": string | null,
+"name": string,
+"offboarded_at": string | null,
+"primary_color": string,
+"slug": string,
+"status": Database["public"]['Enums']["tenant_status"],
+"stripe_account_id": string | null,
+"timezone": string,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "tenants"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "provision_tenant":
 { Args: { "p_currency"?: string,"p_locale"?: string,"p_name": string,"p_slug": string,"p_timezone"?: string }; Returns: string
                            },
@@ -1013,6 +1057,15 @@ isOneToOne: false
                            },
 "scan_ticket":
 { Args: { "p_admin_id": string,"p_gate_id": string,"p_idempotency_key": string,"p_invalid_reason"?: string,"p_raw_hash"?: string,"p_ticket_id": string }; Returns: Json
+                           },
+"set_application_fee_bps":
+{ Args: { "p_fee_bps": number,"p_tenant_id": string }; Returns: undefined
+                           },
+"set_platform_admin":
+{ Args: { "p_grant": boolean,"p_user_id": string }; Returns: undefined
+                           },
+"set_tenant_status":
+{ Args: { "p_status": string,"p_tenant_id": string }; Returns: undefined
                            },
 "skip":
 { Args: { "": string }; Returns: string

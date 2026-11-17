@@ -17,6 +17,10 @@ begin;
 select plan(13);
 
 -- ── fixtures: a second club ──────────────────────────────────────────────────
+-- 0054: provisioning is a platform operation — the service role runs it (a
+-- claim with no `tenant_id` leaves `current_tenant()` on the default club,
+-- as an absent claim does, so the venue writes below are unchanged).
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 select public.provision_tenant('Uniq FC', 'uniq-fc');
 
 -- ── venues.name ──────────────────────────────────────────────────────────────

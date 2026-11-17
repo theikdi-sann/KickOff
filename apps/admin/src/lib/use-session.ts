@@ -5,7 +5,7 @@ import type { StaffRole } from "@kickoff/shared";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { isAdminUser, isStaffUser, roleOf } from "@/lib/auth";
+import { isAdminUser, isPlatformUser, isStaffUser, roleOf } from "@/lib/auth";
 
 export type SessionStatus = "loading" | "unauthenticated" | "mfa_required" | "authenticated";
 
@@ -18,6 +18,8 @@ export interface SessionState {
   isStaff: boolean;
   /** True only for an admin. */
   isAdmin: boolean;
+  /** True for a platform operator (0054) — the platform console's claim. */
+  isPlatform: boolean;
 }
 
 /** Session + MFA assurance for client components. */
@@ -28,6 +30,7 @@ export function useSession(): SessionState {
     role: null,
     isStaff: false,
     isAdmin: false,
+    isPlatform: false,
   });
 
   useEffect(() => {
@@ -39,7 +42,14 @@ export function useSession(): SessionState {
       if (!active) return;
       const user = userData.user ?? null;
       if (!user) {
-        setState({ status: "unauthenticated", user: null, role: null, isStaff: false, isAdmin: false });
+        setState({
+          status: "unauthenticated",
+          user: null,
+          role: null,
+          isStaff: false,
+          isAdmin: false,
+          isPlatform: false,
+        });
         return;
       }
 
@@ -53,6 +63,7 @@ export function useSession(): SessionState {
         role: roleOf(user),
         isStaff: isStaffUser(user),
         isAdmin: isAdminUser(user),
+        isPlatform: isPlatformUser(user),
       });
     };
 
@@ -74,7 +85,9 @@ export function useSession(): SessionState {
 
 /**
  * Redirects unauthenticated users to /login, MFA-pending users to /login/mfa
- * and non-staff accounts back to the sign-in form.
+ * and accounts with neither staff nor platform authority back to the sign-in
+ * form. A platform operator passes: the platform console is theirs, and the
+ * layout routes them to their surface.
  */
 export function useSessionGuard(options: { requireStaff?: boolean } = {}): SessionState {
   const session = useSession();
@@ -86,10 +99,15 @@ export function useSessionGuard(options: { requireStaff?: boolean } = {}): Sessi
       router.replace("/login");
     } else if (session.status === "mfa_required") {
       router.replace("/login/mfa");
-    } else if (session.status === "authenticated" && requireStaff && !session.isStaff) {
+    } else if (
+      session.status === "authenticated" &&
+      requireStaff &&
+      !session.isStaff &&
+      !session.isPlatform
+    ) {
       router.replace("/login?error=not-staff");
     }
-  }, [session.status, session.isStaff, requireStaff, router]);
+  }, [session.status, session.isStaff, session.isPlatform, requireStaff, router]);
 
   return session;
 }

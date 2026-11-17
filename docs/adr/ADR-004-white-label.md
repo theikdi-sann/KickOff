@@ -1,6 +1,6 @@
 # ADR-004 — White-label delivery and the platform console
 
-- **Status:** accepted (design) · **Date:** 2026-11-14 · **Deciders:** engineering
+- **Status:** accepted — implemented in C9 (`0054`, `bootstrap`, `stripe-onboard`, the platform console) · **Date:** 2026-11-14 · **Deciders:** engineering
 - **Related:** [`ADR-002`](ADR-002-multi-tenancy.md) ·
   [`ADR-003`](ADR-003-stripe-connect.md) · [`../RUNBOOK.md`](../RUNBOOK.md) ·
   [`../../PLAN.md`](../../PLAN.md) (C9)
@@ -22,8 +22,11 @@ console to provision clubs, set fee rates and suspend a tenant.
    `staff_members(id, tenant_id)`.
 3. **Platform console** for KickOff staff, gated by `is_platform_admin()`:
    provision tenants (`provision_tenant()`), edit `application_fee_bps`,
-   suspend/restore (`tenants.status`), and read cross-tenant aggregates only.
-   It never bypasses tenant RLS for row-level club data.
+   suspend/restore (`tenants.status`), and read the tenant **registry** —
+   the control columns of `tenants`, suspended clubs included (restoring one
+   is the console's job). Cross-tenant *aggregates* stay with the ops
+   checklist (`GAP-10`). It never bypasses tenant RLS for row-level club
+   data.
 4. **Delivery is ops, not schema:** per-club EAS project/bundle id, Expo push
    credentials, store listings and release cadence. Tracked as `GAP-10` with
    an onboarding checklist (provision → venue/zones/seats → staff invites →

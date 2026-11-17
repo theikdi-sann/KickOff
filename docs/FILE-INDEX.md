@@ -71,6 +71,7 @@ before the suite is green again.
 | `apps/admin/src/app/dashboard/news/page.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/dashboard/overview.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/dashboard/page.tsx` | source | reviewed | staff console screen |
+| `apps/admin/src/app/dashboard/platform/page.tsx` | source | reviewed | the platform console: registry, suspend/restore, fee, provisioning, Stripe onboarding (C9) |
 | `apps/admin/src/app/dashboard/scan/error.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/dashboard/scan/page.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/dashboard/settings/mfa/page.tsx` | source | reviewed | staff console screen |
@@ -102,6 +103,7 @@ before the suite is green again.
 | `apps/admin/src/lib/queries/matches.ts` | source | reviewed | React Query data access |
 | `apps/admin/src/lib/queries/news.ts` | source | reviewed | React Query data access |
 | `apps/admin/src/lib/queries/orders.ts` | source | reviewed | React Query data access |
+| `apps/admin/src/lib/queries/platform.ts` | source | reviewed | React Query data access — the platform RPCs and `stripe-onboard` (one module per surface) |
 | `apps/admin/src/lib/queries/scan.ts` | source | reviewed | React Query data access |
 | `apps/admin/src/lib/queries/settings.ts` | source | reviewed | React Query data access |
 | `apps/admin/src/lib/queries/tenant.ts` | source | reviewed | the admin's club resolver — `currentTenantId()` wraps the `current_tenant()` RPC so name lookups and upserts (0046) scope to the own club |
@@ -213,6 +215,7 @@ before the suite is green again.
 | `packages/shared/src/__tests__/logging.test.ts` | test | covered | unit test — redaction, Error serialisation, scoped and default logger |
 | `packages/shared/src/__tests__/mappers.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `packages/shared/src/__tests__/money.test.ts` | test | covered | contract test — fails when the repository drifts |
+| `packages/shared/src/__tests__/platform.test.ts` | test | covered | unit test — the platform claim, the club slug pattern and the bootstrap claim plan |
 | `packages/shared/src/__tests__/reschedule.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `packages/shared/src/__tests__/schemas.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `packages/shared/src/__tests__/smoke.test.ts` | test | covered | contract test — fails when the repository drifts |
@@ -230,6 +233,7 @@ before the suite is green again.
 | `packages/shared/src/logging.ts` | source | reviewed | shared contract — the one logging convention; generates the Edge copy |
 | `packages/shared/src/mappers.ts` | source | reviewed | shared contract |
 | `packages/shared/src/money.ts` | source | reviewed | shared contract |
+| `packages/shared/src/platform.ts` | source | reviewed | shared contract — the platform claim key, `isPlatformMetadata`, `CLUB_SLUG_PATTERN`, `planBootstrapClaim` (C9) |
 | `packages/shared/src/refund.ts` | source | reviewed | shared contract — canonical refund body, no relative imports (F-11) |
 | `packages/shared/src/require.ts` | source | reviewed | narrowing helper — no non-null assertions |
 | `packages/shared/src/roles.ts` | source | reviewed | canonical staff role vocabulary (`customer` / `admin` / `gatekeeper`); generates the Edge copy |
@@ -271,6 +275,7 @@ before the suite is green again.
 | `scripts/tests/phase11.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/phaseb.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/phaseb0.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/platform-console.test.mjs` | test | covered | contract test — C9 across three tiers: vocabulary + generated copy, Edge guards, bootstrap, stripe-onboard, console gating, mobile binding (PC-1…PC-9) |
 | `scripts/tests/push.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/readme.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/redirects.test.mjs` | test | covered | contract test — fails when the repository drifts |
@@ -302,6 +307,7 @@ before the suite is green again.
 | `supabase/functions/_shared/logger.ts` | source | generated | GENERATED from packages/shared/src/logging.ts — do not edit |
 | `supabase/functions/_shared/metrics.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/money.ts` | source | generated | GENERATED from packages/shared/src/money.ts — do not edit; the receipt formats the order's currency with it (C8.2b) |
+| `supabase/functions/_shared/platform.ts` | source | generated | GENERATED from packages/shared/src/platform.ts — do not edit; the Edge guards and `bootstrap` read the same vocabulary the console does |
 | `supabase/functions/_shared/probe.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/qr.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/rate-limit.ts` | source | reviewed | Edge Function helper |
@@ -312,6 +318,7 @@ before the suite is green again.
 | `supabase/functions/_shared/ticket-view.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/validate.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/admin-users/index.ts` | source | reviewed | Edge Function |
+| `supabase/functions/bootstrap/index.ts` | source | reviewed | Edge Function — binds a session to a club by slug (`app_metadata.tenant_id`, D-29) |
 | `supabase/functions/cancel-order/index.ts` | source | reviewed | Edge Function |
 | `supabase/functions/delete-account/index.ts` | source | reviewed | Edge Function |
 | `supabase/functions/deno.json` | config | reviewed | Deno import map and lint rules |
@@ -328,6 +335,7 @@ before the suite is green again.
 | `supabase/functions/scan-undo/index.ts` | source | reviewed | Edge Function |
 | `supabase/functions/send-kickoff-reminders/index.ts` | source | reviewed | Edge Function |
 | `supabase/functions/stripe-checkout/index.ts` | source | reviewed | Edge Function |
+| `supabase/functions/stripe-onboard/index.ts` | source | reviewed | Edge Function — platform-gated Express account creation + hosted onboarding link (ADR-003/004, D-08) |
 | `supabase/functions/stripe-webhook/index.ts` | source | reviewed | Edge Function |
 | `supabase/functions/tests/_commerce.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/config.test.ts` | test | covered | contract test — fails when the repository drifts |
@@ -337,6 +345,7 @@ before the suite is green again.
 | `supabase/functions/tests/http.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/metrics.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/orders.test.ts` | test | covered | contract test — fails when the repository drifts |
+| `supabase/functions/tests/platform.test.ts` | test | covered | Deno test — the generated platform vocabulary under Deno's module rules |
 | `supabase/functions/tests/probe.test.ts` | test | reviewed | unit test — the probe depth needs the token |
 | `supabase/functions/tests/roles.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/scan.test.ts` | test | covered | contract test — fails when the repository drifts |
@@ -396,6 +405,7 @@ before the suite is green again.
 | `supabase/migrations/0051_tenant_export.sql` | data | reviewed | migration — GAP-09.4: the service-role-only `export_tenant()` — one club's full archive from a structural registry, audited (`tenant.export`), unknown club raises |
 | `supabase/migrations/0052_tenant_erase.sql` | data | reviewed | migration — GAP-09.5: `mark_tenant_offboarded()` (the human money gate, audited) and `erase_tenant()` (refuses until offboarded, purges every scoped table child-first through the scan-log maintenance path, keeps the `tenants` row as the tombstone) |
 | `supabase/migrations/0053_tenant_timezone.sql` | data | reviewed | migration — C8.2c: `tenants.timezone` (default `Asia/Bangkok`, member-readable), `provision_tenant()` gains a validated `p_timezone` against `pg_timezone_names` |
+| `supabase/migrations/0054_platform.sql` | data | reviewed | migration — C9: `platform_admins`, `is_platform_admin()`/`is_platform_operator()`, `set_platform_admin()` (service-role only, merges both projections), `platform_tenants()`, `set_tenant_status()`, `set_application_fee_bps()` (guarded + audited), `provision_tenant()` gains the guard |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/connect.test.sql` | test | covered | pgTAP suite — C8.1 Stripe Connect: the platform fee in minor units, the club a connected account belongs to, the event ledger; 0050's omittable payment-intent and account parameters (16 assertions) |
@@ -406,6 +416,7 @@ before the suite is green again.
 | `supabase/tests/identity.test.sql` | test | covered | pgTAP suite — C6.2 membership as the authority, the legacy column and its bridge gone, membership integrity, fan/staff RLS, the service-role promotion helper (28 assertions) |
 | `supabase/tests/isolation.test.sql` | test | covered | pgTAP suite — C7.3 tenant isolation: cross-tenant reads and writes per scoped table under `authenticated` (24 assertions) |
 | `supabase/tests/order-expiry.test.sql` | data | covered | pgTAP suite — asserts the database contract |
+| `supabase/tests/platform.test.sql` | data | covered | pgTAP suite — PF-1…PF-28: the grant/refusal, the registry, status and fee guards, provisioning |
 | `supabase/tests/reschedule-audit.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/rls-auth.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/rls.test.sql` | data | covered | pgTAP suite — asserts the database contract |

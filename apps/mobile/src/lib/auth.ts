@@ -1,6 +1,9 @@
 import type { User } from '@supabase/supabase-js';
-import { staffRoleOf, type StaffRole } from '@kickoff/shared';
+import { createLogger, staffRoleOf, type StaffRole } from '@kickoff/shared';
+import { invokeFunction } from './functions';
 import { supabase } from './supabase';
+
+const log = createLogger('club');
 
 export interface AppProfile {
   id: string;
@@ -72,6 +75,47 @@ export async function signIn(email: string, password: string): Promise<AppProfil
   if (error) throw new Error(error.message);
   if (!data.user) throw new Error('Sign-in returned no user');
   return loadProfile(data.user);
+}
+
+interface BootstrapResult {
+  tenantId: string;
+  slug: string;
+}
+
+/**
+ * Binds this session to the club the app was built for (ADR-004 §1, D-29).
+ *
+ * A white-label build carries its slug (`EXPO_PUBLIC_CLUB_SLUG`); this asks
+ * the `bootstrap` Edge function to write `app_metadata.tenant_id`, the claim
+ * `current_tenant()` — and every tenant-scoped read — resolves the session
+ * by. Two rules make it safe to run on every session establishment:
+ *
+ *   - **non-blocking**: while the claim is absent the database resolves the
+ *     deployment's default club, so a failed bind costs at worst one read of
+ *     the wrong club's public catalogue — never a sign-in;
+ *   - **rotate only on change**: the claim lives in the JWT, so a bind that
+ *     moved the club refreshes the session — otherwise the old token keeps
+ *     resolving the old club until its natural refresh.
+ *
+ * A build without the slug (a plain checkout) skips the call: the default
+ * club *is* the club there.
+ */
+export async function bindClubToSession(user: User): Promise<void> {
+  const slug = process.env.EXPO_PUBLIC_CLUB_SLUG;
+  if (!slug) return;
+
+  try {
+    const bound = await invokeFunction<BootstrapResult>('bootstrap', { body: { slug } });
+    const current = (user.app_metadata as Record<string, unknown> | undefined)?.tenant_id;
+    if (current !== bound.tenantId) {
+      const { error } = await supabase.auth.refreshSession();
+      if (error) throw new Error(error.message);
+    }
+  } catch (error) {
+    // Logged, not thrown: the caller has a valid session already, and the
+    // next app start binds again (the hydrate path).
+    log.warn('club.bind_failed', { userId: user.id, slug, error });
+  }
 }
 
 /** Result of a sign-up attempt — never a silent dead-end. */

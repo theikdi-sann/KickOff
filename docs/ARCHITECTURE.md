@@ -110,6 +110,8 @@ packages/shared/src/
                        the one formatter (`formatMoney`), self-contained
   display.ts           the club's display config: `displayFromTenant`
                        (validated) and `PLATFORM_DISPLAY` (C8.2d)
+  platform.ts          the platform claim (`app_metadata.platform`), the club
+                       slug pattern and the bootstrap claim plan (C9)
   format.ts            dates (club locale/timezone via `DisplayOptions`),
                        and `formatTHB` as THB's coat over `formatMoney`
   greeting.ts          club-timezone greeting (`clubGreeting(date, timezone)`)

@@ -14,6 +14,7 @@ const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "";
 /** Why the console refused the account — the proxy sends the reason. */
 const REFUSAL_MESSAGES: Record<string, string> = {
   "not-staff": "This account does not have staff access. Ask a club administrator to grant it.",
+  "not-platform": "The platform console is for KickOff platform operators only.",
 };
 
 export default function LoginPage() {

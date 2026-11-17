@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
+  bindClubToSession,
   loadProfile,
   signIn as authSignIn,
   signOut as authSignOut,
@@ -30,13 +31,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const hydrate = async () => {
       const { data } = await supabase.auth.getUser();
       if (!active) return;
-      if (data.user) setProfile(await loadProfile(data.user));
+      if (data.user) {
+        setProfile(await loadProfile(data.user));
+        // A session restored from a previous run may predate the club claim
+        // (signed in before C9, or bound to a different club's build):
+        // bind again — non-blocking, and idempotent on the server.
+        void bindClubToSession(data.user);
+      }
       if (active) setHydrated(true);
     };
 
     void hydrate();
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
       // Defer Supabase calls out of the auth callback to avoid deadlocks.
       setTimeout(() => {
         if (!active) return;
@@ -44,6 +51,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setProfile(null);
           return;
         }
+        // A fresh sign-in binds the session to this build's club; a token
+        // refresh deliberately does not re-bind (the claim it would write is
+        // already the one the refresh is carrying).
+        if (event === 'SIGNED_IN') void bindClubToSession(session.user);
         void loadProfile(session.user).then((next) => {
           if (active) setProfile(next);
         });

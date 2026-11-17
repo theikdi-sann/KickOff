@@ -49,9 +49,17 @@ export const CONTRACTS = [
     // The club's display config travels with it (C8.2d): the receipt's
     // defensive timezone fallback must be the same default the apps use,
     // not a second literal — the copy keeps its one relative import
-    // (`./money`), which resolves to the generated money copy beside it.
+    // (rewritten to `./money.ts` for Deno), which resolves to the generated
+    // money copy beside it.
     source: 'packages/shared/src/display.ts',
     target: 'supabase/functions/_shared/display.ts',
+  },
+  {
+    // The platform vocabulary travels with the Edge guards (C9.2): the
+    // `bootstrap` slug check and the `requirePlatformAdmin` claim read must
+    // be the ones the console and the database use, never a re-derivation.
+    source: 'packages/shared/src/platform.ts',
+    target: 'supabase/functions/_shared/platform.ts',
   },
 ];
 

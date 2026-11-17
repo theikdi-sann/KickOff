@@ -38,6 +38,38 @@ export function createCheckoutSession(
   return stripeClient().checkout.sessions.create(params, requestOptions(options));
 }
 
+/**
+ * Creates a club's Express connected account (ADR-003, C9).
+ *
+ * The club is the merchant of record: charges run *on* this account and the
+ * platform fee is taken by Stripe from them, so the account exists before the
+ * first checkout for that club.
+ *
+ * `idempotencyKey` is the tenant: two clicks (or two tabs) on *Onboard* must
+ * resolve to one account, never two — Stripe replays the first response
+ * within its 24h idempotency window.
+ */
+export function createExpressAccount(
+  params: Stripe.AccountCreateParams,
+  options?: { idempotencyKey?: string },
+): Promise<Stripe.Account> {
+  const request: Stripe.RequestOptions = {};
+  if (options?.idempotencyKey) request.idempotencyKey = options.idempotencyKey;
+  return stripeClient().accounts.create(params, request);
+}
+
+/**
+ * The Stripe-hosted link a club completes to activate its account (C9).
+ *
+ * `type: "account_onboarding"` covers both a fresh account and a returned
+ * one — Stripe keeps the account's state, the link is just the way back in.
+ */
+export function createAccountLink(
+  params: Stripe.AccountLinkCreateParams,
+): Promise<Stripe.AccountLink> {
+  return stripeClient().accountLinks.create(params);
+}
+
 export function retrieveCheckoutSession(
   sessionId: string,
   options?: StripeAccountOptions,
