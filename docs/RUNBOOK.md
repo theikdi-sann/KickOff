@@ -194,6 +194,24 @@ The scheduler is `pg_cron` and secret-guarded (migration `0032`). Check the
 cron job's last run, the `reminders:*` rate limit (12/60s), and the Edge logs
 of `send-kickoff-reminders`.
 
+### 6.8 A fan asks for their data, or to be erased
+
+Both are the fan's own action, not an admin's — and both are the schedule in
+[`PRIVACY.md`](PRIVACY.md), not ad-hoc rows deleted by hand:
+
+- **Export (subject access):** the fan signs in and calls `export-user` with
+  no body — one JSON document with their profile, orders, tickets, holds and
+  device tokens across every club they touch. Support may export on a fan's
+  behalf (admin only); it writes an `account.export` audit row.
+- **Erasure:** the fan calls `delete-account` (or support with an admin JWT
+  and the fan's `userId`). It scrubs the profile (the identity is removed,
+  the row stays), erases the fan's device tokens and holds, voids their
+  still-valid passes, and RETAINs the financial and gate records with their
+  identity scrubbed. The in-app privacy notice promises exactly this.
+
+A fan account can be re-created later; the scrubbed identity rows of orders
+and scans are pseudonyms by then and are not restored.
+
 ## 7. Backup and recovery
 
 - **Data:** Supabase managed Postgres — verify the project's backup schedule in
@@ -220,3 +238,72 @@ of `send-kickoff-reminders`.
       gate expects > 240 scans/min (code change required, not a secret).
 - [ ] `metrics` shows zero order-status drift and normal `holds.conflicts`.
 - [ ] PostHog key set (or explicitly disabled) on the console.
+
+## 9. Tenant offboarding (a club's exit)
+
+The club's exit is the procedure in [`PRIVACY.md`](PRIVACY.md): an export,
+the money hand-back, then an erase. **Do not skip the money step** — the
+platform must not hold a club's money on its own connected account with no
+agreed way to hand it back (ADR-003 §6, GAP-09).
+
+Everything below runs as the **service role** (`serviceClient`), never as a
+club member: `mark_tenant_offboarded()` and `erase_tenant()` refuse every
+other role, and the console has no button for either.
+
+### 9.1 The money hand-back (a human signs this off)
+
+The platform operator confirms, in order:
+
+- [ ] No open orders for the club: `select count(*) from orders where tenant_id = '<id>' and status in ('pending','paid')` — zero (refund anything still live first).
+- [ ] The club's connected account balance is settled to zero in Stripe.
+- [ ] The connected account is **disconnected** in Stripe (the club's own
+      account, not the platform's).
+- [ ] The payout reference is written in the offboarding ticket — the
+      erase's `tenant.erased` audit row is the machine-readable record; the
+      payout reference is the human one.
+
+Only then mark the sign-off:
+
+```sql
+select public.mark_tenant_offboarded('<tenant uuid>');  -- audited
+```
+
+The mark is `tenants.offboarded_at` — `erase_tenant()` refuses until it is
+set. An unknown club raises (`P0002`); an un-offboarded club raises
+(`P0001`).
+
+### 9.2 The export
+
+```sql
+select public.export_tenant('<tenant uuid>');  -- one JSON archive
+```
+
+The archive is every tenant-scoped table for the club plus its own row, keyed
+by table name with per-table counts; an unknown club raises rather than
+exporting a silent empty archive. Each export writes a `tenant.export` audit
+row. Keep the archive with the offboarding ticket — it is what the club
+signed up for, and what a regulator's export request answers.
+
+### 9.3 The erase
+
+```sql
+select public.erase_tenant('<tenant uuid>');  -- refused until 9.1 is done
+```
+
+It purges every tenant-scoped row (children first), keeps the `tenants` row
+as the tombstone — `erased_at` set, Connect account and branding gone, name
+and slug kept — and writes a `tenant.erased` audit row that survives the
+purge. A second run is a no-op that adds no second tombstone.
+
+Verify after the erase:
+
+```sql
+select slug, erased_at, stripe_account_id, primary_color, logo_url
+from tenants where id = '<tenant uuid>';
+-- 'exit-fc', <timestamp>, null, '', null
+select count(*) from audit_logs where action = 'tenant.erased'
+  and entity_id = '<tenant uuid>';   -- 1
+```
+
+The remaining `tenants` row is the tombstone — the club existed and the
+erase happened — and is kept on purpose: it is the record, not the data.

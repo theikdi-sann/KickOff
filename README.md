@@ -454,7 +454,7 @@ Stripe mode, and store deployment via EAS.
 | [`docs/FILE-INDEX.md`](docs/FILE-INDEX.md) | every file in the repository and the verdict on it |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | RLS matrix, secrets, payments, QR, audit, ops |
 | [`docs/PRIVACY.md`](docs/PRIVACY.md) | the data inventory and the retention/erasure schedule: what personal data is held, for how long, and what a fan's export and erasure cover |
-| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | operational procedures: deploy, migrate, rotate keys, incidents, recovery |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | operational procedures: deploy, migrate, rotate keys, incidents, recovery, fan rights, club exit |
 | [`docs/TESTING.md`](docs/TESTING.md) | every test layer, command and skip condition |
 | [`docs/BRAND.md`](docs/BRAND.md) | brand tokens and usage |
 | [`docs/archive/PLAN-history.md`](docs/archive/PLAN-history.md) | archived task-level history of the original build |

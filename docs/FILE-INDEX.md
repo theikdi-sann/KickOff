@@ -191,7 +191,7 @@ before the suite is green again.
 | `docs/FILE-INDEX.md` | doc | reviewed | this file — every tracked file and its verdict |
 | `docs/FLOW-AUDIT.md` | doc | reviewed | flow-by-flow audit findings |
 | `docs/REQUIREMENTS.md` | doc | reviewed | product requirements, traceability, known gaps |
-| `docs/RUNBOOK.md` | doc | reviewed | operational procedures: deploy, rotate, incident, recovery |
+| `docs/RUNBOOK.md` | doc | reviewed | operational procedures: deploy, rotate, incident, recovery, fan rights (§6.8), club exit (§9) |
 | `docs/SECURITY.md` | doc | reviewed | RLS matrix, secrets, payments, QR, audit |
 | `docs/PRIVACY.md` | doc | reviewed | the data inventory and the retention/erasure schedule (GAP-09): what personal data is held, for how long, and what a fan's export and erasure cover |
 | `docs/SRS.md` | doc | reviewed | detailed specification of REQ/NFR/SC with acceptance criteria |

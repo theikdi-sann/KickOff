@@ -89,14 +89,19 @@ records") describes exactly this schedule.
 
 A club leaving the platform gets, in order:
 
-1. **Export** — the club's full data archive (every tenant-scoped table above).
+1. **Export** — `export_tenant()` returns the club's full data archive
+   (every tenant-scoped table above), keyed by table with row counts, and
+   writes a `tenant.export` audit row.
 2. **The money hand-back** — the final payout on the club's connected account
-   is confirmed and the account is disconnected. **A human signs this off**;
-   `erase_tenant()` refuses until the tenant is marked offboarded, which only
-   the signed-off procedure does.
-3. **Erase** — every tenant-scoped row for the club is deleted (children
-   first; `scan_events` through its maintenance-flag purge path), and a
-   tombstone records that the erase happened.
+   is confirmed and the account is disconnected. **A human signs this off**
+   by setting `tenants.offboarded_at` through `mark_tenant_offboarded()`;
+   `erase_tenant()` refuses until that mark exists, which only the
+   signed-off procedure sets.
+3. **Erase** — `erase_tenant()` deletes every tenant-scoped row for the club
+   (children first; `scan_events` through its maintenance-flag purge path),
+   and the `tenants` row survives as the tombstone (`erased_at`, name and
+   slug kept, branding and Connect account gone) — the erase happened, and
+   that is provable without keeping the data.
 
 Until a club is onboarded onto its own Stripe account (C9), the platform is
 the merchant of record for its sales — which is why the exit procedure must

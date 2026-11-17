@@ -357,8 +357,11 @@ the execution order fixed in `PLAN.md`:
 - **C8 (GAP-09)** — Stripe Connect (per-club connected accounts, platform fee,
   per-account webhooks, refund ledger): [`ADR-003`](adr/ADR-003-stripe-connect.md).
   The plumbing (C8.1) landed first — it changes nothing while no club holds a
-  connected account. GDPR export and tenant offboarding must land before a
-  club is onboarded onto its own account.
+  connected account. **GAP-09 closed at GAP-09.6**: the schedule
+  ([`PRIVACY.md`](PRIVACY.md)), the fan export/erasure, the club export and
+  the erase behind the human money gate all landed, so a club can now be
+  onboarded onto its own account with a clean exit available (the onboarding
+  itself belongs to C9).
 - **C9 (GAP-10)** — the cross-tenant platform console and white-label app
   delivery: [`ADR-004`](adr/ADR-004-white-label.md).
 - **C10 (GAP-04, GAP-05, GAP-01, GAP-06)** — observability, i18n/currency UX,

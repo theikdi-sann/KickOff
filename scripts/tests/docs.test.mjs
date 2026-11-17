@@ -290,3 +290,29 @@ test('DOC-12 the privacy schedule and the in-app notice tell the same story', ()
     'the in-app privacy notice must keep its erasure promise aligned with docs/PRIVACY.md',
   );
 });
+
+test('DOC-13 the club exit procedure and the schedule name the same machinery', () => {
+  // The runbook is the procedure a human executes; docs/PRIVACY.md is the
+  // schedule it implements. If either names machinery the other does not, a
+  // reader can follow one and lose the other (GAP-09.6).
+  const runbook = read('docs/RUNBOOK.md');
+  const privacy = read('docs/PRIVACY.md');
+
+  for (const fn of ['export_tenant', 'mark_tenant_offboarded', 'erase_tenant']) {
+    assert.ok(
+      runbook.includes(fn),
+      `the runbook must document ${fn} — the exit procedure needs it`,
+    );
+    assert.ok(
+      privacy.includes(fn),
+      `docs/PRIVACY.md must name ${fn} — the schedule is what it implements`,
+    );
+  }
+
+  // The human money gate is the whole reason the gap exists: the runbook must
+  // say the payout and the Stripe disconnect happen before the erase, and the
+  // schedule must say a human signs it off.
+  assert.match(runbook, /payout/i, 'the runbook must cover the final payout');
+  assert.match(runbook, /disconnect/i, 'the runbook must cover the Stripe disconnect');
+  assert.match(privacy, /human signs this off/, 'the schedule must keep the human gate');
+});
