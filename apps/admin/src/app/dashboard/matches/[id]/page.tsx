@@ -39,10 +39,11 @@ import {
   type AdminMatchInput,
   type AdminZoneInput,
 } from "@/lib/queries/matches";
+import { useTenantDisplay } from "@/lib/queries/tenant";
 import {
   formatMatchDate,
   formatMatchTime,
-  formatTHB,
+  formatMoney,
   potentialRevenueMinorUnits,
   summariseAvailability,
   type ZoneDto,
@@ -51,6 +52,7 @@ import {
 export default function SeatingPage() {
   const params = useParams<{ id: string }>();
   const matchId = params.id;
+  const display = useTenantDisplay();
   const { toast } = useToast();
 
   const matchQuery = useMatch(matchId);
@@ -188,7 +190,7 @@ export default function SeatingPage() {
           value={`${sold} · ${capacity ? Math.round((sold / capacity) * 100) : 0}%`}
         />
         <MiniStat icon={<Wallet size={16} />} label="Available" value={String(available)} />
-        <MiniStat icon={<CircleDollarSign size={16} />} label="Gate potential" value={formatTHB(potential)} />
+        <MiniStat icon={<CircleDollarSign size={16} />} label="Gate potential" value={formatMoney(potential, display.currency)} />
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[1.55fr_1fr]">
@@ -208,7 +210,7 @@ export default function SeatingPage() {
                     {availabilityByZone.get(zone.id)?.totalSeats ?? 0} seats
                   </p>
                 </div>
-                <Badge tone="green">{formatTHB(zone.priceMinorUnits)}</Badge>
+                <Badge tone="green">{formatMoney(zone.priceMinorUnits, display.currency)}</Badge>
                 <button
                   type="button"
                   onClick={() => setDeletingZone(zone)}
@@ -249,8 +251,8 @@ export default function SeatingPage() {
             <p className="label text-pitch">Match details</p>
             <h2 className="display mt-1 text-2xl text-slate-900">Fixture setup</h2>
             <div className="mt-4 space-y-3 text-xs">
-              <DetailRow icon={<CalendarDays size={14} />} label="Date" value={formatMatchDate(match.kickoffAt)} />
-              <DetailRow icon={<Clock3 size={14} />} label="Kick-off" value={formatMatchTime(match.kickoffAt)} />
+              <DetailRow icon={<CalendarDays size={14} />} label="Date" value={formatMatchDate(match.kickoffAt, { timezone: display.timezone })} />
+              <DetailRow icon={<Clock3 size={14} />} label="Kick-off" value={formatMatchTime(match.kickoffAt, { timezone: display.timezone })} />
               <DetailRow icon={<MapPin size={14} />} label="Venue" value={match.venue} />
               <DetailRow icon={<Users size={14} />} label="Competition" value={match.competition} />
             </div>

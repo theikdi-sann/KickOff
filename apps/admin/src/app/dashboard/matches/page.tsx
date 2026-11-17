@@ -34,11 +34,12 @@ import {
   useZoneAvailability,
   type AdminMatchInput,
 } from "@/lib/queries/matches";
+import { useTenantDisplay } from "@/lib/queries/tenant";
 import { cn } from "@/lib/utils";
 import {
   formatMatchDate,
   formatMatchTime,
-  formatTHB,
+  formatMoney,
   sellThroughPercent,
   summariseAvailability,
   type MatchDto,
@@ -48,6 +49,7 @@ type Filter = "all" | "upcoming" | "completed";
 
 export default function MatchesPage() {
   const router = useRouter();
+  const display = useTenantDisplay();
   const { toast } = useToast();
   const { data: matches, isLoading, error } = useMatches();
   const { data: zones } = useAllZones();
@@ -229,7 +231,7 @@ export default function MatchesPage() {
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
                       <span className="flex items-center gap-1">
                         <CalendarDays size={11} />
-                        {formatMatchDate(match.kickoffAt)} · {formatMatchTime(match.kickoffAt)}
+                        {formatMatchDate(match.kickoffAt, { timezone: display.timezone })} · {formatMatchTime(match.kickoffAt, { timezone: display.timezone })}
                       </span>
                       <span className="flex items-center gap-1">
                         <MapPin size={11} />
@@ -242,7 +244,7 @@ export default function MatchesPage() {
                   <div className="grid grid-cols-3 gap-4 sm:w-[260px]">
                     <Metric label="Zones" value={String(matchZones.length)} />
                     <Metric label="Sold" value={completed ? "—" : `${sold}/${capacity}`} />
-                    <Metric label="From" value={minPrice ? formatTHB(minPrice) : "—"} />
+                    <Metric label="From" value={minPrice ? formatMoney(minPrice, display.currency) : "—"} />
                   </div>
 
                   <div className="flex items-center gap-2 sm:justify-end">

@@ -6,6 +6,7 @@ export * from './error-codes';
 export * from './http';
 export * from './schemas';
 export * from './money';
+export * from './display';
 export * from './format';
 export * from './theme';
 export * from './constants';

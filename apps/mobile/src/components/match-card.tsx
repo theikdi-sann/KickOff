@@ -1,8 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { CalendarDays, ChevronRight, MapPin } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { formatMatchDate, formatMatchTime, formatTHB, type MatchDto } from '@kickoff/shared';
+import { formatMatchDate, formatMatchTime, formatMoney, type MatchDto } from '@kickoff/shared';
 import { AppText, Crest, Pill } from '@/components/ui';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, fonts, radii, shadow } from '@/lib/theme';
 
 export function MatchCard({
@@ -14,6 +15,7 @@ export function MatchCard({
   fromPriceSatang?: number;
   onPress: () => void;
 }) {
+  const display = useTenantDisplay();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.cardWrap, pressed && { opacity: 0.9 }]}>
       <LinearGradient
@@ -39,7 +41,7 @@ export function MatchCard({
         <View style={styles.metaRow}>
           <CalendarDays size={12} color={colors.accent} />
           <AppText variant="small" color="rgba(255,255,255,0.82)">
-            {formatMatchDate(match.kickoffAt)} · {formatMatchTime(match.kickoffAt)}
+            {formatMatchDate(match.kickoffAt, { timezone: display.timezone })} · {formatMatchTime(match.kickoffAt, { timezone: display.timezone })}
           </AppText>
         </View>
         <View style={styles.priceRow}>
@@ -47,7 +49,7 @@ export function MatchCard({
             FROM
           </AppText>
           <AppText variant="h3" color={colors.accent}>
-            {fromPriceSatang === undefined ? '—' : formatTHB(fromPriceSatang)}
+            {fromPriceSatang === undefined ? '—' : formatMoney(fromPriceSatang, display.currency)}
           </AppText>
         </View>
       </LinearGradient>
@@ -56,6 +58,7 @@ export function MatchCard({
 }
 
 export function ResultRow({ match, onPress }: { match: MatchDto; onPress?: () => void }) {
+  const display = useTenantDisplay();
   const win = (match.homeScore ?? 0) > (match.awayScore ?? 0);
   const draw = (match.homeScore ?? 0) === (match.awayScore ?? 0);
   return (
@@ -66,7 +69,7 @@ export function ResultRow({ match, onPress }: { match: MatchDto; onPress?: () =>
         <View style={styles.resultMeta}>
           <MapPin size={11} color={colors.muted} />
           <AppText variant="caption" color={colors.muted} style={styles.resultMetaText}>
-            {match.homeAway === 'home' ? 'HOME' : 'AWAY'} · {formatMatchDate(match.kickoffAt).toUpperCase()}
+            {match.homeAway === 'home' ? 'HOME' : 'AWAY'} · {formatMatchDate(match.kickoffAt, { timezone: display.timezone }).toUpperCase()}
           </AppText>
         </View>
       </View>

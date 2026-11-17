@@ -2,7 +2,7 @@ import { Download, ReceiptText } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { formatFullDate, formatTHB } from '@kickoff/shared';
+import { formatFullDate, formatMoney } from '@kickoff/shared';
 import {
   AppText,
   Card,
@@ -15,11 +15,13 @@ import {
 import { errorMessage } from '@/lib/api';
 import { useOrder } from '@/lib/queries/orders';
 import { useProfile } from '@/lib/queries/profile';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { downloadAndShareReceipt } from '@/lib/receipt';
 import { colors, radii } from '@/lib/theme';
 
 export default function OrderDetailScreen() {
   const router = useRouter();
+  const display = useTenantDisplay();
   const { id } = useLocalSearchParams<{ id: string }>();
   const orderQuery = useOrder(id);
   const profileQuery = useProfile();
@@ -84,7 +86,7 @@ export default function OrderDetailScreen() {
                 {order.matchLabel}
               </AppText>
               <AppText variant="small" color={colors.muted}>
-                Placed {formatFullDate(order.createdAt)}
+                Placed {formatFullDate(order.createdAt, { timezone: display.timezone })}
               </AppText>
             </View>
             <Pill
@@ -103,7 +105,7 @@ export default function OrderDetailScreen() {
                   ROW {seat.row} · SEAT {seat.number}
                 </AppText>
               </View>
-              <AppText variant="label">{formatTHB(seat.priceMinorUnits)}</AppText>
+              <AppText variant="label">{formatMoney(seat.priceMinorUnits, display.currency)}</AppText>
             </View>
           ))}
 
@@ -111,7 +113,7 @@ export default function OrderDetailScreen() {
             <AppText variant="small" color={colors.muted}>
               {paid ? 'Total paid' : 'Total'}
             </AppText>
-            <AppText variant="h2">{formatTHB(order.amountMinorUnits)}</AppText>
+            <AppText variant="h2">{formatMoney(order.amountMinorUnits, display.currency)}</AppText>
           </View>
         </Card>
 
@@ -121,7 +123,7 @@ export default function OrderDetailScreen() {
         <Card style={styles.card}>
           <DetailRow label="Status" value={order.status.toUpperCase()} />
           <DetailRow label="Reference" value={order.paymentRef ?? '—'} />
-          <DetailRow label="Paid at" value={order.paidAt ? formatFullDate(order.paidAt) : '—'} />
+          <DetailRow label="Paid at" value={order.paidAt ? formatFullDate(order.paidAt, { timezone: display.timezone }) : '—'} />
           <DetailRow label="Ticket holder" value={profileQuery.data?.fullName ?? '—'} last />
         </Card>
 

@@ -1,8 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { CalendarDays, MapPin, QrCode } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { formatMatchDate, formatMatchTime, formatTHB, type TicketDto } from '@kickoff/shared';
+import { formatMatchDate, formatMatchTime, formatMoney, type TicketDto } from '@kickoff/shared';
 import { AppText, Pill } from '@/components/ui';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export function TicketCard({
@@ -14,6 +15,7 @@ export function TicketCard({
   onPress: () => void;
   compact?: boolean;
 }) {
+  const display = useTenantDisplay();
   const used = ticket.status === 'used';
   return (
     <Pressable
@@ -43,7 +45,7 @@ export function TicketCard({
               <View style={styles.meta}>
                 <CalendarDays size={11} color={colors.muted} />
                 <AppText variant="caption" color={colors.muted} style={styles.metaText}>
-                  {formatMatchDate(ticket.kickoffAt).toUpperCase()} · {formatMatchTime(ticket.kickoffAt)}
+                  {formatMatchDate(ticket.kickoffAt, { timezone: display.timezone }).toUpperCase()} · {formatMatchTime(ticket.kickoffAt, { timezone: display.timezone })}
                 </AppText>
               </View>
             </View>
@@ -68,7 +70,7 @@ export function TicketCard({
             </AppText>
           </View>
           <AppText variant="label" color={colors.primary}>
-            {formatTHB(ticket.priceMinorUnits)}
+            {formatMoney(ticket.priceMinorUnits, display.currency)}
           </AppText>
         </View>
       </View>

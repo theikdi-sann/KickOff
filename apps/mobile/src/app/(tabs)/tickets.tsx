@@ -2,7 +2,7 @@ import { ChevronRight, ReceiptText, Ticket as TicketIcon } from 'lucide-react-na
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
-import { formatMatchDate, formatTHB } from '@kickoff/shared';
+import { formatMatchDate, formatMoney } from '@kickoff/shared';
 import { TicketCard } from '@/components/ticket-card';
 import {
   AppText,
@@ -14,6 +14,7 @@ import {
   Skeleton,
 } from '@/components/ui';
 import { useOrders } from '@/lib/queries/orders';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { useTickets } from '@/lib/queries/tickets';
 import { colors, radii } from '@/lib/theme';
 
@@ -21,6 +22,7 @@ export default function TicketsScreen() {
   const router = useRouter();
   const ticketsQuery = useTickets();
   const ordersQuery = useOrders();
+  const display = useTenantDisplay();
   const [tab, setTab] = useState<'active' | 'past'>('active');
 
   const tickets = ticketsQuery.data ?? [];
@@ -128,7 +130,10 @@ export default function TicketsScreen() {
               TOTAL
             </AppText>
             <AppText variant="label">
-              {formatTHB(paidOrders.reduce((sum, order) => sum + order.amountMinorUnits, 0))}
+              {formatMoney(
+                paidOrders.reduce((sum, order) => sum + order.amountMinorUnits, 0),
+                display.currency,
+              )}
             </AppText>
           </View>
           <ChevronRight size={18} color={colors.muted} />
@@ -148,7 +153,8 @@ export default function TicketsScreen() {
         {active[0] ? (
           <View style={styles.hintRow}>
             <AppText variant="caption" color={colors.muted} style={styles.hintText}>
-              NEXT ENTRY · {formatMatchDate(active[0].kickoffAt).toUpperCase()} ·{' '}
+              NEXT ENTRY ·{' '}
+              {formatMatchDate(active[0].kickoffAt, { timezone: display.timezone }).toUpperCase()} ·{' '}
               {active[0].venue.toUpperCase()}
             </AppText>
           </View>

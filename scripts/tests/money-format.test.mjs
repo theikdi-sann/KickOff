@@ -115,3 +115,23 @@ test('MF-6 the receipt formats with formatMoney and the order currency', () => {
   assert.doesNotMatch(receipt, /\/ *100\b/, 'no hardcoded scale division');
   assert.doesNotMatch(receipt, /"THB /, 'no hardcoded THB label');
 });
+
+test('MF-7 the receipt renders dates in the club time zone', () => {
+  const receipt = read(RECEIPT);
+
+  assert.match(
+    receipt,
+    /from\("tenants"\)[\s\S]{0,120}timezone/,
+    'the receipt must read the club time zone',
+  );
+  assert.match(
+    receipt,
+    /longDate\([^)]*timezone\)/,
+    'the receipt must format its dates in the club time zone',
+  );
+  assert.doesNotMatch(
+    receipt,
+    /timeZone: "Asia\/Bangkok"/,
+    'the receipt must not pin Bangkok — the club says where it lives',
+  );
+});

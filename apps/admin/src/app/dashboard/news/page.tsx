@@ -27,12 +27,14 @@ import {
   useUpdateNews,
   type AdminNewsInput,
 } from "@/lib/queries/news";
+import { useTenantDisplay } from "@/lib/queries/tenant";
 import { cn } from "@/lib/utils";
 import { formatFullDate, type NewsCategory, type NewsDto } from "@kickoff/shared";
 
 const categories: NewsCategory[] = ["Club News", "Match Report", "Announcement"];
 
 export default function NewsPage() {
+  const display = useTenantDisplay();
   const { toast } = useToast();
   const { data: news, isLoading, error } = useNews();
   const createNews = useCreateNews();
@@ -178,7 +180,7 @@ export default function NewsPage() {
 
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-4">
                     <div className="flex items-center gap-3 text-[10px] text-slate-400">
-                      <span>{formatFullDate(item.publishedAt)}</span>
+                      <span>{formatFullDate(item.publishedAt, { timezone: display.timezone })}</span>
                       <span className="flex items-center gap-1">
                         <Clock3 size={10} />
                         {item.readMinutes} min read

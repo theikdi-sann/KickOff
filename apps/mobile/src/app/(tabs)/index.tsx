@@ -10,10 +10,10 @@ import {
 import { useRouter } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import {
-  bangkokGreeting,
+  clubGreeting,
   formatMatchDate,
   formatMatchTime,
-  formatTHB,
+  formatMoney,
 } from '@kickoff/shared';
 import { MatchCard, ResultRow } from '@/components/match-card';
 import { NewsRow } from '@/components/news-row';
@@ -31,6 +31,7 @@ import {
 import { useMatches } from '@/lib/queries/matches';
 import { useNews } from '@/lib/queries/news';
 import { useProfile } from '@/lib/queries/profile';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { useZones, useZoneAvailability } from '@/lib/queries/seats';
 import { useTickets } from '@/lib/queries/tickets';
 import { colors, radii, shadow } from '@/lib/theme';
@@ -41,6 +42,7 @@ export default function HomeScreen() {
   const matchesQuery = useMatches();
   const newsQuery = useNews();
   const ticketsQuery = useTickets();
+  const display = useTenantDisplay();
 
   const matches = matchesQuery.data ?? [];
   const news = newsQuery.data ?? [];
@@ -120,7 +122,7 @@ export default function HomeScreen() {
 
         <View style={styles.greeting}>
           <AppText variant="body" color={colors.muted}>
-            {bangkokGreeting()}, {firstName}.
+            {clubGreeting(new Date(), display.timezone)}, {firstName}.
           </AppText>
           <AppText variant="h2" style={styles.greetingTitle}>
             Are you ready for match day?
@@ -167,7 +169,7 @@ export default function HomeScreen() {
                     VS
                   </AppText>
                   <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.heroKick}>
-                    {formatMatchTime(nextMatch.kickoffAt)} KICK-OFF
+                    {formatMatchTime(nextMatch.kickoffAt, { timezone: display.timezone })} KICK-OFF
                   </AppText>
                 </View>
                 <View style={styles.heroTeam}>
@@ -192,7 +194,7 @@ export default function HomeScreen() {
                       DATE
                     </AppText>
                     <AppText variant="label" color="#FFFFFF">
-                      {formatMatchDate(nextMatch.kickoffAt)}
+                      {formatMatchDate(nextMatch.kickoffAt, { timezone: display.timezone })}
                     </AppText>
                   </View>
                 </View>
@@ -215,7 +217,7 @@ export default function HomeScreen() {
                     TICKETS FROM
                   </AppText>
                   <AppText variant="h2" color={colors.accent}>
-                    {minPrice === undefined ? 'Not on sale' : formatTHB(minPrice)}
+                    {minPrice === undefined ? 'Not on sale' : formatMoney(minPrice, display.currency)}
                   </AppText>
                 </View>
                 <View style={styles.heroButton}>
@@ -329,7 +331,7 @@ export default function HomeScreen() {
                     <Clock3 size={11} color={colors.muted} />
                     <AppText variant="caption" color={colors.muted} style={styles.newsMetaText}>
                       {featured.readMinutes} MIN READ ·{' '}
-                      {formatMatchDate(featured.publishedAt).toUpperCase()}
+                      {formatMatchDate(featured.publishedAt, { timezone: display.timezone }).toUpperCase()}
                     </AppText>
                   </View>
                 </View>

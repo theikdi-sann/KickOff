@@ -12,11 +12,12 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
-import { formatTHB, formatShortDate } from '@kickoff/shared';
+import { formatMoney, formatShortDate } from '@kickoff/shared';
 import { AppText, Card, LiveTag, PageScroll, Pill, Screen } from '@/components/ui';
 import { signOut } from '@/lib/auth';
 import { useOrders } from '@/lib/queries/orders';
 import { useProfile } from '@/lib/queries/profile';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { useTickets } from '@/lib/queries/tickets';
 import { colors, radii } from '@/lib/theme';
 
@@ -25,6 +26,7 @@ export default function ProfileScreen() {
   const profileQuery = useProfile();
   const ticketsQuery = useTickets();
   const ordersQuery = useOrders();
+  const display = useTenantDisplay();
   const profile = profileQuery.data;
   const tickets = ticketsQuery.data ?? [];
   const orders = ordersQuery.data ?? [];
@@ -89,7 +91,7 @@ export default function ProfileScreen() {
             <View style={styles.heroDivider} />
             <HeroStat value={String(orders.length)} label="ORDERS" />
             <View style={styles.heroDivider} />
-            <HeroStat value={formatTHB(spent)} label="SPENT" />
+            <HeroStat value={formatMoney(spent, display.currency)} label="SPENT" />
           </View>
         </LinearGradient>
 
@@ -102,7 +104,9 @@ export default function ProfileScreen() {
               <View style={styles.flex}>
                 <AppText variant="label">Supporter since</AppText>
                 <AppText variant="small" color={colors.muted}>
-                  {profile?.joinedAt ? formatShortDate(profile.joinedAt) : '—'}
+                  {profile?.joinedAt
+                    ? formatShortDate(profile.joinedAt, { timezone: display.timezone })
+                    : '—'}
                 </AppText>
               </View>
               <Pill label="2026/27" tone="gold" />

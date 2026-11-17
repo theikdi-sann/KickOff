@@ -108,8 +108,11 @@ packages/shared/src/
   http.ts              the shared error shape
   money.ts             money in integer minor units: the scale, the arithmetic,
                        the one formatter (`formatMoney`), self-contained
-  format.ts            dates, and `formatTHB` as THB's coat over `formatMoney`
-  greeting.ts          club-timezone greeting
+  display.ts           the club's display config: `displayFromTenant`
+                       (validated) and `PLATFORM_DISPLAY` (C8.2d)
+  format.ts            dates (club locale/timezone via `DisplayOptions`),
+                       and `formatTHB` as THB's coat over `formatMoney`
+  greeting.ts          club-timezone greeting (`clubGreeting(date, timezone)`)
   theme.ts             brand tokens
 
 supabase/

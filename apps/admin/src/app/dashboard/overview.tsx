@@ -18,10 +18,18 @@ import { Badge, EmptyState, SectionTitle, Skeleton } from "@/components/ui";
 import { useMatches, useAllZones, useMatchSalesSummaries, useZoneAvailability } from "@/lib/queries/matches";
 import { useNews } from "@/lib/queries/news";
 import { useOrders, useOrdersAggregate } from "@/lib/queries/orders";
+import { useTenantDisplay } from "@/lib/queries/tenant";
 import { cn } from "@/lib/utils";
-import { formatMatchDate, formatMatchTime, formatTHB, sellThroughPercent, summariseAvailability } from "@kickoff/shared";
+import {
+  formatMatchDate,
+  formatMatchTime,
+  formatMoney,
+  sellThroughPercent,
+  summariseAvailability,
+} from "@kickoff/shared";
 
 export function DashboardOverview() {
+  const display = useTenantDisplay();
   const matchesQuery = useMatches();
   const zonesQuery = useAllZones();
   const salesQuery = useMatchSalesSummaries();
@@ -131,7 +139,7 @@ export function DashboardOverview() {
         <StatCard
           icon={<CircleDollarSign size={17} />}
           label="Ticket revenue"
-          value={formatTHB(revenue)}
+          value={formatMoney(revenue, display.currency)}
           note="Paid orders, last 30 days"
           tone="green"
         />
@@ -177,7 +185,7 @@ export function DashboardOverview() {
                       KickOff vs {next.opponent}
                     </h2>
                     <p className="mt-1 text-xs text-emerald-50/50">
-                      {formatMatchDate(next.kickoffAt)} · {formatMatchTime(next.kickoffAt)} · {next.venue}
+                      {formatMatchDate(next.kickoffAt, { timezone: display.timezone })} · {formatMatchTime(next.kickoffAt, { timezone: display.timezone })} · {next.venue}
                     </p>
                   </div>
                   <div className="hidden rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2 text-center sm:block">
@@ -368,10 +376,10 @@ export function DashboardOverview() {
                     <p className="truncate text-xs font-semibold text-slate-800">{order.matchLabel}</p>
                     <p className="mt-0.5 text-[10px] text-slate-400">
                       {order.id.slice(-6).toUpperCase()} · {order.seats[0]?.zoneName} ·{" "}
-                      {formatMatchDate(order.createdAt)}
+                      {formatMatchDate(order.createdAt, { timezone: display.timezone })}
                     </p>
                   </div>
-                  <p className="text-xs font-semibold text-slate-800">{formatTHB(order.amountMinorUnits)}</p>
+                  <p className="text-xs font-semibold text-slate-800">{formatMoney(order.amountMinorUnits, display.currency)}</p>
                   <Badge tone={order.status === "paid" ? "green" : "muted"}>{order.status}</Badge>
                 </div>
               ))}
@@ -414,7 +422,7 @@ export function DashboardOverview() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-semibold text-slate-800">{article.title}</p>
                     <p className="mt-0.5 text-[10px] text-slate-400">
-                      {article.category} · {formatMatchDate(article.publishedAt)}
+                      {article.category} · {formatMatchDate(article.publishedAt, { timezone: display.timezone })}
                     </p>
                   </div>
                   <ChevronRight size={14} className="text-slate-300" />

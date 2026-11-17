@@ -13,6 +13,7 @@ import {
   type AdminGateInput,
 } from "@/lib/queries/gates";
 import { useMatches } from "@/lib/queries/matches";
+import { useTenantDisplay } from "@/lib/queries/tenant";
 import { useVenues } from "@/lib/queries/venues";
 import { formatMatchDate } from "@kickoff/shared";
 
@@ -33,6 +34,7 @@ function formFrom(gate: AdminGate): AdminGateInput {
 }
 
 export default function GatesPage() {
+  const display = useTenantDisplay();
   const { data: gates, isLoading, error } = useGates();
   const { data: matches } = useMatches();
   const { data: venues } = useVenues();
@@ -213,7 +215,7 @@ export default function GatesPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3.5 text-xs text-slate-500">
-                      {formatMatchDate(gate.updatedAt)}
+                      {formatMatchDate(gate.updatedAt, { timezone: display.timezone })}
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1.5">
@@ -324,7 +326,7 @@ export default function GatesPage() {
                       onChange={() => toggleMatch(match.id)}
                       className="mt-0.5"
                     />
-                    {match.opponent} · {formatMatchDate(match.kickoffAt)} ({match.status})
+                    {match.opponent} · {formatMatchDate(match.kickoffAt, { timezone: display.timezone })} ({match.status})
                   </label>
                 ))
               )}

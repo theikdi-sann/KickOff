@@ -25,7 +25,8 @@ import {
   type OrdersFilter,
 } from "@/lib/queries/orders";
 import { useOrderScanUsage } from "@/lib/queries/scan";
-import { formatShortDate, formatTHB } from "@kickoff/shared";
+import { useTenantDisplay } from "@/lib/queries/tenant";
+import { formatMoney, formatShortDate } from "@kickoff/shared";
 
 const PAGE_SIZE = 10;
 const STATUS_OPTIONS: Array<OrdersFilter["status"]> = [
@@ -37,13 +38,15 @@ const STATUS_OPTIONS: Array<OrdersFilter["status"]> = [
   "failed",
 ];
 
-const CSV_COLUMNS: CsvColumn<Record<string, unknown>>[] = [
+// The amount column names the club's currency: the export is read by a
+// human who must know which one (C8.2d).
+const csvColumns = (currency: string): CsvColumn<Record<string, unknown>>[] => [
   { key: "order", label: "Order" },
   { key: "holder", label: "Holder" },
   { key: "email", label: "Email" },
   { key: "match", label: "Match" },
   { key: "seats", label: "Seats" },
-  { key: "amount", label: "Amount THB" },
+  { key: "amount", label: `Amount ${currency}` },
   { key: "status", label: "Status" },
   { key: "created", label: "Created" },
 ];
@@ -56,6 +59,7 @@ function toneFor(status: string): "green" | "red" | "gold" | "muted" {
 }
 
 export default function TicketsPage() {
+  const display = useTenantDisplay();
   const { toast } = useToast();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<OrdersFilter["status"]>("all");
@@ -87,7 +91,7 @@ export default function TicketsPage() {
       status: order.status,
       created: order.createdAt,
     }));
-    downloadCsv(`kickoff-orders-${status}-p${page}.csv`, toCsv(rows, CSV_COLUMNS));
+    downloadCsv(`kickoff-orders-${status}-p${page}.csv`, toCsv(rows, csvColumns(display.currency)));
 
     // The export leaves the browser with supporter names and e-mail addresses.
     // Record it: who took the data out, and how much of it. If the row cannot
@@ -146,7 +150,7 @@ export default function TicketsPage() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat icon={<Wallet size={16} />} label="Revenue" value={formatTHB(aggregate.data?.revenueMinorUnits ?? 0)} />
+        <Stat icon={<Wallet size={16} />} label="Revenue" value={formatMoney(aggregate.data?.revenueMinorUnits ?? 0, display.currency)} />
         <Stat icon={<Ticket size={16} />} label="Paid orders" value={String(aggregate.data?.ordersPaid ?? 0)} />
         <Stat icon={<Ticket size={16} />} label="Tickets sold" value={String(aggregate.data?.ticketsSold ?? 0)} />
         <Stat icon={<QrCode size={16} />} label="Gate scans (30d)" value={String(aggregate.data?.scans.total ?? 0)} />
@@ -229,12 +233,12 @@ export default function TicketsPage() {
                       </p>
                     </td>
                     <td className="px-4 py-3.5 text-xs font-semibold text-slate-800">
-                      {formatTHB(order.amountMinorUnits)}
+                      {formatMoney(order.amountMinorUnits, display.currency)}
                     </td>
                     <td className="px-4 py-3.5">
                       <Badge tone={toneFor(order.status)}>{order.status.toUpperCase()}</Badge>
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-slate-500">{formatShortDate(order.createdAt)}</td>
+                    <td className="px-5 py-3.5 text-xs text-slate-500">{formatShortDate(order.createdAt, { timezone: display.timezone })}</td>
                     <td className="px-5 py-3.5 text-right">
                       <button
                         type="button"
@@ -280,7 +284,7 @@ export default function TicketsPage() {
         title="Refund this order?"
         description={
           refunding
-            ? `${formatTHB(refunding.amountMinorUnits)} will be refunded through Stripe for ${refunding.id}. Used tickets are non-refundable; use the order detail page to override with an audit reason.`
+            ? `${formatMoney(refunding.amountMinorUnits, display.currency)} will be refunded through Stripe for ${refunding.id}. Used tickets are non-refundable; use the order detail page to override with an audit reason.`
             : undefined
         }
         confirmLabel="Refund order"

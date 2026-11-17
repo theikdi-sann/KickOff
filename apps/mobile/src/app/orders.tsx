@@ -3,11 +3,12 @@ import * as WebBrowser from 'expo-web-browser';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { formatMatchTime, formatTHB, formatShortDate, type OrderDto } from '@kickoff/shared';
+import { formatMatchTime, formatMoney, formatShortDate, type OrderDto } from '@kickoff/shared';
 import { AppText, Card, EmptyState, Pill, Screen, Skeleton } from '@/components/ui';
 import { errorMessage } from '@/lib/api';
 import { useCancelOrder, useOrders } from '@/lib/queries/orders';
 import { useProfile } from '@/lib/queries/profile';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { downloadAndShareReceipt } from '@/lib/receipt';
 import { colors, radii } from '@/lib/theme';
 
@@ -15,6 +16,7 @@ const POLL_INTERVAL_MS = 2500;
 
 export default function OrdersScreen() {
   const router = useRouter();
+  const display = useTenantDisplay();
   const { checkout, order_id } = useLocalSearchParams<{ checkout?: string; order_id?: string }>();
   const ordersQuery = useOrders({
     // Keep polling only until Stripe's webhook has settled every pending order.
@@ -125,7 +127,7 @@ export default function OrdersScreen() {
           <View style={styles.flex}>
             <AppText variant="label">Lifetime ticket spend</AppText>
             <AppText variant="h2" style={styles.summaryTotal}>
-              {formatTHB(paidOrders.reduce((sum, order) => sum + order.amountMinorUnits, 0))}
+              {formatMoney(paidOrders.reduce((sum, order) => sum + order.amountMinorUnits, 0), display.currency)}
             </AppText>
           </View>
           <Pill label="THB" tone="gold" />
@@ -155,12 +157,12 @@ export default function OrdersScreen() {
                     {order.matchLabel}
                   </AppText>
                   <AppText variant="small" color={colors.muted}>
-                    Placed {formatShortDate(order.createdAt)} · {order.seats.length}{' '}
+                    Placed {formatShortDate(order.createdAt, { timezone: display.timezone })} · {order.seats.length}{' '}
                     {order.seats.length === 1 ? 'ticket' : 'tickets'}
                   </AppText>
                   {order.status === 'pending' && order.expiresAt ? (
                     <AppText variant="caption" color={colors.warning} style={styles.reserved}>
-                      Reserved until {formatMatchTime(order.expiresAt)} · pay or cancel to release
+                      Reserved until {formatMatchTime(order.expiresAt, { timezone: display.timezone })} · pay or cancel to release
                     </AppText>
                   ) : null}
                 </View>
@@ -186,7 +188,7 @@ export default function OrdersScreen() {
                       ROW {seat.row} · SEAT {seat.number}
                     </AppText>
                   </View>
-                  <AppText variant="label">{formatTHB(seat.priceMinorUnits)}</AppText>
+                  <AppText variant="label">{formatMoney(seat.priceMinorUnits, display.currency)}</AppText>
                 </View>
               ))}
 
@@ -195,7 +197,7 @@ export default function OrdersScreen() {
                   {order.status === 'paid' ? 'Total paid' : 'Total'} ·{' '}
                   {order.paymentRef ?? order.id.slice(-6).toUpperCase()}
                 </AppText>
-                <AppText variant="h3">{formatTHB(order.amountMinorUnits)}</AppText>
+                <AppText variant="h3">{formatMoney(order.amountMinorUnits, display.currency)}</AppText>
               </View>
 
               <View style={styles.actions}>

@@ -14,7 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import {
   formatFullDate,
   formatMatchTime,
-  formatTHB,
+  formatMoney,
   type MatchDto,
   type ZoneAvailabilityDto,
   type ZoneDto,
@@ -32,6 +32,7 @@ import {
 } from '@/components/ui';
 import { useMatch } from '@/lib/queries/matches';
 import { useZones, useZoneAvailability } from '@/lib/queries/seats';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function MatchDetailScreen() {
@@ -40,6 +41,7 @@ export default function MatchDetailScreen() {
   const matchQuery = useMatch(id);
   const zonesQuery = useZones(id);
   const availabilityQuery = useZoneAvailability(id);
+  const display = useTenantDisplay();
 
   const match = matchQuery.data;
   const zones = zonesQuery.data ?? [];
@@ -199,7 +201,11 @@ export default function MatchDetailScreen() {
             Match information
           </AppText>
           <View style={styles.infoGrid}>
-            <InfoTile icon={<Clock3 size={16} color={colors.primary} />} label="KICK-OFF" value={formatMatchTime(match.kickoffAt)} />
+            <InfoTile
+              icon={<Clock3 size={16} color={colors.primary} />}
+              label="KICK-OFF"
+              value={formatMatchTime(match.kickoffAt, { timezone: display.timezone })}
+            />
             <InfoTile icon={<MapPin size={16} color={colors.primary} />} label="VENUE" value={match.venue} />
             <InfoTile icon={<Users size={16} color={colors.primary} />} label="GATES OPEN" value="16:00" />
             <InfoTile icon={<ShieldCheck size={16} color={colors.primary} />} label="ENTRY" value="Gate 2" />
@@ -241,6 +247,7 @@ function MatchHero({
 }) {
   const completed = match.status === 'completed';
   const onSale = fromPriceSatang !== undefined;
+  const display = useTenantDisplay();
   return (
     <LinearGradient
       colors={match.posterColors}
@@ -287,7 +294,7 @@ function MatchHero({
                 VS
               </AppText>
               <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.heroKick}>
-                {formatMatchTime(match.kickoffAt)}
+                {formatMatchTime(match.kickoffAt, { timezone: display.timezone })}
               </AppText>
             </>
           )}
@@ -311,7 +318,7 @@ function MatchHero({
             DATE
           </AppText>
           <AppText variant="label" color="#FFFFFF">
-            {formatFullDate(match.kickoffAt)}
+            {formatFullDate(match.kickoffAt, { timezone: display.timezone })}
           </AppText>
         </View>
         <View style={styles.metaItem}>
@@ -331,7 +338,7 @@ function MatchHero({
               {onSale ? 'TICKETS FROM' : 'TICKETS'}
             </AppText>
             <AppText variant="h2" color={onSale ? colors.accent : '#FFFFFF'}>
-              {onSale ? formatTHB(fromPriceSatang) : 'Not on sale'}
+              {onSale ? formatMoney(fromPriceSatang, display.currency) : 'Not on sale'}
             </AppText>
           </View>
           <View style={styles.availablePill}>
@@ -356,6 +363,7 @@ function ZoneRow({
   onPress: () => void;
 }) {
   const soldOut = availability.availableSeats === 0;
+  const display = useTenantDisplay();
   return (
     <Pressable
       onPress={onPress}
@@ -381,7 +389,7 @@ function ZoneRow({
         </View>
       </View>
       <View style={styles.zoneRight}>
-        <AppText variant="h3">{formatTHB(zone.priceMinorUnits)}</AppText>
+        <AppText variant="h3">{formatMoney(zone.priceMinorUnits, display.currency)}</AppText>
         <AppText variant="caption" color={colors.primary} style={styles.selectText}>
           SELECT
         </AppText>

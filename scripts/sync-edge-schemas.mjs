@@ -45,20 +45,37 @@ export const CONTRACTS = [
     source: 'packages/shared/src/money.ts',
     target: 'supabase/functions/_shared/money.ts',
   },
+  {
+    // The club's display config travels with it (C8.2d): the receipt's
+    // defensive timezone fallback must be the same default the apps use,
+    // not a second literal — the copy keeps its one relative import
+    // (`./money`), which resolves to the generated money copy beside it.
+    source: 'packages/shared/src/display.ts',
+    target: 'supabase/functions/_shared/display.ts',
+  },
 ];
 
 /**
  * Renders the deployed copy from the canonical source.
  *
- * The canonical file deliberately has no relative imports, so the copy is the
- * source itself plus a "generated" header. Keeping it verbatim means a reader
- * can diff the two files by eye.
+ * The canonical file must stay portable: no import that cannot resolve
+ * inside `supabase/functions/_shared` — either no imports at all (money) or
+ * a relative import to another generated copy (display → `./money`). Two
+ * rewrites make the copy Deno's, and only two: the header, and a relative
+ * import's missing `.ts` extension (Deno requires it; TypeScript through the
+ * apps' `paths` does not accept it). Everything else stays verbatim, so a
+ * reader can diff the two files by eye.
  *
  * @param {string} canonicalSource contents of the canonical file
  * @param {string} [sourcePath] repository path of the canonical file (for the header)
  * @returns {string} the file content for the deployed copy
  */
 export function generate(canonicalSource, sourcePath = 'packages/shared/src/refund.ts') {
+  const denoImports = canonicalSource.replace(
+    /from '(\.\/[^']+?)(\.ts)?'/g,
+    (_match, spec) => `from '${spec}.ts'`,
+  );
+
   return `// GENERATED FILE — do not edit.
 // Source: ${sourcePath}
 // Regenerate: node scripts/sync-edge-schemas.mjs
@@ -67,7 +84,7 @@ export function generate(canonicalSource, sourcePath = 'packages/shared/src/refu
 // import from \`@kickoff/shared\`. It is generated from the canonical source,
 // and a contract test fails if it drifts.
 
-${canonicalSource}`;
+${denoImports}`;
 }
 
 /**

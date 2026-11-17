@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { formatMatchDate, type NewsDto } from '@kickoff/shared';
 import { AppText } from '@/components/ui';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors } from '@/lib/theme';
 
 /** Compact article row used by the home feed and the full news list. */
@@ -15,6 +16,7 @@ export function NewsRow({
   last: boolean;
   onPress: () => void;
 }) {
+  const display = useTenantDisplay();
   return (
     <Pressable
       onPress={onPress}
@@ -36,7 +38,7 @@ export function NewsRow({
           {item.title}
         </AppText>
         <AppText variant="caption" color={colors.muted} style={styles.newsMetaText}>
-          {formatMatchDate(item.publishedAt).toUpperCase()} · {item.readMinutes} MIN
+          {formatMatchDate(item.publishedAt, { timezone: display.timezone }).toUpperCase()} · {item.readMinutes} MIN
         </AppText>
       </View>
       <ChevronRight size={17} color={colors.muted} />

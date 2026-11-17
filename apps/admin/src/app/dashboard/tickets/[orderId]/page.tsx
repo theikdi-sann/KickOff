@@ -7,11 +7,13 @@ import { useState } from "react";
 import { Badge, ConfirmDialog, useToast } from "@/components/ui";
 import { invokeFunction } from "@/lib/functions";
 import { useOrder, useRefund } from "@/lib/queries/orders";
-import { formatFullDate, formatTHB } from "@kickoff/shared";
+import { useTenantDisplay } from "@/lib/queries/tenant";
+import { formatFullDate, formatMoney } from "@kickoff/shared";
 
 export default function OrderDetailPage() {
   const params = useParams<{ orderId: string }>();
   const orderId = params.orderId;
+  const display = useTenantDisplay();
   const { data: order, isLoading, error } = useOrder(orderId);
   const refund = useRefund();
   const { toast } = useToast();
@@ -33,7 +35,7 @@ export default function OrderDetailPage() {
       });
       toast({
         title: "Refund issued",
-        description: `${formatTHB(order.amountMinorUnits)} refunded for ${order.id}.`,
+        description: `${formatMoney(order.amountMinorUnits, display.currency)} refunded for ${order.id}.`,
         tone: "green",
       });
     } catch (caught) {
@@ -125,13 +127,13 @@ export default function OrderDetailPage() {
                     ticket {seat.ticketId ?? "not issued"}
                   </p>
                 </div>
-                <span className="font-semibold text-slate-700">{formatTHB(seat.priceMinorUnits)}</span>
+                <span className="font-semibold text-slate-700">{formatMoney(seat.priceMinorUnits, display.currency)}</span>
               </div>
             ))}
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
             <span className="text-xs uppercase tracking-[0.12em] text-slate-400">Total</span>
-            <span className="text-lg font-bold text-slate-900">{formatTHB(order.amountMinorUnits)}</span>
+            <span className="text-lg font-bold text-slate-900">{formatMoney(order.amountMinorUnits, display.currency)}</span>
           </div>
         </div>
 
@@ -140,8 +142,8 @@ export default function OrderDetailPage() {
             <h2 className="text-sm font-semibold text-slate-800">Payment</h2>
             <dl className="mt-3 space-y-2 text-xs">
               <Row label="Fixture" value={order.matchLabel} />
-              <Row label="Created" value={formatFullDate(order.createdAt)} />
-              <Row label="Paid" value={order.paidAt ? formatFullDate(order.paidAt) : "—"} />
+              <Row label="Created" value={formatFullDate(order.createdAt, { timezone: display.timezone })} />
+              <Row label="Paid" value={order.paidAt ? formatFullDate(order.paidAt, { timezone: display.timezone }) : "—"} />
               <Row label="Reference" value={order.paymentRef ?? "—"} />
             </dl>
           </div>
@@ -187,7 +189,7 @@ export default function OrderDetailPage() {
       <ConfirmDialog
         open={confirmingRefund}
         title="Refund this order?"
-        description={`${formatTHB(order.amountMinorUnits)} will be refunded through Stripe for ${order.id}. ${
+        description={`${formatMoney(order.amountMinorUnits, display.currency)} will be refunded through Stripe for ${order.id}. ${
           override
             ? "The used-ticket override is enabled and will be audited."
             : "Used tickets are non-refundable unless you enable the override."

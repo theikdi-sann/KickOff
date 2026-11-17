@@ -25,13 +25,15 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
 import { useRef, useState } from 'react';
-import { formatFullDate, formatMatchTime, formatTHB } from '@kickoff/shared';
+import { formatFullDate, formatMatchTime, formatMoney } from '@kickoff/shared';
 import { AppText, Pill, Screen, Skeleton } from '@/components/ui';
 import { useTicket, useTicketQr } from '@/lib/queries/tickets';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function TicketDetailScreen() {
   const router = useRouter();
+  const display = useTenantDisplay();
   // The QR only needs to be readable; don't let the screen lock at the gate.
   useKeepAwake();
   const {
@@ -82,7 +84,7 @@ export default function TicketDetailScreen() {
     );
   }
 
-  const passText = `KickOff match pass\n${ticket.matchLabel}\n${formatFullDate(ticket.kickoffAt)} · ${formatMatchTime(ticket.kickoffAt)}\n${ticket.zoneName} · Row ${ticket.row} · Seat ${ticket.number}\nHolder: ${ticket.holder}\n\nThe QR is signed and checked live at the gate.`;
+  const passText = `KickOff match pass\n${ticket.matchLabel}\n${formatFullDate(ticket.kickoffAt, { timezone: display.timezone })} · ${formatMatchTime(ticket.kickoffAt, { timezone: display.timezone })}\n${ticket.zoneName} · Row ${ticket.row} · Seat ${ticket.number}\nHolder: ${ticket.holder}\n\nThe QR is signed and checked live at the gate.`;
 
   // Share the pass as an image: capture the rendered card to a PNG and hand
   // it to the OS share sheet. Falls back to plain text when capture or
@@ -175,13 +177,13 @@ export default function TicketDetailScreen() {
 
           <View style={styles.matchBlock}>
             <AppText variant="caption" color={colors.accent} style={styles.matchLabel}>
-              {formatMatchTime(ticket.kickoffAt)} KICK-OFF · {ticket.venue.toUpperCase()}
+              {formatMatchTime(ticket.kickoffAt, { timezone: display.timezone })} KICK-OFF · {ticket.venue.toUpperCase()}
             </AppText>
             <AppText variant="title" color="#FFFFFF" style={styles.matchTitle}>
               KickOff vs {ticket.opponent}
             </AppText>
             <AppText variant="small" color="rgba(255,255,255,0.65)">
-              {formatFullDate(ticket.kickoffAt)}
+              {formatFullDate(ticket.kickoffAt, { timezone: display.timezone })}
             </AppText>
           </View>
 
@@ -267,7 +269,7 @@ export default function TicketDetailScreen() {
                 PAID
               </AppText>
               <AppText variant="label" color={colors.accent}>
-                {formatTHB(ticket.priceMinorUnits)}
+                {formatMoney(ticket.priceMinorUnits, display.currency)}
               </AppText>
             </View>
           </View>

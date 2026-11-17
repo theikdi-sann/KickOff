@@ -32,11 +32,12 @@ import {
   useScanEvents,
   useUndoScan,
 } from "@/lib/queries/scan";
+import { useTenantDisplay } from "@/lib/queries/tenant";
 import type { ScanOutcome } from "@/lib/scan-api";
 import {
   formatMatchDate,
   formatMatchTime,
-  formatTHB,
+  formatMoney,
   type ScanResultCode,
   type TicketDto,
 } from "@kickoff/shared";
@@ -85,6 +86,7 @@ function toneFor(code: DisplayCode): "green" | "gold" | "red" {
 
 export default function ScanPage() {
   const queryClient = useQueryClient();
+  const display = useTenantDisplay();
   const session = useSession();
   // Admin-only tools: the club-wide aggregate and the demo pass. A gatekeeper
   // gets the scanner, the gate log and nothing else.
@@ -336,7 +338,7 @@ export default function ScanPage() {
               </span>
               {selectedGate.kickoffAt && selectedGate.matchLabels.length === 1 ? (
                 <span className="text-slate-400">
-                  · {formatMatchDate(selectedGate.kickoffAt)} {formatMatchTime(selectedGate.kickoffAt)}
+                  · {formatMatchDate(selectedGate.kickoffAt, { timezone: display.timezone })} {formatMatchTime(selectedGate.kickoffAt, { timezone: display.timezone })}
                 </span>
               ) : null}
               <span className="text-slate-400">· window opens 2h before and closes 2h after kick-off</span>
@@ -511,7 +513,7 @@ export default function ScanPage() {
                             {event.seatLabel ? ` · ${event.zoneName} ${event.seatLabel}` : ""}
                           </p>
                           <p className="text-[10px] text-slate-400">
-                            {event.matchLabel} · {formatMatchTime(event.createdAt)}
+                            {event.matchLabel} · {formatMatchTime(event.createdAt, { timezone: display.timezone })}
                             {event.undoneAt ? " · undone" : ""}
                           </p>
                         </div>
@@ -605,9 +607,9 @@ export default function ScanPage() {
                         </div>
                         <div className="mt-2 flex items-center justify-between text-[10px] text-slate-400">
                           <span>
-                            {formatMatchDate(result.ticket.kickoffAt)} · {formatMatchTime(result.ticket.kickoffAt)}
+                            {formatMatchDate(result.ticket.kickoffAt, { timezone: display.timezone })} · {formatMatchTime(result.ticket.kickoffAt, { timezone: display.timezone })}
                           </span>
-                          <span>{formatTHB(result.ticket.priceMinorUnits)}</span>
+                          <span>{formatMoney(result.ticket.priceMinorUnits, display.currency)}</span>
                         </div>
                       </div>
                     ) : null}

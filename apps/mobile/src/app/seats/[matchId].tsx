@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   formatMatchDate,
   formatMatchTime,
-  formatTHB,
+  formatMoney,
   MAX_SEATS_PER_ORDER,
   SEAT_HOLD_TTL_SECONDS,
   type SeatDto,
@@ -19,6 +19,7 @@ import { useCreateHold, useMyActiveHolds, useReleaseHold } from '@/lib/queries/h
 import { useMatch } from '@/lib/queries/matches';
 import { useCancelOrder, usePendingOrderSeats } from '@/lib/queries/orders';
 import { useSeatMap, useTakenSeats, useZones } from '@/lib/queries/seats';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, radii, shadow } from '@/lib/theme';
 
 /** Poll cadence for live seat availability — silent background refetches. */
@@ -30,6 +31,7 @@ const NO_TAKEN_SEATS: ReadonlySet<string> = new Set<string>();
 export default function SeatSelectionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const display = useTenantDisplay();
   const { matchId, zoneId: initialZoneId } = useLocalSearchParams<{ matchId: string; zoneId?: string }>();
   const matchQuery = useMatch(matchId);
   const zonesQuery = useZones(matchId);
@@ -86,7 +88,7 @@ export default function SeatSelectionScreen() {
   const reservedNotice = pendingCount
     ? `${pendingCount} ${pendingCount === 1 ? 'seat is' : 'seats are'} reserved for you${
         pendingExpiryMs
-          ? ` until ${formatMatchTime(new Date(pendingExpiryMs).toISOString())}`
+          ? ` until ${formatMatchTime(new Date(pendingExpiryMs).toISOString(), { timezone: display.timezone })}`
           : ''
       } — tap a gold seat to resume payment or cancel.`
     : zoneHoldCount
@@ -121,7 +123,7 @@ export default function SeatSelectionScreen() {
     ];
     Alert.alert(
       `Seat ${seat.label} is held by you`,
-      `Your hold runs until ${formatMatchTime(hold.expiresAt)}.`,
+      `Your hold runs until ${formatMatchTime(hold.expiresAt, { timezone: display.timezone })}.`,
       buttons,
     );
   };
@@ -151,7 +153,7 @@ export default function SeatSelectionScreen() {
     Alert.alert(
       `Seat ${seat.label} is reserved for you`,
       order.expiresAt
-        ? `Reserved until ${formatMatchTime(order.expiresAt)} while you finish payment.`
+        ? `Reserved until ${formatMatchTime(order.expiresAt, { timezone: display.timezone })} while you finish payment.`
         : 'Your pending order still holds this seat.',
       buttons,
     );
@@ -261,7 +263,7 @@ export default function SeatSelectionScreen() {
                 KICK-OFF
               </AppText>
               <AppText variant="label">
-                {formatMatchDate(match.kickoffAt)} · {formatMatchTime(match.kickoffAt)}
+                {formatMatchDate(match.kickoffAt, { timezone: display.timezone })} · {formatMatchTime(match.kickoffAt, { timezone: display.timezone })}
               </AppText>
             </View>
           </View>
@@ -299,7 +301,7 @@ export default function SeatSelectionScreen() {
                     variant="caption"
                     color={item.id === zone?.id ? 'rgba(255,255,255,0.7)' : colors.muted}
                     style={styles.zoneChipPrice}>
-                    {formatTHB(item.priceMinorUnits)}
+                    {formatMoney(item.priceMinorUnits, display.currency)}
                   </AppText>
                 </View>
               </Pressable>
@@ -434,7 +436,7 @@ export default function SeatSelectionScreen() {
               {selected.length} {selected.length === 1 ? 'SEAT' : 'SEATS'} SELECTED
             </AppText>
             <AppText variant="h3" style={styles.barTotal}>
-              {formatTHB(total)}
+              {formatMoney(total, display.currency)}
             </AppText>
           </View>
           <PrimaryButton

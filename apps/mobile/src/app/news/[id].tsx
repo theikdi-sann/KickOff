@@ -6,10 +6,12 @@ import { StatusBar } from 'expo-status-bar';
 import { formatFullDate } from '@kickoff/shared';
 import { AppText, Card, EmptyState, Pill, Screen, Skeleton } from '@/components/ui';
 import { useNews, useNewsItem } from '@/lib/queries/news';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function NewsDetailScreen() {
   const router = useRouter();
+  const display = useTenantDisplay();
   const { id } = useLocalSearchParams<{ id: string }>();
   const itemQuery = useNewsItem(id);
   const newsQuery = useNews();
@@ -81,7 +83,7 @@ export default function NewsDetailScreen() {
           <View style={styles.heroBottom}>
             <Pill label={item.category.toUpperCase()} tone="dark" />
             <AppText variant="caption" color="rgba(255,255,255,0.65)" style={styles.heroMeta}>
-              {formatFullDate(item.publishedAt).toUpperCase()}
+              {formatFullDate(item.publishedAt, { timezone: display.timezone }).toUpperCase()}
             </AppText>
           </View>
         </LinearGradient>

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 import { isAdmin, requireUser } from "../_shared/auth.ts";
+import { PLATFORM_DISPLAY } from "../_shared/display.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
 import { formatMoney } from "../_shared/money.ts";
@@ -22,6 +23,7 @@ interface ReceiptSeat {
 interface ReceiptRow {
   order_id: string;
   user_id: string;
+  tenant_id: string;
   amount_minor_units: number;
   currency: string;
   status: string;
@@ -36,11 +38,11 @@ interface ReceiptRow {
   seats: ReceiptSeat[];
 }
 
-function longDate(iso: string): string {
+function longDate(iso: string, timezone: string): string {
   return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: "Asia/Bangkok",
+    timeZone: timezone,
   }).format(new Date(iso));
 }
 
@@ -62,6 +64,17 @@ async function handler(request: Request): Promise<Response> {
   if (receipt.status !== "paid" && receipt.status !== "refunded") {
     throw new AppError("conflict", "Receipts are available for paid orders only");
   }
+
+  // The club says where it lives: every wall-clock time on the receipt —
+  // kickoff and payment — renders in the club's zone (C8.2d). The platform
+  // default is the defensive fallback; the foreign key makes it unreachable.
+  const { data: club, error: clubError } = await db
+    .from("tenants")
+    .select("timezone")
+    .eq("id", receipt.tenant_id)
+    .maybeSingle<{ timezone: string }>();
+  if (clubError) throw clubError;
+  const timezone = club?.timezone ?? PLATFORM_DISPLAY.timezone;
 
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([595, 842]);
@@ -89,9 +102,9 @@ async function handler(request: Request): Promise<Response> {
     ["Order", receipt.order_id],
     ["Holder", `${receipt.holder} · ${receipt.holder_email}`],
     ["Fixture", `KickOff vs ${receipt.opponent}`],
-    ["Kick-off", longDate(receipt.kickoff_at)],
+    ["Kick-off", longDate(receipt.kickoff_at, timezone)],
     ["Venue", receipt.venue],
-    ["Paid", receipt.paid_at ? longDate(receipt.paid_at) : "—"],
+    ["Paid", receipt.paid_at ? longDate(receipt.paid_at, timezone) : "—"],
     ["Payment ref", receipt.payment_ref ?? "—"],
   ];
 

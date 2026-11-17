@@ -5,6 +5,7 @@ import { formatMatchDate, formatMatchTime, type MatchDto } from '@kickoff/shared
 import { ResultRow } from '@/components/match-card';
 import { AppText, Card, Crest, EmptyState, LiveTag, PrimaryButton, Screen, SectionHeading, Skeleton } from '@/components/ui';
 import { useMatches } from '@/lib/queries/matches';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, radii } from '@/lib/theme';
 
 /**
@@ -113,6 +114,7 @@ export default function FixturesScreen() {
 }
 
 function FixtureRow({ match, onPress }: { match: MatchDto; onPress: () => void }) {
+  const display = useTenantDisplay();
   return (
     <Pressable
       onPress={onPress}
@@ -125,8 +127,8 @@ function FixtureRow({ match, onPress }: { match: MatchDto; onPress: () => void }
         <View style={styles.rowMeta}>
           <Clock3 size={11} color={colors.muted} />
           <AppText variant="caption" color={colors.muted} style={styles.rowMetaText}>
-            {formatMatchDate(match.kickoffAt).toUpperCase()} ·{' '}
-            {formatMatchTime(match.kickoffAt)}
+            {formatMatchDate(match.kickoffAt, { timezone: display.timezone }).toUpperCase()} ·{' '}
+            {formatMatchTime(match.kickoffAt, { timezone: display.timezone })}
           </AppText>
         </View>
         <View style={styles.rowMeta}>

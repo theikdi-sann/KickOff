@@ -6,7 +6,7 @@ import { useLocalSearchParams, useRouter, usePreventRemove } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { formatMatchDate, formatMatchTime, formatTHB } from '@kickoff/shared';
+import { formatMatchDate, formatMatchTime, formatMoney } from '@kickoff/shared';
 import {
   AppText,
   Card,
@@ -21,6 +21,7 @@ import { useHold, useReleaseHold } from '@/lib/queries/holds';
 import { useMatch } from '@/lib/queries/matches';
 import { useCancelOrder, useCreateOrder, useOrder } from '@/lib/queries/orders';
 import { useProfile } from '@/lib/queries/profile';
+import { useTenantDisplay } from '@/lib/queries/tenant';
 import { useSeatMap, useZones } from '@/lib/queries/seats';
 import { supabase } from '@/lib/supabase';
 import { colors, radii } from '@/lib/theme';
@@ -30,6 +31,7 @@ const POLL_INTERVAL_MS = 2500;
 
 export default function CheckoutScreen() {
   const router = useRouter();
+  const display = useTenantDisplay();
   const params = useLocalSearchParams<{
     holdId?: string;
     matchId?: string;
@@ -187,7 +189,7 @@ export default function CheckoutScreen() {
   const orderPending = Boolean(orderId) && (!order || order.status === 'pending');
   const processing = createOrder.isPending || redirecting;
   const paymentStopped = Boolean(order && order.status !== 'pending' && order.status !== 'paid');
-  const reservedClock = expiresMs ? formatMatchTime(new Date(expiresMs).toISOString()) : '—';
+  const reservedClock = expiresMs ? formatMatchTime(new Date(expiresMs).toISOString(), { timezone: display.timezone }) : '—';
 
   const handlePay = async () => {
     if (!holdId) return;
@@ -346,7 +348,7 @@ export default function CheckoutScreen() {
             <View style={styles.flex}>
               <AppText variant="label">KickOff vs {match.opponent}</AppText>
               <AppText variant="small" color={colors.muted} style={styles.matchMeta}>
-                {formatMatchDate(match.kickoffAt)} · {formatMatchTime(match.kickoffAt)} ·{' '}
+                {formatMatchDate(match.kickoffAt, { timezone: display.timezone })} · {formatMatchTime(match.kickoffAt, { timezone: display.timezone })} ·{' '}
                 {match.venue}
               </AppText>
             </View>
@@ -486,17 +488,17 @@ export default function CheckoutScreen() {
         <Card style={styles.receipt}>
           <Line
             label={`${seats.length} × ${zone?.name ?? 'Match ticket'}`}
-            value={formatTHB(total)}
+            value={formatMoney(total, display.currency)}
           />
-          <Line label="Booking fee" value={formatTHB(0)} muted />
-          <Line label="Payment processing" value={formatTHB(0)} muted />
+          <Line label="Booking fee" value={formatMoney(0, display.currency)} muted />
+          <Line label="Payment processing" value={formatMoney(0, display.currency)} muted />
           <View style={styles.dashed} />
           <View style={styles.totalRow}>
             <View>
               <AppText variant="caption" color={colors.muted} style={styles.rowLabel}>
                 TOTAL INCLUDING VAT
               </AppText>
-              <AppText variant="h2">{formatTHB(total)}</AppText>
+              <AppText variant="h2">{formatMoney(total, display.currency)}</AppText>
             </View>
             <View style={styles.secure}>
               <ShieldCheck size={15} color={colors.primary} />
@@ -534,7 +536,7 @@ export default function CheckoutScreen() {
             TOTAL
           </AppText>
           <AppText variant="h2" style={styles.footerTotal}>
-            {formatTHB(total)}
+            {formatMoney(total, display.currency)}
           </AppText>
         </View>
         {paymentStopped ? (
@@ -554,7 +556,7 @@ export default function CheckoutScreen() {
           />
         ) : (
           <PrimaryButton
-            label={processing ? 'Confirming…' : `Pay ${formatTHB(total)}`}
+            label={processing ? 'Confirming…' : `Pay ${formatMoney(total, display.currency)}`}
             onPress={() => void handlePay()}
             loading={processing}
             disabled={holdExpired || seats.length === 0}
