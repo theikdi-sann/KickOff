@@ -271,3 +271,22 @@ test('DOC-11 PLAN.md keeps an Errors / Notes section', () => {
     'PLAN.md must keep an "Errors / Notes" section for findings that are not fixed',
   );
 });
+
+test('DOC-12 the privacy schedule and the in-app notice tell the same story', () => {
+  // `docs/PRIVACY.md` is the schedule of record (GAP-09): the in-app privacy
+  // screen describes the same erasure behaviour, so the two must agree — the
+  // fan-facing copy may never promise more or less than the schedule.
+  const privacy = read('docs/PRIVACY.md');
+  const legal = read('apps/mobile/src/app/legal/[doc].tsx');
+
+  assert.match(
+    privacy,
+    /voids unused passes/,
+    'the schedule must state the unused-pass behaviour the in-app notice promises',
+  );
+  assert.match(
+    legal,
+    /voids unused passes/,
+    'the in-app privacy notice must keep its erasure promise aligned with docs/PRIVACY.md',
+  );
+});

@@ -303,7 +303,7 @@ Sales close **15 minutes before kick-off**; unpaid orders expire after
 │   └── seed.sql
 ├── scripts/                     # seed-demo, pgTAP runner, MVP gate, tests
 ├── docs/                        # REQUIREMENTS, SRS, ARCHITECTURE, SECURITY,
-│                                #   RUNBOOK, TESTING, BRAND
+│                                #   PRIVACY, RUNBOOK, TESTING, BRAND
 │   ├── adr/                     # architecture decision records (ADR-001…004)
 │   └── archive/                 # archived plan history
 ├── maestro/flows/               # buy/QR mobile smoke
@@ -453,6 +453,7 @@ Stripe mode, and store deployment via EAS.
 | [`docs/FLOW-AUDIT.md`](docs/FLOW-AUDIT.md) | the flow-by-flow audit: 29 flows, findings and severities |
 | [`docs/FILE-INDEX.md`](docs/FILE-INDEX.md) | every file in the repository and the verdict on it |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | RLS matrix, secrets, payments, QR, audit, ops |
+| [`docs/PRIVACY.md`](docs/PRIVACY.md) | the data inventory and the retention/erasure schedule: what personal data is held, for how long, and what a fan's export and erasure cover |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | operational procedures: deploy, migrate, rotate keys, incidents, recovery |
 | [`docs/TESTING.md`](docs/TESTING.md) | every test layer, command and skip condition |
 | [`docs/BRAND.md`](docs/BRAND.md) | brand tokens and usage |
