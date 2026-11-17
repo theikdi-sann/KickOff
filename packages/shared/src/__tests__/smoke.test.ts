@@ -8,6 +8,6 @@ describe("formatTHB smoke", () => {
   });
 
   it("formats fractional baht amounts with two decimals", () => {
-    expect(formatTHB(155050)).toBe("฿1550.50");
+    expect(formatTHB(155050)).toBe("฿1,550.50");
   });
 });

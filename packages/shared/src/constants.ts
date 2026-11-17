@@ -34,6 +34,3 @@ export const CLUB_TIMEZONE = 'Asia/Bangkok';
 
 /** ISO 4217 code used for all Stripe amounts. */
 export const CURRENCY = 'thb' as const;
-
-/** Stripe expects the smallest currency unit; THB has 100 satang per baht. */
-export const SATANG_PER_BAHT = 100;

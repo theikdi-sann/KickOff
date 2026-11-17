@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { adminUpdateZoneSchema, bahtToSatang } from "@kickoff/shared";
+import { adminUpdateZoneSchema, majorToMinorUnits } from "@kickoff/shared";
 import type { AdminZoneInput } from "@/lib/queries/matches";
 
 interface ZoneCreateFormProps {
@@ -33,7 +33,9 @@ export function ZoneCreateForm({ submitting = false, onSubmit }: ZoneCreateFormP
     const parsed = adminUpdateZoneSchema.safeParse({
       name: values.name,
       description: values.description,
-      priceMinorUnits: bahtToSatang(Number(values.price)),
+      // The price field is the club's major unit; the club currency comes
+      // from `tenants` (C8.2d) — today the console serves one club, in THB.
+      priceMinorUnits: majorToMinorUnits(Number(values.price), "THB"),
       color: values.color,
       rows,
       seatsPerRow: Number(values.seatsPerRow),

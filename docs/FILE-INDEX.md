@@ -260,6 +260,7 @@ before the suite is green again.
 | `scripts/tests/logging.test.mjs` | test | covered | contract test — one logger, generated Edge copy, no raw console (LG-1…LG-4) |
 | `scripts/tests/edge-types.test.mjs` | test | covered | contract test — GAP-09.0: the Edge clients are typed against the generated schema and the deployed schema copy is generated (ET-1…ET-3) |
 | `scripts/tests/erasure.test.mjs` | test | covered | contract test — GAP-09.3 fan erasure: `delete-account` implements `docs/PRIVACY.md`'s schedule (EC-1…EC-6) |
+| `scripts/tests/money-format.test.mjs` | test | covered | contract test — C8.2a one money formatter: `money.ts` is self-contained, `formatTHB` delegates, the satang vocabulary is gone (MF-1…MF-4) |
 | `scripts/tests/mobile-resilience.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/mobile-tests.test.mjs` | test | covered | contract test — the mobile Jest harness is real and CI runs it |
 | `scripts/tests/mvp-gate.test.mjs` | test | covered | contract test — the MVP demo gate drives Stripe's current checkout (MG-1…MG-5) |

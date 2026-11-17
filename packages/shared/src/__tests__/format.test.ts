@@ -17,8 +17,8 @@ describe('formatTHB', () => {
     expect(formatTHB(0)).toBe('฿0');
   });
 
-  it('keeps two decimals for fractional baht', () => {
-    expect(formatTHB(155050)).toBe('฿1550.50');
+  it('keeps two decimals for fractional baht — grouped, unlike the old toFixed path', () => {
+    expect(formatTHB(155050)).toBe('฿1,550.50');
   });
 });
 

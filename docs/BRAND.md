@@ -110,7 +110,8 @@ packages/shared/src/theme.ts   (brand, brandCssVariables)
 ## Voice
 
 - Matchday, tickets, gates, kicks off — not "events", "vouchers", "entries".
-- Prices are THB, always displayed with the `฿` symbol, stored as integer
-  satang (`packages/shared/src/money.ts`).
+- Prices are displayed in the club's currency — THB is the brand default,
+  shown with the `฿` symbol — and stored as integer minor units
+  (`formatMoney` in `packages/shared/src/money.ts`).
 - Legal/copy lives in `apps/mobile/src/app/legal/[doc].tsx` and the mobile
   README; the admin console copy lives in each dashboard page.

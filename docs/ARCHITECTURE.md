@@ -106,7 +106,9 @@ packages/shared/src/
   mappers.ts           row → DTO
   error-codes.ts       the error vocabulary (one source for every tier)
   http.ts              the shared error shape
-  money.ts format.ts   satang formatting, dates
+  money.ts             money in integer minor units: the scale, the arithmetic,
+                       the one formatter (`formatMoney`), self-contained
+  format.ts            dates, and `formatTHB` as THB's coat over `formatMoney`
   greeting.ts          club-timezone greeting
   theme.ts             brand tokens
 
@@ -291,8 +293,9 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
   entity.
 - Queries live in `lib/queries/<domain>.ts` and are the **only** place that
   touches Supabase tables from a client.
-- Money is **integer satang** everywhere; formatting goes through
-  `shared/money.ts`. No floats, no `/100` at call sites.
+- Money is **integer minor units** everywhere; formatting goes through
+  `shared/money.ts` (`formatMoney`, scale from `minorUnitScale()`). No floats,
+  no `/100` at call sites.
 - No `console.log` — ESLint `no-console` allows only `warn`/`error`; use the
   function logger.
 

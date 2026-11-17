@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { adminUpdateZoneSchema, bahtToSatang, type ZoneDto } from "@kickoff/shared";
+import { adminUpdateZoneSchema, majorToMinorUnits, type ZoneDto } from "@kickoff/shared";
 
 interface ZoneEditorProps {
   zone: ZoneDto;
@@ -28,7 +28,9 @@ export function ZoneEditor({ zone, submitting = false, onSubmit }: ZoneEditorPro
     event.preventDefault();
     setError(null);
 
-    const priceMinorUnits = bahtToSatang(Number(values.price));
+    // The price field is the club's major unit; the club currency comes from
+    // `tenants` (C8.2d) — today the console serves one club, in THB.
+    const priceMinorUnits = majorToMinorUnits(Number(values.price), "THB");
     const parsed = adminUpdateZoneSchema.safeParse({
       name: values.name,
       description: values.description,

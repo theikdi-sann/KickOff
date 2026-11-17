@@ -1,12 +1,11 @@
-import { CLUB_TIMEZONE, SATANG_PER_BAHT } from './constants';
+import { CLUB_TIMEZONE } from './constants';
+import { formatMoney } from './money';
 
 const LOCALE = 'en-GB';
 
-/** Formats integer satang as Thai baht, e.g. 150000 → "฿1,500". */
+/** Formats THB, e.g. 150000 → "฿1,500". One formatter — this delegates. */
 export function formatTHB(satang: number): string {
-  const baht = satang / SATANG_PER_BAHT;
-  const formatted = baht % 1 === 0 ? baht.toLocaleString('en-US') : baht.toFixed(2);
-  return `฿${formatted}`;
+  return formatMoney(satang, 'THB');
 }
 
 /** e.g. "Sat 14 Nov" in Asia/Bangkok. */

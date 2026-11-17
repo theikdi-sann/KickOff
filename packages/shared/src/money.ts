@@ -1,42 +1,12 @@
-import { SATANG_PER_BAHT } from './constants';
-
-/** Converts baht to integer satang, rounding to the nearest satang. */
-export function bahtToSatang(baht: number): number {
-  if (!Number.isFinite(baht)) {
-    throw new RangeError('bahtToSatang expects a finite number');
-  }
-  return Math.round(baht * SATANG_PER_BAHT);
-}
-
-/** Converts integer satang to baht. Use only for display, never for storage. */
-export function satangToBaht(satang: number): number {
-  assertSatang(satang);
-  return satang / SATANG_PER_BAHT;
-}
-
-/** Sums satang amounts, keeping the total an integer. */
-export function sumSatang(values: readonly number[]): number {
-  return values.reduce((total, value) => total + assertSatang(value), 0);
-}
-
 /**
- * Throws unless `value` is a non-negative safe integer number of satang.
- * Returns the value so it can be used inline (`sumSatang`).
+ * Money in integer minor units — the one owner of the scale, the arithmetic
+ * and the display format.
+ *
+ * This module is deliberately self-contained (no imports): Supabase deploys
+ * only `supabase/functions/**`, so the generated Edge copy
+ * (`_shared/money.ts`) must stay valid under Deno's module resolution, and the
+ * receipt PDF formats money the same way the apps do (D-13).
  */
-export function assertSatang(value: number, label = 'amount'): number {
-  if (!Number.isSafeInteger(value)) {
-    throw new RangeError(`${label} must be an integer number of satang`);
-  }
-  if (value < 0) {
-    throw new RangeError(`${label} must not be negative`);
-  }
-  return value;
-}
-
-/** Type guard for a valid satang amount. */
-export function isSatang(value: unknown): value is number {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
-}
 
 /**
  * ISO-4217 currencies whose minor unit is not the usual two decimals.
@@ -97,4 +67,91 @@ export function minorUnitScale(currency: string): 0 | 2 | 3 {
     throw new RangeError('minorUnitScale expects a three-letter ISO-4217 code');
   }
   return MINOR_UNIT_SCALE[currency.toUpperCase()] ?? DEFAULT_MINOR_UNIT_SCALE;
+}
+
+/**
+ * The display symbol for a currency; the ISO code (with a space) when unknown.
+ *
+ * A symbol table rather than `Intl`'s `currencyDisplay`: the formatter below
+ * owns the scale, and a second source of truth for the display would be the
+ * drift the "one owner" rule exists to prevent.
+ */
+const CURRENCY_SYMBOLS: Readonly<Record<string, string>> = {
+  THB: '฿',
+  JPY: '¥',
+  USD: '$',
+  EUR: '€',
+};
+
+/** e.g. "THB" → "฿", "XYZ" → "XYZ " (the code, with the space it needs). */
+export function currencySymbol(currency: string): string {
+  if (typeof currency !== 'string' || !ISO_4217_CODE.test(currency)) {
+    throw new RangeError('currencySymbol expects a three-letter ISO-4217 code');
+  }
+  const code = currency.toUpperCase();
+  return CURRENCY_SYMBOLS[code] ?? `${code} `;
+}
+
+/**
+ * Formats integer minor units for any currency — the one money formatter.
+ *
+ * 150000 THB → "฿1,500" · 1500 JPY → "¥1,500" · 1500500 KWD → "KWD 1,500.500".
+ * The scale comes from `minorUnitScale()`, so a zero-decimal currency never
+ * renders with decimals and a three-decimal currency keeps three when the
+ * amount is fractional. Whole amounts keep the house style (no ".00").
+ *
+ * @param minorUnits integer amount in the currency's minor unit
+ * @param currency ISO-4217 code
+ * @param locale display locale (defaults to the product's `en-GB`)
+ */
+export function formatMoney(minorUnits: number, currency: string, locale = 'en-GB'): string {
+  const scale = minorUnitScale(currency);
+  const major = minorUnits / 10 ** scale;
+  const formatted = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: major % 1 === 0 ? 0 : scale,
+    maximumFractionDigits: scale,
+  }).format(major);
+  return `${currencySymbol(currency)}${formatted}`;
+}
+
+/**
+ * Major unit → integer minor units for a currency
+ * (1500 THB → 150000 satang, 1500 JPY → 1500 yen), rounding to the nearest
+ * minor unit.
+ */
+export function majorToMinorUnits(major: number, currency: string): number {
+  if (!Number.isFinite(major)) {
+    throw new RangeError('majorToMinorUnits expects a finite number');
+  }
+  return Math.round(major * 10 ** minorUnitScale(currency));
+}
+
+/** Integer minor units → the major unit. Use only for display, never for storage. */
+export function toMajorUnits(minorUnits: number, currency: string): number {
+  assertMinorUnits(minorUnits);
+  return minorUnits / 10 ** minorUnitScale(currency);
+}
+
+/** Sums minor-unit amounts, keeping the total an integer. */
+export function sumMinorUnits(values: readonly number[]): number {
+  return values.reduce((total, value) => total + assertMinorUnits(value), 0);
+}
+
+/**
+ * Throws unless `value` is a non-negative safe integer number of minor units.
+ * Returns the value so it can be used inline (`sumMinorUnits`).
+ */
+export function assertMinorUnits(value: number, label = 'amount'): number {
+  if (!Number.isSafeInteger(value)) {
+    throw new RangeError(`${label} must be an integer number of minor units`);
+  }
+  if (value < 0) {
+    throw new RangeError(`${label} must not be negative`);
+  }
+  return value;
+}
+
+/** Type guard for a valid minor-unit amount. */
+export function isMinorUnits(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
