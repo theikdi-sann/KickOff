@@ -390,6 +390,7 @@ before the suite is green again.
 | `supabase/migrations/0050_rpc_nullable_args.sql` | data | reviewed | migration — GAP-09.0: `mark_order_paid`'s payment-intent and `tenant_for_stripe_account`'s account parameters say `default null`, so the generated types describe the calls the webhook legitimately makes |
 | `supabase/migrations/0051_tenant_export.sql` | data | reviewed | migration — GAP-09.4: the service-role-only `export_tenant()` — one club's full archive from a structural registry, audited (`tenant.export`), unknown club raises |
 | `supabase/migrations/0052_tenant_erase.sql` | data | reviewed | migration — GAP-09.5: `mark_tenant_offboarded()` (the human money gate, audited) and `erase_tenant()` (refuses until offboarded, purges every scoped table child-first through the scan-log maintenance path, keeps the `tenants` row as the tombstone) |
+| `supabase/migrations/0053_tenant_timezone.sql` | data | reviewed | migration — C8.2c: `tenants.timezone` (default `Asia/Bangkok`, member-readable), `provision_tenant()` gains a validated `p_timezone` against `pg_timezone_names` |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |

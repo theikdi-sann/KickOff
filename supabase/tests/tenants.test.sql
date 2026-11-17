@@ -5,10 +5,11 @@
 --   * `current_tenant()` resolves the JWT claim, refuses a suspended club and
 --     ignores a malformed claim instead of raising;
 --   * `minor_units()` agrees with the shared scale for every currency;
---   * `provision_tenant()` is idempotent and service-role only;
+--   * `provision_tenant()` is idempotent, service-role only and validates
+--     the club's time zone (0053);
 --   * `tenants` is read-only for members (no write grant, no write policy).
 begin;
-select plan(23);
+select plan(27);
 
 -- ── structure ───────────────────────────────────────────────────────────────
 select has_table('public', 'tenants', 'tenants table exists');
@@ -126,7 +127,7 @@ select is(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.provision_tenant(text,text,text,text)',
+    'public.provision_tenant(text,text,text,text,text)',
     'execute'
   ),
   'provision_tenant is not callable by a member'
@@ -135,10 +136,44 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.provision_tenant(text,text,text,text)',
+    'public.provision_tenant(text,text,text,text,text)',
     'execute'
   ),
   'provision_tenant is callable by the service role'
+);
+
+-- ── the club's time zone (0053, C8.2c) ──────────────────────────────────────
+-- Every kickoff, reminder and formatted date is a wall-clock time somewhere:
+-- the club says where, so a club in London does not see 18:00 Bangkok.
+select is(
+  (select timezone from public.tenants where slug = 'kickoff'),
+  'Asia/Bangkok',
+  'the default club runs in Asia/Bangkok'
+);
+
+select is(
+  (select timezone from public.tenants where slug = 'second-fc'),
+  'Asia/Bangkok',
+  'a newly provisioned club gets the default time zone'
+);
+
+-- Two statements, not one: the outer query runs on the statement's snapshot,
+-- which cannot see a row the inner call inserts in the same statement.
+select public.provision_tenant('Zone FC', 'zone-fc', 'GBP', 'en-GB', 'Europe/London');
+
+select is(
+  (select timezone from public.tenants where slug = 'zone-fc'),
+  'Europe/London',
+  'provision_tenant sets the club time zone'
+);
+
+-- Leave the fixture count as the RLS tests below expect it (two clubs).
+delete from public.tenants where slug = 'zone-fc';
+
+select throws_ok(
+  $$select public.provision_tenant('Mars FC', 'mars-fc', 'USD', 'en-US', 'Mars/Olympus')$$,
+  '22023', null,
+  'provision_tenant refuses a time zone the database does not know'
 );
 
 -- ── RLS ─────────────────────────────────────────────────────────────────────

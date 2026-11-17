@@ -9,7 +9,7 @@ gate locally it will break the build.
 |---|---|---|
 | Workspace unit tests | `npm test` | shared schemas/format/i18n/greeting (Vitest), admin node tests, mobile Jest tests, repo script tests |
 | Typecheck + lint | `npm run check` | TypeScript across shared/mobile/admin, ESLint |
-| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning, identity split, tenancy columns, sales restructure, gate ops, tenant isolation, per-club uniques, Stripe Connect, tenant export and erase (331 assertions, 22 suites) |
+| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning, identity split, tenancy columns, sales restructure, gate ops, tenant isolation, per-club uniques, Stripe Connect, tenant export and erase (335 assertions, 22 suites) |
 | Edge Functions (unit) | `cd supabase/functions && deno test --allow-env --allow-net tests/` | HMAC, config, error mapping, metrics helpers |
 | Edge Functions (integration) | `RUN_INTEGRATION=1 deno test --allow-env --allow-net tests/` | real checkout → webhook → ticket → receipt, scan/undo |
 | Functions typecheck | `npm run functions:check` | `deno check` on every `supabase/functions/*/index.ts` |
@@ -58,13 +58,13 @@ The script prefers a local Supabase/Docker instance and falls back to running
 the same SQL against the hosted project when Docker is unavailable. It applies
 the `supabase/tests/*.sql` suites and reports pass/fail per assertion.
 
-**331 assertions across 22 suites**, verified against the local stack on
+**335 assertions across 22 suites**, verified against the local stack on
 2026-11-17: constraints, hold concurrency, hold TTL, order expiry, reschedule
 audit, RLS (auth + anonymous), scan concurrency, seat reservation, venues, the
 F-07 atomicity suite (reschedule and refund), the GAP-03a staff-role suite
 (`admin` / `gatekeeper` authority and the gate RLS boundary), the C6.1 tenant
 suite (`tenants`, `current_tenant()`, `minor_units()`,
-`provision_tenant()`), the C6.2 identity suite (`fans`, per-tenant
+`provision_tenant()` and its club time zone), the C6.2 identity suite (`fans`, per-tenant
 `staff_roles`, `staff_members`, the membership as the authority and the
 service-role promotion helper), the C6.3
 tenancy suite (`tenant_id` columns, composite foreign keys, tenant-led
@@ -75,8 +75,12 @@ join, the scan/undo audit columns and the append-only scan log), the C7.3
 isolation suite (T-01…T-24 — a cross-tenant read and a cross-tenant write
 per scoped table) and the C7.4 uniques suite (U-1…U-13 — the same name may
 exist in two clubs, never twice in one, in the exact shape the console and
-the seed write) and the C8.1 Connect suite (CN-1…CN-13 — the platform fee in
-minor units, the club a connected account belongs to, and the event ledger).
+the seed write), the C8.1 Connect suite (CN-1…CN-16 — the platform fee in
+minor units, the club a connected account belongs to, the event ledger and
+the parameters that accept null), the GAP-09 tenant-export suite (EX-0,
+ER-1…ER-7 — a club's archive covers every tenant-scoped table in the schema,
+structurally) and the GAP-09 tenant-erase suite (EE-0…EE-7 — the human money
+gate, the purge and the tombstone).
 
 Read assertions run under `set local role authenticated`: the runner's
 `postgres` session bypasses RLS, so a policy can only be proven from a role

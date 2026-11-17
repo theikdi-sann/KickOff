@@ -585,14 +585,14 @@ isOneToOne: false
                   ]
                 },"tenants": {
                   Row: {
-                    "application_fee_bps": number,"created_at": string,"currency": string,"erased_at": string | null,"id": string,"locale": string,"logo_url": string | null,"name": string,"offboarded_at": string | null,"primary_color": string,"slug": string,"status": Database["public"]['Enums']["tenant_status"],"stripe_account_id": string | null,"updated_at": string
+                    "application_fee_bps": number,"created_at": string,"currency": string,"erased_at": string | null,"id": string,"locale": string,"logo_url": string | null,"name": string,"offboarded_at": string | null,"primary_color": string,"slug": string,"status": Database["public"]['Enums']["tenant_status"],"stripe_account_id": string | null,"timezone": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "application_fee_bps"?: number,"created_at"?: string,"currency"?: string,"erased_at"?: string | null,"id"?: string,"locale"?: string,"logo_url"?: string | null,"name": string,"offboarded_at"?: string | null,"primary_color"?: string,"slug": string,"status"?: Database["public"]['Enums']["tenant_status"],"stripe_account_id"?: string | null,"updated_at"?: string
+                    "application_fee_bps"?: number,"created_at"?: string,"currency"?: string,"erased_at"?: string | null,"id"?: string,"locale"?: string,"logo_url"?: string | null,"name": string,"offboarded_at"?: string | null,"primary_color"?: string,"slug": string,"status"?: Database["public"]['Enums']["tenant_status"],"stripe_account_id"?: string | null,"timezone"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "application_fee_bps"?: number,"created_at"?: string,"currency"?: string,"erased_at"?: string | null,"id"?: string,"locale"?: string,"logo_url"?: string | null,"name"?: string,"offboarded_at"?: string | null,"primary_color"?: string,"slug"?: string,"status"?: Database["public"]['Enums']["tenant_status"],"stripe_account_id"?: string | null,"updated_at"?: string
+                    "application_fee_bps"?: number,"created_at"?: string,"currency"?: string,"erased_at"?: string | null,"id"?: string,"locale"?: string,"logo_url"?: string | null,"name"?: string,"offboarded_at"?: string | null,"primary_color"?: string,"slug"?: string,"status"?: Database["public"]['Enums']["tenant_status"],"stripe_account_id"?: string | null,"timezone"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -1009,7 +1009,7 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: number
                            },
 "provision_tenant":
-{ Args: { "p_currency"?: string,"p_locale"?: string,"p_name": string,"p_slug": string }; Returns: string
+{ Args: { "p_currency"?: string,"p_locale"?: string,"p_name": string,"p_slug": string,"p_timezone"?: string }; Returns: string
                            },
 "release_hold":
 { Args: { "p_hold_id": string }; Returns: number

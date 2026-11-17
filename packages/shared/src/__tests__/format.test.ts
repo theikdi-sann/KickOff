@@ -27,8 +27,7 @@ describe('date formatting pinned to Asia/Bangkok', () => {
     expect(formatMatchDate(KICKOFF)).toBe('Sat 14 Nov');
   });
 
-  it('formats kick-off time in 24-hour Bangkok time', () => {
-    expect(formatMatchTime(KICKOFF)).toBe('18:00');
+  it('formats kick-off time in 24-hour Bangkok time', () => {    expect(formatMatchTime(KICKOFF)).toBe('18:00');
   });
 
   it('converts UTC instants into Bangkok time', () => {
@@ -51,5 +50,34 @@ describe('date formatting pinned to Asia/Bangkok', () => {
     expect(formatMatchDateTimeRange(KICKOFF, '2026-11-14T20:00:00+07:00')).toBe(
       'Sat 14 Nov · 18:00–20:00',
     );
+  });
+});
+
+describe('club display options (0053, C8.2c)', () => {
+  // The formatters take the club's locale and time zone; the defaults are the
+  // platform constants — a default, not the truth (C8.2d passes the club's).
+  const UTC_NOON = '2026-11-14T12:00:00Z';
+
+  it('renders the same instant in the club time zone', () => {
+    // 12:00 UTC is 19:00 in Bangkok, and 12:00 in London — November is GMT
+    // (BST ended in October), which is exactly what Intl must know.
+    expect(formatMatchTime(UTC_NOON)).toBe('19:00');
+    expect(formatMatchTime(UTC_NOON, { timezone: 'Europe/London' })).toBe('12:00');
+  });
+
+  it('formats dates in the club locale', () => {
+    expect(formatShortDate(UTC_NOON)).toBe('14 Nov 2026');
+    expect(formatShortDate(UTC_NOON, { locale: 'en-US' })).toBe('Nov 14, 2026');
+  });
+
+  it('passes the club options through the date-time range', () => {
+    expect(formatMatchDateTimeRange(UTC_NOON, undefined, { timezone: 'Europe/London' })).toBe(
+      'Sat 14 Nov · 12:00',
+    );
+  });
+
+  it('keeps the platform defaults when no options are given', () => {
+    expect(formatMatchTime(UTC_NOON)).toBe('19:00');
+    expect(formatShortDate(UTC_NOON)).toBe('14 Nov 2026');
   });
 });
