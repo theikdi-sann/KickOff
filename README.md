@@ -12,7 +12,7 @@ mock data layer.
   profile, settings and push notifications.
 - **Admin console** (Next.js 16) — fixtures and seating inventory, gates,
   scanner, orders, refunds, CSV export, news, users, settings and TOTP.
-- **Backend** (Supabase) — Postgres with row-level security, 16 Edge Functions,
+- **Backend** (Supabase) — Postgres with row-level security, 17 Edge Functions,
   Stripe webhooks, signed QR passes, audit logs, scheduled reminders and a
   token-guarded metrics endpoint.
 

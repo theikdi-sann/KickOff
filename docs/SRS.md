@@ -171,8 +171,11 @@ Kickoff reminders for opted-in supporters via Expo Push; requires a dev build
 ### REQ-12/REQ-13 — Profile edit and account deletion (`shipped`)
 
 Profile updates are constrained by `profileUpdateSchema` and own-row RLS.
-Account deletion runs through the `delete-account` Edge Function, wipes own
-data only, and is audited.
+Account deletion runs through the `delete-account` Edge Function, applies the
+retention/erasure schedule (`docs/PRIVACY.md`), and is audited. The
+data-subject export (GAP-09.2, `export-user`) returns the subject's own rows
+across every club their account touches, from the inventory the schedule
+lists, and is audit-logged like the deletion.
 
 ### REQ-14 — Offline pass (`open` — `GAP-01`)
 
@@ -294,6 +297,7 @@ anon key + user JWT.
 | `send-kickoff-reminders` | scheduler secret | reminder fan-out |
 | `orders-aggregate` | admin JWT | scan/sales aggregates |
 | `cancel-order` | user JWT | cancel own pending order |
+| `export-user` | user JWT | data-subject export (GAP-09.2) — own data; another person's requires an admin |
 
 CORS is an allowlist (`ALLOWED_ORIGINS`, `ADMIN_APP_URL`); allowed headers
 mirror supabase-js plus `x-request-id` and `idempotency-key`.
