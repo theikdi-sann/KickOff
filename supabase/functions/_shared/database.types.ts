@@ -923,6 +923,9 @@ isOneToOne: false
 "expire_pending_orders":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"export_tenant":
+{ Args: { "p_tenant_id": string }; Returns: Json
+                           },
 "fail":
 { Args: Record<PropertyKey, never>; Returns: string
                            } |
