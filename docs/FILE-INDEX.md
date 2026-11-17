@@ -169,11 +169,13 @@ before the suite is green again.
 | `apps/mobile/src/components/ui.tsx` | source | reviewed | presentational component |
 | `apps/mobile/src/global.css` | config | reviewed | configuration |
 | `apps/mobile/src/lib/__tests__/auth-test.ts` | test | covered | mobile unit test — the profile mapping |
+| `apps/mobile/src/lib/__tests__/pass-cache-test.ts` | test | covered | unit test — the offline pass cache: round trip, per-ticket isolation, clearing (C10.3) |
 | `apps/mobile/src/lib/api.ts` | source | reviewed | app library |
 | `apps/mobile/src/lib/auth.ts` | source | reviewed | app library |
 | `apps/mobile/src/lib/functions.ts` | source | reviewed | app library |
 | `apps/mobile/src/lib/i18n.ts` | source | reviewed | React Query data access — `useTranslator()`: the club's locale resolves every literal key against the Thai catalog (C10.2) |
 | `apps/mobile/src/lib/notifications.ts` | source | reviewed | app library |
+| `apps/mobile/src/lib/pass-cache.ts` | source | reviewed | the offline pass (GAP-01): records the signed payload and the ticket row verbatim, injectable storage, cleared on sign-out |
 | `apps/mobile/src/lib/queries/holds.ts` | source | reviewed | React Query data access |
 | `apps/mobile/src/lib/queries/matches.ts` | source | reviewed | React Query data access |
 | `apps/mobile/src/lib/queries/news.ts` | source | reviewed | React Query data access |
@@ -278,6 +280,7 @@ before the suite is green again.
 | `scripts/tests/money-format.test.mjs` | test | covered | contract test — one money formatter and its Edge copies: `money.ts` self-contained, `formatTHB` delegates, satang vocabulary gone, the receipt on the order's currency and club timezone, the generated copies fresh (MF-1…MF-7) |
 | `scripts/tests/mvp-gate.test.mjs` | test | covered | contract test — the MVP demo gate drives Stripe's current checkout (MG-1…MG-5) |
 | `scripts/tests/observability.test.mjs` | test | covered | contract test — C10.1: the recorder wiring, the 5xx boundary, the optional alert channel, the cooldown, the metrics counts, the sweep's cron + secret and the retention job (OBS-1…OBS-7) |
+| `scripts/tests/offline-pass.test.mjs` | test | covered | contract test — C10.3: the cache module, both query fallbacks, verbatim payloads, sign-out clearing, the offline hint (PASS-1…PASS-6) |
 | `scripts/tests/phase11.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/phaseb.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/phaseb0.test.mjs` | test | covered | contract test — fails when the repository drifts |

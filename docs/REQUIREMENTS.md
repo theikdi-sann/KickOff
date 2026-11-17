@@ -57,7 +57,7 @@ Supabase backend with Stripe payments and the Expo Push Service.
 | REQ-11 | Opt in to push notifications for kickoff reminders | shipped | dev build required (Expo Go cannot receive push) |
 | REQ-12 | Edit profile (name, phone) | shipped | `profiles` update, own-row RLS |
 | REQ-13 | Delete the account | shipped | `delete-account` function, own data only |
-| REQ-14 | Keep a digital pass usable without a network | **open** | `GAP-01` — no local cache of the signed payload yet |
+| REQ-14 | Keep a digital pass usable without a network | **shipped** | `GAP-01` closed at C10.3 — the signed payload and the ticket row are cached verbatim (`pass-cache.ts`), the screen admits when it is serving a saved pass, sign-out clears it; the scan stays server-authoritative |
 
 ### 2.2 Staff console (admin)
 
@@ -90,7 +90,7 @@ Supabase backend with Stripe payments and the Expo Push Service.
 | NFR-05 | Privileged mutations are audited | shipped | `audit_logs` writes on refund, settings, reschedule, scan |
 | NFR-06 | Deterministic CI gates on every push | shipped | `.github/workflows/ci.yml` |
 | NFR-07 | Type safety: strict TS, no `any` | shipped | `tsconfig.base.json`, ESLint `no-explicit-any` |
-| NFR-08 | Offline entry verification without a network | **open** | `GAP-01` |
+| NFR-08 | Offline entry verification without a network | **shipped** | `GAP-01` closed at C10.3 — `useTicketQr`/`useTicket` fall back to the cache with `fromCache`, proven by PASS-1…PASS-6 and the cache unit tests |
 | NFR-09 | Multi-tenant isolation | **shipped** | `GAP-02` closed at `0045` — ADR-002; C6–C7 (`0040`–`0045`), isolation suite green |
 | NFR-10 | Fine-grained staff roles beyond owner/admin | **shipped** | `GAP-03a` delivered `admin` / `gatekeeper` (`0039`, `roles.ts`); `0041` made roles per-tenant with capability flags (`staff_roles`, `staff_members`), closing GAP-03; `0047` moved every reader onto the membership and made the promotion helper write membership and claim together; `0048` dropped the legacy column and its bridge |
 | NFR-11 | Observability: structured logs, metrics, error tracking | **shipped** | `GAP-04` closed at C10.1 — `error_events` (durable, one request id across response, log and record), the optional `ALERT_WEBHOOK_URL` channel with a per-function cooldown, and `xclub-reconcile-payments` finding the C8.1 unsettled payments |
@@ -107,7 +107,7 @@ Supabase backend with Stripe payments and the Expo Push Service.
 | SC-05 | No membership/loyalty tiers | yes |
 | SC-06 | Simulated QR entry — no turnstile hardware | yes |
 | SC-07 | Free-tier hosting, limited concurrency | yes — hold/unique index, rate limits |
-| SC-08 | Offline use is limited to already-issued passes | **partially** — see `GAP-01` |
+| SC-08 | Offline use is limited to already-issued passes | **shipped** — only payloads the server already issued are cached, byte for byte; nothing is minted or re-signed locally |
 
 ## 5. Traceability
 
@@ -130,7 +130,7 @@ Requirement → implementation → the test that proves it. Tests live in
 | REQ-11 | `apps/mobile/src/lib/notifications.ts`, `apps/mobile/eas.json` | `scripts/tests/push.test.mjs` |
 | REQ-12 | `apps/mobile/src/app/profile/edit.tsx` | `scripts/tests/rls` (pgTAP `rls-auth.test.sql`) |
 | REQ-13 | `supabase/functions/delete-account` | `scripts/tests/phase11.test.mjs` |
-| REQ-14 | — | `GAP-01` (no test: no implementation) |
+| REQ-14 | `apps/mobile/src/lib/{pass-cache.ts,queries/tickets.ts}` | `scripts/tests/offline-pass.test.mjs` (PASS-1…PASS-6), `pass-cache-test.ts` |
 | REQ-15 | `apps/admin/src/app/login/*`, `lib/auth.ts` | `apps/admin/e2e/*` (Playwright) |
 | REQ-16 | `apps/admin/src/app/dashboard/matches/*` | `scripts/tests/venues.test.mjs` |
 | REQ-17 | `apps/admin/src/components/zone-editor.tsx` | `scripts/tests/venues.test.mjs` |
@@ -158,7 +158,7 @@ tracked decision, not an accident.
 
 | ID | Gap | Impact | Plan |
 |---|---|---|---|
-| **GAP-01** | **Offline pass verification.** The signed QR payload is fetched over the network, so a pass cannot be presented without connectivity. The proposal's SC-08 wants issued passes cached locally. | Supporter at a venue with poor signal cannot show the pass. | C10.3 — deliberately deferred; the system is otherwise sound. Implementation must keep the server authoritative at scan time and only cache the *payload*. |
+| **GAP-01** | **Offline pass verification.** The signed QR payload is fetched over the network, so a pass cannot be presented without connectivity. The proposal's SC-08 wants issued passes cached locally. | Supporter at a venue with poor signal cannot show the pass. | ✅ **closed at C10.3** — `pass-cache.ts` records the signed payload and the ticket row verbatim (no local re-signing: PASS-4), both queries fall back with `fromCache`, the screen shows an offline hint, sign-out clears the cache, and the scan stays server-authoritative — the gate refuses a used pass regardless of what the screen shows. |
 | **GAP-02** | **No multi-tenancy.** One club per deployment; branding, currency and staff are global. | Blocks the B2B model. | ✅ closed by C7.3 — ADR-002; `0045` ships the tenant-isolation pgTAP suite (T-01…T-24) green. |
 | **GAP-03** | **Staff roles are a fixed pair.** `GAP-03a` delivered the two-role scope (`admin` \| `gatekeeper`, migration `0039`): a gatekeeper may scan and undo only their own scans and is confined to the gate surface. | Gate staff no longer hold refund/user authority, but a club cannot define its own roles or scope a staff member to one venue/tenant. | ✅ closed by C6.2 — `0041` ships per-tenant `staff_roles` with capability flags and `staff_members(id, tenant_id)` (ADR-001). |
 | **GAP-04** | **Observability is thin.** Structured logs and metrics exist, but there is no error tracking, tracing or alerting. | Incidents are found by users, not by monitoring. | ✅ **closed at C10.1** — every 5xx is recorded with its request id (30-day retention), an optional Slack-compatible webhook pages with a 30-minute per-function cooldown, `metrics` scrapes `errors.total` and `reconciliation.unsettled`, and the cron sweep finds a paid Stripe session on an order that never settled (it records for a human; it never moves money). |

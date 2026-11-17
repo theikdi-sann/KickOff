@@ -177,10 +177,13 @@ data-subject export (GAP-09.2, `export-user`) returns the subject's own rows
 across every club their account touches, from the inventory the schedule
 lists, and is audit-logged like the deletion.
 
-### REQ-14 — Offline pass (`open` — `GAP-01`)
+### REQ-14 — Offline pass (`shipped`)
 
 Cache the signed payload locally so a pass stays presentable without a network;
-the server remains authoritative at scan time. Not yet implemented.
+the server remains authoritative at scan time. Implemented in C10.3: the
+payload and the ticket row are recorded verbatim on fetch, served back with
+`fromCache` when the network fails, admitted by an offline hint on the pass
+screen, and cleared on sign-out (PASS-1…PASS-6).
 
 ## 3. Functional requirements — staff console (admin)
 
@@ -248,7 +251,7 @@ Each NFR states the measurable target and the enforcement mechanism.
 | NFR-05 | Audited privileged mutations | refunds, settings, reschedule, scans, user changes, fixture/zone/venue/gate/news/CSV writes | `audit_logs`; `scripts/tests/audit-coverage.test.mjs` |
 | NFR-06 | Deterministic CI on every push | the CI job list is itself contract-tested | `.github/workflows/ci.yml`; `scripts/tests/ci.test.mjs` |
 | NFR-07 | Type safety | strict TS, `noUncheckedIndexedAccess` on, no `any`, no non-null assertions | `tsconfig.base.json`, ESLint, `scripts/tests/type-safety.test.mjs` |
-| NFR-08 | Offline entry verification | cached signed payload; server authoritative | **open** — `GAP-01` |
+| NFR-08 | Offline entry verification | cached signed payload; server authoritative | **shipped** — `GAP-01` closed at C10.3 |
 | NFR-09 | Multi-tenant isolation | per-club data isolation, branding, currency | **shipped** — `GAP-02` closed at `0045` (isolation suite green); ADR-002, C6–C7 |
 | NFR-10 | Fine-grained staff roles | beyond `admin`/`gatekeeper`: per-club RBAC | **partial** — `GAP-03a` shipped; `0041` made roles per-tenant with capability flags (C6.2) |
 | NFR-11 | Observability | structured logs (single JSON line, redacted), request IDs, error tracking, alerting | **shipped** — C10.1: `error_events` carries the same request id as the envelope and the log line, `ALERT_WEBHOOK_URL` pages (optional, cooldown-gated), and the reconciliation sweep finds unsettled payments; the logger itself landed in C4.11 |

@@ -1,6 +1,7 @@
 import type { User } from '@supabase/supabase-js';
 import { createLogger, staffRoleOf, type StaffRole } from '@kickoff/shared';
 import { invokeFunction } from './functions';
+import { clearPasses } from './pass-cache';
 import { supabase } from './supabase';
 
 const log = createLogger('club');
@@ -165,11 +166,15 @@ export async function resendConfirmation(email: string): Promise<void> {
 export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error(error.message);
+  // A shared device must not keep one fan's passes behind another's session
+  // (C10.3): the cache belongs to the account, not the phone.
+  await clearPasses();
 }
 
 /** Clears the local session without waiting on a network round-trip. */
 export async function resetLocalSession(): Promise<void> {
   await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+  await clearPasses();
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {

@@ -224,6 +224,11 @@ export default function TicketDetailScreen() {
                 </View>
               ) : null}
             </Pressable>
+            {qrQuery.data?.fromCache || ticket.fromCache ? (
+              <AppText variant="caption" color={colors.nightMuted} style={styles.offlineHint}>
+                {t('Offline — showing your saved pass')}
+              </AppText>
+            ) : null}
             <View style={styles.scanRow}>
               <QrIcon size={14} color={colors.accent} />
               <AppText variant="caption" color={colors.accent} style={styles.scanText}>{t('SCAN AT THE GATE · ONE ENTRY ONLY')}</AppText>
@@ -500,6 +505,10 @@ const styles = StyleSheet.create({
   },
   usedText: { fontSize: 34, letterSpacing: 3 },
   scanRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  offlineHint: {
+    textAlign: 'center',
+    marginTop: 10,
+  },
   scanText: { fontSize: 8, letterSpacing: 0.9 },
   ticketId: { fontSize: 7, letterSpacing: 0.8 },
   passStats: {

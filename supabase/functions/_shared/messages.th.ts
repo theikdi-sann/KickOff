@@ -365,4 +365,5 @@ export const th: Record<string, string> = {
   'Could not delete account': 'ไม่สามารถลบบัญชีได้',
   'Refund policy': 'นโยบายคืนเงิน',
   'Could not confirm your email.': 'ไม่สามารถยืนยันอีเมลของคุณ',
+  'Offline — showing your saved pass': 'ออฟไลน์ — แสดงบัตรที่บันทึกไว้',
 };
