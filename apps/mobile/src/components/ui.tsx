@@ -13,6 +13,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslator } from '@/lib/i18n';
 import { colors, fonts, radii, shadow } from '@/lib/theme';
 
 type TextVariant = 'display' | 'title' | 'h2' | 'h3' | 'body' | 'small' | 'caption' | 'label';
@@ -297,10 +298,11 @@ export function ScreenHeader({
 }
 
 export function LiveTag({ dark = false }: { dark?: boolean }) {
+  const t = useTranslator();
   return (
     <View style={[styles.liveTag, dark && { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
       <View style={styles.liveDot} />
-      <Text style={[styles.liveText, dark && { color: '#FFFFFF' }]}>LIVE</Text>
+      <Text style={[styles.liveText, dark && { color: '#FFFFFF' }]}>{t('LIVE')}</Text>
     </View>
   );
 }

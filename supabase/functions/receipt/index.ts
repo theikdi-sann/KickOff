@@ -5,6 +5,7 @@ import { isAdmin, requireUser } from "../_shared/auth.ts";
 import { PLATFORM_DISPLAY } from "../_shared/display.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
+import { localeFromTag, translate, type AppLocale } from "../_shared/i18n.ts";
 import { formatMoney } from "../_shared/money.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { validateBody } from "../_shared/validate.ts";
@@ -38,8 +39,8 @@ interface ReceiptRow {
   seats: ReceiptSeat[];
 }
 
-function longDate(iso: string, timezone: string): string {
-  return new Intl.DateTimeFormat("en-GB", {
+function longDate(iso: string, timezone: string, locale: AppLocale): string {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: timezone,
@@ -70,11 +71,14 @@ async function handler(request: Request): Promise<Response> {
   // default is the defensive fallback; the foreign key makes it unreachable.
   const { data: club, error: clubError } = await db
     .from("tenants")
-    .select("timezone")
+    .select("timezone, locale")
     .eq("id", receipt.tenant_id)
-    .maybeSingle<{ timezone: string }>();
+    .maybeSingle<{ timezone: string; locale: string }>();
   if (clubError) throw clubError;
   const timezone = club?.timezone ?? PLATFORM_DISPLAY.timezone;
+  // The receipt is the fan's copy of the club's document: it is spelled in
+  // the club's language and the club's date conventions (C10.2).
+  const locale = localeFromTag(club?.locale ?? PLATFORM_DISPLAY.locale);
 
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([595, 842]);
@@ -86,8 +90,10 @@ async function handler(request: Request): Promise<Response> {
 
   let y = 790;
   page.drawText("KICKOFF", { x: 48, y, size: 26, font: bold, color: green });
-  page.drawText("Matchday receipt", { x: 48, y: y - 20, size: 11, font, color: muted });
-  page.drawText(receipt.status === "refunded" ? "REFUNDED" : "PAID", {
+  page.drawText(translate(locale, "Matchday receipt"), { x: 48, y: y - 20, size: 11, font, color: muted });
+  page.drawText(
+    receipt.status === "refunded" ? translate(locale, "REFUNDED") : translate(locale, "PAID"),
+    {
     x: 470,
     y,
     size: 12,
@@ -99,13 +105,19 @@ async function handler(request: Request): Promise<Response> {
   page.drawLine({ start: { x: 48, y }, end: { x: 547, y }, thickness: 1, color: rgb(0.88, 0.9, 0.92) });
 
   const rows: Array<[string, string]> = [
-    ["Order", receipt.order_id],
-    ["Holder", `${receipt.holder} · ${receipt.holder_email}`],
-    ["Fixture", `KickOff vs ${receipt.opponent}`],
-    ["Kick-off", longDate(receipt.kickoff_at, timezone)],
-    ["Venue", receipt.venue],
-    ["Paid", receipt.paid_at ? longDate(receipt.paid_at, timezone) : "—"],
-    ["Payment ref", receipt.payment_ref ?? "—"],
+    [translate(locale, "Order"), receipt.order_id],
+    [translate(locale, "Holder"), `${receipt.holder} · ${receipt.holder_email}`],
+    [
+      translate(locale, "Fixture"),
+      translate(locale, "KickOff vs {opponent}", { opponent: receipt.opponent }),
+    ],
+    [translate(locale, "Kick-off"), longDate(receipt.kickoff_at, timezone, locale)],
+    [translate(locale, "Venue"), receipt.venue],
+    [
+      translate(locale, "Paid"),
+      receipt.paid_at ? longDate(receipt.paid_at, timezone, locale) : "—",
+    ],
+    [translate(locale, "Payment ref"), receipt.payment_ref ?? "—"],
   ];
 
   y -= 26;
@@ -116,7 +128,7 @@ async function handler(request: Request): Promise<Response> {
   }
 
   y -= 12;
-  page.drawText("Seats", { x: 48, y, size: 11, font: bold, color: ink });
+  page.drawText(translate(locale, "Seats"), { x: 48, y, size: 11, font: bold, color: ink });
   y -= 20;
   for (const seat of receipt.seats) {
     page.drawText(`${seat.zoneName} · Row ${seat.row} · Seat ${seat.number}`, {
@@ -126,7 +138,7 @@ async function handler(request: Request): Promise<Response> {
       font,
       color: ink,
     });
-    page.drawText(formatMoney(seat.priceMinorUnits, receipt.currency), {
+    page.drawText(formatMoney(seat.priceMinorUnits, receipt.currency, locale), {
       x: 430,
       y,
       size: 10,
@@ -142,14 +154,14 @@ async function handler(request: Request): Promise<Response> {
   y -= 10;
   page.drawLine({ start: { x: 48, y }, end: { x: 547, y }, thickness: 1, color: rgb(0.88, 0.9, 0.92) });
   y -= 24;
-  page.drawText("Net", { x: 360, y, size: 10, font, color: muted });
-  page.drawText(formatMoney(net, receipt.currency), { x: 450, y, size: 10, font, color: ink });
+  page.drawText(translate(locale, "Net"), { x: 360, y, size: 10, font, color: muted });
+  page.drawText(formatMoney(net, receipt.currency, locale), { x: 450, y, size: 10, font, color: ink });
   y -= 18;
-  page.drawText("VAT 7% (included)", { x: 360, y, size: 10, font, color: muted });
-  page.drawText(formatMoney(vat, receipt.currency), { x: 450, y, size: 10, font, color: ink });
+  page.drawText(translate(locale, "VAT 7% (included)"), { x: 360, y, size: 10, font, color: muted });
+  page.drawText(formatMoney(vat, receipt.currency, locale), { x: 450, y, size: 10, font, color: ink });
   y -= 22;
-  page.drawText("Total", { x: 360, y, size: 12, font: bold, color: ink });
-  page.drawText(formatMoney(receipt.amount_minor_units, receipt.currency), {
+  page.drawText(translate(locale, "Total"), { x: 360, y, size: 12, font: bold, color: ink });
+  page.drawText(formatMoney(receipt.amount_minor_units, receipt.currency, locale), {
     x: 450,
     y,
     size: 12,
@@ -159,7 +171,10 @@ async function handler(request: Request): Promise<Response> {
 
   y -= 54;
   page.drawText(
-    "Prices include Thai VAT (7%). This receipt is proof of purchase, not a tax invoice.",
+    translate(
+      locale,
+      "Prices include Thai VAT (7%). This receipt is proof of purchase, not a tax invoice.",
+    ),
     { x: 48, y, size: 8, font, color: muted },
   );
   page.drawText("KickOff Arena · Bangkok · kickoff.app", { x: 48, y: y - 14, size: 8, font, color: muted });

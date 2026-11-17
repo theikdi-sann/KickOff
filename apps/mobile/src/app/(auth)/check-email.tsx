@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText, PrimaryButton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { resendConfirmation } from '@/lib/auth';
 import { colors, radii } from '@/lib/theme';
 
@@ -12,6 +13,7 @@ import { colors, radii } from '@/lib/theme';
  * No code entry, no password sign-in — those fail until the link is opened.
  */
 export default function CheckEmailScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email?: string }>();
   const address = typeof email === 'string' ? email : '';
@@ -43,10 +45,10 @@ export default function CheckEmailScreen() {
         </Pressable>
 
         <AppText variant="display" style={styles.title}>
-          CHECK YOUR{'\n'}EMAIL.
+          {t('CHECK YOUR')}{'\n'}{t('EMAIL.')}
         </AppText>
         <AppText variant="body" color={colors.muted} style={styles.subtitle}>
-          We sent a confirmation link to{' '}
+          {t('We sent a confirmation link to')}{' '}
           <AppText variant="label" color={colors.text}>
             {address || 'your inbox'}
           </AppText>
@@ -56,12 +58,9 @@ export default function CheckEmailScreen() {
         <View style={styles.card}>
           <Mail size={22} color={colors.primary} />
           <View style={styles.cardText}>
-            <AppText variant="label" color={colors.text}>
-              One link, no code
-            </AppText>
+            <AppText variant="label" color={colors.text}>{t('One link, no code')}</AppText>
             <AppText variant="small" color={colors.muted} style={styles.cardBody}>
-              The link confirms your email and signs you in. Nothing to type —
-              if it did not arrive, check spam or send it again.
+              {t('The link confirms your email and signs you in. Nothing to type — if it did not arrive, check spam or send it again.')}
             </AppText>
           </View>
         </View>
@@ -69,7 +68,7 @@ export default function CheckEmailScreen() {
         {resent ? (
           <View style={styles.successBox}>
             <AppText variant="small" color={colors.primary}>
-              Confirmation email sent again — check your inbox.
+              {t('Confirmation email sent again — check your inbox.')}
             </AppText>
           </View>
         ) : null}
@@ -83,7 +82,7 @@ export default function CheckEmailScreen() {
         ) : null}
 
         <PrimaryButton
-          label="Resend email"
+          label={t('Resend email')}
           onPress={() => void handleResend()}
           loading={resending}
           icon={<Send size={17} color="#FFFFFF" />}
@@ -92,10 +91,8 @@ export default function CheckEmailScreen() {
 
         <Pressable onPress={() => router.replace('/login')} style={styles.loginLink}>
           <AppText variant="small" color={colors.muted}>
-            Already confirmed?{' '}
-            <AppText variant="label" color={colors.primary}>
-              Back to sign in
-            </AppText>
+            {t('Already confirmed?')}{' '}
+            <AppText variant="label" color={colors.primary}>{t('Back to sign in')}</AppText>
           </AppText>
         </Pressable>
       </ScrollView>

@@ -3,6 +3,7 @@ import { CalendarDays, ChevronRight, MapPin } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { formatMatchDate, formatMatchTime, formatMoney, type MatchDto } from '@kickoff/shared';
 import { AppText, Crest, Pill } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, fonts, radii, shadow } from '@/lib/theme';
 
@@ -15,6 +16,7 @@ export function MatchCard({
   fromPriceSatang?: number;
   onPress: () => void;
 }) {
+  const t = useTranslator();
   const display = useTenantDisplay();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.cardWrap, pressed && { opacity: 0.9 }]}>
@@ -41,15 +43,13 @@ export function MatchCard({
         <View style={styles.metaRow}>
           <CalendarDays size={12} color={colors.accent} />
           <AppText variant="small" color="rgba(255,255,255,0.82)">
-            {formatMatchDate(match.kickoffAt, { timezone: display.timezone })} · {formatMatchTime(match.kickoffAt, { timezone: display.timezone })}
+            {formatMatchDate(match.kickoffAt, { timezone: display.timezone, locale: display.locale })} · {formatMatchTime(match.kickoffAt, { timezone: display.timezone, locale: display.locale })}
           </AppText>
         </View>
         <View style={styles.priceRow}>
-          <AppText variant="caption" color="rgba(255,255,255,0.55)">
-            FROM
-          </AppText>
+          <AppText variant="caption" color="rgba(255,255,255,0.55)">{t('FROM')}</AppText>
           <AppText variant="h3" color={colors.accent}>
-            {fromPriceSatang === undefined ? '—' : formatMoney(fromPriceSatang, display.currency)}
+            {fromPriceSatang === undefined ? '—' : formatMoney(fromPriceSatang, display.currency, display.locale)}
           </AppText>
         </View>
       </LinearGradient>
@@ -69,7 +69,7 @@ export function ResultRow({ match, onPress }: { match: MatchDto; onPress?: () =>
         <View style={styles.resultMeta}>
           <MapPin size={11} color={colors.muted} />
           <AppText variant="caption" color={colors.muted} style={styles.resultMetaText}>
-            {match.homeAway === 'home' ? 'HOME' : 'AWAY'} · {formatMatchDate(match.kickoffAt, { timezone: display.timezone }).toUpperCase()}
+            {match.homeAway === 'home' ? 'HOME' : 'AWAY'} · {formatMatchDate(match.kickoffAt, { timezone: display.timezone, locale: display.locale }).toUpperCase()}
           </AppText>
         </View>
       </View>

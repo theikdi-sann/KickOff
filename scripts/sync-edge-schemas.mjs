@@ -61,6 +61,19 @@ export const CONTRACTS = [
     source: 'packages/shared/src/platform.ts',
     target: 'supabase/functions/_shared/platform.ts',
   },
+  {
+    // The translation layer travels with the receipt (C10.2): the PDF speaks
+    // the club's language exactly as the apps do. `i18n.ts` keeps one
+    // relative import (`./messages.th`), rewritten for Deno like display's.
+    source: 'packages/shared/src/i18n.ts',
+    target: 'supabase/functions/_shared/i18n.ts',
+  },
+  {
+    // The Thai catalog is data the receipt renders with — generated so a new
+    // app string and the PDF's translation cannot drift apart.
+    source: 'packages/shared/src/messages.th.ts',
+    target: 'supabase/functions/_shared/messages.th.ts',
+  },
 ];
 
 /**

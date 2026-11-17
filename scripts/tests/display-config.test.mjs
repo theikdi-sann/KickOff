@@ -121,7 +121,7 @@ test('DC-5 the greeting follows the club clock', () => {
     }
   }
   const shared = read('packages/shared/src/greeting.ts');
-  assert.match(shared, /export function clubGreeting\(date: Date, timezone: string\)/);
+  assert.match(shared, /export function clubGreeting\(date: Date, timezone: string/);
   assert.doesNotMatch(shared, /bangkokGreeting/);
 });
 

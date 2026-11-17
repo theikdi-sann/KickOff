@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { passwordSchema } from '@kickoff/shared';
 import { AppText, PrimaryButton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { applyLinkSession, updatePassword } from '@/lib/auth';
 import { colors, fonts, radii } from '@/lib/theme';
 
@@ -36,6 +37,7 @@ function readRecoveryTokens(url: string): { access?: string; refresh?: string } 
 }
 
 export default function ResetPasswordScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
@@ -108,15 +110,13 @@ export default function ResetPasswordScreen() {
         </Pressable>
 
         <AppText variant="display" style={styles.title}>
-          CHOOSE A{'\n'}NEW PASSWORD.
+          {t('CHOOSE A')}{'\n'}{t('NEW PASSWORD.')}
         </AppText>
-        <AppText variant="body" color={colors.muted} style={styles.subtitle}>
-          You opened a recovery link. Set a new password to get back to your tickets.
-        </AppText>
+        <AppText variant="body" color={colors.muted} style={styles.subtitle}>{t('You opened a recovery link. Set a new password to get back to your tickets.')}</AppText>
 
         <View style={styles.form}>
-          <Field label="NEW PASSWORD" value={password} onChangeText={setPassword} />
-          <Field label="CONFIRM PASSWORD" value={confirm} onChangeText={setConfirm} />
+          <Field label={t('NEW PASSWORD')} value={password} onChangeText={setPassword} />
+          <Field label={t('CONFIRM PASSWORD')} value={confirm} onChangeText={setConfirm} />
 
           {tokenError ? (
             <View style={styles.errorBox}>
@@ -135,7 +135,7 @@ export default function ResetPasswordScreen() {
           ) : null}
 
           <PrimaryButton
-            label="Update password"
+            label={t('Update password')}
             onPress={handleSubmit}
             loading={loading || !ready}
             icon={<ShieldCheck size={18} color="#FFFFFF" />}
@@ -156,6 +156,7 @@ function Field({
   value: string;
   onChangeText: (value: string) => void;
 }) {
+  const t = useTranslator();
   return (
     <View style={styles.field}>
       <AppText variant="caption" color={colors.muted} style={styles.fieldLabel}>
@@ -168,7 +169,7 @@ function Field({
           onChangeText={onChangeText}
           secureTextEntry
           autoComplete="new-password"
-          placeholder="At least 8 characters"
+          placeholder={t('At least 8 characters')}
           placeholderTextColor="#94A3B8"
           style={styles.input}
           selectionColor={colors.primary}

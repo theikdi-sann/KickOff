@@ -12,12 +12,14 @@ import {
 } from 'react-native';
 import { emailSchema } from '@kickoff/shared';
 import { AppText, PrimaryButton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { requestPasswordReset } from '@/lib/auth';
 import { colors, fonts, radii } from '@/lib/theme';
 
 const INVALID_EMAIL_MESSAGE = 'Enter a valid email address.';
 
 export default function ForgotPasswordScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -52,7 +54,7 @@ export default function ForgotPasswordScreen() {
         </Pressable>
 
         <AppText variant="display" style={styles.title}>
-          RESET YOUR{'\n'}PASSWORD.
+          {t('RESET YOUR')}{'\n'}{t('PASSWORD.')}
         </AppText>
         <AppText variant="body" color={colors.muted} style={styles.subtitle}>
           We&apos;ll email you a secure link. Open it on this phone to choose a new password.
@@ -60,25 +62,21 @@ export default function ForgotPasswordScreen() {
 
         {sent ? (
           <View style={styles.successBox}>
-            <AppText variant="label" color={colors.primary}>
-              Check your inbox
-            </AppText>
+            <AppText variant="label" color={colors.primary}>{t('Check your inbox')}</AppText>
             <AppText variant="small" color={colors.muted} style={styles.successText}>
-              If an account exists for {email.trim()}, a reset link is on its way.
+              {t('If an account exists for {email}, a reset link is on its way.', { email: email.trim() })}
             </AppText>
           </View>
         ) : (
           <View style={styles.form}>
             <View style={styles.field}>
-              <AppText variant="caption" color={colors.muted} style={styles.fieldLabel}>
-                EMAIL
-              </AppText>
+              <AppText variant="caption" color={colors.muted} style={styles.fieldLabel}>{t('EMAIL')}</AppText>
               <View style={styles.inputWrap}>
                 <Mail size={17} color={colors.muted} />
                 <TextInput
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="you@example.com"
+                  placeholder={t('you@example.com')}
                   placeholderTextColor="#94A3B8"
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -98,7 +96,7 @@ export default function ForgotPasswordScreen() {
             ) : null}
 
             <PrimaryButton
-              label="Send reset link"
+              label={t('Send reset link')}
               onPress={handleSubmit}
               loading={loading}
               icon={<Send size={17} color="#FFFFFF" />}

@@ -1,11 +1,16 @@
 /**
- * Time-aware greeting in the club's timezone (P11-12, C8.2c/C8.2d).
+ * Time-aware greeting in the club's timezone (P11-12, C8.2c/C8.2d, C10.2).
  *
  * Devices travel, so the greeting must follow the club's timezone rather than
  * `Date#getHours()`. `Intl` does the offset math without hard-coding an
  * offset — and the time zone is a parameter, because the club says where it
  * lives (`tenants.timezone`, migration `0053`).
+ *
+ * The phrase is English copy like any other: it resolves through the
+ * translation layer in the club's language (`tenants.locale`), so a Thai
+ * club greets in Thai and an untranslated phrase renders in English.
  */
+import { localeFromTag, translate } from './i18n';
 
 /** Hour of day (0–23) in the given zone for the given instant. */
 function clubHour(date: Date, timezone: string): number {
@@ -37,7 +42,10 @@ const GREETINGS: Record<GreetingPeriod, string> = {
   night: 'Good night',
 };
 
-/** "Good evening" — by the club's clock, not the device's. */
-export function clubGreeting(date: Date, timezone: string): string {
-  return GREETINGS[clubPeriod(date, timezone)];
+/**
+ * "Good evening" — by the club's clock, not the device's, in the club's
+ * language (the English phrase is the key; see `i18n.ts`).
+ */
+export function clubGreeting(date: Date, timezone: string, localeTag = 'en-GB'): string {
+  return translate(localeFromTag(localeTag), GREETINGS[clubPeriod(date, timezone)]);
 }

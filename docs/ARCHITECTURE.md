@@ -112,6 +112,9 @@ packages/shared/src/
                        (validated) and `PLATFORM_DISPLAY` (C8.2d)
   platform.ts          the platform claim (`app_metadata.platform`), the club
                        slug pattern and the bootstrap claim plan (C9)
+  i18n.ts              the translation layer: `translate()` (the English
+                       source string is the key) and `localeFromTag()` (C10.2)
+  messages.th.ts       the Thai catalog — coverage is a contract, not a type
   format.ts            dates (club locale/timezone via `DisplayOptions`),
                        and `formatTHB` as THB's coat over `formatMoney`
   greeting.ts          club-timezone greeting (`clubGreeting(date, timezone)`)

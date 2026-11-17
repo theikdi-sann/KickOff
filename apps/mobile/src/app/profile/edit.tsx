@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { passwordSchema, profileUpdateSchema } from '@kickoff/shared';
 import { AppText, Card, PrimaryButton, Screen, ScreenHeader, Skeleton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { errorMessage } from '@/lib/api';
 import type { AppProfile } from '@/lib/auth';
 import { useChangePassword, useProfile, useUpdateProfile } from '@/lib/queries/profile';
@@ -24,13 +25,14 @@ const PASSWORD_TOO_SHORT_MESSAGE = 'Passwords must be at least 8 characters.';
 const PASSWORDS_DO_NOT_MATCH_MESSAGE = 'The two passwords do not match.';
 
 export default function EditProfileScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const profileQuery = useProfile();
 
   if (profileQuery.isLoading) {
     return (
       <Screen>
-        <ScreenHeader title="Personal details" onBack={() => router.back()} />
+        <ScreenHeader title={t('Personal details')} onBack={() => router.back()} />
         <View style={styles.loading}>
           <Skeleton height={220} radius={18} />
           <Skeleton height={180} radius={18} />
@@ -42,7 +44,7 @@ export default function EditProfileScreen() {
   if (!profileQuery.data) {
     return (
       <Screen>
-        <ScreenHeader title="Personal details" onBack={() => router.back()} />
+        <ScreenHeader title={t('Personal details')} onBack={() => router.back()} />
         <View style={styles.loading}>
           <AppText variant="small" color={colors.muted}>
             {profileQuery.error instanceof Error
@@ -58,6 +60,7 @@ export default function EditProfileScreen() {
 }
 
 function EditForm({ profile }: { profile: AppProfile }) {
+  const t = useTranslator();
   const router = useRouter();
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
@@ -105,7 +108,7 @@ function EditForm({ profile }: { profile: AppProfile }) {
         phone: details.data.phone ?? null,
       });
       if (nextPassword) await changePassword.mutateAsync(nextPassword);
-      Alert.alert('Saved', 'Your details have been updated.');
+      Alert.alert(t('Saved'), 'Your details have been updated.');
       router.back();
     } catch (caught) {
       setError(errorMessage(caught));
@@ -114,35 +117,33 @@ function EditForm({ profile }: { profile: AppProfile }) {
 
   return (
     <Screen>
-      <ScreenHeader title="Personal details" subtitle="Account" onBack={() => router.back()} />
+      <ScreenHeader title={t('Personal details')} subtitle="Account" onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Card style={styles.card}>
-            <Field label="Full name" value={fullName} onChangeText={setFullName} autoCapitalize="words" />
+            <Field label={t('Full name')} value={fullName} onChangeText={setFullName} autoCapitalize="words" />
             <Field
-              label="Phone (optional)"
+              label={t('Phone (optional)')}
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
             />
-            <Field label="Email" value={profile.email} editable={false} />
+            <Field label={t('Email')} value={profile.email} editable={false} />
           </Card>
 
-          <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
-            CHANGE PASSWORD
-          </AppText>
+          <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>{t('CHANGE PASSWORD')}</AppText>
           <Card style={styles.card}>
             <Field
-              label="New password"
+              label={t('New password')}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              placeholder="Leave blank to keep current"
+              placeholder={t('Leave blank to keep current')}
             />
             <Field
-              label="Confirm new password"
+              label={t('Confirm new password')}
               value={confirm}
               onChangeText={setConfirm}
               secureTextEntry
@@ -156,7 +157,7 @@ function EditForm({ profile }: { profile: AppProfile }) {
           ) : null}
 
           <PrimaryButton
-            label="Save changes"
+            label={t('Save changes')}
             onPress={() => void handleSave()}
             loading={saving}
             style={styles.save}

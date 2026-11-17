@@ -16,6 +16,7 @@ import {
   Screen,
   Skeleton,
 } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { errorMessage } from '@/lib/api';
 import { useHold, useReleaseHold } from '@/lib/queries/holds';
 import { useMatch } from '@/lib/queries/matches';
@@ -30,6 +31,7 @@ import { colors, radii } from '@/lib/theme';
 const POLL_INTERVAL_MS = 2500;
 
 export default function CheckoutScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const display = useTenantDisplay();
   const params = useLocalSearchParams<{
@@ -189,7 +191,7 @@ export default function CheckoutScreen() {
   const orderPending = Boolean(orderId) && (!order || order.status === 'pending');
   const processing = createOrder.isPending || redirecting;
   const paymentStopped = Boolean(order && order.status !== 'pending' && order.status !== 'paid');
-  const reservedClock = expiresMs ? formatMatchTime(new Date(expiresMs).toISOString(), { timezone: display.timezone }) : '—';
+  const reservedClock = expiresMs ? formatMatchTime(new Date(expiresMs).toISOString(), { timezone: display.timezone, locale: display.locale }) : '—';
 
   const handlePay = async () => {
     if (!holdId) return;
@@ -260,10 +262,10 @@ export default function CheckoutScreen() {
       <Screen>
         <View style={styles.loading}>
           <EmptyState
-            title="No seats held"
-            description="Pick your seats again to start a new checkout."
+            title={t('No seats held')}
+            description={t('Pick your seats again to start a new checkout.')}
           />
-          <PrimaryButton label="Back to fixtures" onPress={() => router.replace('/(tabs)')} />
+          <PrimaryButton label={t('Back to fixtures')} onPress={() => router.replace('/(tabs)')} />
         </View>
       </Screen>
     );
@@ -274,7 +276,7 @@ export default function CheckoutScreen() {
       <Screen>
         <View style={styles.loading}>
           <EmptyState
-            title={holdQuery.isError ? 'Could not load your hold' : 'Hold expired'}
+            title={holdQuery.isError ? t('Could not load your hold') : 'Hold expired'}
             description={
               holdQuery.isError && holdQuery.error instanceof Error
                 ? holdQuery.error.message
@@ -282,7 +284,7 @@ export default function CheckoutScreen() {
             }
           />
           <PrimaryButton
-            label="Choose seats"
+            label={t('Choose seats')}
             onPress={() =>
               match?.id
                 ? router.replace({ pathname: '/match/[id]', params: { id: match.id } })
@@ -299,7 +301,7 @@ export default function CheckoutScreen() {
       <Screen>
         <View style={styles.loading}>
           <EmptyState
-            title="Fixture unavailable"
+            title={t('Fixture unavailable')}
             description={
               matchQuery.error instanceof Error
                 ? matchQuery.error.message
@@ -321,10 +323,8 @@ export default function CheckoutScreen() {
           <X size={20} color={colors.text} />
         </Pressable>
         <View style={styles.headerCenter}>
-          <AppText variant="h3">Checkout</AppText>
-          <AppText variant="caption" color={colors.muted} style={styles.headerSub}>
-            STEP 2 OF 3 · PAYMENT
-          </AppText>
+          <AppText variant="h3">{t('Checkout')}</AppText>
+          <AppText variant="caption" color={colors.muted} style={styles.headerSub}>{t('STEP 2 OF 3 · PAYMENT')}</AppText>
         </View>
         <View style={styles.timer}>
           <Timer size={13} color={holdExpired ? colors.danger : colors.warning} />
@@ -346,9 +346,9 @@ export default function CheckoutScreen() {
               </AppText>
             </View>
             <View style={styles.flex}>
-              <AppText variant="label">KickOff vs {match.opponent}</AppText>
+              <AppText variant="label">{t('KickOff vs {opponent}', { opponent: match.opponent })}</AppText>
               <AppText variant="small" color={colors.muted} style={styles.matchMeta}>
-                {formatMatchDate(match.kickoffAt, { timezone: display.timezone })} · {formatMatchTime(match.kickoffAt, { timezone: display.timezone })} ·{' '}
+                {formatMatchDate(match.kickoffAt, { timezone: display.timezone, locale: display.locale })} · {formatMatchTime(match.kickoffAt, { timezone: display.timezone, locale: display.locale })} ·{' '}
                 {match.venue}
               </AppText>
             </View>
@@ -362,21 +362,15 @@ export default function CheckoutScreen() {
 
           <View style={styles.summaryRow}>
             <View>
-              <AppText variant="caption" color={colors.muted} style={styles.rowLabel}>
-                STAND
-              </AppText>
+              <AppText variant="caption" color={colors.muted} style={styles.rowLabel}>{t('STAND')}</AppText>
               <AppText variant="label">{standName}</AppText>
             </View>
             <View>
-              <AppText variant="caption" color={colors.muted} style={styles.rowLabel}>
-                SEATS
-              </AppText>
+              <AppText variant="caption" color={colors.muted} style={styles.rowLabel}>{t('SEATS')}</AppText>
               <AppText variant="label">{seatLabels}</AppText>
             </View>
             <View style={styles.alignRight}>
-              <AppText variant="caption" color={colors.muted} style={styles.rowLabel}>
-                ROWS
-              </AppText>
+              <AppText variant="caption" color={colors.muted} style={styles.rowLabel}>{t('ROWS')}</AppText>
               <AppText variant="label">{rowLabels}</AppText>
             </View>
           </View>
@@ -386,16 +380,13 @@ export default function CheckoutScreen() {
           <Card style={styles.panel}>
             <View style={styles.panelTop}>
               <ShieldCheck size={15} color={colors.primary} />
-              <AppText variant="label">Payment pending</AppText>
+              <AppText variant="label">{t('Payment pending')}</AppText>
               <View style={styles.flex} />
               <AppText variant="label" color={colors.warning}>
-                Reserved until {reservedClock}
+                {t('Reserved until {clock}', { clock: reservedClock })}
               </AppText>
             </View>
-            <AppText variant="small" color={colors.muted} style={styles.panelText}>
-              Your seats are reserved for you while you finish paying on Stripe. Resume when you
-              are ready, or cancel to free them for other fans.
-            </AppText>
+            <AppText variant="small" color={colors.muted} style={styles.panelText}>{t('Your seats are reserved for you while you finish paying on Stripe. Resume when you are ready, or cancel to free them for other fans.')}</AppText>
             <View style={styles.panelActions}>
               <PrimaryButton
                 label={busy === 'resume' ? 'Opening…' : 'Resume payment'}
@@ -426,9 +417,7 @@ export default function CheckoutScreen() {
           </Card>
         ) : null}
 
-        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
-          ATTENDEE
-        </AppText>
+        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>{t('ATTENDEE')}</AppText>
         <Card style={styles.attendee}>
           <View style={styles.avatar}>
             <AppText variant="label" color="#FFFFFF">
@@ -438,36 +427,28 @@ export default function CheckoutScreen() {
           <View style={styles.flex}>
             <AppText variant="label">{profileQuery.data?.fullName ?? 'KickOff supporter'}</AppText>
             <AppText variant="small" color={colors.muted}>
-              {profileQuery.data?.email ?? 'Signed in'}
+              {profileQuery.data?.email ?? t('Signed in')}
             </AppText>
           </View>
-          <Pill label="TICKET HOLDER" tone="muted" />
+          <Pill label={t('TICKET HOLDER')} tone="muted" />
         </Card>
 
         <View style={styles.sectionHead}>
-          <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
-            PAYMENT METHOD
-          </AppText>
+          <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>{t('PAYMENT METHOD')}</AppText>
           <View style={styles.stripePill}>
             <Lock size={10} color={colors.primary} />
-            <AppText variant="caption" color={colors.primary} style={styles.stripeText}>
-              STRIPE TEST MODE
-            </AppText>
+            <AppText variant="caption" color={colors.primary} style={styles.stripeText}>{t('STRIPE TEST MODE')}</AppText>
           </View>
         </View>
 
         <Card style={styles.paymentCard}>
           <View style={styles.cardBrandRow}>
             <View style={styles.visa}>
-              <AppText variant="caption" color="#FFFFFF" style={styles.visaText}>
-                STRIPE
-              </AppText>
+              <AppText variant="caption" color="#FFFFFF" style={styles.visaText}>{t('STRIPE')}</AppText>
             </View>
             <View style={styles.flex}>
-              <AppText variant="label">Secure hosted checkout</AppText>
-              <AppText variant="small" color={colors.muted}>
-                Card details are entered on Stripe, never in the app.
-              </AppText>
+              <AppText variant="label">{t('Secure hosted checkout')}</AppText>
+              <AppText variant="small" color={colors.muted}>{t('Card details are entered on Stripe, never in the app.')}</AppText>
             </View>
             <View style={styles.checkCircle}>
               <ShieldCheck size={13} color="#FFFFFF" />
@@ -476,45 +457,34 @@ export default function CheckoutScreen() {
 
           <View style={styles.brandRow}>
             <Lock size={14} color={colors.muted} />
-            <AppText variant="caption" color={colors.muted} style={styles.brandText}>
-              YOU WILL BE REDIRECTED TO STRIPE. USE A TEST CARD SUCH AS 4242 4242 4242 4242.
-            </AppText>
+            <AppText variant="caption" color={colors.muted} style={styles.brandText}>{t('YOU WILL BE REDIRECTED TO STRIPE. USE A TEST CARD SUCH AS 4242 4242 4242 4242.')}</AppText>
           </View>
         </Card>
 
-        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
-          ORDER SUMMARY
-        </AppText>
+        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>{t('ORDER SUMMARY')}</AppText>
         <Card style={styles.receipt}>
           <Line
-            label={`${seats.length} × ${zone?.name ?? 'Match ticket'}`}
-            value={formatMoney(total, display.currency)}
+            label={`${seats.length} × ${zone?.name ?? t('Match ticket')}`}
+            value={formatMoney(total, display.currency, display.locale)}
           />
-          <Line label="Booking fee" value={formatMoney(0, display.currency)} muted />
-          <Line label="Payment processing" value={formatMoney(0, display.currency)} muted />
+          <Line label={t('Booking fee')} value={formatMoney(0, display.currency, display.locale)} muted />
+          <Line label={t('Payment processing')} value={formatMoney(0, display.currency, display.locale)} muted />
           <View style={styles.dashed} />
           <View style={styles.totalRow}>
             <View>
-              <AppText variant="caption" color={colors.muted} style={styles.rowLabel}>
-                TOTAL INCLUDING VAT
-              </AppText>
-              <AppText variant="h2">{formatMoney(total, display.currency)}</AppText>
+              <AppText variant="caption" color={colors.muted} style={styles.rowLabel}>{t('TOTAL INCLUDING VAT')}</AppText>
+              <AppText variant="h2">{formatMoney(total, display.currency, display.locale)}</AppText>
             </View>
             <View style={styles.secure}>
               <ShieldCheck size={15} color={colors.primary} />
-              <AppText variant="caption" color={colors.primary} style={styles.secureText}>
-                SECURE
-              </AppText>
+              <AppText variant="caption" color={colors.primary} style={styles.secureText}>{t('SECURE')}</AppText>
             </View>
           </View>
         </Card>
 
         <View style={styles.terms}>
           <Lock size={12} color={colors.muted} />
-          <AppText variant="caption" color={colors.muted} style={styles.termsText}>
-            BY PAYING YOU ACCEPT THE SINGLE-MATCH TICKET TERMS. TICKETS ARE NON-REFUNDABLE AND
-            TRANSFERABLE ONLY THROUGH THE CLUB.
-          </AppText>
+          <AppText variant="caption" color={colors.muted} style={styles.termsText}>{t('BY PAYING YOU ACCEPT THE SINGLE-MATCH TICKET TERMS. TICKETS ARE NON-REFUNDABLE AND TRANSFERABLE ONLY THROUGH THE CLUB.')}</AppText>
         </View>
 
         {payError ? (
@@ -524,24 +494,20 @@ export default function CheckoutScreen() {
         ) : null}
 
         {order && order.status !== 'pending' && order.status !== 'paid' ? (
-          <AppText variant="small" color={colors.muted} style={styles.error}>
-            Payment was not completed. Open your orders to check the status and try again.
-          </AppText>
+          <AppText variant="small" color={colors.muted} style={styles.error}>{t('Payment was not completed. Open your orders to check the status and try again.')}</AppText>
         ) : null}
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <View>
-          <AppText variant="caption" color={colors.muted} style={styles.footerLabel}>
-            TOTAL
-          </AppText>
+          <AppText variant="caption" color={colors.muted} style={styles.footerLabel}>{t('TOTAL')}</AppText>
           <AppText variant="h2" style={styles.footerTotal}>
-            {formatMoney(total, display.currency)}
+            {formatMoney(total, display.currency, display.locale)}
           </AppText>
         </View>
         {paymentStopped ? (
           <PrimaryButton
-            label="View orders"
+            label={t('View orders')}
             onPress={() => router.replace('/orders')}
             style={styles.payButton}
           />
@@ -556,7 +522,7 @@ export default function CheckoutScreen() {
           />
         ) : (
           <PrimaryButton
-            label={processing ? 'Confirming…' : `Pay ${formatMoney(total, display.currency)}`}
+            label={processing ? 'Confirming…' : `Pay ${formatMoney(total, display.currency, display.locale)}`}
             onPress={() => void handlePay()}
             loading={processing}
             disabled={holdExpired || seats.length === 0}

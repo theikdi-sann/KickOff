@@ -14,6 +14,7 @@ import {
   type ZoneDto,
 } from '@kickoff/shared';
 import { AppText, EmptyState, Pill, PrimaryButton, Screen, Skeleton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { errorMessage } from '@/lib/api';
 import { useCreateHold, useMyActiveHolds, useReleaseHold } from '@/lib/queries/holds';
 import { useMatch } from '@/lib/queries/matches';
@@ -29,6 +30,7 @@ const POLL_INTERVAL_MS = 3000;
 const NO_TAKEN_SEATS: ReadonlySet<string> = new Set<string>();
 
 export default function SeatSelectionScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const display = useTenantDisplay();
@@ -88,7 +90,7 @@ export default function SeatSelectionScreen() {
   const reservedNotice = pendingCount
     ? `${pendingCount} ${pendingCount === 1 ? 'seat is' : 'seats are'} reserved for you${
         pendingExpiryMs
-          ? ` until ${formatMatchTime(new Date(pendingExpiryMs).toISOString(), { timezone: display.timezone })}`
+          ? ` until ${formatMatchTime(new Date(pendingExpiryMs).toISOString(), { timezone: display.timezone, locale: display.locale })}`
           : ''
       } — tap a gold seat to resume payment or cancel.`
     : zoneHoldCount
@@ -104,7 +106,7 @@ export default function SeatSelectionScreen() {
   const showHoldAlert = (seat: SeatDto, hold: { holdGroupId: string; expiresAt: string }) => {
     const buttons: AlertButton[] = [
       {
-        text: 'Resume checkout',
+        text: t('Resume checkout'),
         onPress: () =>
           router.push({
             pathname: '/checkout',
@@ -112,18 +114,18 @@ export default function SeatSelectionScreen() {
           }),
       },
       {
-        text: 'Release seat',
+        text: t('Release seat'),
         style: 'destructive',
         onPress: () =>
           void releaseHold.mutateAsync(hold.holdGroupId).catch((error) =>
-            Alert.alert('Could not release the seat', errorMessage(error)),
+            Alert.alert(t('Could not release the seat'), errorMessage(error)),
           ),
       },
       { text: 'Close', style: 'cancel' },
     ];
     Alert.alert(
       `Seat ${seat.label} is held by you`,
-      `Your hold runs until ${formatMatchTime(hold.expiresAt, { timezone: display.timezone })}.`,
+      `Your hold runs until ${formatMatchTime(hold.expiresAt, { timezone: display.timezone, locale: display.locale })}.`,
       buttons,
     );
   };
@@ -135,25 +137,25 @@ export default function SeatSelectionScreen() {
     const buttons: AlertButton[] = [];
     if (order.checkoutUrl) {
       buttons.push({
-        text: 'Resume payment',
+        text: t('Resume payment'),
         onPress: () => void WebBrowser.openBrowserAsync(String(order.checkoutUrl)),
       });
     }
     buttons.push(
       {
-        text: 'Cancel order',
+        text: t('Cancel order'),
         style: 'destructive',
         onPress: () =>
           void cancelOrder
             .mutateAsync(order.orderId)
-            .catch((error) => Alert.alert('Could not cancel the order', errorMessage(error))),
+            .catch((error) => Alert.alert(t('Could not cancel the order'), errorMessage(error))),
       },
       { text: 'Close', style: 'cancel' },
     );
     Alert.alert(
       `Seat ${seat.label} is reserved for you`,
       order.expiresAt
-        ? `Reserved until ${formatMatchTime(order.expiresAt, { timezone: display.timezone })} while you finish payment.`
+        ? `Reserved until ${formatMatchTime(order.expiresAt, { timezone: display.timezone, locale: display.locale })} while you finish payment.`
         : 'Your pending order still holds this seat.',
       buttons,
     );
@@ -223,7 +225,7 @@ export default function SeatSelectionScreen() {
       <Screen>
         <View style={{ padding: 20 }}>
           <EmptyState
-            title="Fixture unavailable"
+            title={t('Fixture unavailable')}
             description={
               matchQuery.error instanceof Error ? matchQuery.error.message : 'This match could not be found.'
             }
@@ -242,20 +244,18 @@ export default function SeatSelectionScreen() {
               <ChevronLeft size={22} color={colors.text} />
             </Pressable>
             <View style={styles.headerCenter}>
-              <AppText variant="h3">Choose your seat</AppText>
+              <AppText variant="h3">{t('Choose your seat')}</AppText>
               <AppText variant="caption" color={colors.muted} style={styles.headerSub}>
-                KICKOFF VS {match.opponent.toUpperCase()}
+                {t('KICKOFF VS {opponent}', { opponent: match.opponent.toUpperCase() })}
               </AppText>
             </View>
-            <Pill label="LIVE" tone="green" />
+            <Pill label={t('LIVE')} tone="green" />
           </View>
 
           <View style={styles.matchStrip}>
             <View style={styles.stripItem}>
-              <AppText variant="caption" color={colors.muted} style={styles.stripLabel}>
-                FIXTURE
-              </AppText>
-              <AppText variant="label">KickOff vs {match.opponent}</AppText>
+              <AppText variant="caption" color={colors.muted} style={styles.stripLabel}>{t('FIXTURE')}</AppText>
+              <AppText variant="label">{t('KickOff vs {opponent}', { opponent: match.opponent })}</AppText>
             </View>
             <View style={styles.stripDivider} />
             <View style={styles.stripItem}>
@@ -263,7 +263,7 @@ export default function SeatSelectionScreen() {
                 KICK-OFF
               </AppText>
               <AppText variant="label">
-                {formatMatchDate(match.kickoffAt, { timezone: display.timezone })} · {formatMatchTime(match.kickoffAt, { timezone: display.timezone })}
+                {formatMatchDate(match.kickoffAt, { timezone: display.timezone, locale: display.locale })} · {formatMatchTime(match.kickoffAt, { timezone: display.timezone, locale: display.locale })}
               </AppText>
             </View>
           </View>
@@ -277,9 +277,7 @@ export default function SeatSelectionScreen() {
             </View>
           ) : null}
 
-          <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
-            SELECT STAND
-          </AppText>
+          <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>{t('SELECT STAND')}</AppText>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -301,7 +299,7 @@ export default function SeatSelectionScreen() {
                     variant="caption"
                     color={item.id === zone?.id ? 'rgba(255,255,255,0.7)' : colors.muted}
                     style={styles.zoneChipPrice}>
-                    {formatMoney(item.priceMinorUnits, display.currency)}
+                    {formatMoney(item.priceMinorUnits, display.currency, display.locale)}
                   </AppText>
                 </View>
               </Pressable>
@@ -320,17 +318,13 @@ export default function SeatSelectionScreen() {
                 <AppText variant="h3" color={colors.primary}>
                   {freeCount}
                 </AppText>
-                <AppText variant="caption" color={colors.muted} style={styles.availLabel}>
-                  FREE
-                </AppText>
+                <AppText variant="caption" color={colors.muted} style={styles.availLabel}>{t('FREE')}</AppText>
               </View>
             </View>
 
             <View style={styles.pitchTag}>
               <View style={styles.pitchTagLine} />
-              <AppText variant="caption" color={colors.muted} style={styles.pitchTagText}>
-                PITCH THIS WAY
-              </AppText>
+              <AppText variant="caption" color={colors.muted} style={styles.pitchTagText}>{t('PITCH THIS WAY')}</AppText>
               <View style={styles.pitchTagLine} />
             </View>
 
@@ -398,18 +392,17 @@ export default function SeatSelectionScreen() {
             </View>
 
             <View style={styles.legend}>
-              <Legend color="#FFFFFF" border={colors.line} label="Available" />
-              <Legend color={colors.primary} label="Selected" />
-              <Legend color={colors.accent} border={colors.accentSoft} label="Reserved by you" />
-              <Legend color="#DDE3DF" label="Unavailable" />
+              <Legend color="#FFFFFF" border={colors.line} label={t('Available')} />
+              <Legend color={colors.primary} label={t('Selected')} />
+              <Legend color={colors.accent} border={colors.accentSoft} label={t('Reserved by you')} />
+              <Legend color="#DDE3DF" label={t('Unavailable')} />
             </View>
           </View>
 
           <View style={styles.note}>
             <ShieldCheck size={15} color={colors.primary} />
             <AppText variant="small" color={colors.muted} style={styles.noteText}>
-              You can select up to {MAX_SEATS_PER_ORDER} seats per order. Seats are held for{' '}
-              {Math.round(SEAT_HOLD_TTL_SECONDS / 60)} minutes while you check out.
+              {t('You can select up to {max} seats per order. Seats are held for {minutes} minutes while you check out.', { max: MAX_SEATS_PER_ORDER, minutes: Math.round(SEAT_HOLD_TTL_SECONDS / 60) })}
             </AppText>
           </View>
           {holdError ? (
@@ -436,7 +429,7 @@ export default function SeatSelectionScreen() {
               {selected.length} {selected.length === 1 ? 'SEAT' : 'SEATS'} SELECTED
             </AppText>
             <AppText variant="h3" style={styles.barTotal}>
-              {formatMoney(total, display.currency)}
+              {formatMoney(total, display.currency, display.locale)}
             </AppText>
           </View>
           <PrimaryButton

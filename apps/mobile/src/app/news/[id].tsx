@@ -5,11 +5,13 @@ import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { formatFullDate } from '@kickoff/shared';
 import { AppText, Card, EmptyState, Pill, Screen, Skeleton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { useNews, useNewsItem } from '@/lib/queries/news';
 import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function NewsDetailScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const display = useTenantDisplay();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -36,7 +38,7 @@ export default function NewsDetailScreen() {
         <StatusBar style="light" />
         <View style={{ padding: 20 }}>
           <EmptyState
-            title="Article unavailable"
+            title={t('Article unavailable')}
             description={
               itemQuery.error instanceof Error
                 ? itemQuery.error.message
@@ -83,7 +85,7 @@ export default function NewsDetailScreen() {
           <View style={styles.heroBottom}>
             <Pill label={item.category.toUpperCase()} tone="dark" />
             <AppText variant="caption" color="rgba(255,255,255,0.65)" style={styles.heroMeta}>
-              {formatFullDate(item.publishedAt, { timezone: display.timezone }).toUpperCase()}
+              {formatFullDate(item.publishedAt, { timezone: display.timezone, locale: display.locale }).toUpperCase()}
             </AppText>
           </View>
         </LinearGradient>
@@ -103,7 +105,7 @@ export default function NewsDetailScreen() {
                 </AppText>
               </View>
               <View style={styles.flex}>
-                <AppText variant="label">KickOff Media</AppText>
+                <AppText variant="label">{t('KickOff Media')}</AppText>
                 <View style={styles.readRow}>
                   <Clock3 size={11} color={colors.muted} />
                   <AppText variant="caption" color={colors.muted} style={styles.readText}>
@@ -111,7 +113,7 @@ export default function NewsDetailScreen() {
                   </AppText>
                 </View>
               </View>
-              <Pill label="CLUB FEED" tone="green" />
+              <Pill label={t('CLUB FEED')} tone="green" />
             </View>
           </Card>
 
@@ -132,16 +134,12 @@ export default function NewsDetailScreen() {
             <AppText variant="h3" color={colors.primary} style={styles.quoteText}>
               “Every match is better when the stands are full.”
             </AppText>
-            <AppText variant="caption" color={colors.muted} style={styles.quoteBy}>
-              KICKOFF SUPPORTERS TRUST
-            </AppText>
+            <AppText variant="caption" color={colors.muted} style={styles.quoteBy}>{t('KICKOFF SUPPORTERS TRUST')}</AppText>
           </View>
 
           <View style={styles.divider} />
 
-          <AppText variant="h2" style={styles.moreTitle}>
-            More from the club
-          </AppText>
+          <AppText variant="h2" style={styles.moreTitle}>{t('More from the club')}</AppText>
           <View style={styles.related}>
             {related.map((article) => (
               <Pressable
@@ -166,9 +164,7 @@ export default function NewsDetailScreen() {
           </View>
 
           <Pressable onPress={() => router.replace('/(tabs)')} style={styles.backHome}>
-            <AppText variant="label" color={colors.primary}>
-              Back to home
-            </AppText>
+            <AppText variant="label" color={colors.primary}>{t('Back to home')}</AppText>
           </Pressable>
         </View>
       </ScrollView>

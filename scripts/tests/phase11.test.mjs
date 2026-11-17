@@ -56,8 +56,8 @@ test('P11-22 docs/TESTING.md lists every test layer', () => {
 test('P11-25 settings confirms destructive actions and explains the audit trail', () => {
   const source = read('apps/mobile/src/app/settings.tsx');
 
-  assert.match(source, /Alert\.alert\(\s*['"]Sign out\?['"]/, 'signing out needs a confirmation');
-  assert.match(source, /Alert\.alert\(\s*['"]Delete account\?['"]/, 'deleting the account needs a confirmation');
+  assert.match(source, /Alert\.alert\(\s*t\(['"]Sign out\?['"]\)/, 'signing out needs a confirmation');
+  assert.match(source, /Alert\.alert\(\s*t\(['"]Delete account\?['"]\)/, 'deleting the account needs a confirmation');
   assert.match(source, /style: ['"]destructive['"]/, 'destructive buttons must be marked as such');
   assert.match(source, /audit/i, 'the copy must explain that deletion is recorded for audit');
   assert.match(source, /cannot be undone/i, 'the copy must state the deletion is irreversible');

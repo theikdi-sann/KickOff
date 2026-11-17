@@ -38,7 +38,7 @@ export function NewsRow({
           {item.title}
         </AppText>
         <AppText variant="caption" color={colors.muted} style={styles.newsMetaText}>
-          {formatMatchDate(item.publishedAt, { timezone: display.timezone }).toUpperCase()} · {item.readMinutes} MIN
+          {formatMatchDate(item.publishedAt, { timezone: display.timezone, locale: display.locale }).toUpperCase()} · {item.readMinutes} MIN
         </AppText>
       </View>
       <ChevronRight size={17} color={colors.muted} />

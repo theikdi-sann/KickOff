@@ -108,7 +108,7 @@ test('MF-6 the receipt formats with formatMoney and the order currency', () => {
   assert.match(receipt, /currency: string/, 'the receipt row must carry the order currency');
   assert.match(
     receipt,
-    /formatMoney\([^,]+,\s*receipt\.currency\)/,
+    /formatMoney\([^,]+,\s*receipt\.currency(,|\))/,
     'the receipt must format with the order currency',
   );
   assert.doesNotMatch(receipt, /function thb\(/, 'the private thb() formatter is gone');
@@ -126,7 +126,7 @@ test('MF-7 the receipt renders dates in the club time zone', () => {
   );
   assert.match(
     receipt,
-    /longDate\([^)]*timezone\)/,
+    /longDate\([^)]*timezone/,
     'the receipt must format its dates in the club time zone',
   );
   assert.doesNotMatch(

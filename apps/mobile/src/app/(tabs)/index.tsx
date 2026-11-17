@@ -28,6 +28,7 @@ import {
   SectionHeading,
   Skeleton,
 } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { useMatches } from '@/lib/queries/matches';
 import { useNews } from '@/lib/queries/news';
 import { useProfile } from '@/lib/queries/profile';
@@ -37,6 +38,7 @@ import { useTickets } from '@/lib/queries/tickets';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function HomeScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const profileQuery = useProfile();
   const matchesQuery = useMatches();
@@ -98,12 +100,8 @@ export default function HomeScreen() {
               </AppText>
             </View>
             <View>
-              <AppText variant="h3" style={styles.brand}>
-                KICKOFF
-              </AppText>
-              <AppText variant="caption" color={colors.muted} style={styles.brandSub}>
-                MEMBER APP
-              </AppText>
+              <AppText variant="h3" style={styles.brand}>{t('KICKOFF')}</AppText>
+              <AppText variant="caption" color={colors.muted} style={styles.brandSub}>{t('MEMBER APP')}</AppText>
             </View>
           </View>
           <View style={styles.headerRight}>
@@ -122,11 +120,9 @@ export default function HomeScreen() {
 
         <View style={styles.greeting}>
           <AppText variant="body" color={colors.muted}>
-            {clubGreeting(new Date(), display.timezone)}, {firstName}.
+            {clubGreeting(new Date(), display.timezone, display.locale)}, {firstName}.
           </AppText>
-          <AppText variant="h2" style={styles.greetingTitle}>
-            Are you ready for match day?
-          </AppText>
+          <AppText variant="h2" style={styles.greetingTitle}>{t('Are you ready for match day?')}</AppText>
         </View>
 
         {loading ? (
@@ -146,9 +142,7 @@ export default function HomeScreen() {
               <View style={styles.heroTop}>
                 <View style={styles.livePill}>
                   <View style={styles.liveDot} />
-                  <AppText variant="caption" color="#FFFFFF" style={styles.liveText}>
-                    NEXT HOME MATCH
-                  </AppText>
+                  <AppText variant="caption" color="#FFFFFF" style={styles.liveText}>{t('NEXT HOME MATCH')}</AppText>
                 </View>
                 <View style={styles.competition}>
                   <AppText variant="caption" color="rgba(255,255,255,0.6)" style={styles.compText}>
@@ -160,16 +154,14 @@ export default function HomeScreen() {
               <View style={styles.heroTeams}>
                 <View style={styles.heroTeam}>
                   <Crest short="KO" size={54} colors={[colors.primaryBright, colors.primaryDark]} />
-                  <AppText variant="label" color="#FFFFFF">
-                    KICKOFF
-                  </AppText>
+                  <AppText variant="label" color="#FFFFFF">{t('KICKOFF')}</AppText>
                 </View>
                 <View style={styles.heroCenter}>
                   <AppText variant="display" color="#FFFFFF" style={styles.heroVs}>
                     VS
                   </AppText>
                   <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.heroKick}>
-                    {formatMatchTime(nextMatch.kickoffAt, { timezone: display.timezone })} KICK-OFF
+                    {formatMatchTime(nextMatch.kickoffAt, { timezone: display.timezone, locale: display.locale })} KICK-OFF
                   </AppText>
                 </View>
                 <View style={styles.heroTeam}>
@@ -190,20 +182,16 @@ export default function HomeScreen() {
                 <View style={styles.heroMetaItem}>
                   <CalendarDays size={14} color={colors.accent} />
                   <View>
-                    <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.metaLabel}>
-                      DATE
-                    </AppText>
+                    <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.metaLabel}>{t('DATE')}</AppText>
                     <AppText variant="label" color="#FFFFFF">
-                      {formatMatchDate(nextMatch.kickoffAt, { timezone: display.timezone })}
+                      {formatMatchDate(nextMatch.kickoffAt, { timezone: display.timezone, locale: display.locale })}
                     </AppText>
                   </View>
                 </View>
                 <View style={styles.heroMetaItem}>
                   <MapPin size={14} color={colors.accent} />
                   <View>
-                    <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.metaLabel}>
-                      VENUE
-                    </AppText>
+                    <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.metaLabel}>{t('VENUE')}</AppText>
                     <AppText variant="label" color="#FFFFFF">
                       {nextMatch.venue}
                     </AppText>
@@ -213,17 +201,13 @@ export default function HomeScreen() {
 
               <View style={styles.heroFooter}>
                 <View>
-                  <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.metaLabel}>
-                    TICKETS FROM
-                  </AppText>
+                  <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.metaLabel}>{t('TICKETS FROM')}</AppText>
                   <AppText variant="h2" color={colors.accent}>
-                    {minPrice === undefined ? 'Not on sale' : formatMoney(minPrice, display.currency)}
+                    {minPrice === undefined ? t('Not on sale') : formatMoney(minPrice, display.currency, display.locale)}
                   </AppText>
                 </View>
                 <View style={styles.heroButton}>
-                  <AppText variant="label" color={colors.ink}>
-                    Get tickets
-                  </AppText>
+                  <AppText variant="label" color={colors.ink}>{t('Get tickets')}</AppText>
                   <ArrowUpRight size={15} color={colors.ink} />
                 </View>
               </View>
@@ -232,8 +216,8 @@ export default function HomeScreen() {
         ) : (
           <Card style={styles.heroWrap}>
             <EmptyState
-              title="No fixtures on sale"
-              description="The next home fixture will appear here as soon as the club publishes it."
+              title={t('No fixtures on sale')}
+              description={t('The next home fixture will appear here as soon as the club publishes it.')}
             />
           </Card>
         )}
@@ -241,31 +225,31 @@ export default function HomeScreen() {
         <View style={styles.statsRow}>
           <Stat
             value={String(validTickets.length)}
-            label="Active passes"
+            label={t('Active passes')}
             icon={<TicketIcon size={15} color={colors.primary} />}
           />
           <Stat
             value={String(upcoming.length)}
-            label="Home fixtures"
+            label={t('Home fixtures')}
             icon={<CalendarDays size={15} color={colors.primary} />}
           />
           <Stat
             value={availabilityQuery.error ? '—' : String(seatsOnSale)}
-            label="Seats on sale"
+            label={t('Seats on sale')}
             icon={<MapPin size={15} color={colors.primary} />}
           />
         </View>
 
         <View style={styles.section}>
           <SectionHeading
-            title="Upcoming fixtures"
-            action={upcoming.length > 0 ? 'See all' : undefined}
+            title={t('Upcoming fixtures')}
+            action={upcoming.length > 0 ? t('See all') : undefined}
             onAction={() => router.push('/fixtures')}
           />
           {matchesQuery.isLoading ? (
             <Skeleton height={232} radius={22} />
           ) : upcoming.length === 0 ? (
-            <EmptyState title="No upcoming fixtures" description="Check back soon for the next match." />
+            <EmptyState title={t('No upcoming fixtures')} description={t('Check back soon for the next match.')} />
           ) : (
             <ScrollView
               horizontal
@@ -284,14 +268,14 @@ export default function HomeScreen() {
 
         <View style={styles.section}>
           <SectionHeading
-            title="Latest news"
-            action={news.length > 1 ? 'See all' : undefined}
+            title={t('Latest news')}
+            action={news.length > 1 ? t('See all') : undefined}
             onAction={() => router.push('/news')}
           />
           {newsQuery.isLoading ? (
             <Skeleton height={300} radius={22} />
           ) : !featured ? (
-            <EmptyState title="No news yet" description="Club updates will land here." />
+            <EmptyState title={t('No news yet')} description={t('Club updates will land here.')} />
           ) : (
             <>
               <Pressable
@@ -331,7 +315,7 @@ export default function HomeScreen() {
                     <Clock3 size={11} color={colors.muted} />
                     <AppText variant="caption" color={colors.muted} style={styles.newsMetaText}>
                       {featured.readMinutes} MIN READ ·{' '}
-                      {formatMatchDate(featured.publishedAt, { timezone: display.timezone }).toUpperCase()}
+                      {formatMatchDate(featured.publishedAt, { timezone: display.timezone, locale: display.locale }).toUpperCase()}
                     </AppText>
                   </View>
                 </View>
@@ -356,10 +340,10 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeading title="Recent results" />
+          <SectionHeading title={t('Recent results')} />
           <Card style={styles.resultsCard}>
             {results.length === 0 ? (
-              <EmptyState title="No results yet" description="Completed matches will be listed here." />
+              <EmptyState title={t('No results yet')} description={t('Completed matches will be listed here.')} />
             ) : (
               results.map((match, index) => (
                 <View key={match.id} style={index === results.length - 1 && { borderBottomWidth: 0 }}>
@@ -371,9 +355,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.footerNote}>
-          <AppText variant="caption" color={colors.muted} style={styles.footerText}>
-            KICKOFF · SECURE TICKETS, LIVE GATE VALIDATION
-          </AppText>
+          <AppText variant="caption" color={colors.muted} style={styles.footerText}>{t('KICKOFF · SECURE TICKETS, LIVE GATE VALIDATION')}</AppText>
         </View>
       </PageScroll>
     </Screen>

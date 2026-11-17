@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { formatMatchTime, formatMoney, formatShortDate, type OrderDto } from '@kickoff/shared';
 import { AppText, Card, EmptyState, Pill, Screen, Skeleton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { errorMessage } from '@/lib/api';
 import { useCancelOrder, useOrders } from '@/lib/queries/orders';
 import { useProfile } from '@/lib/queries/profile';
@@ -15,6 +16,7 @@ import { colors, radii } from '@/lib/theme';
 const POLL_INTERVAL_MS = 2500;
 
 export default function OrdersScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const display = useTenantDisplay();
   const { checkout, order_id } = useLocalSearchParams<{ checkout?: string; order_id?: string }>();
@@ -52,7 +54,7 @@ export default function OrdersScreen() {
     try {
       await downloadAndShareReceipt(order.id);
     } catch (error) {
-      Alert.alert('Could not open receipt', errorMessage(error));
+      Alert.alert(t('Could not open receipt'), errorMessage(error));
     } finally {
       setBusyId(null);
     }
@@ -88,9 +90,7 @@ export default function OrdersScreen() {
         {checkout === 'success' ? (
           <Card style={styles.banner}>
             <ReceiptText size={18} color={colors.primary} />
-            <AppText variant="small" color={colors.primary} style={styles.bannerText}>
-              Payment received. Your passes appear as soon as Stripe confirms the payment.
-            </AppText>
+            <AppText variant="small" color={colors.primary} style={styles.bannerText}>{t('Payment received. Your passes appear as soon as Stripe confirms the payment.')}</AppText>
           </Card>
         ) : null}
         {checkout === 'cancelled' ? (
@@ -98,8 +98,7 @@ export default function OrdersScreen() {
             <Card style={[styles.banner, styles.bannerError]}>
               <ReceiptText size={18} color={colors.danger} />
               <AppText variant="small" color={colors.danger} style={styles.bannerText}>
-                Payment was cancelled, but your seats could not be released yet:{' '}
-                {autoCancelError}
+                {t('Payment was cancelled, but your seats could not be released yet: {error}', { error: autoCancelError })}
               </AppText>
               <Pressable
                 onPress={() => order_id && runAutoCancel(order_id)}
@@ -113,9 +112,7 @@ export default function OrdersScreen() {
           ) : (
             <Card style={styles.banner}>
               <ReceiptText size={18} color={colors.warning} />
-              <AppText variant="small" color={colors.warning} style={styles.bannerText}>
-                Payment was cancelled. You were not charged.
-              </AppText>
+              <AppText variant="small" color={colors.warning} style={styles.bannerText}>{t('Payment was cancelled. You were not charged.')}</AppText>
             </Card>
           )
         ) : null}
@@ -125,12 +122,12 @@ export default function OrdersScreen() {
             <ReceiptText size={22} color={colors.primary} />
           </View>
           <View style={styles.flex}>
-            <AppText variant="label">Lifetime ticket spend</AppText>
+            <AppText variant="label">{t('Lifetime ticket spend')}</AppText>
             <AppText variant="h2" style={styles.summaryTotal}>
-              {formatMoney(paidOrders.reduce((sum, order) => sum + order.amountMinorUnits, 0), display.currency)}
+              {formatMoney(paidOrders.reduce((sum, order) => sum + order.amountMinorUnits, 0), display.currency, display.locale)}
             </AppText>
           </View>
-          <Pill label="THB" tone="gold" />
+          <Pill label={t('THB')} tone="gold" />
         </Card>
 
         {ordersQuery.isLoading ? (
@@ -141,8 +138,8 @@ export default function OrdersScreen() {
         ) : orders.length === 0 ? (
           <Card style={styles.emptyCard}>
             <EmptyState
-              title="No orders yet"
-              description="Match passes and receipts will appear here after your first purchase."
+              title={t('No orders yet')}
+              description={t('Match passes and receipts will appear here after your first purchase.')}
             />
           </Card>
         ) : (
@@ -151,18 +148,17 @@ export default function OrdersScreen() {
               <View style={styles.orderTop}>
                 <View style={styles.flex}>
                   <AppText variant="caption" color={colors.primary} style={styles.orderLabel}>
-                    ORDER · {order.id.slice(-6).toUpperCase()}
+                    {t('ORDER · {id}', { id: order.id.slice(-6).toUpperCase() })}
                   </AppText>
                   <AppText variant="h3" style={styles.orderTitle}>
                     {order.matchLabel}
                   </AppText>
                   <AppText variant="small" color={colors.muted}>
-                    Placed {formatShortDate(order.createdAt, { timezone: display.timezone })} · {order.seats.length}{' '}
-                    {order.seats.length === 1 ? 'ticket' : 'tickets'}
+                    {t('Placed {date} · {count} {plural}', { date: formatShortDate(order.createdAt, { timezone: display.timezone, locale: display.locale }), count: order.seats.length, plural: order.seats.length === 1 ? t('ticket') : t('tickets') })}
                   </AppText>
                   {order.status === 'pending' && order.expiresAt ? (
                     <AppText variant="caption" color={colors.warning} style={styles.reserved}>
-                      Reserved until {formatMatchTime(order.expiresAt, { timezone: display.timezone })} · pay or cancel to release
+                      {t('Reserved until {clock} · pay or cancel to release', { clock: formatMatchTime(order.expiresAt, { timezone: display.timezone, locale: display.locale }) })}
                     </AppText>
                   ) : null}
                 </View>
@@ -185,19 +181,19 @@ export default function OrdersScreen() {
                   <View style={styles.itemInfo}>
                     <AppText variant="label">{seat.zoneName}</AppText>
                     <AppText variant="caption" color={colors.muted} style={styles.itemMeta}>
-                      ROW {seat.row} · SEAT {seat.number}
+                      {t('ROW {row} · SEAT {number}', { row: seat.row, number: seat.number })}
                     </AppText>
                   </View>
-                  <AppText variant="label">{formatMoney(seat.priceMinorUnits, display.currency)}</AppText>
+                  <AppText variant="label">{formatMoney(seat.priceMinorUnits, display.currency, display.locale)}</AppText>
                 </View>
               ))}
 
               <View style={styles.totalRow}>
                 <AppText variant="small" color={colors.muted}>
-                  {order.status === 'paid' ? 'Total paid' : 'Total'} ·{' '}
+                  {order.status === 'paid' ? t('Total paid') : 'Total'} ·{' '}
                   {order.paymentRef ?? order.id.slice(-6).toUpperCase()}
                 </AppText>
-                <AppText variant="h3">{formatMoney(order.amountMinorUnits, display.currency)}</AppText>
+                <AppText variant="h3">{formatMoney(order.amountMinorUnits, display.currency, display.locale)}</AppText>
               </View>
 
               <View style={styles.actions}>
@@ -214,18 +210,14 @@ export default function OrdersScreen() {
                 ) : (
                   <View style={[styles.download, { opacity: 0.5 }]}>
                     <ReceiptText size={15} color={colors.muted} />
-                    <AppText variant="label" color={colors.muted}>
-                      Receipt after payment
-                    </AppText>
+                    <AppText variant="label" color={colors.muted}>{t('Receipt after payment')}</AppText>
                   </View>
                 )}
                 {order.status === 'pending' && order.checkoutUrl ? (
                   <Pressable
                     onPress={() => void WebBrowser.openBrowserAsync(String(order.checkoutUrl))}
                     style={styles.viewTickets}>
-                    <AppText variant="label" color={colors.primary}>
-                      Resume payment
-                    </AppText>
+                    <AppText variant="label" color={colors.primary}>{t('Resume payment')}</AppText>
                   </Pressable>
                 ) : null}
                 {order.status === 'pending' ? (
@@ -234,7 +226,7 @@ export default function OrdersScreen() {
                       setBusyId(order.id);
                       void cancelOrder
                         .mutateAsync(order.id)
-                        .catch((e) => Alert.alert('Could not cancel', errorMessage(e)))
+                        .catch((e) => Alert.alert(t('Could not cancel'), errorMessage(e)))
                         .finally(() => setBusyId(null));
                     }}
                     disabled={busyId === order.id || cancelOrder.isPending}
@@ -258,10 +250,7 @@ export default function OrdersScreen() {
           ))
         )}
 
-        <AppText variant="caption" color={colors.muted} style={styles.note}>
-          RECEIPTS ARE GENERATED SECURELY BY KICKOFF AND INCLUDE VAT. PAYMENTS ARE PROCESSED BY
-          STRIPE.
-        </AppText>
+        <AppText variant="caption" color={colors.muted} style={styles.note}>{t('RECEIPTS ARE GENERATED SECURELY BY KICKOFF AND INCLUDE VAT. PAYMENTS ARE PROCESSED BY STRIPE.')}</AppText>
       </ScrollView>
     </Screen>
   );

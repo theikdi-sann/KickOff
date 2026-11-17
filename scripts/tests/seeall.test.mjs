@@ -22,7 +22,7 @@ test('SA-1 the fixtures See all opens the fixtures list', () => {
 
   assert.match(
     source,
-    /title="Upcoming fixtures"[\s\S]{0,240}?router\.push\('\/fixtures'\)/,
+    /title=\{t\('Upcoming fixtures'\)\}[\s\S]{0,240}?router.push\('\/fixtures'\)/,
     'the Upcoming fixtures See all must navigate to the fixtures list screen',
   );
   assert.doesNotMatch(
@@ -37,7 +37,7 @@ test('SA-2 the news heading gains a See all that opens the news list', () => {
 
   assert.match(
     source,
-    /title="Latest news"[\s\S]{0,240}?action=\{[\s\S]{0,120}?router\.push\('\/news'\)/,
+    /title=\{t\('Latest news'\)\}[\s\S]{0,240}?action=\{[\s\S]{0,120}?router\.push\('\/news'\)/,
     'the Latest news heading must offer See all navigating to the news list',
   );
 });

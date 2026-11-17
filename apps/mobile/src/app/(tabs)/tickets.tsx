@@ -13,12 +13,14 @@ import {
   Screen,
   Skeleton,
 } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { useOrders } from '@/lib/queries/orders';
 import { useTenantDisplay } from '@/lib/queries/tenant';
 import { useTickets } from '@/lib/queries/tickets';
 import { colors, radii } from '@/lib/theme';
 
 export default function TicketsScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const ticketsQuery = useTickets();
   const ordersQuery = useOrders();
@@ -53,12 +55,8 @@ export default function TicketsScreen() {
         }>
         <View style={styles.header}>
           <View>
-            <AppText variant="caption" color={colors.primary} style={styles.eyebrow}>
-              DIGITAL MATCH PASSES
-            </AppText>
-            <AppText variant="title" style={styles.title}>
-              My tickets
-            </AppText>
+            <AppText variant="caption" color={colors.primary} style={styles.eyebrow}>{t('DIGITAL MATCH PASSES')}</AppText>
+            <AppText variant="title" style={styles.title}>{t('My tickets')}</AppText>
           </View>
           <LiveTag />
         </View>
@@ -99,13 +97,11 @@ export default function TicketsScreen() {
               <TicketIcon size={26} color={colors.primary} />
             </View>
             <AppText variant="h3" style={styles.emptyTitle}>
-              No {tab} tickets yet
+              {t(tab === 'active' ? 'No active tickets yet' : 'No past tickets yet')}
             </AppText>
-            <AppText variant="small" color={colors.muted} style={styles.emptyText}>
-              Pick an upcoming fixture, choose your exact seat, and your pass will appear here.
-            </AppText>
+            <AppText variant="small" color={colors.muted} style={styles.emptyText}>{t('Pick an upcoming fixture, choose your exact seat, and your pass will appear here.')}</AppText>
             <PrimaryButton
-              label="Browse fixtures"
+              label={t('Browse fixtures')}
               onPress={() => router.push('/(tabs)')}
               style={styles.emptyButton}
             />
@@ -119,20 +115,19 @@ export default function TicketsScreen() {
             <ReceiptText size={20} color={colors.primary} />
           </View>
           <View style={styles.flex}>
-            <AppText variant="label">Order history</AppText>
+            <AppText variant="label">{t('Order history')}</AppText>
             <AppText variant="small" color={colors.muted}>
               {paidOrders.length} paid {paidOrders.length === 1 ? 'order' : 'orders'} · receipts
               available
             </AppText>
           </View>
           <View style={styles.orderTotal}>
-            <AppText variant="caption" color={colors.muted} style={styles.orderTotalLabel}>
-              TOTAL
-            </AppText>
+            <AppText variant="caption" color={colors.muted} style={styles.orderTotalLabel}>{t('TOTAL')}</AppText>
             <AppText variant="label">
               {formatMoney(
                 paidOrders.reduce((sum, order) => sum + order.amountMinorUnits, 0),
                 display.currency,
+                display.locale,
               )}
             </AppText>
           </View>
@@ -142,20 +137,18 @@ export default function TicketsScreen() {
         <Card style={styles.info}>
           <View style={styles.infoDot} />
           <View style={styles.flex}>
-            <AppText variant="label">Keep your pass ready</AppText>
-            <AppText variant="small" color={colors.muted} style={styles.infoText}>
-              Open your pass before you reach the gate so the signed QR is ready. Each pass admits
-              one entry and is validated live by the scanner.
-            </AppText>
+            <AppText variant="label">{t('Keep your pass ready')}</AppText>
+            <AppText variant="small" color={colors.muted} style={styles.infoText}>{t('Open your pass before you reach the gate so the signed QR is ready. Each pass admits one entry and is validated live by the scanner.')}</AppText>
           </View>
         </Card>
 
         {active[0] ? (
           <View style={styles.hintRow}>
             <AppText variant="caption" color={colors.muted} style={styles.hintText}>
-              NEXT ENTRY ·{' '}
-              {formatMatchDate(active[0].kickoffAt, { timezone: display.timezone }).toUpperCase()} ·{' '}
-              {active[0].venue.toUpperCase()}
+              {t('NEXT ENTRY · {date} · {venue}', {
+                date: formatMatchDate(active[0].kickoffAt, { timezone: display.timezone, locale: display.locale }).toUpperCase(),
+                venue: active[0].venue.toUpperCase(),
+              })}
             </AppText>
           </View>
         ) : null}

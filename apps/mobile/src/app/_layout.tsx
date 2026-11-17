@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useTranslator } from '@/lib/i18n';
 import { QueryProvider } from '@/lib/queries/query-provider';
 import { AppProvider, useApp } from '@/lib/store';
 import { colors } from '@/lib/theme';
@@ -14,13 +15,14 @@ SplashScreen.preventAutoHideAsync();
 
 /** Branded boot screen shown while fonts load and the session hydrates. */
 function BrandSplash() {
+  const t = useTranslator();
   return (
     <View style={styles.splash}>
       <View style={styles.crest}>
         <Text style={styles.crestLetter}>K</Text>
       </View>
-      <Text style={styles.wordmark}>KICKOFF</Text>
-      <Text style={styles.tagline}>MATCHDAY, SIMPLIFIED</Text>
+      <Text style={styles.wordmark}>{t('KICKOFF')}</Text>
+      <Text style={styles.tagline}>{t('MATCHDAY, SIMPLIFIED')}</Text>
       <ActivityIndicator color={colors.accent} style={styles.spinner} />
     </View>
   );

@@ -4,6 +4,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-n
 import { formatMatchDate, formatMatchTime, type MatchDto } from '@kickoff/shared';
 import { ResultRow } from '@/components/match-card';
 import { AppText, Card, Crest, EmptyState, LiveTag, PrimaryButton, Screen, SectionHeading, Skeleton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { useMatches } from '@/lib/queries/matches';
 import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, radii } from '@/lib/theme';
@@ -13,6 +14,7 @@ import { colors, radii } from '@/lib/theme';
  * Every upcoming fixture and every result, uncut.
  */
 export default function FixturesScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const matchesQuery = useMatches();
 
@@ -29,7 +31,7 @@ export default function FixturesScreen() {
           <ChevronLeft size={21} color={colors.text} />
         </Pressable>
         <View style={styles.headerCenter}>
-          <AppText variant="h3">Fixtures</AppText>
+          <AppText variant="h3">{t('Fixtures')}</AppText>
           <AppText variant="caption" color={colors.muted} style={styles.headerSub}>
             {upcoming.length} UPCOMING · {results.length} PLAYED
           </AppText>
@@ -55,7 +57,7 @@ export default function FixturesScreen() {
         ) : matchesQuery.error ? (
           <Card style={styles.empty}>
             <EmptyState
-              title="Could not load the fixtures"
+              title={t('Could not load the fixtures')}
               description={
                 matchesQuery.error instanceof Error
                   ? matchesQuery.error.message
@@ -64,17 +66,17 @@ export default function FixturesScreen() {
               icon={<CloudOff size={26} color={colors.muted} />}
             />
             <View style={styles.retry}>
-              <PrimaryButton label="Try again" onPress={refresh} />
+              <PrimaryButton label={t('Try again')} onPress={refresh} />
             </View>
           </Card>
         ) : (
           <>
-            <SectionHeading title="Upcoming" />
+            <SectionHeading title={t('Upcoming')} />
             {upcoming.length === 0 ? (
               <Card style={styles.empty}>
                 <EmptyState
-                  title="No upcoming fixtures"
-                  description="The next home fixture will appear here as soon as the club publishes it."
+                  title={t('No upcoming fixtures')}
+                  description={t('The next home fixture will appear here as soon as the club publishes it.')}
                 />
               </Card>
             ) : (
@@ -91,12 +93,12 @@ export default function FixturesScreen() {
               </View>
             )}
 
-            <SectionHeading title="Recent results" />
+            <SectionHeading title={t('Recent results')} />
             <Card style={styles.resultsCard}>
               {results.length === 0 ? (
                 <EmptyState
-                  title="No results yet"
-                  description="Completed matches will be listed here."
+                  title={t('No results yet')}
+                  description={t('Completed matches will be listed here.')}
                 />
               ) : (
                 results.map((match, index) => (
@@ -114,6 +116,7 @@ export default function FixturesScreen() {
 }
 
 function FixtureRow({ match, onPress }: { match: MatchDto; onPress: () => void }) {
+  const t = useTranslator();
   const display = useTenantDisplay();
   return (
     <Pressable
@@ -122,13 +125,13 @@ function FixtureRow({ match, onPress }: { match: MatchDto; onPress: () => void }
       <Crest short={match.opponentShort} size={42} colors={[match.accent, '#1E293B']} />
       <View style={styles.rowInfo}>
         <AppText variant="label" numberOfLines={1}>
-          KickOff vs {match.opponent}
+          {t('KickOff vs {opponent}', { opponent: match.opponent })}
         </AppText>
         <View style={styles.rowMeta}>
           <Clock3 size={11} color={colors.muted} />
           <AppText variant="caption" color={colors.muted} style={styles.rowMetaText}>
-            {formatMatchDate(match.kickoffAt, { timezone: display.timezone }).toUpperCase()} ·{' '}
-            {formatMatchTime(match.kickoffAt, { timezone: display.timezone })}
+            {formatMatchDate(match.kickoffAt, { timezone: display.timezone, locale: display.locale }).toUpperCase()} ·{' '}
+            {formatMatchTime(match.kickoffAt, { timezone: display.timezone, locale: display.locale })}
           </AppText>
         </View>
         <View style={styles.rowMeta}>

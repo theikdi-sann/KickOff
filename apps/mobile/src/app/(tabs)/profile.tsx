@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { formatMoney, formatShortDate } from '@kickoff/shared';
 import { AppText, Card, LiveTag, PageScroll, Pill, Screen } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { signOut } from '@/lib/auth';
 import { useOrders } from '@/lib/queries/orders';
 import { useProfile } from '@/lib/queries/profile';
@@ -22,6 +23,7 @@ import { useTickets } from '@/lib/queries/tickets';
 import { colors, radii } from '@/lib/theme';
 
 export default function ProfileScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const profileQuery = useProfile();
   const ticketsQuery = useTickets();
@@ -36,17 +38,17 @@ export default function ProfileScreen() {
     .reduce((sum, order) => sum + order.amountMinorUnits, 0);
 
   const confirmSignOut = () => {
-    Alert.alert('Sign out?', "You'll need to sign in again to access your passes.", [
+    Alert.alert(t('Sign out?'), "You'll need to sign in again to access your passes.", [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Sign out',
+        text: t('Sign out'),
         style: 'destructive',
         onPress: () => {
           // A failed sign-out must be reported: the supporter would otherwise
           // stay signed in and believe the session ended.
           void signOut().catch((error: unknown) => {
             Alert.alert(
-              'Sign out failed',
+              t('Sign out failed'),
               error instanceof Error ? error.message : 'Please try again in a moment.',
             );
           });
@@ -60,9 +62,7 @@ export default function ProfileScreen() {
       <PageScroll bottom={118}>
         <LinearGradient colors={[colors.primary, colors.primaryDark, colors.night]} style={styles.hero}>
           <View style={styles.heroTop}>
-            <AppText variant="caption" color="rgba(255,255,255,0.6)" style={styles.heroEyebrow}>
-              SUPPORTER ACCOUNT
-            </AppText>
+            <AppText variant="caption" color="rgba(255,255,255,0.6)" style={styles.heroEyebrow}>{t('SUPPORTER ACCOUNT')}</AppText>
             <LiveTag dark />
           </View>
           <View style={styles.identity}>
@@ -76,22 +76,20 @@ export default function ProfileScreen() {
                 {profile?.fullName ?? 'KickOff supporter'}
               </AppText>
               <AppText variant="small" color={colors.nightMuted}>
-                {profile?.email ?? 'Signed in'}
+                {profile?.email ?? t('Signed in')}
               </AppText>
               <View style={styles.verified}>
                 <ShieldCheck size={12} color={colors.accent} />
-                <AppText variant="caption" color={colors.accent} style={styles.verifiedText}>
-                  VERIFIED MEMBER
-                </AppText>
+                <AppText variant="caption" color={colors.accent} style={styles.verifiedText}>{t('VERIFIED MEMBER')}</AppText>
               </View>
             </View>
           </View>
           <View style={styles.heroStats}>
-            <HeroStat value={String(active)} label="ACTIVE PASSES" />
+            <HeroStat value={String(active)} label={t('ACTIVE PASSES')} />
             <View style={styles.heroDivider} />
-            <HeroStat value={String(orders.length)} label="ORDERS" />
+            <HeroStat value={String(orders.length)} label={t('ORDERS')} />
             <View style={styles.heroDivider} />
-            <HeroStat value={formatMoney(spent, display.currency)} label="SPENT" />
+            <HeroStat value={formatMoney(spent, display.currency, display.locale)} label={t('SPENT')} />
           </View>
         </LinearGradient>
 
@@ -102,10 +100,10 @@ export default function ProfileScreen() {
                 <TicketIcon size={18} color={colors.primary} />
               </View>
               <View style={styles.flex}>
-                <AppText variant="label">Supporter since</AppText>
+                <AppText variant="label">{t('Supporter since')}</AppText>
                 <AppText variant="small" color={colors.muted}>
                   {profile?.joinedAt
-                    ? formatShortDate(profile.joinedAt, { timezone: display.timezone })
+                    ? formatShortDate(profile.joinedAt, { timezone: display.timezone, locale: display.locale })
                     : '—'}
                 </AppText>
               </View>
@@ -113,60 +111,56 @@ export default function ProfileScreen() {
             </View>
           </Card>
 
-          <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
-            ACCOUNT
-          </AppText>
+          <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>{t('ACCOUNT')}</AppText>
           <Card style={styles.menu}>
             <MenuItem
               icon={<UserRound size={18} color={colors.primary} />}
-              label="Personal details"
+              label={t('Personal details')}
               detail={profile?.phone ?? 'Name, phone & password'}
               onPress={() => router.push('/profile/edit')}
             />
             <MenuItem
               icon={<ReceiptText size={18} color={colors.primary} />}
-              label="Orders & receipts"
+              label={t('Orders & receipts')}
               detail={`${orders.length} orders`}
               onPress={() => router.push('/orders')}
             />
             <MenuItem
               icon={<CreditCard size={18} color={colors.primary} />}
-              label="Payment methods"
+              label={t('Payment methods')}
               detail="Cards are entered at checkout"
               onPress={() =>
                 Alert.alert(
-                  'Payment methods',
+                  t('Payment methods'),
                   'Card details are collected securely by Stripe each time you check out. KickOff never stores your card number.',
                 )
               }
             />
             <MenuItem
               icon={<Bell size={18} color={colors.primary} />}
-              label="Settings & notifications"
+              label={t('Settings & notifications')}
               detail="Reminders, language, account"
               onPress={() => router.push('/settings')}
               last
             />
           </Card>
 
-          <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
-            SUPPORT
-          </AppText>
+          <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>{t('SUPPORT')}</AppText>
           <Card style={styles.menu}>
             <MenuItem
               icon={<HelpCircle size={18} color={colors.primary} />}
-              label="Help & stadium info"
+              label={t('Help & stadium info')}
               detail="Gates, travel, rules"
               onPress={() =>
                 Alert.alert(
-                  'KickOff Arena',
+                  t('KickOff Arena'),
                   'Gates open 2 hours before kick-off and close 2 hours after. Scan your pass at any gate assigned to this fixture.',
                 )
               }
             />
             <MenuItem
               icon={<ShieldCheck size={18} color={colors.primary} />}
-              label="Ticket terms"
+              label={t('Ticket terms')}
               detail="Single-match passes"
               onPress={() => router.push('/legal/terms')}
               last
@@ -175,14 +169,10 @@ export default function ProfileScreen() {
 
           <Pressable onPress={confirmSignOut} style={styles.signOut}>
             <LogOut size={16} color={colors.danger} />
-            <AppText variant="label" color={colors.danger}>
-              Sign out
-            </AppText>
+            <AppText variant="label" color={colors.danger}>{t('Sign out')}</AppText>
           </Pressable>
 
-          <AppText variant="caption" color={colors.muted} style={styles.version}>
-            KICKOFF MEMBER APP · v0.1.0
-          </AppText>
+          <AppText variant="caption" color={colors.muted} style={styles.version}>{t('KICKOFF MEMBER APP · v0.1.0')}</AppText>
         </View>
       </PageScroll>
     </Screen>

@@ -67,7 +67,6 @@ test('HYG-1 the dead shared modules stay deleted', () => {
     'packages/shared/src/qr.ts',
     'packages/shared/src/i18n/en.ts',
     'packages/shared/src/__tests__/qr.test.ts',
-    'packages/shared/src/__tests__/i18n.test.ts',
   ]) {
     assert.equal(exists(dead), false, `${dead} is dead code — it must not come back`);
   }
@@ -75,7 +74,7 @@ test('HYG-1 the dead shared modules stay deleted', () => {
   const index = read('packages/shared/src/index.ts');
   assert.doesNotMatch(
     index,
-    /'\.\/(types|qr|i18n)/,
+    /'\.\/(types|qr|i18n\/en)/,
     'the shared package must not re-export deleted modules',
   );
 });

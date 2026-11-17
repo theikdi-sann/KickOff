@@ -3,6 +3,7 @@ import { CalendarDays, MapPin, QrCode } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { formatMatchDate, formatMatchTime, formatMoney, type TicketDto } from '@kickoff/shared';
 import { AppText, Pill } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, radii, shadow } from '@/lib/theme';
 
@@ -15,6 +16,7 @@ export function TicketCard({
   onPress: () => void;
   compact?: boolean;
 }) {
+  const t = useTranslator();
   const display = useTenantDisplay();
   const used = ticket.status === 'used';
   return (
@@ -26,9 +28,7 @@ export function TicketCard({
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.accent}>
-        <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.rotated}>
-          MATCH PASS
-        </AppText>
+        <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.rotated}>{t('MATCH PASS')}</AppText>
       </LinearGradient>
       <View style={styles.body}>
         <View style={styles.top}>
@@ -40,12 +40,12 @@ export function TicketCard({
             </View>
             <View style={styles.flex}>
               <AppText variant="label" numberOfLines={1}>
-                KickOff vs {ticket.opponent}
+                {t('KickOff vs {opponent}', { opponent: ticket.opponent })}
               </AppText>
               <View style={styles.meta}>
                 <CalendarDays size={11} color={colors.muted} />
                 <AppText variant="caption" color={colors.muted} style={styles.metaText}>
-                  {formatMatchDate(ticket.kickoffAt, { timezone: display.timezone }).toUpperCase()} · {formatMatchTime(ticket.kickoffAt, { timezone: display.timezone })}
+                  {formatMatchDate(ticket.kickoffAt, { timezone: display.timezone, locale: display.locale }).toUpperCase()} · {formatMatchTime(ticket.kickoffAt, { timezone: display.timezone, locale: display.locale })}
                 </AppText>
               </View>
             </View>
@@ -54,9 +54,9 @@ export function TicketCard({
         </View>
 
         <View style={styles.seatRow}>
-          <SeatCell label="ZONE" value={ticket.zoneName} />
-          <SeatCell label="ROW" value={ticket.row} />
-          <SeatCell label="SEAT" value={String(ticket.number)} />
+          <SeatCell label={t('ZONE')} value={ticket.zoneName} />
+          <SeatCell label={t('ROW')} value={ticket.row} />
+          <SeatCell label={t('SEAT')} value={String(ticket.number)} />
           <View style={styles.qrMini}>
             <QrCode size={compact ? 20 : 24} color={colors.primary} />
           </View>
@@ -70,7 +70,7 @@ export function TicketCard({
             </AppText>
           </View>
           <AppText variant="label" color={colors.primary}>
-            {formatMoney(ticket.priceMinorUnits, display.currency)}
+            {formatMoney(ticket.priceMinorUnits, display.currency, display.locale)}
           </AppText>
         </View>
       </View>

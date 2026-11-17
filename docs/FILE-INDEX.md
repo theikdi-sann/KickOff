@@ -172,6 +172,7 @@ before the suite is green again.
 | `apps/mobile/src/lib/api.ts` | source | reviewed | app library |
 | `apps/mobile/src/lib/auth.ts` | source | reviewed | app library |
 | `apps/mobile/src/lib/functions.ts` | source | reviewed | app library |
+| `apps/mobile/src/lib/i18n.ts` | source | reviewed | React Query data access — `useTranslator()`: the club's locale resolves every literal key against the Thai catalog (C10.2) |
 | `apps/mobile/src/lib/notifications.ts` | source | reviewed | app library |
 | `apps/mobile/src/lib/queries/holds.ts` | source | reviewed | React Query data access |
 | `apps/mobile/src/lib/queries/matches.ts` | source | reviewed | React Query data access |
@@ -212,6 +213,7 @@ before the suite is green again.
 | `packages/shared/src/__tests__/display.test.ts` | test | covered | unit test — displayFromTenant validation and the platform default (C8.2d) |
 | `packages/shared/src/__tests__/format.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `packages/shared/src/__tests__/greeting.test.ts` | test | covered | contract test — fails when the repository drifts |
+| `packages/shared/src/__tests__/i18n.test.ts` | test | covered | unit test — localeFromTag, translate (source-as-key, interpolation, fallback) |
 | `packages/shared/src/__tests__/logging.test.ts` | test | covered | unit test — redaction, Error serialisation, scoped and default logger |
 | `packages/shared/src/__tests__/mappers.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `packages/shared/src/__tests__/money.test.ts` | test | covered | contract test — fails when the repository drifts |
@@ -229,9 +231,11 @@ before the suite is green again.
 | `packages/shared/src/format.ts` | source | reviewed | shared contract |
 | `packages/shared/src/greeting.ts` | source | reviewed | shared contract |
 | `packages/shared/src/http.ts` | source | reviewed | shared contract |
+| `packages/shared/src/i18n.ts` | source | reviewed | shared contract — the translation layer: `translate()` (English is the key) and `localeFromTag()` (C10.2) |
 | `packages/shared/src/index.ts` | source | reviewed | shared contract |
 | `packages/shared/src/logging.ts` | source | reviewed | shared contract — the one logging convention; generates the Edge copy |
 | `packages/shared/src/mappers.ts` | source | reviewed | shared contract |
+| `packages/shared/src/messages.th.ts` | source | reviewed | the Thai catalog — keys are the English source strings; coverage enforced by the i18n contract |
 | `packages/shared/src/money.ts` | source | reviewed | shared contract |
 | `packages/shared/src/platform.ts` | source | reviewed | shared contract — the platform claim key, `isPlatformMetadata`, `CLUB_SLUG_PATTERN`, `planBootstrapClaim` (C9) |
 | `packages/shared/src/refund.ts` | source | reviewed | shared contract — canonical refund body, no relative imports (F-11) |
@@ -265,6 +269,7 @@ before the suite is green again.
 | `scripts/tests/export.test.mjs` | test | covered | contract test — GAP-09.2 the fan export: the registry names the subject's inventory tables, the function queries them, the audit and the admin guard (EX-1…EX-3) |
 | `scripts/tests/file-coverage.test.mjs` | test | reviewed | repo contract test — fails when the repository drifts |
 | `scripts/tests/hygiene.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/i18n.test.mjs` | test | covered | contract test — C10.2: catalog coverage (no missing, no orphans), club locale on dates/money, the receipt, generated Edge copies, literal keys, no unwrapped copy (I18N-1…I18N-8) |
 | `scripts/tests/lan.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/language.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/logging.test.mjs` | test | covered | contract test — one logger, generated Edge copy, no raw console (LG-1…LG-4) |
@@ -305,7 +310,9 @@ before the suite is green again.
 | `supabase/functions/_shared/export.ts` | source | reviewed | shared contract — the subject-export registry (`USER_EXPORT_TABLES`) and the document builder (GAP-09.2) |
 | `supabase/functions/_shared/hmac.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/http.ts` | source | reviewed | Edge Function helper |
+| `supabase/functions/_shared/i18n.ts` | source | generated | GENERATED from packages/shared/src/i18n.ts — do not edit; the receipt translates in the club's language (C10.2) |
 | `supabase/functions/_shared/logger.ts` | source | generated | GENERATED from packages/shared/src/logging.ts — do not edit |
+| `supabase/functions/_shared/messages.th.ts` | source | generated | GENERATED from packages/shared/src/messages.th.ts — do not edit; the receipt's Thai catalog |
 | `supabase/functions/_shared/metrics.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/money.ts` | source | generated | GENERATED from packages/shared/src/money.ts — do not edit; the receipt formats the order's currency with it (C8.2b) |
 | `supabase/functions/_shared/observability.ts` | source | reviewed | Edge Function helper — the error recorder: classify, record (never throws), cooldown-gated Slack-compatible alerting, the reconciliation verdict (C10.1) |

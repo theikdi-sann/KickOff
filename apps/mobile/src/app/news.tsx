@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { NewsRow } from '@/components/news-row';
 import { AppText, Card, EmptyState, PrimaryButton, Screen, Skeleton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { useNews } from '@/lib/queries/news';
 import { colors } from '@/lib/theme';
 
@@ -11,6 +12,7 @@ import { colors } from '@/lib/theme';
  * Every published article, uncut (the home card only teases the first few).
  */
 export default function NewsScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const newsQuery = useNews();
   const news = newsQuery.data ?? [];
@@ -24,7 +26,7 @@ export default function NewsScreen() {
           <ChevronLeft size={21} color={colors.text} />
         </Pressable>
         <View style={styles.headerCenter}>
-          <AppText variant="h3">Club news</AppText>
+          <AppText variant="h3">{t('Club news')}</AppText>
           <AppText variant="caption" color={colors.muted} style={styles.headerSub}>
             {news.length} {news.length === 1 ? 'ARTICLE' : 'ARTICLES'}
           </AppText>
@@ -51,7 +53,7 @@ export default function NewsScreen() {
         ) : newsQuery.error ? (
           <Card style={styles.empty}>
             <EmptyState
-              title="Could not load the news"
+              title={t('Could not load the news')}
               description={
                 newsQuery.error instanceof Error
                   ? newsQuery.error.message
@@ -60,12 +62,12 @@ export default function NewsScreen() {
               icon={<CloudOff size={26} color={colors.muted} />}
             />
             <View style={styles.retry}>
-              <PrimaryButton label="Try again" onPress={refresh} />
+              <PrimaryButton label={t('Try again')} onPress={refresh} />
             </View>
           </Card>
         ) : news.length === 0 ? (
           <Card style={styles.empty}>
-            <EmptyState title="No news yet" description="Club updates will land here." />
+            <EmptyState title={t('No news yet')} description={t('Club updates will land here.')} />
           </Card>
         ) : (
           <Card style={styles.list}>

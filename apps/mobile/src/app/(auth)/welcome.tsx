@@ -6,9 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { CLUB_TAGLINE } from '@kickoff/shared';
 import { AppText, LiveTag, PrimaryButton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function WelcomeScreen() {
+  const t = useTranslator();
   const router = useRouter();
 
   return (
@@ -26,12 +28,8 @@ export default function WelcomeScreen() {
               </AppText>
             </View>
             <View>
-              <AppText variant="h2" color="#FFFFFF" style={styles.brand}>
-                KICKOFF
-              </AppText>
-              <AppText variant="caption" color={colors.nightMuted} style={styles.est}>
-                EST. 2026 · BANGKOK
-              </AppText>
+              <AppText variant="h2" color="#FFFFFF" style={styles.brand}>{t('KICKOFF')}</AppText>
+              <AppText variant="caption" color={colors.nightMuted} style={styles.est}>{t('EST. 2026 · BANGKOK')}</AppText>
             </View>
           </View>
           <LiveTag dark />
@@ -45,7 +43,7 @@ export default function WelcomeScreen() {
             </AppText>
           </View>
           <AppText variant="display" color="#FFFFFF" style={styles.headline}>
-            MATCH DAY{'\n'}STARTS HERE.
+            {t('MATCH DAY')}{'\n'}{t('STARTS HERE.')}
           </AppText>
           <AppText variant="body" color={colors.nightMuted} style={styles.sub}>
             {CLUB_TAGLINE} Pick your exact seat, pay securely, and carry your pass in your pocket.
@@ -58,12 +56,8 @@ export default function WelcomeScreen() {
             />
             <View style={styles.passTop}>
               <View>
-                <AppText variant="caption" color={colors.nightMuted}>
-                  DIGITAL MATCH PASS
-                </AppText>
-                <AppText variant="h3" color="#FFFFFF" style={styles.passTitle}>
-                  KickOff vs Bangkok Rovers
-                </AppText>
+                <AppText variant="caption" color={colors.nightMuted}>{t('DIGITAL MATCH PASS')}</AppText>
+                <AppText variant="h3" color="#FFFFFF" style={styles.passTitle}>{t('KickOff vs Bangkok Rovers')}</AppText>
               </View>
               <View style={styles.qrBox}>
                 <QrCode size={30} color={colors.primaryDark} />
@@ -71,38 +65,34 @@ export default function WelcomeScreen() {
             </View>
             <View style={styles.passDivider} />
             <View style={styles.passBottom}>
-              <PassStat label="STAND" value="North" />
-              <PassStat label="ROW" value="C" />
-              <PassStat label="SEAT" value="07" />
+              <PassStat label={t('STAND')} value="North" />
+              <PassStat label={t('ROW')} value="C" />
+              <PassStat label={t('SEAT')} value="07" />
               <View style={styles.passCheck}>
                 <ShieldCheck size={15} color={colors.accent} />
-                <AppText variant="caption" color={colors.accent} style={styles.passCheckText}>
-                  VERIFIED
-                </AppText>
+                <AppText variant="caption" color={colors.accent} style={styles.passCheckText}>{t('VERIFIED')}</AppText>
               </View>
             </View>
           </View>
 
           <View style={styles.features}>
-            <Feature icon={<CalendarDays size={14} color={colors.accent} />} label="Fixtures & news" />
-            <Feature icon={<QrCode size={14} color={colors.accent} />} label="Offline QR pass" />
-            <Feature icon={<ShieldCheck size={14} color={colors.accent} />} label="Secure entry" />
+            <Feature icon={<CalendarDays size={14} color={colors.accent} />} label={t('Fixtures & news')} />
+            <Feature icon={<QrCode size={14} color={colors.accent} />} label={t('Offline QR pass')} />
+            <Feature icon={<ShieldCheck size={14} color={colors.accent} />} label={t('Secure entry')} />
           </View>
         </View>
 
         <View style={styles.footer}>
           <PrimaryButton
-            label="Get started"
+            label={t('Get started')}
             tone="gold"
             onPress={() => router.push('/login')}
             icon={<ArrowRight size={18} color={colors.ink} />}
           />
           <Pressable onPress={() => router.push('/register')} style={styles.secondary}>
             <AppText variant="small" color={colors.nightMuted}>
-              New here?{' '}
-              <AppText variant="label" color="#FFFFFF">
-                Create an account
-              </AppText>
+              {t('New here?')}{' '}
+              <AppText variant="label" color="#FFFFFF">{t('Create an account')}</AppText>
             </AppText>
           </Pressable>
         </View>

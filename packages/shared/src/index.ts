@@ -8,6 +8,7 @@ export * from './schemas';
 export * from './money';
 export * from './display';
 export * from './platform';
+export * from './i18n';
 export * from './format';
 export * from './theme';
 export * from './constants';

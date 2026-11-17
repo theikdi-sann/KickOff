@@ -12,6 +12,7 @@ import {
   ScreenHeader,
   Skeleton,
 } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { errorMessage } from '@/lib/api';
 import { useOrder } from '@/lib/queries/orders';
 import { useProfile } from '@/lib/queries/profile';
@@ -20,6 +21,7 @@ import { downloadAndShareReceipt } from '@/lib/receipt';
 import { colors, radii } from '@/lib/theme';
 
 export default function OrderDetailScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const display = useTenantDisplay();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,7 +36,7 @@ export default function OrderDetailScreen() {
     try {
       await downloadAndShareReceipt(order.id);
     } catch (error) {
-      Alert.alert('Could not open receipt', errorMessage(error));
+      Alert.alert(t('Could not open receipt'), errorMessage(error));
     } finally {
       setBusy(false);
     }
@@ -43,7 +45,7 @@ export default function OrderDetailScreen() {
   if (orderQuery.isLoading) {
     return (
       <Screen>
-        <ScreenHeader title="Order" subtitle="Receipt" onBack={() => router.back()} />
+        <ScreenHeader title={t('Order')} subtitle="Receipt" onBack={() => router.back()} />
         <View style={styles.loading}>
           <Skeleton height={150} radius={18} />
           <Skeleton height={200} radius={18} />
@@ -55,10 +57,10 @@ export default function OrderDetailScreen() {
   if (!order) {
     return (
       <Screen>
-        <ScreenHeader title="Order" subtitle="Receipt" onBack={() => router.back()} />
+        <ScreenHeader title={t('Order')} subtitle="Receipt" onBack={() => router.back()} />
         <View style={styles.loading}>
           <EmptyState
-            title="Order not found"
+            title={t('Order not found')}
             description={
               orderQuery.error instanceof Error
                 ? orderQuery.error.message
@@ -74,19 +76,19 @@ export default function OrderDetailScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="Order" subtitle="Receipt" onBack={() => router.back()} />
+      <ScreenHeader title={t('Order')} subtitle="Receipt" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Card style={styles.card}>
           <View style={styles.top}>
             <View style={styles.flex}>
               <AppText variant="caption" color={colors.primary} style={styles.label}>
-                ORDER · {order.id.slice(-6).toUpperCase()}
+                {t('ORDER · {id}', { id: order.id.slice(-6).toUpperCase() })}
               </AppText>
               <AppText variant="h2" style={styles.title}>
                 {order.matchLabel}
               </AppText>
               <AppText variant="small" color={colors.muted}>
-                Placed {formatFullDate(order.createdAt, { timezone: display.timezone })}
+                {t('Placed {date}', { date: formatFullDate(order.createdAt, { timezone: display.timezone, locale: display.locale }) })}
               </AppText>
             </View>
             <Pill
@@ -102,29 +104,27 @@ export default function OrderDetailScreen() {
               <View style={styles.flex}>
                 <AppText variant="label">{seat.zoneName}</AppText>
                 <AppText variant="caption" color={colors.muted} style={styles.meta}>
-                  ROW {seat.row} · SEAT {seat.number}
+                  {t('ROW {row} · SEAT {number}', { row: seat.row, number: seat.number })}
                 </AppText>
               </View>
-              <AppText variant="label">{formatMoney(seat.priceMinorUnits, display.currency)}</AppText>
+              <AppText variant="label">{formatMoney(seat.priceMinorUnits, display.currency, display.locale)}</AppText>
             </View>
           ))}
 
           <View style={styles.total}>
             <AppText variant="small" color={colors.muted}>
-              {paid ? 'Total paid' : 'Total'}
+              {paid ? t('Total paid') : 'Total'}
             </AppText>
-            <AppText variant="h2">{formatMoney(order.amountMinorUnits, display.currency)}</AppText>
+            <AppText variant="h2">{formatMoney(order.amountMinorUnits, display.currency, display.locale)}</AppText>
           </View>
         </Card>
 
-        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
-          PAYMENT
-        </AppText>
+        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>{t('PAYMENT')}</AppText>
         <Card style={styles.card}>
-          <DetailRow label="Status" value={order.status.toUpperCase()} />
-          <DetailRow label="Reference" value={order.paymentRef ?? '—'} />
-          <DetailRow label="Paid at" value={order.paidAt ? formatFullDate(order.paidAt, { timezone: display.timezone }) : '—'} />
-          <DetailRow label="Ticket holder" value={profileQuery.data?.fullName ?? '—'} last />
+          <DetailRow label={t('Status')} value={order.status.toUpperCase()} />
+          <DetailRow label={t('Reference')} value={order.paymentRef ?? '—'} />
+          <DetailRow label={t('Paid at')} value={order.paidAt ? formatFullDate(order.paidAt, { timezone: display.timezone, locale: display.locale }) : '—'} />
+          <DetailRow label={t('Ticket holder')} value={profileQuery.data?.fullName ?? '—'} last />
         </Card>
 
         {paid ? (
@@ -140,16 +140,12 @@ export default function OrderDetailScreen() {
         ) : (
           <View style={[styles.download, { opacity: 0.55 }]}>
             <ReceiptText size={16} color={colors.muted} />
-            <AppText variant="label" color={colors.muted}>
-              Receipt available after payment
-            </AppText>
+            <AppText variant="label" color={colors.muted}>{t('Receipt available after payment')}</AppText>
           </View>
         )}
 
         <Pressable onPress={() => router.push('/tickets')} style={styles.link}>
-          <AppText variant="label" color={colors.primary}>
-            View my tickets
-          </AppText>
+          <AppText variant="label" color={colors.primary}>{t('View my tickets')}</AppText>
         </Pressable>
       </ScrollView>
     </Screen>

@@ -1,0 +1,368 @@
+// GENERATED FILE — do not edit.
+// Source: packages/shared/src/messages.th.ts
+// Regenerate: node scripts/sync-edge-schemas.mjs
+//
+// Supabase deploys only `supabase/functions/**`, so this copy cannot be an
+// import from `@kickoff/shared`. It is generated from the canonical source,
+// and a contract test fails if it drifts.
+
+/**
+ * The Thai catalog (C10.2, GAP-05).
+ *
+ * Keys are the **English source strings**: the app's English copy needs no
+ * catalog, so there is no English table to keep in step, and a key nobody
+ * translated renders as itself. The entries grow with every `t()` call the
+ * apps make — `scripts/tests/i18n.test.mjs` fails when one is missing, or
+ * when an entry nothing uses lingers.
+ *
+ * Style: plain, courteous Thai; the club's voice, not a translation of the
+ * English phrasing. Placeholders (`{name}`) keep their names. Brand and
+ * venue names (KICKOFF, KickOff Arena, Stripe, THB) stay as they are — a
+ * catalog entry may map a key to itself when the word is a proper noun.
+ */
+export const th: Record<string, string> = {
+  'Not on sale': 'ไม่มีจำหน่าย',
+
+  // ── the receipt (the PDF a fan keeps) ─────────────────────────────────────
+  'Matchday receipt': 'ใบเสร็จวันแข่งขัน',
+  'REFUNDED': 'คืนเงินแล้ว',
+  'PAID': 'ชำระแล้ว',
+  'Order': 'คำสั่งซื้อ',
+  'Holder': 'ผู้ถือบัตร',
+  'Fixture': 'การแข่งขัน',
+  'KickOff vs {opponent}': 'KickOff พบ {opponent}',
+  'Kick-off': 'คิกออฟ',
+  'Venue': 'สนาม',
+  'Paid': 'ชำระเมื่อ',
+  'Payment ref': 'อ้างอิงการชำระเงิน',
+  'Seats': 'ที่นั่ง',
+  'Net': 'ยอดสุทธิ',
+  'VAT 7% (included)': 'VAT 7% (รวมในราคา)',
+  'Total': 'รวมทั้งหมด',
+  'Prices include Thai VAT (7%). This receipt is proof of purchase, not a tax invoice.':
+    'ราคารวมภาษีมูลค่าเพิ่ม 7% แล้ว เอกสารนี้เป็นหลักฐานการซื้อ ไม่ใช่ใบกำกับภาษี',
+
+  // ── the greeting (greeting.ts resolves these through translate) ───────────
+  'Good morning': 'สวัสดีตอนเช้า',
+  'Good afternoon': 'สวัสดีตอนบ่าย',
+  'Good evening': 'สวัสดีตอนเย็น',
+  'Good night': 'ราตรีสวัสดิ์',
+
+  // ── home ──────────────────────────────────────────────────────────────────
+  'Are you ready for match day?': 'พร้อมสำหรับวันแข่งขันหรือยัง?',
+  'NEXT HOME MATCH': 'แมตช์เหย้าถัดไป',
+  'DATE': 'วันที่',
+  'VENUE': 'สนาม',
+  'TICKETS FROM': 'บัตรเริ่มที่',
+  'Get tickets': 'ซื้อบัตร',
+  'No fixtures on sale': 'ยังไม่มีบัตรจำหน่าย',
+  'The next home fixture will appear here as soon as the club publishes it.':
+    'แมตช์เหย้าถัดไปจะปรากฏที่นี่ทันทีที่สโมสรเผยแพร่',
+  'Active passes': 'บัตรที่ใช้งาน',
+  'Home fixtures': 'แมตช์เหย้า',
+  'Seats on sale': 'ที่นั่งที่จำหน่าย',
+  'Upcoming fixtures': 'แมตช์ที่จะถึง',
+  'See all': 'ดูทั้งหมด',
+  'No upcoming fixtures': 'ไม่มีแมตช์ที่จะถึง',
+  'Check back soon for the next match.': 'กลับมาดูแมตช์ถัดไปเร็ว ๆ นี้',
+  'Latest news': 'ข่าวล่าสุด',
+  'No news yet': 'ยังไม่มีข่าว',
+  'Club updates will land here.': 'ความเคลื่อนไหวของสโมสรจะปรากฏที่นี่',
+  'Recent results': 'ผลล่าสุด',
+  'No results yet': 'ยังไม่มีผลการแข่งขัน',
+  'Completed matches will be listed here.': 'ผลการแข่งขันที่จบแล้วจะแสดงที่นี่',
+  'KICKOFF · SECURE TICKETS, LIVE GATE VALIDATION': 'KICKOFF · บัตรปลอดภัย สแกนประตูสด',
+  'KICKOFF': 'KICKOFF',
+  'MEMBER APP': 'แอปสมาชิก',
+  'Sign out?': 'ออกจากระบบ?',
+  'Sign out': 'ออกจากระบบ',
+  'Sign out failed': 'ออกจากระบบไม่สำเร็จ',
+
+  // ── profile ───────────────────────────────────────────────────────────────
+  'SUPPORTER ACCOUNT': 'บัญชีผู้สนับสนุน',
+  'Signed in': 'เข้าสู่ระบบแล้ว',
+  'VERIFIED MEMBER': 'สมาชิกยืนยันแล้ว',
+  'ACTIVE PASSES': 'บัตรที่ใช้งาน',
+  'SPENT': 'ใช้จ่าย',
+  'Supporter since': 'ผู้สนับสนุนตั้งแต่',
+  'ACCOUNT': 'บัญชี',
+  'Personal details': 'ข้อมูลส่วนตัว',
+  'Orders & receipts': 'คำสั่งซื้อและใบเสร็จ',
+  'Payment methods': 'วิธีชำระเงิน',
+  'Settings & notifications': 'ตั้งค่าและการแจ้งเตือน',
+  'SUPPORT': 'สนับสนุน',
+  'Help & stadium info': 'ช่วยเหลือและข้อมูลสนาม',
+  'KickOff Arena': 'KickOff Arena',
+  'Ticket terms': 'เงื่อนไขบัตร',
+  'Terms of use': 'เงื่อนไขการใช้งาน',
+  'Privacy policy': 'นโยบายความเป็นส่วนตัว',
+  'LEGAL': 'กฎหมาย',
+  'KICKOFF MEMBER APP · v0.1.0': 'แอปสมาชิก KICKOFF · v0.1.0',
+  'Language': 'ภาษา',
+  'More languages coming soon': 'ภาษาอื่น ๆ กำลังจะมา',
+  'Notifications': 'การแจ้งเตือน',
+  'Match reminders': 'เตือนการแข่งขัน',
+  'Kick-off reminders 24 hours and 2 hours before home matches.':
+    'เตือนการคิกออฟ 24 ชั่วโมงและ 2 ชั่วโมงก่อนแมตช์เหย้า',
+  'Delete account': 'ลบบัญชี',
+  'Delete account?': 'ลบบัญชี?',
+  'Deleting your account voids unused passes, revokes access immediately and writes an audit record for the club. Contact the club if you need help with an existing refund.':
+    'การลบบัญชีจะทำให้บัตรที่ยังไม่ใช้หมดอายุ เพิกถอนการเข้าถึงทันที และบันทึกประวัติให้สโมสร ติดต่อสโมสรหากต้องการความช่วยเหลือเรื่องการคืนเงิน',
+
+  // ── tickets / orders ──────────────────────────────────────────────────────
+  'DIGITAL MATCH PASSES': 'บัตรดิจิทัลแมตช์',
+  'My tickets': 'บัตรของฉัน',
+  'Pick an upcoming fixture, choose your exact seat, and your pass will appear here.':
+    'เลือกแมตช์ที่จะถึง เลือกที่นั่งของคุณ แล้วบัตรจะปรากฏที่นี่',
+  'Browse fixtures': 'ดูรายการแข่งขัน',
+  'Order history': 'ประวัติคำสั่งซื้อ',
+  'TOTAL': 'รวมทั้งหมด',
+  'No active tickets yet': 'ยังไม่มีบัตรที่ใช้งาน',
+  'No past tickets yet': 'ยังไม่มีบัตรที่ผ่านมาแล้ว',
+  'No seats held': 'ยังไม่มีที่นั่งที่จองไว้',
+  'Pick your seats again to start a new checkout.': 'เลือกที่นั่งอีกครั้งเพื่อเริ่มการชำระเงินใหม่',
+  'Back to fixtures': 'กลับไปรายการแข่งขัน',
+  'NEXT ENTRY · {date} · {venue}': 'เข้าชมแมตช์ถัดไป · {date} · {venue}',
+  'MATCHDAY, SIMPLIFIED': 'วันแข่งขัน ง่าย ๆ',
+  'ORDERS': 'คำสั่งซื้อ',
+  'No orders yet': 'ยังไม่มีคำสั่งซื้อ',
+  'Open orders': 'เปิดคำสั่งซื้อ',
+  'ORDER SUMMARY': 'สรุปคำสั่งซื้อ',
+  'Payment received. Your passes appear as soon as Stripe confirms the payment.':
+    'รับชำระเงินแล้ว บัตรจะปรากฏทันทีที่ Stripe ยืนยันการชำระเงิน',
+  'Payment was cancelled. You were not charged.': 'การชำระเงินถูกยกเลิก คุณไม่ถูกเรียกเก็บเงิน',
+  'Payment was not completed. Open your orders to check the status and try again.':
+    'การชำระเงินไม่สำเร็จ เปิดคำสั่งซื้อเพื่อดูสถานะแล้วลองใหม่',
+  'Payment was cancelled, but your seats could not be released yet: {error}':
+    'การชำระเงินถูกยกเลิก แต่ยังปล่อยที่นั่งไม่ได้: {error}',
+  'Reserved until {clock} · pay or cancel to release': 'จองไว้ถึง {clock} · ชำระหรือยกเลิกเพื่อปล่อยที่นั่ง',
+  'Reserved until {clock}': 'จองไว้ถึง {clock}',
+  'ORDER · {id}': 'คำสั่งซื้อ · {id}',
+  'Placed {date} · {count} {plural}': 'สั่งเมื่อ {date} · {count} {plural}',
+  'Placed {date}': 'สั่งเมื่อ {date}',
+  'ticket': 'ใบ',
+  'tickets': 'ใบ',
+  'View orders': 'ดูคำสั่งซื้อ',
+  'Total paid': 'ชำระแล้วทั้งหมด',
+  'Reference': 'เลขอ้างอิง',
+  'Paid at': 'ชำระเมื่อ',
+  'Order not found': 'ไม่พบคำสั่งซื้อ',
+  'Could not cancel the order': 'ไม่สามารถยกเลิกคำสั่งซื้อได้',
+  'Could not cancel': 'ไม่สามารถยกเลิกได้',
+  'Could not open receipt': 'ไม่สามารถเปิดใบเสร็จได้',
+  'Receipt after payment': 'ใบเสร็จหลังชำระเงิน',
+  'Receipt available after payment': 'ใบเสร็จเปิดดูได้หลังชำระเงิน',
+
+  // ── match detail ──────────────────────────────────────────────────────────
+  'Match information': 'ข้อมูลการแข่งขัน',
+  'FULL TIME': 'จบการแข่งขัน',
+  'GATES OPEN': 'ประตูเปิด',
+  'KICK-OFF': 'คิกออฟ',
+  'Seating zones': 'โซนที่นั่ง',
+  'ROWS {range}': 'แถว {range}',
+  'ROWS': 'แถว',
+  'Fixture unavailable': 'ไม่สามารถโหลดคู่แข่งขันได้',
+  'Tickets for this fixture are not available yet. Check back when the club opens seating.':
+    'บัตรสำหรับแมตช์นี้ยังไม่เปิดจำหน่าย กลับมาเมื่อสโมสรเปิดผังที่นั่ง',
+  'This fixture has ended. Match report is available in the club feed.':
+    'แมตช์นี้จบแล้ว รายงานการแข่งขันอยู่ในฟีดสโมสร',
+  'Interactive seat maps are a post-MVP feature. Zones are configured by the club admin.':
+    'แผนผังที่นั่งแบบโต้ตอบเป็นฟีเจอร์หลัง MVP โซนต่าง ๆ จัดการโดยผู้ดูแลสโมสร',
+  'Seating unavailable': 'ไม่สามารถโหลดผังที่นั่งได้',
+
+  // ── seat selection / checkout ─────────────────────────────────────────────
+  'Choose your seat': 'เลือกที่นั่งของคุณ',
+  'Choose seats': 'เลือกที่นั่ง',
+  'SELECT': 'เลือก',
+  'Selected': 'เลือกแล้ว',
+  'CHOOSE YOUR VIEW': 'เลือกมุมมองของคุณ',
+  'STAND': 'อัฒจันทร์',
+  'SELECT STAND': 'เลือกอัฒจันทร์',
+  'ROW': 'แถว',
+  'ROW {row} · SEAT {number}': 'แถว {row} · เก้าอี้ {number}',
+  'SEAT': 'เก้าอี้',
+  'SEATS': 'ที่นั่ง',
+  'ZONE': 'โซน',
+  'FREE': 'ฟรี',
+  'FROM': 'เริ่มที่',
+  'Available': 'ว่าง',
+  'Unavailable': 'ไม่พร้อมใช้งาน',
+  'Upcoming': 'จะถึง',
+  'Status': 'สถานะ',
+  'Reserved by you': 'คุณจองไว้',
+  'Release seat': 'ปล่อยที่นั่ง',
+  'Resume payment': 'ชำระเงินต่อ',
+  'Resume checkout': 'ดำเนินการชำระเงินต่อ',
+  'Booking fee': 'ค่าจอง',
+  'Payment processing': 'กำลังดำเนินการชำระเงิน',
+  'Payment pending': 'รอการชำระเงิน',
+  'Payment successful': 'ชำระเงินสำเร็จ',
+  'Checkout': 'ชำระเงิน',
+  'STEP 2 OF 3 · PAYMENT': 'ขั้นที่ 2 จาก 3 · การชำระเงิน',
+  'TOTAL INCLUDING VAT': 'รวมทั้งหมดรวมภาษี',
+  'BY PAYING YOU ACCEPT THE SINGLE-MATCH TICKET TERMS. TICKETS ARE NON-REFUNDABLE AND TRANSFERABLE ONLY THROUGH THE CLUB.':
+    'การชำระเงินถือว่าคุณยอมรับเงื่อนไขบัตรแมตช์เดียว บัตรไม่สามารถคืนเงินได้ และโอนได้เฉพาะผ่านสโมสรเท่านั้น',
+  'Card details are entered on Stripe, never in the app.':
+    'ข้อมูลบัตรกรอกใน Stripe เท่านั้น ไม่เคยผ่านแอป',
+  'Secure hosted checkout': 'ชำระเงินผ่าน Stripe อย่างปลอดภัย',
+  'YOU WILL BE REDIRECTED TO STRIPE. USE A TEST CARD SUCH AS 4242 4242 4242 4242.':
+    'คุณจะถูกพาไปยัง Stripe ใช้บัตรทดสอบเช่น 4242 4242 4242 4242',
+  'Could not load your hold': 'ไม่สามารถโหลดที่นั่งที่จองไว้ได้',
+  'Could not release the seat': 'ไม่สามารถปล่อยที่นั่งได้',
+  'You can select up to {max} seats per order. Seats are held for {minutes} minutes while you check out.':
+    'เลือกได้สูงสุด {max} ที่นั่งต่อคำสั่งซื้อ ที่นั่งจะถูกจองไว้ {minutes} นาทีระหว่างคุณชำระเงิน',
+  'KICKOFF VS {opponent}': 'KICKOFF พบ {opponent}',
+  'Your seats are reserved for you while you finish paying on Stripe. Resume when you are ready, or cancel to free them for other fans.':
+    'ที่นั่งของคุณถูกจองไว้ระหว่างคุณชำระเงินใน Stripe กลับมาเมื่อพร้อม หรือยกเลิกเพื่อปล่อยให้แฟนคนอื่น',
+  'How your pass works': 'บัตรทำงานอย่างไร',
+  'Keep your pass ready': 'เตรียมบัตรของคุณไว้',
+  'Open your pass before you reach the gate so the signed QR is ready. Each pass admits one entry and is validated live by the scanner.':
+    'เปิดบัตรก่อนถึงประตูเพื่อให้คิวอาร์พร้อม บัตรหนึ่งใบเข้าได้หนึ่งคนและสแกนสดที่ประตู',
+  'Buy your seat, show the QR at the gate, and staff will mark it used. One scan per pass. Keep the pass on your phone — screenshots are not accepted.':
+    'เลือกที่นั่ง แสดงคิวอาร์ที่ประตู แล้วเจ้าหน้าที่จะทำเครื่องหมายว่าใช้แล้ว สแกนหนึ่งครั้งต่อบัตร เก็บบัตรไว้ในโทรศัพท์ — ไม่รับภาพหน้าจอ',
+  'Arrive 60 minutes early. Have this pass open at full brightness. Photo ID may be requested. Each pass admits one entry, so sharing the QR does not create a second admission.':
+    'มาถึงก่อน 60 นาที เปิดบัตรนี้ไว้ที่ความสว่างเต็มที่ อาจขอดูบัตรประชาชนที่ประตู บัตรหนึ่งใบเข้าได้หนึ่งคน การแชร์คิวอาร์จึงไม่สร้างสิทธิ์เข้าชมที่สอง',
+  'Entry checklist': 'รายการก่อนเข้าชม',
+  'SCAN AT THE GATE · ONE ENTRY ONLY': 'สแกนที่ประตู · เข้าได้หนึ่งครั้ง',
+  'SECURE PASS · SIGNED QR · VALID FOR ONE ENTRY': 'บัตรปลอดภัย · คิวอาร์ลงนาม · ใช้เข้าได้หนึ่งครั้ง',
+  'OFFICIAL MATCH PASS': 'บัตรแมตช์อย่างเป็นทางการ',
+  'Digital pass': 'บัตรดิจิทัล',
+  'Offline QR pass': 'บัตรคิวอาร์แบบออฟไลน์',
+  'OFFLINE READY': 'พร้อมออฟไลน์',
+  'Secure entry': 'เข้าชมอย่างปลอดภัย',
+  'Get started': 'เริ่มต้น',
+  'PITCH THIS WAY': 'ไปทางนี้',
+
+  // ── ticket detail ─────────────────────────────────────────────────────────
+  'MATCH PASS': 'บัตรแมตช์',
+  'Match ticket': 'บัตรแข่งขัน',
+  'ATTENDEE': 'ผู้เข้าชม',
+  'TICKET HOLDER': 'ผู้ถือบัตร',
+  'Ticket holder': 'ผู้ถือบัตร',
+  'PASS ID · {id}': 'เลขบัตร · {id}',
+  'VERIFIED': 'ยืนยันแล้ว',
+  'USED': 'ใช้แล้ว',
+  'Need the receipt or another pass?': 'ต้องการใบเสร็จหรือบัตรอีกใบ?',
+  'Pass not found': 'ไม่พบบัตร',
+  'Preparing image…': 'กำลังเตรียมรูปภาพ…',
+  'Could not load the fixtures': 'ไม่สามารถโหลดรายการแข่งขันได้',
+
+  // ── fixtures / news ───────────────────────────────────────────────────────
+  'Fixtures': 'รายการแข่งขัน',
+  'Fixtures & news': 'แข่งขันและข่าว',
+  'Club news': 'ข่าวสโมสร',
+  'More from the club': 'เพิ่มเติมจากสโมสร',
+  'CLUB FEED': 'ฟีดสโมสร',
+  'Article unavailable': 'ไม่สามารถอ่านบทความได้',
+  'Back to home': 'กลับหน้าแรก',
+  'KickOff vs Bangkok Rovers': 'KickOff พบ Bangkok Rovers',
+  'KICKOFF SUPPORTERS TRUST': 'KICKOFF SUPPORTERS TRUST',
+  'EST. 2026 · BANGKOK': 'EST. 2026 · BANGKOK',
+  'HOME': 'เหย้า',
+  'AWAY': 'เยือน',
+  'NORTH': 'NORTH',
+  'EAST': 'EAST',
+
+  // ── auth ──────────────────────────────────────────────────────────────────
+  'Sign in': 'เข้าสู่ระบบ',
+  'Sign in to manage your tickets, seats, and match day.':
+    'เข้าสู่ระบบเพื่อบริหารบัตร ที่นั่ง และวันแข่งขันของคุณ',
+  'PASSWORD': 'รหัสผ่าน',
+  'Your password': 'รหัสผ่านของคุณ',
+  'Forgot your password?': 'ลืมรหัสผ่าน?',
+  'EMAIL': 'อีเมล',
+  'you@example.com': 'you@example.com',
+  'Send reset link': 'ส่งลิงก์รีเซ็ต',
+  'Continue with demo fan account': 'เข้าสู่ระบบด้วยบัญชีทดลอง',
+  'The demo account is preloaded with one active pass and one used pass.':
+    'บัญชีทดลองมีบัตรที่ใช้งานหนึ่งใบและบัตรที่ใช้แล้วหนึ่งใบ',
+  'Create an account': 'สร้างบัญชี',
+  'Create account': 'สร้างบัญชี',
+  'Create your supporter account and get your first digital match pass.':
+    'สร้างบัญชีผู้สนับสนุนและรับบัตรดิจิทัลแมตช์แรกของคุณ',
+  'FULL NAME': 'ชื่อ-นามสกุล',
+  'Your full name': 'ชื่อ-นามสกุลของคุณ',
+  'At least 8 characters': 'อย่างน้อย 8 ตัวอักษร',
+  'By continuing you agree to the terms of service and match day ground rules.':
+    'การดำเนินการต่อถือว่าคุณยอมรับข้อกำหนดการให้บริการและกฎระเบียบวันแข่งขัน',
+  'NEW PASSWORD': 'รหัสผ่านใหม่',
+  'New password': 'รหัสผ่านใหม่',
+  'CONFIRM PASSWORD': 'ยืนยันรหัสผ่าน',
+  'Confirm new password': 'ยืนยันรหัสผ่านใหม่',
+  'Update password': 'อัปเดตรหัสผ่าน',
+  'You opened a recovery link. Set a new password to get back to your tickets.':
+    'คุณเปิดลิงก์กู้คืนรหัสผ่าน ตั้งรหัสผ่านใหม่เพื่อกลับเข้าถึงบัตรของคุณ',
+  'Check your inbox': 'กล่องจดหมายของคุณ',
+  'One link, no code': 'ลิงก์เดียว ไม่ต้องกรอกรหัส',
+  'The link confirms your email and signs you in. Nothing to type — if it did not arrive, check spam or send it again.':
+    'ลิงก์นี้ยืนยันอีเมลและเข้าสู่ระบบให้คุณ ไม่ต้องกรอกรหัสใด ๆ — หากไม่ได้รับ ตรวจสอบโฟลเดอร์สแปมหรือส่งอีกครั้ง',
+  'Confirmation links can only be used once and do expire. Sign in and we will send a fresh one if you still need it.':
+    'ลิงก์ยืนยันใช้ได้เพียงครั้งเดียวและมีวันหมดอายุ เข้าสู่ระบบแล้วเราจะส่งลิงก์ใหม่ให้หากคุณยังต้องการ',
+  'Back to sign in': 'กลับไปหน้าเข้าสู่ระบบ',
+  'This confirmation link is invalid or has expired.': 'ลิงก์ยืนยันนี้ไม่ถูกต้องหรือหมดอายุ',
+  'Resend email': 'ส่งอีเมลซ้ำ',
+  'Confirmation email sent again — check your inbox.': 'ส่งอีเมลยืนยันอีกครั้งแล้ว — กล่องจดหมายของคุณ',
+  'We sent a confirmation link to': 'เราส่งลิงก์ยืนยันไปที่',
+  'Already confirmed?': 'ยืนยันแล้วใช่ไหม?',
+  'Already have an account?': 'มีบัญชีอยู่แล้ว?',
+  'New to KickOff?': 'ใหม่สำหรับ KickOff?',
+  'New here?': 'ใหม่ที่นี่?',
+  'If an account exists for {email}, a reset link is on its way.':
+    'หากมีบัญชีสำหรับ {email} ลิงก์รีเซ็ตกำลังจะไปถึง',
+  'Leave blank to keep current': 'เว้นว่างเพื่อคงค่าปัจจุบัน',
+  'Save changes': 'บันทึกการเปลี่ยนแปลง',
+  'Saved': 'บันทึกแล้ว',
+  'Try again': 'ลองใหม่',
+
+  // ── the display headlines (each line is its own key: the break is layout) ─
+  'LINK': 'ลิงก์',
+  'EXPIRED.': 'หมดอายุ.',
+  'CHECK YOUR': 'ตรวจสอบ',
+  'EMAIL.': 'อีเมล.',
+  'RESET YOUR': 'รีเซ็ต',
+  'PASSWORD.': 'รหัสผ่าน.',
+  'WELCOME': 'ยินดีต้อนรับ',
+  'BACK.': 'กลับมา.',
+  'JOIN THE': 'เข้าร่วม',
+  'CLUB.': 'สโมสร.',
+  'CHOOSE A': 'เลือก',
+  'NEW PASSWORD.': 'รหัสผ่านใหม่.',
+  'MATCH DAY': 'วันแข่งขัน',
+  'STARTS HERE.': 'เริ่มที่นี่.',
+  'MATCHDAY': 'วันแข่งขัน',
+
+  // ── settings ──────────────────────────────────────────────────────────────
+  'Settings': 'การตั้งค่า',
+  'NOTIFICATIONS': 'การแจ้งเตือน',
+  'CHANGE PASSWORD': 'เปลี่ยนรหัสผ่าน',
+  'PREFERENCES': 'การตั้งค่า',
+  'PAYMENT METHOD': 'วิธีชำระเงิน',
+  'PAYMENT': 'การชำระเงิน',
+  'ORDER': 'คำสั่งซื้อ',
+  'FIXTURE': 'คู่แข่งขัน',
+  'ENTRY': 'ทางเข้า',
+  'SECURE': 'ปลอดภัย',
+  'STRIPE': 'STRIPE',
+  'STRIPE TEST MODE': 'โหมดทดสอบ Stripe',
+  'THB': 'THB',
+  'VIP': 'VIP',
+  'KICKOFF ARENA': 'KICKOFF ARENA',
+  'KickOff Media': 'KickOff Media',
+  'Lifetime ticket spend': 'ยอดใช้จ่ายบัตรทั้งหมด',
+  'Stadium overview': 'ภาพรวมสนาม',
+  'LIVE': 'ถ่ายทอดสด',
+  'DIGITAL MATCH PASS': 'บัตรดิจิทัลแมตช์',
+  'The seat count could not be loaded. Check your connection and try again.': 'โหลดจำนวนที่นั่งไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองใหม่',
+  'SECURE CHECKOUT · HMAC-SIGNED PASSES · LIVE GATE VALIDATION': 'ชำระเงินปลอดภัย · บัตรลงนาม HMAC · สแกนประตูสด',
+  'Could not load the news': 'ไม่สามารถโหลดข่าวได้',
+  'View my tickets': 'ดูบัตรของฉัน',
+  'Match passes and receipts will appear here after your first purchase.': 'บัตรและใบเสร็จจะปรากฏที่นี่หลังการซื้อครั้งแรก',
+  'RECEIPTS ARE GENERATED SECURELY BY KICKOFF AND INCLUDE VAT. PAYMENTS ARE PROCESSED BY STRIPE.': 'ใบเสร็จสร้างอย่างปลอดภัยโดย KICKOFF และรวมภาษี การชำระเงินดำเนินการโดย Stripe',
+  'Full name': 'ชื่อ-นามสกุล',
+  'Phone (optional)': 'เบอร์โทรศัพท์ (ไม่บังคับ)',
+  'Email': 'อีเมล',
+  'Cancel order': 'ยกเลิกคำสั่งซื้อ',
+  'Could not delete account': 'ไม่สามารถลบบัญชีได้',
+  'Refund policy': 'นโยบายคืนเงิน',
+  'Could not confirm your email.': 'ไม่สามารถยืนยันอีเมลของคุณ',
+};

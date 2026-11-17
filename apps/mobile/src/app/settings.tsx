@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { AppText, Card, PrimaryButton, Screen, ScreenHeader } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { api, errorMessage } from '@/lib/api';
 import { resetLocalSession, signOut } from '@/lib/auth';
 import {
@@ -16,6 +17,7 @@ import {
 import { colors, radii } from '@/lib/theme';
 
 export default function SettingsScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<'notifications' | 'delete' | null>(null);
@@ -37,7 +39,7 @@ export default function SettingsScreen() {
       else await unregisterPushToken();
       await devicesQuery.refetch();
     } catch (error) {
-      Alert.alert('Notifications', errorMessage(error));
+      Alert.alert(t('Notifications'), errorMessage(error));
     } finally {
       setBusy(null);
     }
@@ -45,17 +47,17 @@ export default function SettingsScreen() {
 
   const handleSignOut = () => {
     Alert.alert(
-      'Sign out?',
+      t('Sign out?'),
       "You'll need to sign in again to access your passes. Offline copies on this device are removed.",
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Sign out',
+          text: t('Sign out'),
           style: 'destructive',
           onPress: () => {
             void signOut()
               .then(() => router.replace('/(auth)/welcome'))
-              .catch((error) => Alert.alert('Sign out failed', errorMessage(error)));
+              .catch((error) => Alert.alert(t('Sign out failed'), errorMessage(error)));
           },
         },
       ],
@@ -64,12 +66,12 @@ export default function SettingsScreen() {
 
   const handleDelete = () => {
     Alert.alert(
-      'Delete account?',
+      t('Delete account?'),
       'Your account will be closed, unused passes voided and personal details removed. This cannot be undone. The request is recorded in the club audit log.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete account',
+          text: t('Delete account'),
           style: 'destructive',
           onPress: () => {
             setBusy('delete');
@@ -80,7 +82,7 @@ export default function SettingsScreen() {
                 queryClient.clear();
                 router.replace('/(auth)/welcome');
               })
-              .catch((error) => Alert.alert('Could not delete account', errorMessage(error)))
+              .catch((error) => Alert.alert(t('Could not delete account'), errorMessage(error)))
               .finally(() => setBusy(null));
           },
         },
@@ -90,18 +92,14 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="Settings" subtitle="Account" onBack={() => router.back()} />
+      <ScreenHeader title={t('Settings')} subtitle="Account" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
-          NOTIFICATIONS
-        </AppText>
+        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>{t('NOTIFICATIONS')}</AppText>
         <Card style={styles.card}>
           <View style={styles.row}>
             <View style={styles.flex}>
-              <AppText variant="label">Match reminders</AppText>
-              <AppText variant="small" color={colors.muted} style={styles.rowDetail}>
-                Kick-off reminders 24 hours and 2 hours before home matches.
-              </AppText>
+              <AppText variant="label">{t('Match reminders')}</AppText>
+              <AppText variant="small" color={colors.muted} style={styles.rowDetail}>{t('Kick-off reminders 24 hours and 2 hours before home matches.')}</AppText>
             </View>
             <Switch
               value={notificationsOn}
@@ -118,16 +116,12 @@ export default function SettingsScreen() {
           ) : null}
         </Card>
 
-        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
-          PREFERENCES
-        </AppText>
+        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>{t('PREFERENCES')}</AppText>
         <Card style={styles.card}>
           <View style={styles.row}>
             <View style={styles.flex}>
-              <AppText variant="label">Language</AppText>
-              <AppText variant="small" color={colors.muted} style={styles.rowDetail}>
-                More languages coming soon
-              </AppText>
+              <AppText variant="label">{t('Language')}</AppText>
+              <AppText variant="small" color={colors.muted} style={styles.rowDetail}>{t('More languages coming soon')}</AppText>
             </View>
             <AppText variant="label" color={colors.primary}>
               English
@@ -135,24 +129,20 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
-          LEGAL
-        </AppText>
+        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>{t('LEGAL')}</AppText>
         <Card style={styles.card}>
-          <LegalRow label="Terms of use" onPress={() => router.push('/legal/terms')} />
-          <LegalRow label="Privacy policy" onPress={() => router.push('/legal/privacy')} />
+          <LegalRow label={t('Terms of use')} onPress={() => router.push('/legal/terms')} />
+          <LegalRow label={t('Privacy policy')} onPress={() => router.push('/legal/privacy')} />
           <LegalRow
-            label="Refund policy"
+            label={t('Refund policy')}
             onPress={() => router.push('/legal/refund')}
             last
           />
         </Card>
 
-        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>
-          ACCOUNT
-        </AppText>
+        <AppText variant="caption" color={colors.muted} style={styles.sectionLabel}>{t('ACCOUNT')}</AppText>
         <PrimaryButton
-          label="Sign out"
+          label={t('Sign out')}
           tone="dark"
           icon={<LogOut size={16} color="#FFFFFF" />}
           onPress={handleSignOut}
@@ -170,15 +160,10 @@ export default function SettingsScreen() {
 
         <View style={styles.info}>
           <ShieldAlert size={15} color={colors.muted} />
-          <AppText variant="caption" color={colors.muted} style={styles.infoText}>
-            Deleting your account voids unused passes, revokes access immediately and writes an
-            audit record for the club. Contact the club if you need help with an existing refund.
-          </AppText>
+          <AppText variant="caption" color={colors.muted} style={styles.infoText}>{t('Deleting your account voids unused passes, revokes access immediately and writes an audit record for the club. Contact the club if you need help with an existing refund.')}</AppText>
         </View>
 
-        <AppText variant="caption" color={colors.muted} style={styles.version}>
-          KICKOFF MEMBER APP · v0.1.0
-        </AppText>
+        <AppText variant="caption" color={colors.muted} style={styles.version}>{t('KICKOFF MEMBER APP · v0.1.0')}</AppText>
       </ScrollView>
     </Screen>
   );

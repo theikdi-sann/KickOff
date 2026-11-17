@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { signInSchema } from '@kickoff/shared';
 import { AppText, LiveTag, PrimaryButton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { useApp } from '@/lib/store';
 import { colors, fonts, radii } from '@/lib/theme';
 
@@ -21,6 +22,7 @@ const INVALID_CREDENTIALS_MESSAGE =
   'Enter a valid email and a password of 8 to 72 characters.';
 
 export default function LoginScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const { signIn, signInDemo } = useApp();
   const [email, setEmail] = useState('');
@@ -81,34 +83,30 @@ export default function LoginScreen() {
               X
             </AppText>
           </View>
-          <AppText variant="h2" style={styles.brand}>
-            KICKOFF
-          </AppText>
+          <AppText variant="h2" style={styles.brand}>{t('KICKOFF')}</AppText>
         </View>
 
         <AppText variant="display" style={styles.title}>
-          WELCOME{'\n'}BACK.
+          {t('WELCOME')}{'\n'}{t('BACK.')}
         </AppText>
-        <AppText variant="body" color={colors.muted} style={styles.subtitle}>
-          Sign in to manage your tickets, seats, and match day.
-        </AppText>
+        <AppText variant="body" color={colors.muted} style={styles.subtitle}>{t('Sign in to manage your tickets, seats, and match day.')}</AppText>
 
         <View style={styles.form}>
           <Field
-            label="EMAIL"
+            label={t('EMAIL')}
             icon={<Mail size={17} color={colors.muted} />}
             value={email}
             onChangeText={setEmail}
-            placeholder="you@example.com"
+            placeholder={t('you@example.com')}
             keyboardType="email-address"
             autoCapitalize="none"
           />
           <Field
-            label="PASSWORD"
+            label={t('PASSWORD')}
             icon={<Lock size={17} color={colors.muted} />}
             value={password}
             onChangeText={setPassword}
-            placeholder="Your password"
+            placeholder={t('Your password')}
             secureTextEntry={!showPassword}
             right={
               <Pressable onPress={() => setShowPassword((value) => !value)} hitSlop={10}>
@@ -133,13 +131,11 @@ export default function LoginScreen() {
             onPress={() => router.push('/forgot-password')}
             hitSlop={8}
             style={styles.forgot}>
-            <AppText variant="caption" color={colors.primary}>
-              Forgot your password?
-            </AppText>
+            <AppText variant="caption" color={colors.primary}>{t('Forgot your password?')}</AppText>
           </Pressable>
 
           <PrimaryButton
-            label="Sign in"
+            label={t('Sign in')}
             onPress={handleSignIn}
             loading={loading}
             icon={<ShieldCheck size={18} color="#FFFFFF" />}
@@ -157,23 +153,19 @@ export default function LoginScreen() {
               </View>
 
               <PrimaryButton
-                label="Continue with demo fan account"
+                label={t('Continue with demo fan account')}
                 tone="gold"
                 onPress={handleDemo}
               />
-              <AppText variant="small" color={colors.muted} style={styles.hint}>
-                The demo account is preloaded with one active pass and one used pass.
-              </AppText>
+              <AppText variant="small" color={colors.muted} style={styles.hint}>{t('The demo account is preloaded with one active pass and one used pass.')}</AppText>
             </>
           ) : null}
         </View>
 
         <Pressable onPress={() => router.push('/register')} style={styles.registerLink}>
           <AppText variant="small" color={colors.muted}>
-            New to KickOff?{' '}
-            <AppText variant="label" color={colors.primary}>
-              Create an account
-            </AppText>
+            {t('New to KickOff?')}{' '}
+            <AppText variant="label" color={colors.primary}>{t('Create an account')}</AppText>
           </AppText>
         </Pressable>
       </ScrollView>

@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { applyLinkSession } from '@/lib/auth';
 import { colors, radii } from '@/lib/theme';
 
@@ -48,8 +49,9 @@ function readLinkPayload(url: string): LinkPayload {
  * with a way back to sign-in — no code or password entry anywhere.
  */
 export default function AuthCallbackScreen() {
+  const t = useTranslator();
   const router = useRouter();
-  const [failed, setFailed] = useState<string | null>(null);
+  const [failed, setFailed] = useState<{ reason: 'expired' | 'confirm'; message?: string } | null>(null);
   const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
@@ -57,13 +59,13 @@ export default function AuthCallbackScreen() {
 
     const consume = async (url: string | null) => {
       if (!url) {
-        if (active) setFailed('This confirmation link is invalid or has expired.');
+        if (active) setFailed({ reason: 'expired' });
         return;
       }
       const { access, refresh, error } = readLinkPayload(url);
       if (!access || !refresh) {
         if (active) {
-          setFailed(error ?? 'This confirmation link is invalid or has expired.');
+          setFailed({ reason: 'expired', message: error ?? undefined });
         }
         return;
       }
@@ -72,7 +74,7 @@ export default function AuthCallbackScreen() {
         if (active) setConfirmed(true);
       } catch (caught) {
         if (active) {
-          setFailed(caught instanceof Error ? caught.message : 'Could not confirm your email.');
+          setFailed({ reason: 'confirm', message: caught instanceof Error ? caught.message : undefined });
         }
       }
     };
@@ -104,22 +106,20 @@ export default function AuthCallbackScreen() {
           </Pressable>
 
           <AppText variant="display" style={styles.title}>
-            LINK{'\n'}EXPIRED.
+            {t('LINK')}{'\n'}{t('EXPIRED.')}
           </AppText>
           <View style={styles.errorBox}>
             <AppText variant="small" color={colors.danger}>
-              {failed}
+              {failed.message ??
+                (failed.reason === 'expired'
+                  ? t('This confirmation link is invalid or has expired.')
+                  : t('Could not confirm your email.'))}
             </AppText>
           </View>
-          <AppText variant="body" color={colors.muted} style={styles.subtitle}>
-            Confirmation links can only be used once and do expire. Sign in and we will send a
-            fresh one if you still need it.
-          </AppText>
+          <AppText variant="body" color={colors.muted} style={styles.subtitle}>{t('Confirmation links can only be used once and do expire. Sign in and we will send a fresh one if you still need it.')}</AppText>
 
           <Pressable onPress={() => router.replace('/login')} style={styles.loginLink}>
-            <AppText variant="label" color={colors.primary}>
-              Back to sign in
-            </AppText>
+            <AppText variant="label" color={colors.primary}>{t('Back to sign in')}</AppText>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

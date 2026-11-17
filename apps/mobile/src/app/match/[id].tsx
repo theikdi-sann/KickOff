@@ -30,12 +30,14 @@ import {
   Screen,
   Skeleton,
 } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { useMatch } from '@/lib/queries/matches';
 import { useZones, useZoneAvailability } from '@/lib/queries/seats';
 import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function MatchDetailScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const matchQuery = useMatch(id);
@@ -66,7 +68,7 @@ export default function MatchDetailScreen() {
         <StatusBar style="light" />
         <View style={{ padding: 20 }}>
           <EmptyState
-            title="Fixture unavailable"
+            title={t('Fixture unavailable')}
             description={
               matchQuery.error instanceof Error
                 ? matchQuery.error.message
@@ -90,9 +92,7 @@ export default function MatchDetailScreen() {
         <View style={styles.body}>
           {completed ? (
             <Card style={styles.resultCard}>
-              <AppText variant="caption" color={colors.muted} style={styles.caption}>
-                FULL TIME
-              </AppText>
+              <AppText variant="caption" color={colors.muted} style={styles.caption}>{t('FULL TIME')}</AppText>
               <View style={styles.resultRow}>
                 <Crest short="KO" size={46} colors={[colors.primaryBright, colors.primaryDark]} />
                 <AppText variant="display" style={styles.score}>
@@ -100,19 +100,15 @@ export default function MatchDetailScreen() {
                 </AppText>
                 <Crest short={match.opponentShort} size={46} colors={[match.accent, '#1E293B']} />
               </View>
-              <AppText variant="small" color={colors.muted} style={styles.centerText}>
-                This fixture has ended. Match report is available in the club feed.
-              </AppText>
+              <AppText variant="small" color={colors.muted} style={styles.centerText}>{t('This fixture has ended. Match report is available in the club feed.')}</AppText>
             </Card>
           ) : zonesQuery.error || availabilityQuery.error ? (
             <Card style={styles.notOnSaleCard}>
               <View style={styles.notOnSaleIcon}>
                 <TicketIcon size={22} color={colors.muted} />
               </View>
-              <AppText variant="h3">Seating unavailable</AppText>
-              <AppText variant="small" color={colors.muted} style={styles.centerText}>
-                The seat count could not be loaded. Check your connection and try again.
-              </AppText>
+              <AppText variant="h3">{t('Seating unavailable')}</AppText>
+              <AppText variant="small" color={colors.muted} style={styles.centerText}>{t('The seat count could not be loaded. Check your connection and try again.')}</AppText>
             </Card>
           ) : zonesQuery.isLoading || availabilityQuery.isLoading ? (
             <Card style={styles.notOnSaleCard}>
@@ -123,20 +119,15 @@ export default function MatchDetailScreen() {
               <View style={styles.notOnSaleIcon}>
                 <TicketIcon size={22} color={colors.muted} />
               </View>
-              <AppText variant="h3">Not on sale</AppText>
-              <AppText variant="small" color={colors.muted} style={styles.centerText}>
-                Tickets for this fixture are not available yet. Check back when the club opens
-                seating.
-              </AppText>
+              <AppText variant="h3">{t('Not on sale')}</AppText>
+              <AppText variant="small" color={colors.muted} style={styles.centerText}>{t('Tickets for this fixture are not available yet. Check back when the club opens seating.')}</AppText>
             </Card>
           ) : (
             <>
               <View style={styles.sectionHeader}>
                 <View>
-                  <AppText variant="caption" color={colors.primary} style={styles.caption}>
-                    CHOOSE YOUR VIEW
-                  </AppText>
-                  <AppText variant="h2">Seating zones</AppText>
+                  <AppText variant="caption" color={colors.primary} style={styles.caption}>{t('CHOOSE YOUR VIEW')}</AppText>
+                  <AppText variant="h2">{t('Seating zones')}</AppText>
                 </View>
                 <LiveTag />
               </View>
@@ -166,8 +157,8 @@ export default function MatchDetailScreen() {
 
               <Card style={styles.mapCard}>
                 <View style={styles.mapHeader}>
-                  <AppText variant="label">Stadium overview</AppText>
-                  <Pill label="KICKOFF ARENA" tone="muted" />
+                  <AppText variant="label">{t('Stadium overview')}</AppText>
+                  <Pill label={t('KICKOFF ARENA')} tone="muted" />
                 </View>
                 <View style={styles.map}>
                   <View style={styles.pitch}>
@@ -175,40 +166,30 @@ export default function MatchDetailScreen() {
                     <View style={styles.pitchCircle} />
                   </View>
                   <View style={[styles.stand, styles.standNorth]}>
-                    <AppText variant="caption" color="#FFFFFF" style={styles.standText}>
-                      NORTH
-                    </AppText>
+                    <AppText variant="caption" color="#FFFFFF" style={styles.standText}>{t('NORTH')}</AppText>
                   </View>
                   <View style={[styles.stand, styles.standEast]}>
-                    <AppText variant="caption" color={colors.ink} style={styles.standText}>
-                      EAST
-                    </AppText>
+                    <AppText variant="caption" color={colors.ink} style={styles.standText}>{t('EAST')}</AppText>
                   </View>
                   <View style={[styles.stand, styles.standVip]}>
-                    <AppText variant="caption" color="#FFFFFF" style={styles.standText}>
-                      VIP
-                    </AppText>
+                    <AppText variant="caption" color="#FFFFFF" style={styles.standText}>{t('VIP')}</AppText>
                   </View>
                 </View>
-                <AppText variant="small" color={colors.muted} style={styles.mapNote}>
-                  Interactive seat maps are a post-MVP feature. Zones are configured by the club admin.
-                </AppText>
+                <AppText variant="small" color={colors.muted} style={styles.mapNote}>{t('Interactive seat maps are a post-MVP feature. Zones are configured by the club admin.')}</AppText>
               </Card>
             </>
           )}
 
-          <AppText variant="h2" style={styles.infoTitle}>
-            Match information
-          </AppText>
+          <AppText variant="h2" style={styles.infoTitle}>{t('Match information')}</AppText>
           <View style={styles.infoGrid}>
             <InfoTile
               icon={<Clock3 size={16} color={colors.primary} />}
-              label="KICK-OFF"
-              value={formatMatchTime(match.kickoffAt, { timezone: display.timezone })}
+              label={t('KICK-OFF')}
+              value={formatMatchTime(match.kickoffAt, { timezone: display.timezone, locale: display.locale })}
             />
-            <InfoTile icon={<MapPin size={16} color={colors.primary} />} label="VENUE" value={match.venue} />
-            <InfoTile icon={<Users size={16} color={colors.primary} />} label="GATES OPEN" value="16:00" />
-            <InfoTile icon={<ShieldCheck size={16} color={colors.primary} />} label="ENTRY" value="Gate 2" />
+            <InfoTile icon={<MapPin size={16} color={colors.primary} />} label={t('VENUE')} value={match.venue} />
+            <InfoTile icon={<Users size={16} color={colors.primary} />} label={t('GATES OPEN')} value="16:00" />
+            <InfoTile icon={<ShieldCheck size={16} color={colors.primary} />} label={t('ENTRY')} value="Gate 2" />
           </View>
 
           <Card style={styles.entryCard}>
@@ -216,19 +197,16 @@ export default function MatchDetailScreen() {
               <TicketIcon size={21} color={colors.primary} />
             </View>
             <View style={styles.flex}>
-              <AppText variant="label">How your pass works</AppText>
+              <AppText variant="label">{t('How your pass works')}</AppText>
               <AppText variant="small" color={colors.muted} style={styles.entryText}>
-                Buy your seat, show the QR at the gate, and staff will mark it used. One scan per
-                pass. Keep the pass on your phone — screenshots are not accepted.
+                {t('Buy your seat, show the QR at the gate, and staff will mark it used. One scan per pass. Keep the pass on your phone — screenshots are not accepted.')}
               </AppText>
             </View>
           </Card>
 
           <View style={styles.notice}>
             <Info size={14} color={colors.warning} />
-            <AppText variant="caption" color={colors.goldInk} style={styles.noticeText}>
-              SECURE CHECKOUT · HMAC-SIGNED PASSES · LIVE GATE VALIDATION
-            </AppText>
+            <AppText variant="caption" color={colors.goldInk} style={styles.noticeText}>{t('SECURE CHECKOUT · HMAC-SIGNED PASSES · LIVE GATE VALIDATION')}</AppText>
           </View>
         </View>
       </PageScroll>
@@ -245,6 +223,7 @@ function MatchHero({
   fromPriceSatang?: number;
   onBack: () => void;
 }) {
+  const t = useTranslator();
   const completed = match.status === 'completed';
   const onSale = fromPriceSatang !== undefined;
   const display = useTenantDisplay();
@@ -268,20 +247,14 @@ function MatchHero({
         <AppText variant="caption" color={colors.accent} style={styles.heroEyebrow}>
           {completed ? 'FINAL SCORE' : match.competition.toUpperCase()}
         </AppText>
-        <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.heroEyebrow}>
-          MATCHDAY
-        </AppText>
+        <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.heroEyebrow}>{t('MATCHDAY')}</AppText>
       </View>
 
       <View style={styles.heroTeams}>
         <View style={styles.team}>
           <Crest short="KO" size={72} colors={[colors.primaryBright, colors.primaryDark]} />
-          <AppText variant="h3" color="#FFFFFF">
-            KICKOFF
-          </AppText>
-          <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.homeAway}>
-            HOME
-          </AppText>
+          <AppText variant="h3" color="#FFFFFF">{t('KICKOFF')}</AppText>
+          <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.homeAway}>{t('HOME')}</AppText>
         </View>
         <View style={styles.heroCenter}>
           {completed ? (
@@ -294,7 +267,7 @@ function MatchHero({
                 VS
               </AppText>
               <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.heroKick}>
-                {formatMatchTime(match.kickoffAt, { timezone: display.timezone })}
+                {formatMatchTime(match.kickoffAt, { timezone: display.timezone, locale: display.locale })}
               </AppText>
             </>
           )}
@@ -304,9 +277,7 @@ function MatchHero({
           <AppText variant="h3" color="#FFFFFF" numberOfLines={1} style={styles.opponent}>
             {match.opponent.toUpperCase()}
           </AppText>
-          <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.homeAway}>
-            AWAY
-          </AppText>
+          <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.homeAway}>{t('AWAY')}</AppText>
         </View>
       </View>
 
@@ -314,17 +285,13 @@ function MatchHero({
 
       <View style={styles.heroMeta}>
         <View style={styles.metaItem}>
-          <AppText variant="caption" color="rgba(255,255,255,0.45)" style={styles.metaLabel}>
-            DATE
-          </AppText>
+          <AppText variant="caption" color="rgba(255,255,255,0.45)" style={styles.metaLabel}>{t('DATE')}</AppText>
           <AppText variant="label" color="#FFFFFF">
-            {formatFullDate(match.kickoffAt, { timezone: display.timezone })}
+            {formatFullDate(match.kickoffAt, { timezone: display.timezone, locale: display.locale })}
           </AppText>
         </View>
         <View style={styles.metaItem}>
-          <AppText variant="caption" color="rgba(255,255,255,0.45)" style={styles.metaLabel}>
-            VENUE
-          </AppText>
+          <AppText variant="caption" color="rgba(255,255,255,0.45)" style={styles.metaLabel}>{t('VENUE')}</AppText>
           <AppText variant="label" color="#FFFFFF">
             {match.venue}
           </AppText>
@@ -338,7 +305,7 @@ function MatchHero({
               {onSale ? 'TICKETS FROM' : 'TICKETS'}
             </AppText>
             <AppText variant="h2" color={onSale ? colors.accent : '#FFFFFF'}>
-              {onSale ? formatMoney(fromPriceSatang, display.currency) : 'Not on sale'}
+              {onSale ? formatMoney(fromPriceSatang, display.currency, display.locale) : 'Not on sale'}
             </AppText>
           </View>
           <View style={styles.availablePill}>
@@ -362,6 +329,7 @@ function ZoneRow({
   availability: ZoneAvailabilityDto;
   onPress: () => void;
 }) {
+  const t = useTranslator();
   const soldOut = availability.availableSeats === 0;
   const display = useTenantDisplay();
   return (
@@ -380,7 +348,7 @@ function ZoneRow({
         </AppText>
         <View style={styles.zoneMeta}>
           <AppText variant="caption" color={colors.muted} style={styles.zoneMetaText}>
-            ROWS {zone.rows[0]}–{zone.rows[zone.rows.length - 1]}
+            {t('ROWS {range}', { range: `${zone.rows[0]}–${zone.rows[zone.rows.length - 1]}` })}
           </AppText>
           <View style={styles.zoneDot} />
           <AppText variant="caption" color={colors.muted} style={styles.zoneMetaText}>
@@ -389,10 +357,8 @@ function ZoneRow({
         </View>
       </View>
       <View style={styles.zoneRight}>
-        <AppText variant="h3">{formatMoney(zone.priceMinorUnits, display.currency)}</AppText>
-        <AppText variant="caption" color={colors.primary} style={styles.selectText}>
-          SELECT
-        </AppText>
+        <AppText variant="h3">{formatMoney(zone.priceMinorUnits, display.currency, display.locale)}</AppText>
+        <AppText variant="caption" color={colors.primary} style={styles.selectText}>{t('SELECT')}</AppText>
       </View>
     </Pressable>
   );

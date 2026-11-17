@@ -27,11 +27,13 @@ import { StatusBar } from 'expo-status-bar';
 import { useRef, useState } from 'react';
 import { formatFullDate, formatMatchTime, formatMoney } from '@kickoff/shared';
 import { AppText, Pill, Screen, Skeleton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { useTicket, useTicketQr } from '@/lib/queries/tickets';
 import { useTenantDisplay } from '@/lib/queries/tenant';
 import { colors, radii, shadow } from '@/lib/theme';
 
 export default function TicketDetailScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const display = useTenantDisplay();
   // The QR only needs to be readable; don't let the screen lock at the gate.
@@ -66,25 +68,21 @@ export default function TicketDetailScreen() {
       <Screen dark>
         <View style={styles.empty}>
           <QrIcon size={36} color={colors.nightMuted} />
-          <AppText variant="h2" color="#FFFFFF" style={styles.emptyTitle}>
-            Pass not found
-          </AppText>
+          <AppText variant="h2" color="#FFFFFF" style={styles.emptyTitle}>{t('Pass not found')}</AppText>
           <AppText variant="small" color={colors.nightMuted} style={styles.emptyText}>
             {ticketQuery.error instanceof Error
               ? ticketQuery.error.message
               : 'This pass could not be loaded.'}
           </AppText>
           <Pressable onPress={() => router.replace('/tickets')} style={styles.emptyButton}>
-            <AppText variant="label" color={colors.ink}>
-              View my tickets
-            </AppText>
+            <AppText variant="label" color={colors.ink}>{t('View my tickets')}</AppText>
           </Pressable>
         </View>
       </Screen>
     );
   }
 
-  const passText = `KickOff match pass\n${ticket.matchLabel}\n${formatFullDate(ticket.kickoffAt, { timezone: display.timezone })} · ${formatMatchTime(ticket.kickoffAt, { timezone: display.timezone })}\n${ticket.zoneName} · Row ${ticket.row} · Seat ${ticket.number}\nHolder: ${ticket.holder}\n\nThe QR is signed and checked live at the gate.`;
+  const passText = `KickOff match pass\n${ticket.matchLabel}\n${formatFullDate(ticket.kickoffAt, { timezone: display.timezone, locale: display.locale })} · ${formatMatchTime(ticket.kickoffAt, { timezone: display.timezone, locale: display.locale })}\n${ticket.zoneName} · Row ${ticket.row} · Seat ${ticket.number}\nHolder: ${ticket.holder}\n\nThe QR is signed and checked live at the gate.`;
 
   // Share the pass as an image: capture the rendered card to a PNG and hand
   // it to the OS share sheet. Falls back to plain text when capture or
@@ -118,12 +116,8 @@ export default function TicketDetailScreen() {
           <ChevronLeft size={21} color="#FFFFFF" />
         </Pressable>
         <View style={styles.headerCenter}>
-          <AppText variant="h3" color="#FFFFFF">
-            Digital pass
-          </AppText>
-          <AppText variant="caption" color={colors.nightMuted} style={styles.headerSub}>
-            OFFLINE READY
-          </AppText>
+          <AppText variant="h3" color="#FFFFFF">{t('Digital pass')}</AppText>
+          <AppText variant="caption" color={colors.nightMuted} style={styles.headerSub}>{t('OFFLINE READY')}</AppText>
         </View>
         <Pressable onPress={sharePass} style={styles.iconButton}>
           <Share2 size={18} color="#FFFFFF" />
@@ -137,9 +131,7 @@ export default function TicketDetailScreen() {
               <Check size={15} color={colors.ink} />
             </View>
             <View style={styles.flex}>
-              <AppText variant="label" color={colors.accent}>
-                Payment successful
-              </AppText>
+              <AppText variant="label" color={colors.accent}>{t('Payment successful')}</AppText>
               <AppText variant="small" color={colors.nightMuted} style={styles.successText}>
                 {count && Number(count) > 1
                   ? `${count} passes are now in My Tickets. Showing the first one.`
@@ -164,12 +156,8 @@ export default function TicketDetailScreen() {
                 </AppText>
               </View>
               <View>
-                <AppText variant="h3" color="#FFFFFF" style={styles.brand}>
-                  KICKOFF
-                </AppText>
-                <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.brandSub}>
-                  OFFICIAL MATCH PASS
-                </AppText>
+                <AppText variant="h3" color="#FFFFFF" style={styles.brand}>{t('KICKOFF')}</AppText>
+                <AppText variant="caption" color="rgba(255,255,255,0.55)" style={styles.brandSub}>{t('OFFICIAL MATCH PASS')}</AppText>
               </View>
             </View>
             <Pill label={used ? 'USED' : 'VALID'} tone={used ? 'muted' : 'gold'} />
@@ -177,18 +165,18 @@ export default function TicketDetailScreen() {
 
           <View style={styles.matchBlock}>
             <AppText variant="caption" color={colors.accent} style={styles.matchLabel}>
-              {formatMatchTime(ticket.kickoffAt, { timezone: display.timezone })} KICK-OFF · {ticket.venue.toUpperCase()}
+              {formatMatchTime(ticket.kickoffAt, { timezone: display.timezone, locale: display.locale })} KICK-OFF · {ticket.venue.toUpperCase()}
             </AppText>
             <AppText variant="title" color="#FFFFFF" style={styles.matchTitle}>
-              KickOff vs {ticket.opponent}
+              {t('KickOff vs {opponent}', { opponent: ticket.opponent })}
             </AppText>
             <AppText variant="small" color="rgba(255,255,255,0.65)">
-              {formatFullDate(ticket.kickoffAt, { timezone: display.timezone })}
+              {formatFullDate(ticket.kickoffAt, { timezone: display.timezone, locale: display.locale })}
             </AppText>
           </View>
 
           <View style={styles.teamsRow}>
-            <TeamBadge short="KO" label="KICKOFF" colors={[colors.primaryBright, colors.primaryDark]} />
+            <TeamBadge short="KO" label={t('KICKOFF')} colors={[colors.primaryBright, colors.primaryDark]} />
             <View style={styles.vs}>
               <AppText variant="caption" color="rgba(255,255,255,0.4)">
                 VS
@@ -232,44 +220,36 @@ export default function TicketDetailScreen() {
               )}
               {used ? (
                 <View style={styles.usedOverlay}>
-                  <AppText variant="display" color="#FFFFFF" style={styles.usedText}>
-                    USED
-                  </AppText>
+                  <AppText variant="display" color="#FFFFFF" style={styles.usedText}>{t('USED')}</AppText>
                 </View>
               ) : null}
             </Pressable>
             <View style={styles.scanRow}>
               <QrIcon size={14} color={colors.accent} />
-              <AppText variant="caption" color={colors.accent} style={styles.scanText}>
-                SCAN AT THE GATE · ONE ENTRY ONLY
-              </AppText>
+              <AppText variant="caption" color={colors.accent} style={styles.scanText}>{t('SCAN AT THE GATE · ONE ENTRY ONLY')}</AppText>
             </View>
             <AppText variant="caption" color="rgba(255,255,255,0.4)" style={styles.ticketId}>
-              PASS ID · {ticket.id.toUpperCase()}
+              {t('PASS ID · {id}', { id: ticket.id.toUpperCase() })}
             </AppText>
           </View>
 
           <View style={styles.passStats}>
-            <PassStat label="STAND" value={ticket.zoneName} />
-            <PassStat label="ROW" value={ticket.row} />
-            <PassStat label="SEAT" value={String(ticket.number).padStart(2, '0')} />
+            <PassStat label={t('STAND')} value={ticket.zoneName} />
+            <PassStat label={t('ROW')} value={ticket.row} />
+            <PassStat label={t('SEAT')} value={String(ticket.number).padStart(2, '0')} />
           </View>
 
           <View style={styles.holderRow}>
             <View>
-              <AppText variant="caption" color="rgba(255,255,255,0.4)" style={styles.holderLabel}>
-                TICKET HOLDER
-              </AppText>
+              <AppText variant="caption" color="rgba(255,255,255,0.4)" style={styles.holderLabel}>{t('TICKET HOLDER')}</AppText>
               <AppText variant="label" color="#FFFFFF">
                 {ticket.holder}
               </AppText>
             </View>
             <View style={styles.holderRight}>
-              <AppText variant="caption" color="rgba(255,255,255,0.4)" style={styles.holderLabel}>
-                PAID
-              </AppText>
+              <AppText variant="caption" color="rgba(255,255,255,0.4)" style={styles.holderLabel}>{t('PAID')}</AppText>
               <AppText variant="label" color={colors.accent}>
-                {formatMoney(ticket.priceMinorUnits, display.currency)}
+                {formatMoney(ticket.priceMinorUnits, display.currency, display.locale)}
               </AppText>
             </View>
           </View>
@@ -286,7 +266,7 @@ export default function TicketDetailScreen() {
               <Share2 size={17} color="#FFFFFF" />
             )}
             <AppText variant="label" color="#FFFFFF">
-              {sharing ? 'Preparing image…' : 'Share pass'}
+              {sharing ? t('Preparing image…') : 'Share pass'}
             </AppText>
           </Pressable>
           <Pressable
@@ -304,35 +284,25 @@ export default function TicketDetailScreen() {
             <ShieldCheck size={18} color={colors.accent} />
           </View>
           <View style={styles.flex}>
-            <AppText variant="label" color="#FFFFFF">
-              Entry checklist
-            </AppText>
-            <AppText variant="small" color={colors.nightMuted} style={styles.infoText}>
-              Arrive 60 minutes early. Have this pass open at full brightness. Photo ID may be
-              requested. Each pass admits one entry, so sharing the QR does not create a second
-              admission.
-            </AppText>
+            <AppText variant="label" color="#FFFFFF">{t('Entry checklist')}</AppText>
+            <AppText variant="small" color={colors.nightMuted} style={styles.infoText}>{t('Arrive 60 minutes early. Have this pass open at full brightness. Photo ID may be requested. Each pass admits one entry, so sharing the QR does not create a second admission.')}</AppText>
           </View>
         </View>
 
         <View style={styles.metaGrid}>
-          <MetaTile icon={<Clock3 size={15} color={colors.accent} />} label="GATES OPEN" value="2H BEFORE" />
-          <MetaTile icon={<MapPin size={15} color={colors.accent} />} label="ENTRY" value="Any gate" />
-          <MetaTile icon={<TicketIcon size={15} color={colors.accent} />} label="ORDER" value={ticket.orderId.slice(-6).toUpperCase()} />
+          <MetaTile icon={<Clock3 size={15} color={colors.accent} />} label={t('GATES OPEN')} value="2H BEFORE" />
+          <MetaTile icon={<MapPin size={15} color={colors.accent} />} label={t('ENTRY')} value="Any gate" />
+          <MetaTile icon={<TicketIcon size={15} color={colors.accent} />} label={t('ORDER')} value={ticket.orderId.slice(-6).toUpperCase()} />
         </View>
 
         <Pressable onPress={() => router.push('/orders')} style={styles.orderLink}>
           <AppText variant="small" color={colors.nightMuted}>
-            Need the receipt or another pass?{' '}
-            <AppText variant="label" color={colors.accent}>
-              Open orders
-            </AppText>
+            {t('Need the receipt or another pass?')}{' '}
+            <AppText variant="label" color={colors.accent}>{t('Open orders')}</AppText>
           </AppText>
         </Pressable>
 
-        <AppText variant="caption" color={colors.mutedGreen} style={styles.footer}>
-          SECURE PASS · SIGNED QR · VALID FOR ONE ENTRY
-        </AppText>
+        <AppText variant="caption" color={colors.mutedGreen} style={styles.footer}>{t('SECURE PASS · SIGNED QR · VALID FOR ONE ENTRY')}</AppText>
       </ScrollView>
     </Screen>
   );

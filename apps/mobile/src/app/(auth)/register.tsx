@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { signUpSchema } from '@kickoff/shared';
 import { AppText, LiveTag, PrimaryButton } from '@/components/ui';
+import { useTranslator } from '@/lib/i18n';
 import { useApp } from '@/lib/store';
 import { colors, fonts, radii } from '@/lib/theme';
 
@@ -27,6 +28,7 @@ function signUpErrorMessage(issues: readonly { path: readonly PropertyKey[] }[])
 }
 
 export default function RegisterScreen() {
+  const t = useTranslator();
   const router = useRouter();
   const { signUp } = useApp();
   const [fullName, setFullName] = useState('');
@@ -81,36 +83,34 @@ export default function RegisterScreen() {
         </View>
 
         <AppText variant="display" style={styles.title}>
-          JOIN THE{'\n'}CLUB.
+          {t('JOIN THE')}{'\n'}{t('CLUB.')}
         </AppText>
-        <AppText variant="body" color={colors.muted} style={styles.subtitle}>
-          Create your supporter account and get your first digital match pass.
-        </AppText>
+        <AppText variant="body" color={colors.muted} style={styles.subtitle}>{t('Create your supporter account and get your first digital match pass.')}</AppText>
 
         <View style={styles.form}>
           <Field
-            label="FULL NAME"
+            label={t('FULL NAME')}
             icon={<UserRound size={17} color={colors.muted} />}
             value={fullName}
             onChangeText={setFullName}
-            placeholder="Your full name"
+            placeholder={t('Your full name')}
             autoCapitalize="words"
           />
           <Field
-            label="EMAIL"
+            label={t('EMAIL')}
             icon={<Mail size={17} color={colors.muted} />}
             value={email}
             onChangeText={setEmail}
-            placeholder="you@example.com"
+            placeholder={t('you@example.com')}
             keyboardType="email-address"
             autoCapitalize="none"
           />
           <Field
-            label="PASSWORD"
+            label={t('PASSWORD')}
             icon={<Lock size={17} color={colors.muted} />}
             value={password}
             onChangeText={setPassword}
-            placeholder="At least 8 characters"
+            placeholder={t('At least 8 characters')}
             secureTextEntry={!showPassword}
             right={
               <Pressable onPress={() => setShowPassword((value) => !value)} hitSlop={10}>
@@ -131,18 +131,14 @@ export default function RegisterScreen() {
             </View>
           ) : null}
 
-          <PrimaryButton label="Create account" onPress={handleSignUp} loading={loading} />
-          <AppText variant="small" color={colors.muted} style={styles.terms}>
-            By continuing you agree to the terms of service and match day ground rules.
-          </AppText>
+          <PrimaryButton label={t('Create account')} onPress={handleSignUp} loading={loading} />
+          <AppText variant="small" color={colors.muted} style={styles.terms}>{t('By continuing you agree to the terms of service and match day ground rules.')}</AppText>
         </View>
 
         <Pressable onPress={() => router.replace('/login')} style={styles.loginLink}>
           <AppText variant="small" color={colors.muted}>
-            Already have an account?{' '}
-            <AppText variant="label" color={colors.primary}>
-              Sign in
-            </AppText>
+            {t('Already have an account?')}{' '}
+            <AppText variant="label" color={colors.primary}>{t('Sign in')}</AppText>
           </AppText>
         </Pressable>
       </ScrollView>

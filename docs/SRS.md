@@ -252,7 +252,7 @@ Each NFR states the measurable target and the enforcement mechanism.
 | NFR-09 | Multi-tenant isolation | per-club data isolation, branding, currency | **shipped** — `GAP-02` closed at `0045` (isolation suite green); ADR-002, C6–C7 |
 | NFR-10 | Fine-grained staff roles | beyond `admin`/`gatekeeper`: per-club RBAC | **partial** — `GAP-03a` shipped; `0041` made roles per-tenant with capability flags (C6.2) |
 | NFR-11 | Observability | structured logs (single JSON line, redacted), request IDs, error tracking, alerting | **shipped** — C10.1: `error_events` carries the same request id as the envelope and the log line, `ALERT_WEBHOOK_URL` pages (optional, cooldown-gated), and the reconciliation sweep finds unsettled payments; the logger itself landed in C4.11 |
-| NFR-12 | Multi-language/currency | per-tenant locale and currency | **open** — `GAP-05`; schema in C6/C7, UX in C10.2 |
+| NFR-12 | Multi-language/currency | per-tenant locale and currency | **shipped** — `GAP-05` closed at C10.2: schema (C6/C7), formatting (C8.2), the translation layer with a coverage-contracted Thai catalog (C10.2) |
 
 ### 4.1 Cross-cutting quality rules
 
