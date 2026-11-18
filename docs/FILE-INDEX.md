@@ -90,6 +90,7 @@ before the suite is green again.
 | `apps/admin/src/app/page.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/components/logo.tsx` | source | reviewed | presentational component |
 | `apps/admin/src/components/match-form.tsx` | source | reviewed | presentational component |
+| `apps/admin/src/components/match-result-dialog.tsx` | source | reviewed | the one score form — used by the matches list and the fixture page; validates non-negative integers and warns before full time |
 | `apps/admin/src/components/news-form.tsx` | source | reviewed | presentational component |
 | `apps/admin/src/components/providers.tsx` | source | reviewed | presentational component |
 | `apps/admin/src/components/ui.tsx` | source | reviewed | presentational component |
@@ -270,6 +271,7 @@ before the suite is green again.
 | `scripts/sync-edge-schemas.mjs` | source | reviewed | generates the Edge copy of a shared Zod contract; drift fails CI |
 | `scripts/sync-error-codes.mjs` | source | reviewed | tool or gate script |
 | `scripts/tests/admin-access.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/admin-gates.test.mjs` | test | covered | AG-1…AG-7 — reusable gates, current fixture in the scanner, per-zone pending state, seating lock UI, one-click result and the schema-cache reload |
 | `scripts/tests/atomicity.test.mjs` | test | covered | contract test — the atomic RPCs are wired and service-role only |
 | `scripts/tests/audit-coverage.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/availability.test.mjs` | test | covered | contract test — availability comes from the view, not the layout |
@@ -442,6 +444,8 @@ before the suite is green again.
 | `supabase/migrations/0058_match_clock.sql` | data | reviewed | migration — `match_notifications` + per-admin reads, `record_match_clock()` (upcoming→live, +2h→completed, four idempotent bells) and the one-minute `xclub-match-clock` cron |
 | `supabase/migrations/0059_admin_set_match_result.sql` | data | reviewed | migration — `admin_set_match_result()`: one audited write of both scores and `completed`; refused for postponed/cancelled |
 | `supabase/migrations/0060_tenant_scope_match_notifications.sql` | data | reviewed | migration — adds `match_notifications` to the export and erase registries, so a departing club's bell rows are archived and purged |
+| `supabase/migrations/0061_reload_schema_cache.sql` | data | reviewed | migration — `notify pgrst, 'reload schema'` so a new RPC is callable without an API restart |
+| `supabase/migrations/0062_lock_seating_after_kickoff.sql` | data | reviewed | migration — seating guard: admin zone/price/seat writes are refused once kickoff has passed or the clock closed the fixture; trusted setup bypasses |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/connect.test.sql` | test | covered | pgTAP suite — C8.1 Stripe Connect: the platform fee in minor units, the club a connected account belongs to, the event ledger; 0050's omittable payment-intent and account parameters (16 assertions) |
@@ -461,6 +465,7 @@ before the suite is green again.
 | `supabase/tests/sales.test.sql` | test | covered | pgTAP suite — C7.1 derived occupancy, per-match pricing, order snapshots, refund ledger, one-live-ticket-per-seat (28 assertions) |
 | `supabase/tests/scan-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/seat-reservation.test.sql` | data | covered | pgTAP suite — asserts the database contract |
+| `supabase/tests/seating-lock.test.sql` | data | covered | pgTAP SL — completed/live fixtures refuse zones, prices and seats; a scheduled fixture and the trusted setup path still work |
 | `supabase/tests/staff-roles.test.sql` | test | covered | pgTAP suite — GAP-03a staff roles, the club's vocabulary, gate authority and RLS boundary (26 assertions) |
 | `supabase/tests/tenancy.test.sql` | test | covered | pgTAP suite — C6.3 tenant columns, composite FK isolation, backfill, tenant-led indexes (24 assertions) |
 | `supabase/tests/tenant-erase.test.sql` | test | covered | pgTAP suite — GAP-09.5 the tenant erase: the human gate, structural coverage, isolation, the tombstone, idempotence (11 assertions) |

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { MatchForm } from "@/components/match-form";
+import { MatchResultDialog, type MatchResultInput } from "@/components/match-result-dialog";
 import {
   Badge,
   ConfirmDialog,
@@ -77,8 +78,6 @@ export default function SeatingPage() {
     null,
   );
   const [statusReason, setStatusReason] = useState("");
-  const [homeScore, setHomeScore] = useState("0");
-  const [awayScore, setAwayScore] = useState("0");
 
   if (matchQuery.isLoading || zonesQuery.isLoading || availabilityQuery.isLoading) {
     return (
@@ -177,23 +176,15 @@ export default function SeatingPage() {
   const canEnterResult = phase === "live" || phase === "awaitingResult" || phase === "played";
   const canChangeStatus =
     phase === "scheduled" || match.status === "postponed" || match.status === "cancelled";
+  // A zone, a price and a seat are saleable inventory. Once the clock has
+  // started or closed the fixture, the database refuses the write (0062) and
+  // the console must not offer it either. Rescheduling reopens the fixture.
+  const canConfigureSeating = phase === "scheduled";
   const paidOrders = salesQuery.data?.[match.id]?.ordersPaid ?? 0;
 
-  const openResult = () => {
-    setHomeScore(String(match.homeScore ?? 0));
-    setAwayScore(String(match.awayScore ?? 0));
-    setResultOpen(true);
-  };
-
-  const handleSaveResult = async () => {
-    const home = Number.parseInt(homeScore, 10);
-    const away = Number.parseInt(awayScore, 10);
-    if (!Number.isInteger(home) || !Number.isInteger(away) || home < 0 || away < 0) {
-      toast({ title: "Enter both scores", description: "Scores are whole numbers, 0 or more.", tone: "red" });
-      return;
-    }
+  const handleSaveResult = async (result: MatchResultInput) => {
     try {
-      await setMatchResult.mutateAsync({ id: match.id, homeScore: home, awayScore: away });
+      await setMatchResult.mutateAsync({ id: match.id, ...result });
       setResultOpen(false);
       toast({ title: "Result saved", description: "The fixture now shows the final score.", tone: "green" });
     } catch (caught) {
@@ -256,12 +247,21 @@ export default function SeatingPage() {
         title={`KickOff vs ${match.opponent}`}
         description="Set zone prices, rows, and seat counts. Changes are written to Supabase instantly."
         action={
-          <button type="button" onClick={() => setCreatingZone(true)} className="btn-primary">
-            <Plus size={16} />
-            Add zone
-          </button>
+          canConfigureSeating ? (
+            <button type="button" onClick={() => setCreatingZone(true)} className="btn-primary">
+              <Plus size={16} />
+              Add zone
+            </button>
+          ) : undefined
         }
       />
+
+      {!canConfigureSeating ? (
+        <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">
+          Seating is locked: this fixture has started or finished. Reschedule it to a future
+          kick-off to add zones, seats or prices again.
+        </div>
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MiniStat icon={<Users size={16} />} label="Capacity" value={String(capacity)} />
@@ -292,22 +292,26 @@ export default function SeatingPage() {
                   </p>
                 </div>
                 <Badge tone="green">{formatMoney(zone.priceMinorUnits, display.currency)}</Badge>
-                <button
-                  type="button"
-                  onClick={() => setDeletingZone(zone)}
-                  className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                  aria-label={`Delete ${zone.name}`}>
-                  <Trash2 size={13} />
-                </button>
+                {canConfigureSeating ? (
+                  <button
+                    type="button"
+                    onClick={() => setDeletingZone(zone)}
+                    className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                    aria-label={`Delete ${zone.name}`}>
+                    <Trash2 size={13} />
+                  </button>
+                ) : null}
               </div>
-              <div className="p-4">
-                <ZoneEditor
-                  key={`${zone.id}-${zone.priceMinorUnits}-${zone.name}`}
-                  zone={zone}
-                  submitting={updateZone.isPending}
-                  onSubmit={(patch) => handleUpdateZone(zone, patch)}
-                />
-              </div>
+              {canConfigureSeating ? (
+                <div className="p-4">
+                  <ZoneEditor
+                    key={`${zone.id}-${zone.priceMinorUnits}-${zone.name}`}
+                    zone={zone}
+                    submitting={updateZone.isPending && updateZone.variables?.id === zone.id}
+                    onSubmit={(patch) => handleUpdateZone(zone, patch)}
+                  />
+                </div>
+              ) : null}
             </div>
           ))}
 
@@ -318,9 +322,11 @@ export default function SeatingPage() {
                 title="No zones yet"
                 description="Add a stand to start selling seats for this fixture."
                 action={
-                  <button type="button" onClick={() => setCreatingZone(true)} className="btn-primary">
-                    Add first zone
-                  </button>
+                  canConfigureSeating ? (
+                    <button type="button" onClick={() => setCreatingZone(true)} className="btn-primary">
+                      Add first zone
+                    </button>
+                  ) : undefined
                 }
               />
             </div>
@@ -393,7 +399,10 @@ export default function SeatingPage() {
                   ? "The match is still playing. Saving a result before full time is possible but the clock will not have closed the fixture."
                   : "Scores are entered by an admin. The clock never guesses a result."}
               </p>
-              <button type="button" onClick={openResult} className="btn-primary mt-3 w-full">
+              <button
+                type="button"
+                onClick={() => setResultOpen(true)}
+                className="btn-primary mt-3 w-full">
                 {match.homeScore !== null && match.awayScore !== null
                   ? "Edit result"
                   : "Enter result"}
@@ -467,51 +476,15 @@ export default function SeatingPage() {
         />
       </Modal>
 
-      <Modal
-        open={resultOpen}
-        onClose={() => setResultOpen(false)}
-        title="Enter the result"
-        description="One save writes both scores and closes the fixture."
-        wide>
-        <div className="space-y-4">
-          {phase === "live" ? (
-            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-800">
-              This match has not reached full time. Continue only if it ended early.
-            </p>
-          ) : null}
-          <div className="grid grid-cols-2 gap-4">
-            <label className="block text-[11px] font-semibold text-slate-600">
-              KickOff score
-              <input
-                type="number"
-                min={0}
-                step={1}
-                value={homeScore}
-                onChange={(event) => setHomeScore(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
-              />
-            </label>
-            <label className="block text-[11px] font-semibold text-slate-600">
-              {match.opponent} score
-              <input
-                type="number"
-                min={0}
-                step={1}
-                value={awayScore}
-                onChange={(event) => setAwayScore(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
-              />
-            </label>
-          </div>
-          <button
-            type="button"
-            onClick={handleSaveResult}
-            disabled={setMatchResult.isPending}
-            className="btn-primary w-full">
-            {setMatchResult.isPending ? "Saving…" : "Save result"}
-          </button>
-        </div>
-      </Modal>
+      {resultOpen ? (
+        <MatchResultDialog
+          open
+          match={match}
+          pending={setMatchResult.isPending}
+          onClose={() => setResultOpen(false)}
+          onSubmit={handleSaveResult}
+        />
+      ) : null}
 
       <Modal
         open={statusAction !== null}

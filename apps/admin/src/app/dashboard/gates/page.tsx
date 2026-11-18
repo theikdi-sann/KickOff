@@ -15,7 +15,7 @@ import {
 import { useMatches } from "@/lib/queries/matches";
 import { useTenantDisplay } from "@/lib/queries/tenant";
 import { useVenues } from "@/lib/queries/venues";
-import { formatMatchDate } from "@kickoff/shared";
+import { formatMatchDate, isGateFixtureOpen } from "@kickoff/shared";
 
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,31}$/;
 
@@ -46,6 +46,14 @@ export default function GatesPage() {
   const [editing, setEditing] = useState<AdminGate | null>(null);
   const [form, setForm] = useState<AdminGateInput>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // A gate is physical: the same turnstile serves today's match and the ones
+  // after it. Only fixtures that are still scheduled or live may be ticked;
+  // everything already assigned in the past stays in `form.matchIds` so saving
+  // the gate never rewrites its history.
+  const openMatches = (matches ?? []).filter((match) => isGateFixtureOpen(match));
+  const openMatchIds = new Set(openMatches.map((match) => match.id));
+  const historyMatchIds = form.matchIds.filter((id) => !openMatchIds.has(id));
 
   const openCreate = () => {
     setForm(emptyForm());
@@ -192,22 +200,28 @@ export default function GatesPage() {
                       {gate.venueName ?? gate.venueId}
                     </td>
                     <td className="px-4 py-3.5 text-xs text-slate-600">
-                      {gate.matchLabels.length === 0 ? (
-                        <span className="text-amber-600">No fixture assigned</span>
+                      {gate.currentMatchLabels.length === 0 ? (
+                        <span className="text-amber-600">No fixture today</span>
                       ) : (
                         <ul className="space-y-0.5">
-                          {gate.matchLabels.slice(0, 3).map((label, index) => (
-                            <li key={gate.matchIds[index]} className="font-medium text-slate-700">
+                          {gate.currentMatchLabels.slice(0, 3).map((label, index) => (
+                            <li key={gate.currentMatchIds[index]} className="font-medium text-slate-700">
                               {label}
                             </li>
                           ))}
-                          {gate.matchLabels.length > 3 ? (
+                          {gate.currentMatchLabels.length > 3 ? (
                             <li className="text-[10px] text-slate-400">
-                              +{gate.matchLabels.length - 3} more
+                              +{gate.currentMatchLabels.length - 3} more
                             </li>
                           ) : null}
                         </ul>
                       )}
+                      {gate.matchIds.length > gate.currentMatchIds.length ? (
+                        <span className="mt-1 block text-[10px] text-slate-400">
+                          {gate.matchIds.length - gate.currentMatchIds.length} past assignment
+                          {gate.matchIds.length - gate.currentMatchIds.length === 1 ? "" : "s"} kept
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3.5">
                       <Badge tone={gate.active ? "green" : "muted"}>
@@ -309,14 +323,14 @@ export default function GatesPage() {
           </label>
 
           <div className="block">
-            <span className="label mb-1.5 block">Assigned fixtures</span>
+            <span className="label mb-1.5 block">Current &amp; upcoming fixtures</span>
             <div className="max-h-44 space-y-0.5 overflow-y-auto rounded-xl border border-slate-200 p-2">
-              {(matches ?? []).length === 0 ? (
+              {openMatches.length === 0 ? (
                 <p className="px-1 py-2 text-xs text-slate-400">
-                  No fixtures yet — create one first.
+                  No scheduled fixture — create one first.
                 </p>
               ) : (
-                (matches ?? []).map((match) => (
+                openMatches.map((match) => (
                   <label
                     key={match.id}
                     className="flex items-start gap-2 rounded-lg px-1 py-1 text-xs text-slate-600 hover:bg-slate-50">
@@ -335,6 +349,26 @@ export default function GatesPage() {
               A gate may admit several fixtures; a pass for anything else is rejected as the wrong
               fixture.
             </span>
+            {historyMatchIds.length > 0 ? (
+              <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-2">
+                <span className="label mb-1 block text-[10px]">Past assignments (kept)</span>
+                <ul className="space-y-0.5">
+                  {historyMatchIds.map((id) => {
+                    const match = (matches ?? []).find((candidate) => candidate.id === id);
+                    return (
+                      <li key={id} className="px-1 text-[11px] text-slate-500">
+                        <label className="flex items-start gap-2">
+                          <input type="checkbox" checked disabled className="mt-0.5" />
+                          {match
+                            ? `${match.opponent} · ${formatMatchDate(match.kickoffAt, { timezone: display.timezone })}`
+                            : id}
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : null}
           </div>
 
           <label className="flex items-start gap-2 text-xs text-slate-600">

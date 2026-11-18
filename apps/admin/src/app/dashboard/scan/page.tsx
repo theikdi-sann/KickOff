@@ -323,22 +323,22 @@ export default function ScanPage() {
         </div>
       ) : (
         <>
-          {selectedGate.matchLabels.length === 0 ? (
+          {selectedGate.currentMatchLabels.length === 0 ? (
             <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
               <ShieldAlert size={15} className="mt-0.5 shrink-0" />
-              {selectedGate.name} has no fixture assigned. Scans will be rejected until an admin
-              assigns one on the Gates page.
+              {selectedGate.name} has no fixture today. The gate stays available — a past or
+              unassigned gate only admits a pass whose own fixture is inside its gate window.
             </div>
           ) : (
             <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-600">
               <ShieldCheck size={15} className="text-pitch" />
               Admitting{" "}
               <span className="font-semibold text-slate-800">
-                {selectedGate.matchLabels.join(" · ")}
+                {selectedGate.currentMatchLabels.join(" · ")}
               </span>
-              {selectedGate.kickoffAt && selectedGate.matchLabels.length === 1 ? (
+              {selectedGate.currentKickoffAt && selectedGate.currentMatchLabels.length === 1 ? (
                 <span className="text-slate-400">
-                  · {formatMatchDate(selectedGate.kickoffAt, { timezone: display.timezone })} {formatMatchTime(selectedGate.kickoffAt, { timezone: display.timezone })}
+                  · {formatMatchDate(selectedGate.currentKickoffAt, { timezone: display.timezone })} {formatMatchTime(selectedGate.currentKickoffAt, { timezone: display.timezone })}
                 </span>
               ) : null}
               <span className="text-slate-400">· window opens 2h before and closes 2h after kick-off</span>

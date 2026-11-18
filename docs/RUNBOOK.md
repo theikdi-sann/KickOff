@@ -303,6 +303,21 @@ one save writes both scores and `completed` (`admin_set_match_result`).
 Sales stop at kickoff in the database (`stripe-checkout` returns
 `match_started`); a fixture whose stored status lags is still refused.
 
+**Gates are physical and reusable.** A gate is never recreated for a match:
+attach the same turnstile to the new fixture on the Gates page. Past
+assignments stay as history and are not selectable; the scanner shows the
+fixture the gate is admitting now, not the earliest date it ever served.
+
+**Seating locks at kickoff.** Once a fixture has started or been closed,
+admin writes to zones, prices and seats are refused by trigger
+(`0062_lock_seating_after_kickoff`), and the fixture page hides the controls.
+Reschedule the fixture to a future kick-off (or restore a postponed one) to
+edit its inventory again. The trusted seed/migration path is unaffected.
+
+**Results are one click.** A completed fixture without a score is flagged
+**Needs result** on the matches list; **Enter result** opens the score form
+directly. Saving writes both scores and `completed` in one audited call.
+
 ## 7. Backup and recovery
 
 - **Data:** Supabase managed Postgres — verify the project's backup schedule in

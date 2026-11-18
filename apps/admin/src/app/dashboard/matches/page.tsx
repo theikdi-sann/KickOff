@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { MatchForm } from "@/components/match-form";
+import { MatchResultDialog, type MatchResultInput } from "@/components/match-result-dialog";
 import { track } from "@/lib/analytics";
 import {
   Badge,
@@ -30,6 +31,7 @@ import {
   useDeleteMatch,
   useMatchSalesSummaries,
   useMatches,
+  useSetMatchResult,
   useUpdateMatch,
   useZoneAvailability,
   type AdminMatchInput,
@@ -60,12 +62,14 @@ export default function MatchesPage() {
   const createMatch = useCreateMatch();
   const updateMatch = useUpdateMatch();
   const deleteMatch = useDeleteMatch();
+  const setMatchResult = useSetMatchResult();
 
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<MatchDto | null>(null);
   const [deleting, setDeleting] = useState<MatchDto | null>(null);
+  const [resultMatch, setResultMatch] = useState<MatchDto | null>(null);
 
   const allMatches = useMemo(() => matches ?? [], [matches]);
   const allZones = useMemo(() => zones ?? [], [zones]);
@@ -94,6 +98,21 @@ export default function MatchesPage() {
       tone: "green",
     });
     router.push(`/dashboard/matches/${match.id}`);
+  };
+
+  const handleSaveResult = async (input: MatchResultInput) => {
+    if (!resultMatch) return;
+    try {
+      await setMatchResult.mutateAsync({ id: resultMatch.id, ...input });
+      setResultMatch(null);
+      toast({ title: "Result saved", description: "The fixture now shows the final score.", tone: "green" });
+    } catch (caught) {
+      toast({
+        title: "Could not save the result",
+        description: caught instanceof Error ? caught.message : "Try again in a moment.",
+        tone: "red",
+      });
+    }
   };
 
   const handleUpdate = async (input: AdminMatchInput) => {
@@ -256,8 +275,16 @@ export default function MatchesPage() {
                   </div>
 
                   <div className="flex items-center gap-2 sm:justify-end">
+                    {needsResult ? (
+                      <button
+                        type="button"
+                        onClick={() => setResultMatch(match)}
+                        className="btn-primary px-3 py-2 text-[11px]">
+                        Enter result
+                      </button>
+                    ) : null}
                     <Link href={`/dashboard/matches/${match.id}`} className="btn-ghost px-3 py-2 text-[11px]">
-                      Seating
+                      Manage fixture
                       <ChevronRight size={13} />
                     </Link>
                     <button
@@ -318,6 +345,16 @@ export default function MatchesPage() {
           onSubmit={handleUpdate}
         />
       </Modal>
+
+      {resultMatch ? (
+        <MatchResultDialog
+          open
+          match={resultMatch}
+          pending={setMatchResult.isPending}
+          onClose={() => setResultMatch(null)}
+          onSubmit={handleSaveResult}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={deleting !== null}

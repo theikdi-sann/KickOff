@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { groupMatches, isMatchOnSale, matchPhase } from '../match-phase';
+import { groupMatches, isGateFixtureOpen, isMatchOnSale, matchPhase } from '../match-phase';
 
 /**
  * The match clock: a fixture's displayed phase is decided by `kickoffAt`, not
@@ -79,5 +79,14 @@ describe('matchPhase (MP)', () => {
     expect(groups.awaitingResult.map((match) => match.id)).toEqual(
       expect.arrayContaining(['past', 'unscored']),
     );
+  });
+
+  it('MP-7 a gate may admit only fixtures that are scheduled or live', () => {
+    expect(isGateFixtureOpen(storedUpcoming, at(-1))).toBe(true);
+    expect(isGateFixtureOpen(storedUpcoming, at(30))).toBe(true);
+    expect(isGateFixtureOpen(storedUpcoming, at(180))).toBe(false);
+    expect(isGateFixtureOpen({ ...storedUpcoming, status: 'completed' }, at(200))).toBe(false);
+    expect(isGateFixtureOpen({ ...storedUpcoming, status: 'postponed' }, at(-60))).toBe(false);
+    expect(isGateFixtureOpen({ ...storedUpcoming, status: 'cancelled' }, at(-60))).toBe(false);
   });
 });

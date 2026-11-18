@@ -42,6 +42,16 @@ export function isMatchOnSale(match: MatchClockInput, now: Date = new Date()): b
 }
 
 /**
+ * A physical gate admits a fixture while it is scheduled or in play. A gate
+ * may be reused on later matchdays, so past assignments remain history but
+ * are not selectable.
+ */
+export function isGateFixtureOpen(match: MatchClockInput, now: Date = new Date()): boolean {
+  const phase = matchPhase(match, now);
+  return phase === 'scheduled' || phase === 'live';
+}
+
+/**
  * Classify a fixture for display. `now` is injectable so callers and tests
  * agree on the clock.
  */

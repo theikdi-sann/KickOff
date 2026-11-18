@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AUDIT_ACTIONS, changedFields, recordAudit } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/client";
+import { isGateFixtureOpen, type MatchStatus } from "@kickoff/shared";
 
 /**
  * A gate is a physical turnstile bound to a venue; the fixtures it admits are
@@ -25,8 +26,13 @@ export interface AdminGate {
   matchIds: string[];
   /** `KickOff vs <opponent>` per assigned fixture, ordered by kick-off. */
   matchLabels: string[];
-  /** Kick-off of the earliest assigned fixture — the single-fixture view. */
+  /** Kick-off of the earliest assigned fixture, including past history. */
   kickoffAt: string | null;
+  /** Assignments that are scheduled or in play — what this gate admits now. */
+  currentMatchIds: string[];
+  currentMatchLabels: string[];
+  /** Kick-off of the next current fixture — never a date from a past match. */
+  currentKickoffAt: string | null;
 }
 
 export interface AdminGateInput {
@@ -50,11 +56,18 @@ interface GateRow {
 interface AssignmentRow {
   gate_id: string;
   match_id: string;
-  matches: { opponent: string; kickoff_at: string } | null;
+  matches: {
+    opponent: string;
+    kickoff_at: string;
+    status: MatchStatus;
+    home_score: number | null;
+    away_score: number | null;
+  } | null;
 }
 
 const GATE_SELECT = "id,name,venue_id,active,created_at,updated_at,venues(name)";
-const ASSIGNMENT_SELECT = "gate_id,match_id,matches(opponent,kickoff_at)";
+const ASSIGNMENT_SELECT =
+  "gate_id,match_id,matches(opponent,kickoff_at,status,home_score,away_score)";
 
 function client() {
   return createClient();
@@ -72,6 +85,9 @@ function mapGate(row: GateRow): AdminGate {
     matchIds: [],
     matchLabels: [],
     kickoffAt: null,
+    currentMatchIds: [],
+    currentMatchLabels: [],
+    currentKickoffAt: null,
   };
 }
 
@@ -90,26 +106,40 @@ async function loadGates(): Promise<AdminGate[]> {
     byGate.set(row.id, mapGate(row));
   }
 
-  const labelsByGate = new Map<string, Array<{ id: string; label: string; kickoffAt: string }>>();
+  type GateFixture = { id: string; label: string; kickoffAt: string; open: boolean };
+  const fixturesByGate = new Map<string, GateFixture[]>();
   for (const row of (assignments.data ?? []) as unknown as AssignmentRow[]) {
     const gate = byGate.get(row.gate_id);
     if (!gate) continue;
-    const bucket = labelsByGate.get(row.gate_id) ?? [];
+    const bucket = fixturesByGate.get(row.gate_id) ?? [];
+    const match = row.matches;
     bucket.push({
       id: row.match_id,
-      label: row.matches ? `KickOff vs ${row.matches.opponent}` : "Unknown fixture",
-      kickoffAt: row.matches?.kickoff_at ?? "",
+      label: match ? `KickOff vs ${match.opponent}` : "Unknown fixture",
+      kickoffAt: match?.kickoff_at ?? "",
+      open: match
+        ? isGateFixtureOpen({
+            status: match.status,
+            kickoffAt: match.kickoff_at,
+            homeScore: match.home_score,
+            awayScore: match.away_score,
+          })
+        : false,
     });
-    labelsByGate.set(row.gate_id, bucket);
+    fixturesByGate.set(row.gate_id, bucket);
   }
 
-  for (const [gateId, fixtures] of labelsByGate) {
+  for (const [gateId, fixtures] of fixturesByGate) {
     const gate = byGate.get(gateId);
     if (!gate) continue;
     fixtures.sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
+    const open = fixtures.filter((fixture) => fixture.open);
     gate.matchIds = fixtures.map((fixture) => fixture.id);
     gate.matchLabels = fixtures.map((fixture) => fixture.label);
     gate.kickoffAt = fixtures.find((fixture) => fixture.kickoffAt)?.kickoffAt ?? null;
+    gate.currentMatchIds = open.map((fixture) => fixture.id);
+    gate.currentMatchLabels = open.map((fixture) => fixture.label);
+    gate.currentKickoffAt = open.find((fixture) => fixture.kickoffAt)?.kickoffAt ?? null;
   }
 
   return [...byGate.values()];
