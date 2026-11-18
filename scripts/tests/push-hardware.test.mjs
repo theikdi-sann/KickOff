@@ -142,3 +142,53 @@ test('PUSH-HW-6 google-services.json ships with the build', () => {
     'google-services.json is build input, not a secret — ignoring it would break every clone and every EAS build',
   );
 });
+
+// PUSH-HW-7 — the gap closes on evidence, not on the procedure existing.
+//
+// The run below is the one thing no gate in this repository can execute: a
+// development build installed on physical hardware, a token registered against
+// the hosted project, and a push delivered to the tray while the app was not
+// running. The record is what lets REQUIREMENTS say `GAP-06` closed without
+// asking anyone to trust a memory, and the screenshot is what "delivered"
+// means when the count comes back from `exp.host`.
+test('PUSH-HW-7 the hardware run is recorded, with its evidence', () => {
+  const runbook = read(RUNBOOK);
+  const start = runbook.indexOf('### 11.7');
+  assert.ok(start !== -1, 'RUNBOOK §11.7 must record the device run that closed GAP-06');
+
+  const record = runbook.slice(start);
+
+  assert.match(record, /Xiaomi Pad 6/, 'the device model is recorded');
+  assert.match(record, /Android 14/, 'the OS version is recorded');
+  assert.match(
+    record,
+    /ExponentPushToken\[-u895ZPCd6/,
+    'the token prefix is recorded — enough to prove a real token, not enough to push to the device',
+  );
+  assert.doesNotMatch(
+    record,
+    /ExponentPushToken\[[A-Za-z0-9_-]{18,}\]/,
+    'the full push token is a live credential: record the prefix only',
+  );
+  assert.match(record, /docs\/evidence\/push-hardware-xiaomi-pad-6-2026-11-19\.jpg/);
+  assert.match(
+    record,
+    /recents|swiped away|not running/i,
+    'the record must say the app was not running when the notification arrived',
+  );
+  assert.ok(
+    existsSync(resolve(root, 'docs/evidence/push-hardware-xiaomi-pad-6-2026-11-19.jpg')),
+    'the tray screenshot is the evidence the record cites',
+  );
+});
+
+test('PUSH-HW-8 the gap is reported as closed where the project tracks it', () => {
+  const requirements = read('docs/REQUIREMENTS.md');
+  const row = requirements.split('\n').find((line) => line.startsWith('| **GAP-06**'));
+
+  assert.ok(row, 'REQUIREMENTS must keep the GAP-06 row');
+  assert.match(row, /closed/i, 'GAP-06 closes on the recorded run');
+  assert.doesNotMatch(row, /\*\*Still open:\*\*/, 'the row must no longer say the device run is pending');
+  assert.match(row, /Xiaomi Pad 6/, 'the closing evidence is named in the row itself');
+});
+

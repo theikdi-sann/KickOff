@@ -545,3 +545,23 @@ That evidence — not this procedure — is what closes `GAP-06`.
 | Native log: *Unable to get Firebase Messaging instance* | `googleServicesFile` unwired, or the file's package ≠ `android.package` | §11.1 boxes 2 |
 | Token obtained, no notification | FCM V1 key missing, or the API key in `google-services.json` is restricted | Upload the key; allow **FCM Registration API** and **Firebase Installations API** in Google Cloud, and use the Play *App signing* SHA-1, not the upload key's |
 | Notification only while the app is open | Background delivery never configured | Check the channel and the FCM key above |
+
+### 11.7 Recorded run — 2026-11-19
+
+The first completed hardware proof, against the hosted project
+(`cvebikawynavfyfbjnzu`) with a `development` build installed from its EAS
+artifact:
+
+| Field | Value |
+|---|---|
+| Device | Xiaomi Pad 6 |
+| OS | Android 14 |
+| Token | `ExponentPushToken[-u895ZPCd6…` — prefix only; the full token can send to the device |
+| Trigger | `POST /functions/v1/send-kickoff-reminders` with `{"matchId":"m-cmi"}` → `{"ok":true,"data":{"sent":1,"matchId":"m-cmi","devices":1}}` |
+| Notification | *"Matchday is coming — KickOff vs Chiang Mai FC · Sat, 21 Nov, 19:30 at KickOff …"*, in the tray |
+| App state | swiped out of recents, so the process was not running — the notification came from FCM through the OS, not from the JS runtime |
+| Evidence | `docs/evidence/push-hardware-xiaomi-pad-6-2026-11-19.jpg` |
+
+This closes `GAP-06` for Android. iOS uses the same procedure with an APNs key
+instead of FCM and has not been run yet; the gap row says so rather than
+implying both platforms.

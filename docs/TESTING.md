@@ -37,9 +37,10 @@ Runs every workspace `test` script, then the repository script tests:
   set*).
 - `scripts/tests/*.test.mjs` are source-level contract tests run with
   `node --test scripts/tests/`. The C10.4 push-hardware contracts
-  (`PUSH-HW-1…PUSH-HW-6`) pin the client/server push configuration and the
-  hardware procedure in `RUNBOOK` §11 — they cannot prove delivery, which is
-  why `GAP-06` stays open until a device run is recorded. `BRAND-1…BRAND-5`
+  (`PUSH-HW-1…PUSH-HW-8`) pin the client/server push configuration, the
+  hardware procedure in `RUNBOOK` §11 and the recorded Android run that closed
+  `GAP-06` (device, OS, token prefix, tray screenshot). The contracts cannot
+  deliver a push themselves — the evidence file is what stands in for that. `BRAND-1…BRAND-5`
   pin the icon set: the app config's paths exist, the store tile is a 1024
   square with no alpha, the splash and adaptive marks keep theirs, every
   in-app logo renders the crest, and the set stays inside its size budget.

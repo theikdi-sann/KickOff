@@ -166,7 +166,9 @@ private `receipts` bucket readable only by the order's owner.
 ### REQ-11 — Push notifications (`shipped`)
 
 Kickoff reminders for opted-in supporters via Expo Push; requires a dev build
-(Expo Go cannot receive push; `GAP-06` proves it on hardware).
+(Expo Go cannot receive push). Proven on hardware 2026-11-19: a Xiaomi Pad 6 on
+Android 14 received a reminder in the tray with the app swiped out of recents —
+`RUNBOOK` §11.7.
 
 ### REQ-12/REQ-13 — Profile edit and account deletion (`shipped`)
 
@@ -371,6 +373,7 @@ the execution order fixed in `PLAN.md`:
   [`ADR-004`](adr/ADR-004-white-label.md). The per-club release overhead
   itself remains `GAP-10`.
 - **C10 (GAP-04, GAP-05, GAP-01, GAP-06)** — observability, i18n/currency UX,
-  the offline pass cache and the hardware push proof.
+  the offline pass cache and the hardware push proof (Android run recorded
+  2026-11-19; iOS uses the same procedure with an APNs key and is unrun).
 - **GAP-08** — ticket transfer/claim is explicitly out of scope; a buyer holds
   every pass for their order until it is designed as its own feature.
