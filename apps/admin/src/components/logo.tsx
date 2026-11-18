@@ -1,11 +1,17 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export function Logo({ dark = false, compact = false }: { dark?: boolean; compact?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="grid h-9 w-9 place-items-center rounded-xl bg-gold text-lg font-bold text-night shadow-sm">
-        K
-      </div>
+      <Image
+        src="/brand-mark.png"
+        alt=""
+        width={256}
+        height={133}
+        preload
+        className="h-9 w-auto"
+      />
       {!compact ? (
         <div>
           <div

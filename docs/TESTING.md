@@ -39,7 +39,11 @@ Runs every workspace `test` script, then the repository script tests:
   `node --test scripts/tests/`. The C10.4 push-hardware contracts
   (`PUSH-HW-1…PUSH-HW-6`) pin the client/server push configuration and the
   hardware procedure in `RUNBOOK` §11 — they cannot prove delivery, which is
-  why `GAP-06` stays open until a device run is recorded. The Phase 11 mobile contracts (Maestro flow,
+  why `GAP-06` stays open until a device run is recorded. `BRAND-1…BRAND-5`
+  pin the icon set: the app config's paths exist, the store tile is a 1024
+  square with no alpha, the splash and adaptive marks keep theirs, every
+  in-app logo renders the crest, and the set stays inside its size budget.
+  The Phase 11 mobile contracts (Maestro flow,
   tab a11y, analytics adapters, settings confirms) are still asserted here.
 
 Run a single file:

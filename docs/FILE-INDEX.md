@@ -63,6 +63,7 @@ before the suite is green again.
 | `apps/admin/next.config.ts` | source | reviewed | source |
 | `apps/admin/package.json` | config | reviewed | admin app manifest |
 | `apps/admin/playwright.config.ts` | source | reviewed | source |
+| `apps/admin/public/brand-mark.png` | asset | asset | the crest the admin logo renders (BRAND-4); generated from the KickOff artwork |
 | `apps/admin/src/app/dashboard/error.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/dashboard/gates/page.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/dashboard/layout.tsx` | source | reviewed | staff console screen |
@@ -127,9 +128,11 @@ before the suite is green again.
 | `apps/mobile/.vscode/settings.json` | config | reviewed | editor settings |
 | `apps/mobile/AGENTS.md` | doc | reviewed | documentation |
 | `apps/mobile/app.config.ts` | source | reviewed | source |
+| `apps/mobile/assets/brand/kickoff-logo.png` | asset | asset | the KickOff artwork (lockup on the navy field) — the source every generated icon derives from; not shipped, so it lives outside `assets/images` |
 | `apps/mobile/assets/images/android-icon-background.png` | asset | asset | app icon — referenced by the app config |
 | `apps/mobile/assets/images/android-icon-foreground.png` | asset | asset | app icon — referenced by the app config |
 | `apps/mobile/assets/images/android-icon-monochrome.png` | asset | asset | app icon — referenced by the app config |
+| `apps/mobile/assets/images/brand-mark.png` | asset | asset | the crest alone, transparent — the mobile splash and welcome hero render it (BRAND-4) |
 | `apps/mobile/assets/images/favicon.png` | asset | asset | app icon — referenced by the app config |
 | `apps/mobile/assets/images/icon.png` | asset | asset | app icon — referenced by the app config |
 | `apps/mobile/assets/images/splash-icon.png` | asset | asset | app icon — referenced by the app config |
@@ -262,6 +265,7 @@ before the suite is green again.
 | `scripts/tests/atomicity.test.mjs` | test | covered | contract test — the atomic RPCs are wired and service-role only |
 | `scripts/tests/audit-coverage.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/availability.test.mjs` | test | covered | contract test — availability comes from the view, not the layout |
+| `scripts/tests/brand-assets.test.mjs` | test | covered | contract test — BRAND-1…BRAND-5: every icon path exists, the store tile is 1024 opaque, the splash/adaptive marks keep alpha, the in-app marks render the crest, and the set stays under the size budget |
 | `scripts/tests/ci.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/connect.test.mjs` | test | covered | contract test — C8.1 Stripe Connect: the checkout, the webhook and the refund run on the club's connected account (CN-1…CN-7) |
 | `scripts/tests/db-gate.test.mjs` | test | covered | contract test — the pgTAP gate must run locally |

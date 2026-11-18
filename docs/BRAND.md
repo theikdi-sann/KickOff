@@ -92,17 +92,31 @@ packages/shared/src/theme.ts   (brand, brandCssVariables)
   `#FEE2E2`/`#FECACA`/`#FEF2F2` (danger surfaces), `#635BFF` (Stripe),
   `#334155`/`#1E293B` (used/neutral ticket state), `#DDE3DF` (unavailable
   seat), `#7D8F84` (inactive tab).
-- Brand assets (`icon.png`, `splash-icon.png`, notification icon) are
-  tracked by `P12-03` and still pending final art.
+- Brand art is the KickOff lockup: a match ball breaking through a ticket
+  and a pitch outline, over the navy field `#14243D`. It ships in two forms —
+  the full lockup (`splash-icon.png`, crest plus `KICK OFF` wordmark) and the
+  crest alone (`brand-mark.png`), which every other mark derives from.
+- The store tile (`icon.png`) is 1024×1024 and opaque: the platforms mask the
+  corners, so a transparent icon is rejected. The adaptive foreground, the
+  monochrome layer and the favicons keep transparency.
+- The artwork itself lives in `apps/mobile/assets/brand/kickoff-logo.png`
+  (outside `assets/images`, which holds only what ships).
+- Regenerating an asset means regenerating from the artwork, not editing a
+  derived file: the alpha is matted against the navy field, then each size is
+  composited on that field and quantised to a palette. `BRAND-1…BRAND-5` pin
+  the paths, the 1024 square, the transparency split and the size budget.
 
 ## Marks
 
-- **Logo tile** (`apps/admin/src/components/logo.tsx`): gold tile, `K`
-  glyph, `KICKOFF` wordmark, `Matchday operations` descriptor.
+All three render the crest from `apps/mobile/assets/images/brand-mark.png`
+(served as `/brand-mark.png` in the admin console) instead of a letter tile:
+
+- **Admin logo** (`apps/admin/src/components/logo.tsx`): crest, `KICKOFF`
+  wordmark, `Matchday operations` descriptor.
 - **Mobile splash** (`apps/mobile/src/app/_layout.tsx` → `BrandSplash`):
-  green tile, `K` glyph, `KICKOFF`, `MATCHDAY, SIMPLIFIED`.
-- **Welcome hero** (`apps/mobile/src/app/(auth)/welcome.tsx`): green tile,
-  `K` glyph, `KICKOFF`, `EST. 2026 · BANGKOK`.
+  crest, `KICKOFF`, `MATCHDAY, SIMPLIFIED`.
+- **Welcome hero** (`apps/mobile/src/app/(auth)/welcome.tsx`): crest,
+  `KICKOFF`, `EST. 2026 · BANGKOK`.
 - **Crests / avatars**: two-letter `KO` for the club; opponents use
   `opponentShort`; the club crest gradient is
   `[colors.primaryBright, colors.primaryDark]`.

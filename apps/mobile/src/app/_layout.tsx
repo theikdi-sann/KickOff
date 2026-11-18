@@ -5,7 +5,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 import { useTranslator } from '@/lib/i18n';
 import { QueryProvider } from '@/lib/queries/query-provider';
 import { AppProvider, useApp } from '@/lib/store';
@@ -18,9 +18,12 @@ function BrandSplash() {
   const t = useTranslator();
   return (
     <View style={styles.splash}>
-      <View style={styles.crest}>
-        <Text style={styles.crestLetter}>K</Text>
-      </View>
+      <Image
+        source={require('../../assets/images/brand-mark.png')}
+        style={styles.mark}
+        resizeMode="contain"
+        accessibilityIgnoresInvertColors
+      />
       <Text style={styles.wordmark}>{t('KICKOFF')}</Text>
       <Text style={styles.tagline}>{t('MATCHDAY, SIMPLIFIED')}</Text>
       <ActivityIndicator color={colors.accent} style={styles.spinner} />
@@ -85,21 +88,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.night,
   },
-  crest: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    borderWidth: 1,
-    borderColor: 'rgba(244, 196, 48, 0.4)',
-  },
-  crestLetter: {
-    color: colors.accent,
-    fontSize: 34,
-    fontWeight: '800',
-    letterSpacing: -1,
+  mark: {
+    width: 132,
+    height: 69,
   },
   wordmark: {
     marginTop: 18,

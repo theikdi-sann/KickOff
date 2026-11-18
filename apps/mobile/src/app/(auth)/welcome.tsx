@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowRight, CalendarDays, QrCode, ShieldCheck, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { CLUB_TAGLINE } from '@kickoff/shared';
@@ -22,11 +22,12 @@ export default function WelcomeScreen() {
       <SafeAreaView style={styles.flex}>
         <View style={styles.header}>
           <View style={styles.brandRow}>
-            <View style={styles.logo}>
-              <AppText variant="h2" color={colors.night}>
-                K
-              </AppText>
-            </View>
+            <Image
+              source={require('../../../assets/images/brand-mark.png')}
+              style={styles.logo}
+              resizeMode="contain"
+              accessibilityIgnoresInvertColors
+            />
             <View>
               <AppText variant="h2" color="#FFFFFF" style={styles.brand}>{t('KICKOFF')}</AppText>
               <AppText variant="caption" color={colors.nightMuted} style={styles.est}>{t('EST. 2026 · BANGKOK')}</AppText>
@@ -163,12 +164,8 @@ const styles = StyleSheet.create({
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   logo: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 58,
+    height: 30,
   },
   brand: { letterSpacing: 1.6, lineHeight: 28 },
   est: { fontSize: 8, letterSpacing: 1.2 },

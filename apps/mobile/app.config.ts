@@ -49,7 +49,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         backgroundColor: brand.night,
         image: './assets/images/splash-icon.png',
-        imageWidth: 76,
+        imageWidth: 200,
       },
     ],
     'expo-sharing',
