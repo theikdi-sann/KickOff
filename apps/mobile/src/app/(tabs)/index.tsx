@@ -134,7 +134,7 @@ export default function HomeScreen() {
             onPress={() => router.push({ pathname: '/match/[id]', params: { id: nextMatch.id } })}
             style={({ pressed }) => [styles.heroWrap, pressed && { opacity: 0.96 }]}>
             <LinearGradient
-              colors={nextMatch.posterColors}
+              colors={[colors.primary, colors.primaryDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.hero}>
@@ -142,10 +142,10 @@ export default function HomeScreen() {
               <View style={styles.heroTop}>
                 <View style={styles.livePill}>
                   <View style={styles.liveDot} />
-                  <AppText variant="caption" color="#FFFFFF" style={styles.liveText}>{t('NEXT HOME MATCH')}</AppText>
+                  <AppText variant="caption" color={colors.ink} style={styles.liveText}>{t('NEXT HOME MATCH')}</AppText>
                 </View>
                 <View style={styles.competition}>
-                  <AppText variant="caption" color="rgba(255,255,255,0.6)" style={styles.compText}>
+                  <AppText variant="caption" color={colors.accent} style={styles.compText}>
                     {nextMatch.competition.toUpperCase()}
                   </AppText>
                 </View>
@@ -153,7 +153,7 @@ export default function HomeScreen() {
 
               <View style={styles.heroTeams}>
                 <View style={styles.heroTeam}>
-                  <Crest short="KO" size={54} colors={[colors.primaryBright, colors.primaryDark]} />
+                  <Crest short="KO" size={54} colors={[colors.accent, colors.accentDeep]} />
                   <AppText variant="label" color="#FFFFFF">{t('KICKOFF')}</AppText>
                 </View>
                 <View style={styles.heroCenter}>
@@ -437,16 +437,25 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: 'rgba(255,202,111,0.14)',
     right: -80,
     top: -70,
   },
   heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  livePill: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent },
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.accent,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary },
   liveText: { fontSize: 9, letterSpacing: 1.1 },
   competition: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: colors.accent,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
@@ -467,7 +476,7 @@ const styles = StyleSheet.create({
   heroDivider: {
     borderTopWidth: 1,
     borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.14)',
+    borderColor: 'rgba(255,202,111,0.3)',
     marginVertical: 17,
   },
   heroMeta: { flexDirection: 'row', gap: 24 },

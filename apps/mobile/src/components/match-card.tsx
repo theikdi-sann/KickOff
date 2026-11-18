@@ -21,17 +21,17 @@ export function MatchCard({
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.cardWrap, pressed && { opacity: 0.9 }]}>
       <LinearGradient
-        colors={match.posterColors}
+        colors={[colors.primary, colors.primaryDark]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.card}>
         <View style={styles.glow} />
         <View style={styles.topRow}>
-          <Pill label={match.competition.toUpperCase()} tone="dark" />
-          <ChevronRight size={17} color="rgba(255,255,255,0.7)" />
+          <Pill label={match.competition.toUpperCase()} tone="gold" />
+          <ChevronRight size={17} color={colors.accent} />
         </View>
         <View style={styles.teams}>
-          <Crest short="KO" size={46} colors={[colors.primaryBright, colors.primaryDark]} />
+          <Crest short="KO" size={46} colors={[colors.accent, colors.accentDeep]} />
           <AppText variant="caption" color="rgba(255,255,255,0.5)" style={styles.vs}>
             VS
           </AppText>
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     width: 170,
     height: 170,
     borderRadius: 85,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,202,111,0.16)',
     right: -60,
     top: -60,
   },
