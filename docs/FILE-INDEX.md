@@ -202,8 +202,9 @@ before the suite is green again.
 | `docs/FILE-INDEX.md` | doc | reviewed | this file — every tracked file and its verdict |
 | `docs/FLOW-AUDIT.md` | doc | reviewed | flow-by-flow audit findings |
 | `docs/PRIVACY.md` | doc | reviewed | the data inventory and the retention/erasure schedule (GAP-09): what personal data is held, for how long, and what a fan's export and erasure cover |
+| `docs/PUSH.md` | doc | reviewed | the end-to-end push guide: Firebase project and `google-services.json`, the FCM V1 key via `eas credentials`, the EAS project id, the dev build, obtaining/verifying the Expo token, send and receipt `curl`s, the `send-kickoff-reminders` trigger, SQL editor recipes, troubleshooting and FCM rotation |
 | `docs/REQUIREMENTS.md` | doc | reviewed | product requirements, traceability, known gaps |
-| `docs/RUNBOOK.md` | doc | reviewed | operational procedures: deploy, rotate, incident, recovery, fan rights (§6.8), club exit (§9) |
+| `docs/RUNBOOK.md` | doc | reviewed | operational procedures: deploy, rotate (incl. the FCM V1 key), incident, recovery, manual reminder trigger (§6.7), pre-event push check (§8), hardware push proof and the recorded run (§11/§11.7, linking `PUSH.md`), fan rights (§6.8), club exit (§9) |
 | `docs/SECURITY.md` | doc | reviewed | RLS matrix, secrets, payments, QR, audit |
 | `docs/SRS.md` | doc | reviewed | detailed specification of REQ/NFR/SC with acceptance criteria |
 | `docs/TESTING.md` | doc | reviewed | test layers and commands |
@@ -292,7 +293,7 @@ before the suite is green again.
 | `scripts/tests/phaseb.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/phaseb0.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/platform-console.test.mjs` | test | covered | contract test — C9 across three tiers: vocabulary + generated copy, Edge guards, bootstrap, stripe-onboard, console gating, mobile binding (PC-1…PC-9) |
-| `scripts/tests/push-hardware.test.mjs` | test | covered | contract test — C10.4 + GAP-06 closure: Firebase config wired and package matching, EAS project id in the build env, the service-account key ignored, RUNBOOK §11 procedure and §11.7 recorded run, and the gap row reporting closed (PUSH-HW-1…PUSH-HW-8) |
+| `scripts/tests/push-hardware.test.mjs` | test | covered | contract test — C10.4 + GAP-06 closure: Firebase config wired and package matching, EAS project id in the build env, the service-account key ignored, RUNBOOK §11 procedure and §11.7 recorded run, the gap row reporting closed, and the end-to-end guide carrying every step the runbook links (PUSH-HW-1…PUSH-HW-10) |
 | `scripts/tests/push.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/readme.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/redirects.test.mjs` | test | covered | contract test — fails when the repository drifts |

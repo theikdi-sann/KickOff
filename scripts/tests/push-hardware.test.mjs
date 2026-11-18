@@ -192,3 +192,43 @@ test('PUSH-HW-8 the gap is reported as closed where the project tracks it', () =
   assert.match(row, /Xiaomi Pad 6/, 'the closing evidence is named in the row itself');
 });
 
+// PUSH-HW-9 — the hardware proof is one run; the guide is what an operator
+// follows on the next project, the next club build, or the next incident.
+// Every step that has silently bitten this project is named in it.
+const PUSH_GUIDE = 'docs/PUSH.md';
+
+test('PUSH-HW-9 the end-to-end push guide carries every step', () => {
+  assert.ok(existsSync(resolve(root, PUSH_GUIDE)), `${PUSH_GUIDE} is the operator guide`);
+
+  const guide = read(PUSH_GUIDE);
+
+  for (const [pattern, step] of [
+    [/Settings\s*→\s*Service accounts/i, 'the Firebase service-account key is created in the console'],
+    [/Generate new private key/i, 'the key generation step is named'],
+    [/credentials/, 'the EAS credential upload is named'],
+    [/FCM V1/i, 'the FCM V1 credential type is named'],
+    [/google-services\.json/, 'the client config file is named'],
+    [/getExpoPushTokenAsync/, 'how the token is obtained is shown'],
+    [/device_tokens/, 'where the token is stored is named'],
+    [/app_secrets[\s\S]{0,120}reminders_secret/, 'the cron secret is read from app_settings/app_secrets'],
+    [/exp\.host\/--\/api\/v2\/push\/send/, 'the send endpoint is shown'],
+    [/exp\.host\/--\/api\/v2\/push\/getReceipts/, 'the receipt check is shown'],
+    [/send-kickoff-reminders/, 'the real reminder path is shown'],
+    [/SQL editor/i, 'the SQL steps say where to run them'],
+  ]) {
+    assert.match(guide, pattern, `the push guide must document ${step}`);
+  }
+
+  // It is a public document: a full token is a live credential.
+  assert.doesNotMatch(
+    guide,
+    /ExponentPushToken\[[A-Za-z0-9_-]{18,}\]/,
+    'never paste a full push token into the guide',
+  );
+});
+
+test('PUSH-HW-10 the runbook links the guide instead of repeating it', () => {
+  assert.match(read(RUNBOOK), /docs\/PUSH\.md/, 'RUNBOOK §11 must point at the full guide');
+});
+
+

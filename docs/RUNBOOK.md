@@ -5,9 +5,10 @@ migrate, rotate keys, respond to incidents, and recover from failure. Every
 command is written to be run from the repository root unless stated otherwise.
 
 - **Status:** living document · **Owner:** engineering
-- **Last verified:** 2026-11-14
+- **Last verified:** 2026-11-19 (hardware push run, §11.7)
 - **Related:** [`SECURITY.md`](SECURITY.md) (controls + secret inventory) ·
   [`TESTING.md`](TESTING.md) (verification layers) ·
+  [`PUSH.md`](PUSH.md) (the full end-to-end push guide) ·
   [`ARCHITECTURE.md`](ARCHITECTURE.md) (system shape)
 
 ## 1. Environments
@@ -104,7 +105,8 @@ Rules:
 ```bash
 npm run build:admin                      # must pass before deploy (CI also gates it)
 npx eas build --profile production       # mobile; for push testing use the development
-                                         # profile and follow §11 (GAP-06)
+                                         # profile and follow §11 (GAP-06 is closed for
+                                         # Android — §11.7 is the recorded run)
 ```
 
 Set the production `ALLOWED_ORIGINS` / `ADMIN_APP_URL` Edge secrets to the
@@ -148,6 +150,7 @@ All secrets rotate through Supabase secrets; none are committed.
 | `METRICS_TOKEN` | monitoring caller must be updated | set both sides, monitoring first |
 | `SUPABASE_SERVICE_ROLE_KEY` | invalidates Edge auth to DB | set via dashboard/CLI; redeploy functions in the same window |
 | `ALLOWED_ORIGINS` / `ADMIN_APP_URL` | CORS breaks the console if stale | update when the admin origin changes |
+| **FCM V1 service-account key** (EAS credential, not a Supabase secret) | **push delivery stops** until the new key is uploaded; no app rebuild needed | Firebase console → Project settings → Service accounts → **Generate new private key**, then `npx eas-cli@latest credentials` → Android → production → *Google Service Account* → *Manage … FCM V1* → upload; send one test push to confirm (see [`PUSH.md`](PUSH.md) §2 and §10) |
 
 Rotate immediately after: any suspected leak, offboarding of anyone with
 dashboard access, and at least quarterly.
@@ -230,6 +233,30 @@ The scheduler is `pg_cron` and secret-guarded (migration `0032`). Check the
 cron job's last run, the `reminders:*` rate limit (12/60s), and the Edge logs
 of `send-kickoff-reminders`.
 
+To trigger it by hand — the fastest way to separate "the scheduler did not
+fire" from "the send failed" — read the secret in the Supabase **SQL editor**:
+
+```sql
+select value from app_secrets where key = 'reminders_secret';
+```
+
+and call the function with it (the function is deployed `verify_jwt=false`):
+
+```bash
+curl -X POST "https://cvebikawynavfyfbjnzu.supabase.co/functions/v1/send-kickoff-reminders" \
+  -H "x-cron-secret: <secret>" \
+  -H "content-type: application/json" \
+  -d '{"matchId":"<match-id>"}'
+```
+
+`{}` (or no body) uses the earliest `upcoming` match in the next 26 h.
+`{"sent":N,"devices":M}` means Expo accepted N tickets; `{"sent":0,"reason":…}`
+names the missing link — `no upcoming match` (pass `matchId`),
+`match already started`, `no ticket holders` (no `valid` ticket rows),
+`no registered devices` (no `device_tokens` rows). A `401 Invalid reminder
+scheduler secret` is the header, not the function. Full walkthrough:
+[`PUSH.md`](PUSH.md) §7.
+
 ### 6.8 A fan asks for their data, or to be erased
 
 Both are the fan's own action, not an admin's — and both are the schedule in
@@ -274,6 +301,9 @@ and scans are pseudonyms by then and are not restored.
       gate expects > 240 scans/min (code change required, not a secret).
 - [ ] `metrics` shows zero order-status drift and normal `holds.conflicts`.
 - [ ] PostHog key set (or explicitly disabled) on the console.
+- [ ] Push ready: the FCM V1 key is present in EAS credentials, and the demo
+      fan has at least one `device_tokens` row — send one manual reminder
+      (§6.7) and confirm it reaches the tray before matchday.
 
 ## 9. Tenant offboarding (a club's exit)
 
@@ -461,6 +491,10 @@ cannot: **build → install → permission → token → delivery**. Run it once
 platform, and again whenever the Firebase project, the app package or the
 EAS project changes.
 
+The checklist version is below; the full step-by-step — every Firebase click,
+the exact `eas credentials` menu path, the SQL recipes and the send/receipt
+`curl`s — is [`docs/PUSH.md`](PUSH.md).
+
 ### 11.1 Prerequisites
 
 - [ ] An EAS account with access to the project; `EAS_PROJECT_ID` is set in
@@ -475,9 +509,11 @@ EAS project changes.
       `android.package` (`app.kickoff.fan`). A mismatch makes Firebase return
       `403 PERMISSION_DENIED` and no token is ever issued.
 - [ ] The **FCM V1 service-account key** is uploaded to EAS — this is the
-      server side, and it is what actually delivers the notification:
-      `npx eas-cli@latest credentials` → Android → *Google Service Account* →
-      *Set up … FCM V1* → upload. The downloaded
+      server side, and it is what actually delivers the notification. In
+      Firebase: Project settings → Service accounts → **Generate new private
+      key**; then `npx eas-cli@latest credentials` → Android → production →
+      *Google Service Account* → *Manage … FCM V1* → *Set up …* → upload
+      ([`PUSH.md`](PUSH.md) §2 has every screen). The downloaded
       `*firebase-adminsdk*.json` is a real secret: it is gitignored and must
       never be committed.
 - [ ] A **physical** device. Expo Go cannot receive push since SDK 53, and
@@ -505,19 +541,44 @@ EAS instead of FCM.
    refusal reason when the runtime is wrong, so a wrong launch is caught here
    rather than at the token call.
 3. Sign in with the demo fan account.
-4. Settings → notifications: grant the permission when prompted. The
-   registered token appears once `registerPushToken()` succeeds, and the row
-   exists in `devices` for that fan.
+4. Settings → **Match reminders**: grant the OS permission when prompted.
+   `registerPushToken()` then calls `getExpoPushTokenAsync({ projectId })` and
+   `POST /devices`, which upserts a row in **`device_tokens`** for that fan.
+   The screen shows only the switch — it never displays the token — so verify
+   in the Supabase **SQL editor**:
+   `select token, platform, created_at from device_tokens order by created_at desc limit 5;`
+   Record the first ~10 characters only; a full `ExponentPushToken` can send to
+   the device.
 
 ### 11.4 Deliver the test push
 
-- [ ] `https://expo.dev/notifications` → paste the token → send a test
-      notification (or the project's dashboard *Send a notification*), **or**
-      `POST https://exp.host/--/api/v2/push/send` with
-      `{"to": "<token>", "title": "KickOff", "body": "Hardware push proof"}`.
+Two different things get called "testing push"; run both, because they prove
+different links.
 
-The kickoff-reminder path uses the same token, so a test push that arrives
-proves `send-kickoff-reminders` can reach the device too.
+**A. Direct push — proves the token and the FCM key.** Background the app (or
+swipe it out of recents) first.
+
+- [ ] `https://expo.dev/notifications` → paste the token → send, **or**
+
+```bash
+curl -X POST https://exp.host/--/api/v2/push/send \
+  -H 'Content-Type: application/json' \
+  -d '{"to":"ExponentPushToken[…your-token-here…]","title":"KickOff","body":"Hardware push proof","sound":"default"}'
+```
+
+Keep the returned ticket `id` and check the receipt:
+
+```bash
+curl -X POST https://exp.host/--/api/v2/push/getReceipts \
+  -H 'Content-Type: application/json' \
+  -d '{"ids":["<ticket-id>"]}'
+```
+
+**B. The reminder path — proves the ticket query and the device lookup.** This
+is the function `pg_cron` actually calls; a successful direct push does **not**
+prove it. §6.7 has the manual trigger
+(`x-cron-secret` + `{"matchId":"…"}`), and [`PUSH.md`](PUSH.md) §7 walks
+through it.
 
 ### 11.5 What green looks like
 
@@ -527,13 +588,15 @@ All five, observed once:
 - [ ] The app runs as the installed dev client (Settings shows no
       push-unavailable reason).
 - [ ] The OS permission dialog appears and is granted.
-- [ ] A push token is obtained and registered (`devices` row or on screen).
-- [ ] The test notification arrives **with the app backgrounded**, in the
-      notification tray.
+- [ ] A push token is stored in **`device_tokens`** (seen in the SQL editor).
+- [ ] The test notification arrives **with the app backgrounded or swiped out
+      of recents**, in the notification tray.
+- [ ] The manual reminder returns `{"sent":N,"devices":M}` with N ≥ 1.
 
 Record the evidence in the release ticket: build URL, device model and OS
 version, token prefix, and the push receipt from `expo.dev/notifications`.
-That evidence — not this procedure — is what closes `GAP-06`.
+That evidence — not this procedure — is what closes `GAP-06`. Android is
+closed on the run in §11.7; iOS still needs its own.
 
 ### 11.6 When it fails
 
