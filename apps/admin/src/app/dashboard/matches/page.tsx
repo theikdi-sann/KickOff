@@ -327,7 +327,7 @@ export default function MatchesPage() {
         open={creating}
         onClose={() => setCreating(false)}
         title="Create fixture"
-        description="New fixtures start with no zones. Add stands on the seating page."
+        description="Choose the venue: its zones, seats and gates are copied into the fixture, with per-fixture prices."
         wide>
         <MatchForm submitting={createMatch.isPending} onSubmit={handleCreate} />
       </Modal>

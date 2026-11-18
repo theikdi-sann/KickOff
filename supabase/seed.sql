@@ -121,3 +121,27 @@ values
   ('kickoff_lock_minutes', '15'::jsonb),
   ('gate_undo_seconds', '60'::jsonb)
 on conflict (tenant_id, key) do nothing;
+
+-- The home ground's physical layout (Phase 2). Fixtures created from the venue
+-- clone these zones and seats; existing match inventory is untouched.
+update public.venues set is_home = true where id = 'v_kickoff';
+
+insert into public.venue_zones
+  (id, venue_id, name, description, color, rows, seats_per_row, default_price_minor_units)
+values
+  ('vz-kickoff-north', 'v_kickoff', 'North Stand', 'Behind the goal · loudest end', '#22C55E', array['A','B','C','D','E','F']::text[], 12, 35000),
+  ('vz-kickoff-east', 'v_kickoff', 'East Stand', 'Side view · family friendly', '#F4C430', array['A','B','C','D','E','F']::text[], 12, 45000),
+  ('vz-kickoff-vip', 'v_kickoff', 'VIP Pavilion', 'Halfway line · padded seats', '#8B5CF6', array['A','B','C','D']::text[], 10, 85000)
+on conflict (venue_id, name) do nothing;
+
+insert into public.venue_seats (id, venue_zone_id, row_label, number)
+select
+  vz.id || '-' || r || n,
+  vz.id,
+  r,
+  n
+from public.venue_zones vz
+cross join lateral unnest(vz.rows) as r
+cross join lateral generate_series(1, vz.seats_per_row) as n
+where vz.venue_id = 'v_kickoff'
+on conflict (venue_zone_id, row_label, number) do nothing;

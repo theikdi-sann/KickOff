@@ -18,6 +18,12 @@ export interface AdminMatchInput {
   opponentShort: string;
   kickoffAt: string;
   venue: string;
+  /** Create only: the venue's id (the RPC clones its layout). */
+  venueId?: string;
+  /** Create only: gates assigned to the fixture. */
+  gateIds?: string[];
+  /** Create only: per-venue-zone price overrides, in minor units. */
+  zonePrices?: Record<string, number>;
   competition: string;
   homeAway: "home" | "away";
   posterColors: [string, string];
@@ -218,36 +224,28 @@ export function useCreateMatch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: AdminMatchInput) => {
-      const venueId = await resolveVenueId(input.venue);
-      const { data, error } = await client()
-        .from("matches")
-        .insert({
+      const venueId = requireDefined(input.venueId, "venue id");
+      const { data, error } = await client().rpc("admin_create_match_from_venue", {
+        p_match: {
           opponent: input.opponent,
-          opponent_short: input.opponentShort,
-          kickoff_at: input.kickoffAt,
-          venue_id: venueId,
+          opponentShort: input.opponentShort,
+          kickoffAt: input.kickoffAt,
+          venueId,
           competition: input.competition,
-          home_away: input.homeAway,
-          poster_colors: input.posterColors,
+          homeAway: input.homeAway,
+          posterColors: input.posterColors,
           accent: input.accent,
-        })
-        .select("*, venues(name)")
-        .single();
+        },
+        p_gate_ids: input.gateIds ?? [],
+        p_prices: input.zonePrices ?? {},
+      });
       if (error) throw new Error(error.message);
 
-      await recordAudit({
-        action: AUDIT_ACTIONS.matchCreate,
-        entity: "matches",
-        entityId: data.id,
-        metadata: {
-          opponent: input.opponent,
-          competition: input.competition,
-          kickoff_at: input.kickoffAt,
-          venue_id: venueId,
-        },
-      });
-
-      return toMatchDto(data);
+      const result = requireDefined(data, "created fixture") as unknown as {
+        row: MatchRow;
+        venue_name: string;
+      };
+      return toMatchDto({ ...result.row, venues: { name: result.venue_name } });
     },
     onSuccess: () => invalidateMatchData(queryClient),
   });

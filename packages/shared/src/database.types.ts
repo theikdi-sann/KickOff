@@ -2,7 +2,7 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
-  
+
   "graphql_public": {
           Tables: {
             [_ in never]: never
@@ -35,7 +35,7 @@ export type Database = {
                     "key"?: string,"updated_at"?: string,"value"?: string
                   }
                   Relationships: [
-                    
+
                   ]
                 },"app_settings": {
                   Row: {
@@ -89,7 +89,7 @@ isOneToOne: false
                     "created_at"?: string,"id"?: string,"platform"?: string,"token"?: string,"user_id"?: string
                   }
                   Relationships: [
-                    
+
                   ]
                 },"error_events": {
                   Row: {
@@ -103,7 +103,7 @@ isOneToOne: false
                     "code"?: string,"context"?: Json | null,"created_at"?: string,"id"?: string,"message"?: string,"request_id"?: string | null,"source"?: string,"status"?: number | null
                   }
                   Relationships: [
-                    
+
                   ]
                 },"fans": {
                   Row: {
@@ -413,7 +413,7 @@ isOneToOne: false
                     "granted_at"?: string,"user_id"?: string
                   }
                   Relationships: [
-                    
+
                   ]
                 },"profiles": {
                   Row: {
@@ -427,7 +427,7 @@ isOneToOne: false
                     "created_at"?: string,"email"?: string,"full_name"?: string,"id"?: string,"phone"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
-                    
+
                   ]
                 },"rate_limits": {
                   Row: {
@@ -441,7 +441,7 @@ isOneToOne: false
                     "hits"?: number,"key"?: string,"window_start"?: string
                   }
                   Relationships: [
-                    
+
                   ]
                 },"refunds": {
                   Row: {
@@ -667,7 +667,7 @@ isOneToOne: false
                     "application_fee_bps"?: number,"created_at"?: string,"currency"?: string,"erased_at"?: string | null,"id"?: string,"locale"?: string,"logo_url"?: string | null,"name"?: string,"offboarded_at"?: string | null,"primary_color"?: string,"slug"?: string,"status"?: Database["public"]['Enums']["tenant_status"],"stripe_account_id"?: string | null,"timezone"?: string,"updated_at"?: string
                   }
                   Relationships: [
-                    
+
                   ]
                 },"tickets": {
                   Row: {
@@ -719,16 +719,68 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"venues": {
+                },"venue_seats": {
                   Row: {
-                    "address": string | null,"city": string | null,"created_at": string,"id": string,"name": string,"tenant_id": string,"updated_at": string
+                    "id": string,"number": number,"row_label": string,"tenant_id": string,"venue_zone_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "address"?: string | null,"city"?: string | null,"created_at"?: string,"id"?: string,"name": string,"tenant_id"?: string,"updated_at"?: string
+                    "id"?: string,"number": number,"row_label": string,"tenant_id"?: string,"venue_zone_id": string
                   }
                   Update: {
-                    "address"?: string | null,"city"?: string | null,"created_at"?: string,"id"?: string,"name"?: string,"tenant_id"?: string,"updated_at"?: string
+                    "id"?: string,"number"?: number,"row_label"?: string,"tenant_id"?: string,"venue_zone_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "venue_seats_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "venue_seats_venue_zone_id_tenant_id_fkey"
+      columns: ["venue_zone_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "venue_zones"
+      referencedColumns: ["id","tenant_id"]
+    }
+                  ]
+                },"venue_zones": {
+                  Row: {
+                    "color": string,"created_at": string,"default_price_minor_units": number,"description": string,"id": string,"name": string,"rows": (string)[],"seats_per_row": number,"tenant_id": string,"updated_at": string,"venue_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "color"?: string,"created_at"?: string,"default_price_minor_units": number,"description"?: string,"id"?: string,"name": string,"rows"?: (string)[],"seats_per_row": number,"tenant_id"?: string,"updated_at"?: string,"venue_id": string
+                  }
+                  Update: {
+                    "color"?: string,"created_at"?: string,"default_price_minor_units"?: number,"description"?: string,"id"?: string,"name"?: string,"rows"?: (string)[],"seats_per_row"?: number,"tenant_id"?: string,"updated_at"?: string,"venue_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "venue_zones_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "venue_zones_venue_id_tenant_id_fkey"
+      columns: ["venue_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "venues"
+      referencedColumns: ["id","tenant_id"]
+    }
+                  ]
+                },"venues": {
+                  Row: {
+                    "address": string | null,"city": string | null,"created_at": string,"id": string,"is_home": boolean,"name": string,"tenant_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address"?: string | null,"city"?: string | null,"created_at"?: string,"id"?: string,"is_home"?: boolean,"name": string,"tenant_id"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "address"?: string | null,"city"?: string | null,"created_at"?: string,"id"?: string,"is_home"?: boolean,"name"?: string,"tenant_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -774,7 +826,7 @@ isOneToOne: false
                   }
                   ComputedFields: never
                   Relationships: [
-                    
+
                   ]
                 },"order_receipt_view": {
                   Row: {
@@ -802,7 +854,7 @@ isOneToOne: false
                   }
                   ComputedFields: never
                   Relationships: [
-                    
+
                   ]
                 },"seat_availability": {
                   Row: {
@@ -810,7 +862,7 @@ isOneToOne: false
                   }
                   ComputedFields: never
                   Relationships: [
-                    
+
                   ]
                 },"tap_funky": {
                   Row: {
@@ -818,7 +870,15 @@ isOneToOne: false
                   }
                   ComputedFields: never
                   Relationships: [
-                    
+
+                  ]
+                },"venue_capacity": {
+                  Row: {
+                    "capacity": number | null,"venue_id": string
+                  }
+                  ComputedFields: never
+                  Relationships: [
+
                   ]
                 },"zone_availability": {
                   Row: {
@@ -891,6 +951,15 @@ isOneToOne: false
 "_todo":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"admin_create_match_from_venue":
+{ Args: { "p_gate_ids"?: (string)[],"p_match": Json,"p_prices"?: Json }; Returns: Json
+                           },
+"admin_delete_venue_zone":
+{ Args: { "p_zone_id": string }; Returns: undefined
+                           },
+"admin_save_venue_zone":
+{ Args: { "p_patch": Json,"p_venue_id": string,"p_zone_id": string }; Returns: Json
+                           },
 "admin_set_match_result":
 { Args: { "p_away_score": number,"p_home_score": number,"p_match_id": string }; Returns: Json
                            },
@@ -902,6 +971,12 @@ isOneToOne: false
                            },
 "application_fee_minor_units":
 { Args: { "p_amount_minor_units": number,"p_fee_bps": number }; Returns: number
+                           },
+"assert_seating_open":
+{ Args: { "p_match_id": string }; Returns: undefined
+                           },
+"assert_seating_open_for_zone":
+{ Args: { "p_zone_id": string }; Returns: undefined
                            },
 "cancel_order":
 { Args: { "p_actor_id"?: string,"p_order_id": string }; Returns: Json
@@ -1239,7 +1314,7 @@ export type CompositeTypes<
 export const Constants = {
   "graphql_public": {
           Enums: {
-            
+
           }
         },"public": {
           Enums: {

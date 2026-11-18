@@ -20,6 +20,7 @@ export const AUDIT_ACTIONS = {
   zoneUpdate: 'zone.update',
   zoneDelete: 'zone.delete',
   venueCreate: 'venue.create',
+  venueUpdate: 'venue.update',
   venueDelete: 'venue.delete',
   gateCreate: 'gate.create',
   gateUpdate: 'gate.update',

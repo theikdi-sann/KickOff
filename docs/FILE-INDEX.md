@@ -317,6 +317,7 @@ before the suite is green again.
 | `scripts/tests/type-safety.test.mjs` | test | covered | contract test — no non-null assertion may return |
 | `scripts/tests/ui.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/uniques.test.mjs` | test | covered | contract test — C7.4 per-club uniques: the migration, the seed conflict targets and the admin/mvp-gate writers stay on the composite keys (UNI-1…UNI-4) |
+| `scripts/tests/venue-layout.test.mjs` | test | covered | VL-1…VL-3 — venue layout/home/away, atomic fixture clone, generated seats and the seeded home ground |
 | `scripts/tests/venues.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `supabase/.env.example` | config | reviewed | Edge Function secrets template |
 | `supabase/.gitignore` | config | reviewed | local secrets ignore rules |
@@ -446,6 +447,8 @@ before the suite is green again.
 | `supabase/migrations/0060_tenant_scope_match_notifications.sql` | data | reviewed | migration — adds `match_notifications` to the export and erase registries, so a departing club's bell rows are archived and purged |
 | `supabase/migrations/0061_reload_schema_cache.sql` | data | reviewed | migration — `notify pgrst, 'reload schema'` so a new RPC is callable without an API restart |
 | `supabase/migrations/0062_lock_seating_after_kickoff.sql` | data | reviewed | migration — seating guard: admin zone/price/seat writes are refused once kickoff has passed or the clock closed the fixture; trusted setup bypasses |
+| `supabase/migrations/0063_venue_layout.sql` | data | reviewed | migration — `venues.is_home`, `venue_zones`, `venue_seats`, `venue_capacity`, the zone RPCs and `admin_create_match_from_venue()` (clone layout/prices/gates atomically) |
+| `supabase/migrations/0064_tenant_scope_venue_layout.sql` | data | reviewed | migration — venue zones/seats join the export and erase registries (seats before zone, both before the venue) |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/connect.test.sql` | test | covered | pgTAP suite — C8.1 Stripe Connect: the platform fee in minor units, the club a connected account belongs to, the event ledger; 0050's omittable payment-intent and account parameters (16 assertions) |
@@ -472,5 +475,6 @@ before the suite is green again.
 | `supabase/tests/tenant-export.test.sql` | test | covered | pgTAP suite — GAP-09.4 the per-tenant export: structural coverage of every tenant-scoped table, isolation, service-role-only, audited (9 assertions) |
 | `supabase/tests/tenants.test.sql` | test | covered | pgTAP suite — C6.1 tenant row, claim resolution, scale parity, provisioning, branding-only reads and write denial (23 assertions) |
 | `supabase/tests/uniques.test.sql` | test | covered | pgTAP suite — C7.4 per-club uniques: the same name in two clubs, never twice in one, in the console/seed conflict shape (13 assertions) |
+| `supabase/tests/venue-layout.test.sql` | data | covered | pgTAP VL — one home venue, zone seat generation, derived capacity, atomic fixture clone and the admin/past-kickoff refusals |
 | `supabase/tests/venues.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `tsconfig.base.json` | config | reviewed | shared TypeScript strictness |

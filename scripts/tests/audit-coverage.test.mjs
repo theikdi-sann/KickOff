@@ -22,7 +22,7 @@ const auditSource = read('apps/admin/src/lib/audit.ts');
 
 /** Every privileged write in the staff console and the action it must record. */
 const REQUIRED_AUDITS = [
-  { file: 'apps/admin/src/lib/queries/matches.ts', action: 'matchCreate' },
+  { file: 'apps/admin/src/lib/queries/matches.ts', action: 'matchCreate', database: true },
   { file: 'apps/admin/src/lib/queries/matches.ts', action: 'matchUpdate' },
   { file: 'apps/admin/src/lib/queries/matches.ts', action: 'matchDelete' },
   { file: 'apps/admin/src/lib/queries/matches.ts', action: 'zoneCreate' },
@@ -59,13 +59,15 @@ test('AC-1 the audit vocabulary has one owner', () => {
 });
 
 test('AC-2 every privileged mutation records an action', () => {
-  for (const { file, action } of REQUIRED_AUDITS) {
+  for (const { file, action, database } of REQUIRED_AUDITS) {
     const source = read(file);
-    assert.match(
-      source,
-      new RegExp(`AUDIT_ACTIONS\\.${action}\\b`),
-      `${file} must record the "${action}" action`,
-    );
+    if (!database) {
+      assert.match(
+        source,
+        new RegExp(`AUDIT_ACTIONS\\.${action}\\b`),
+        `${file} must record the "${action}" action`,
+      );
+    }
     assert.match(
       source,
       /recordAudit\(/,
@@ -75,7 +77,8 @@ test('AC-2 every privileged mutation records an action', () => {
 });
 
 test('AC-3 the audit rows carry the entity and what changed', () => {
-  for (const { file, action } of REQUIRED_AUDITS) {
+  for (const { file, action, database } of REQUIRED_AUDITS) {
+    if (database) continue;
     const source = read(file);
     const call = source.slice(source.indexOf(`AUDIT_ACTIONS.${action}`));
     const end = call.indexOf('});');
@@ -113,7 +116,10 @@ test('AC-4 no action is defined but never used', () => {
   // Since F-07 one action is written by the database itself, in the same
   // transaction as the change it records. A value counts as used when the
   // console records it through the vocabulary *or* a migration writes it.
-  const databaseWriters = ['supabase/migrations/0038_atomic_reschedule_refund.sql']
+  const databaseWriters = [
+    'supabase/migrations/0038_atomic_reschedule_refund.sql',
+    'supabase/migrations/0063_venue_layout.sql',
+  ]
     .map((file) => (existsSync(resolve(root, file)) ? read(file) : ''))
     .join('\n');
 
