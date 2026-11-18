@@ -395,7 +395,7 @@ export default function SeatSelectionScreen() {
               <Legend color="#FFFFFF" border={colors.line} label={t('Available')} />
               <Legend color={colors.primary} label={t('Selected')} />
               <Legend color={colors.accent} border={colors.accentSoft} label={t('Reserved by you')} />
-              <Legend color="#DDE3DF" label={t('Unavailable')} />
+              <Legend color={colors.line} label={t('Unavailable')} />
             </View>
           </View>
 
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  seatSold: { backgroundColor: '#DDE3DF', borderColor: '#DDE3DF' },
+  seatSold: { backgroundColor: colors.line, borderColor: colors.line },
   seatMine: { backgroundColor: colors.softGold, borderColor: colors.accent },
   seatSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   seatConflict: { borderColor: colors.danger, borderWidth: 2 },

@@ -24,7 +24,7 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: '#7D8F84',
+        tabBarInactiveTintColor: colors.nightMuted,
         tabBarStyle: [
           styles.tabBar,
           { height: tabBarHeight, paddingBottom: Math.max(insets.bottom, 10) },

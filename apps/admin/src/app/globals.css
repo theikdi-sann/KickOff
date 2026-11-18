@@ -28,8 +28,8 @@
 }
 
 :root {
-  --background: var(--brand-app-background, #f5f7f6);
-  --foreground: var(--brand-ink, #0f172a);
+  --background: var(--brand-app-background, #f1f5f9);
+  --foreground: var(--brand-ink, #0a0f1a);
 }
 
 * {
@@ -52,7 +52,7 @@ body {
 
 @layer components {
   .panel {
-    @apply rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(11,32,22,0.05)];
+    @apply rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(10,22,40,0.05)];
   }
 
   .label {

@@ -170,7 +170,7 @@ function AdminShell({
       .find(([path]) => pathname === path || pathname.startsWith(`${path}/`))?.[1] ?? "Dashboard";
 
   return (
-    <div className="min-h-screen bg-[#F5F7F6]">
+    <div className="min-h-screen bg-app">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-pitch focus:shadow-lg">
@@ -200,7 +200,7 @@ function AdminShell({
                 className={cn(
                   "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition",
                   active
-                    ? "bg-pitch text-white shadow-[0_8px_24px_rgba(11,107,58,0.35)]"
+                    ? "bg-pitch text-white shadow-[0_8px_24px_rgba(0,0,0,0.28)]"
                     : "text-emerald-50/60 hover:bg-white/5 hover:text-white",
                 )}>
                 <Icon size={17} strokeWidth={active ? 2.2 : 1.8} />
@@ -240,7 +240,7 @@ function AdminShell({
       </aside>
 
       <div className="lg:pl-[264px]">
-        <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-[#F5F7F6]/85 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-app/85 backdrop-blur-xl">
           <div className="flex h-[66px] items-center gap-3 px-4 sm:px-6 lg:px-8">
             <div className="lg:hidden">
               <Logo compact />
