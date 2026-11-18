@@ -64,13 +64,15 @@ export default function RootLayout() {
     if (fontsLoaded) SplashScreen.hideAsync().catch(() => undefined);
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) return <BrandSplash />;
-
+  // The providers wrap the boot gate, not the other way round: the splash
+  // renders before fonts load, and C10.2 made it read the club's locale through
+  // React Query. An early `return <BrandSplash />` sits outside the provider
+  // tree and throws "No QueryClient set" on every cold start.
   return (
     <QueryProvider>
       <AppProvider>
         <StatusBar style="dark" />
-        <RootNavigator />
+        {fontsLoaded ? <RootNavigator /> : <BrandSplash />}
       </AppProvider>
     </QueryProvider>
   );

@@ -30,7 +30,11 @@ Runs every workspace `test` script, then the repository script tests:
 - `apps/mobile` uses **Jest** with the `jest-expo` preset and React Native
   Testing Library (`src/**/__tests__/*-test.ts(x)`). Native modules are mocked
   by the preset; `jest.setup.ts` pins the Supabase env to localhost so a unit
-  test can never reach a real project. CI runs this workspace too.
+  test can never reach a real project. CI runs this workspace too. `BOOT-1`
+  renders `RootLayout` with fonts still loading — the boot splash reads the
+  club locale through React Query, so it must render inside the providers
+  (C10.2 shipped it outside them, and every cold start threw *No QueryClient
+  set*).
 - `scripts/tests/*.test.mjs` are source-level contract tests run with
   `node --test scripts/tests/`. The C10.4 push-hardware contracts
   (`PUSH-HW-1…PUSH-HW-6`) pin the client/server push configuration and the

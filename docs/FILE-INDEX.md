@@ -138,6 +138,7 @@ before the suite is green again.
 | `apps/mobile/google-services.json` | config | reviewed | FCM client config (C10.4): public identifiers only — package name matches `android.package`; wired through `android.googleServicesFile` and committed because the build needs it |
 | `apps/mobile/jest.setup.ts` | config | reviewed | mobile test setup — pins the Supabase env to localhost |
 | `apps/mobile/package.json` | config | reviewed | mobile app manifest |
+| `apps/mobile/src/__tests__/layout-test.tsx` | test | covered | mobile boot test — BOOT-1: `RootLayout` renders the splash while fonts load, which is only possible when the providers wrap the font gate (C10.2 shipped the splash outside them and every cold start threw *No QueryClient set*) |
 | `apps/mobile/src/app/(auth)/_layout.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/(auth)/auth/callback.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/(auth)/check-email.tsx` | source | reviewed | supporter app screen |

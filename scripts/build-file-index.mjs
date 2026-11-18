@@ -42,7 +42,14 @@ export function classify(file) {
   if (/(^|\/)LICENSE$/i.test(file)) return 'license';
   if (/\.(md|mdx)$/.test(file)) return 'doc';
   if (/\.sql$/.test(file)) return 'data';
-  if (/\.(test|spec)\.[cm]?[jt]sx?$/.test(file) || /^scripts\/tests\//.test(file)) return 'test';
+  if (
+    /\.(test|spec)\.[cm]?[jt]sx?$/.test(file) ||
+    /^scripts\/tests\//.test(file) ||
+    // The mobile convention is `__tests__/<name>-test.tsx`: Jest owns that
+    // directory, so everything inside it is a test whatever the suffix.
+    /(^|\/)__tests__\//.test(file)
+  )
+    return 'test';
   if (/\.(json|toml|yaml|yml|mjs|sh|js)$/.test(file)) {
     // A script that is a gate or a tool, not application code.
     return file.startsWith('scripts/') ? 'source' : 'config';
