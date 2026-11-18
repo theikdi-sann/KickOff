@@ -1,4 +1,5 @@
 export * from './entities';
+export * from './match-phase';
 export * from './dto';
 export * from './database.types';
 export * from './mappers';

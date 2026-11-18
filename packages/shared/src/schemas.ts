@@ -31,7 +31,7 @@ export const emailSchema = z.email();
 /** A password as the auth screens accept it (Supabase's 72-byte limit). */
 export const passwordSchema = z.string().min(8).max(72);
 
-export const matchStatusSchema = z.enum(['upcoming', 'live', 'completed']);
+export const matchStatusSchema = z.enum(['upcoming', 'live', 'completed', 'postponed', 'cancelled']);
 export const orderStatusSchema = z.enum(['pending', 'paid', 'failed', 'cancelled', 'refunded']);
 export const ticketStatusSchema = z.enum(['valid', 'used', 'void']);
 export const scanResultCodeSchema = z.enum(['valid', 'used', 'invalid', 'wrong_match']);

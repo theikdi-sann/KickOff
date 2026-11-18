@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, Clock3, CloudOff, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { formatMatchDate, formatMatchTime, type MatchDto } from '@kickoff/shared';
+import { formatMatchDate, formatMatchTime, groupMatches, type MatchDto } from '@kickoff/shared';
 import { ResultRow } from '@/components/match-card';
 import { AppText, Card, Crest, EmptyState, LiveTag, PrimaryButton, Screen, SectionHeading, Skeleton } from '@/components/ui';
 import { useTranslator } from '@/lib/i18n';
@@ -19,8 +19,8 @@ export default function FixturesScreen() {
   const matchesQuery = useMatches();
 
   const matches = matchesQuery.data ?? [];
-  const upcoming = matches.filter((match) => match.status === 'upcoming');
-  const results = matches.filter((match) => match.status === 'completed');
+  const clock = groupMatches(matches);
+  const { upcoming, live, results, postponed, cancelled } = clock;
 
   const refresh = () => void matchesQuery.refetch();
 
@@ -33,7 +33,7 @@ export default function FixturesScreen() {
         <View style={styles.headerCenter}>
           <AppText variant="h3">{t('Fixtures')}</AppText>
           <AppText variant="caption" color={colors.muted} style={styles.headerSub}>
-            {upcoming.length} UPCOMING · {results.length} PLAYED
+            {upcoming.length + live.length} UPCOMING · {results.length} PLAYED
           </AppText>
         </View>
         <LiveTag />
@@ -71,6 +71,15 @@ export default function FixturesScreen() {
           </Card>
         ) : (
           <>
+            {live.length > 0 ? (
+              <FixtureSection
+                title={t('Live')}
+                matches={live}
+                note={t('Live')}
+                onPress={(id) => router.push({ pathname: '/match/[id]', params: { id } })}
+              />
+            ) : null}
+
             <SectionHeading title={t('Upcoming')} />
             {upcoming.length === 0 ? (
               <Card style={styles.empty}>
@@ -92,6 +101,24 @@ export default function FixturesScreen() {
                 ))}
               </View>
             )}
+
+            {postponed.length > 0 ? (
+              <FixtureSection
+                title={t('Postponed')}
+                matches={postponed}
+                note={t('Postponed')}
+                onPress={(id) => router.push({ pathname: '/match/[id]', params: { id } })}
+              />
+            ) : null}
+
+            {cancelled.length > 0 ? (
+              <FixtureSection
+                title={t('Cancelled')}
+                matches={cancelled}
+                note={t('Cancelled')}
+                onPress={(id) => router.push({ pathname: '/match/[id]', params: { id } })}
+              />
+            ) : null}
 
             <SectionHeading title={t('Recent results')} />
             <Card style={styles.resultsCard}>
@@ -115,7 +142,38 @@ export default function FixturesScreen() {
   );
 }
 
-function FixtureRow({ match, onPress }: { match: MatchDto; onPress: () => void }) {
+function FixtureSection({
+  title,
+  matches,
+  note,
+  onPress,
+}: {
+  title: string;
+  matches: MatchDto[];
+  note: string;
+  onPress: (id: string) => void;
+}) {
+  return (
+    <>
+      <SectionHeading title={title} />
+      <View style={styles.list}>
+        {matches.map((match) => (
+          <FixtureRow key={match.id} match={match} note={note} onPress={() => onPress(match.id)} />
+        ))}
+      </View>
+    </>
+  );
+}
+
+function FixtureRow({
+  match,
+  note,
+  onPress,
+}: {
+  match: MatchDto;
+  note?: string;
+  onPress: () => void;
+}) {
   const t = useTranslator();
   const display = useTenantDisplay();
   return (
@@ -140,6 +198,11 @@ function FixtureRow({ match, onPress }: { match: MatchDto; onPress: () => void }
             {match.venue.toUpperCase()} · {match.competition.toUpperCase()}
           </AppText>
         </View>
+        {note ? (
+          <AppText variant="caption" color={colors.muted} style={styles.rowNote}>
+            {note.toUpperCase()}
+          </AppText>
+        ) : null}
       </View>
       <ChevronRight size={17} color={colors.muted} />
     </Pressable>
@@ -183,6 +246,7 @@ const styles = StyleSheet.create({
   rowInfo: { flex: 1, gap: 4 },
   rowMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   rowMetaText: { fontSize: 9, letterSpacing: 0.4 },
+  rowNote: { fontSize: 8, letterSpacing: 0.6 },
   empty: { padding: 8 },
   retry: { marginTop: 12 },
   resultsCard: { paddingHorizontal: 14 },

@@ -15,6 +15,7 @@ import {
   formatFullDate,
   formatMatchTime,
   formatMoney,
+  matchPhase,
   type MatchDto,
   type ZoneAvailabilityDto,
   type ZoneDto,
@@ -80,8 +81,13 @@ export default function MatchDetailScreen() {
     );
   }
 
-  const completed = match.status === 'completed';
-  const minPrice = zones.length ? Math.min(...zones.map((zone) => zone.priceMinorUnits)) : undefined;
+  // The kickoff decides whether seats can still be sold; the stored status is
+  // only a hint the clock may not have caught up with yet.
+  const phase = matchPhase(match);
+  const minPrice =
+    phase === 'scheduled' && zones.length
+      ? Math.min(...zones.map((zone) => zone.priceMinorUnits))
+      : undefined;
 
   return (
     <Screen style={{ backgroundColor: colors.bg }}>
@@ -90,7 +96,7 @@ export default function MatchDetailScreen() {
         <MatchHero match={match} fromPriceSatang={minPrice} onBack={() => router.back()} />
 
         <View style={styles.body}>
-          {completed ? (
+          {phase === 'played' ? (
             <Card style={styles.resultCard}>
               <AppText variant="caption" color={colors.muted} style={styles.caption}>{t('FULL TIME')}</AppText>
               <View style={styles.resultRow}>
@@ -101,6 +107,38 @@ export default function MatchDetailScreen() {
                 <Crest short={match.opponentShort} size={46} colors={[match.accent, '#1E293B']} />
               </View>
               <AppText variant="small" color={colors.muted} style={styles.centerText}>{t('This fixture has ended. Match report is available in the club feed.')}</AppText>
+            </Card>
+          ) : phase === 'awaitingResult' ? (
+            <Card style={styles.notOnSaleCard}>
+              <View style={styles.notOnSaleIcon}>
+                <Clock3 size={22} color={colors.muted} />
+              </View>
+              <AppText variant="h3">{t('Awaiting result')}</AppText>
+              <AppText variant="small" color={colors.muted} style={styles.centerText}>{t('The result has not been entered yet. Check back shortly.')}</AppText>
+            </Card>
+          ) : phase === 'postponed' ? (
+            <Card style={styles.notOnSaleCard}>
+              <View style={styles.notOnSaleIcon}>
+                <Clock3 size={22} color={colors.muted} />
+              </View>
+              <AppText variant="h3">{t('Match postponed')}</AppText>
+              <AppText variant="small" color={colors.muted} style={styles.centerText}>{t('The club will confirm the new date. Tickets already bought stay valid.')}</AppText>
+            </Card>
+          ) : phase === 'cancelled' ? (
+            <Card style={styles.notOnSaleCard}>
+              <View style={styles.notOnSaleIcon}>
+                <TicketIcon size={22} color={colors.muted} />
+              </View>
+              <AppText variant="h3">{t('Match cancelled')}</AppText>
+              <AppText variant="small" color={colors.muted} style={styles.centerText}>{t('Ticket holders will be contacted about a refund.')}</AppText>
+            </Card>
+          ) : phase === 'live' ? (
+            <Card style={styles.notOnSaleCard}>
+              <View style={styles.notOnSaleIcon}>
+                <TicketIcon size={22} color={colors.muted} />
+              </View>
+              <AppText variant="h3">{t('Sales closed')}</AppText>
+              <AppText variant="small" color={colors.muted} style={styles.centerText}>{t('This match has kicked off. Tickets are no longer on sale online.')}</AppText>
             </Card>
           ) : zonesQuery.error || availabilityQuery.error ? (
             <Card style={styles.notOnSaleCard}>
@@ -224,7 +262,7 @@ function MatchHero({
   onBack: () => void;
 }) {
   const t = useTranslator();
-  const completed = match.status === 'completed';
+  const completed = matchPhase(match) === 'played';
   const onSale = fromPriceSatang !== undefined;
   const display = useTenantDisplay();
   return (

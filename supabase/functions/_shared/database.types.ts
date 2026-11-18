@@ -191,6 +191,58 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"match_notification_reads": {
+                  Row: {
+                    "notification_id": string,"read_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "notification_id": string,"read_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "notification_id"?: string,"read_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "match_notification_reads_notification_id_fkey"
+      columns: ["notification_id"]
+isOneToOne: false
+      referencedRelation: "match_notifications"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"match_notifications": {
+                  Row: {
+                    "body": string,"created_at": string,"id": string,"kind": string,"match_id": string,"tenant_id": string,"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"created_at"?: string,"id"?: string,"kind": string,"match_id": string,"tenant_id"?: string,"title": string
+                  }
+                  Update: {
+                    "body"?: string,"created_at"?: string,"id"?: string,"kind"?: string,"match_id"?: string,"tenant_id"?: string,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "match_notifications_match_id_fkey"
+      columns: ["match_id"]
+isOneToOne: false
+      referencedRelation: "match_sales_summary"
+      referencedColumns: ["match_id"]
+    },{
+      foreignKeyName: "match_notifications_match_id_fkey"
+      columns: ["match_id"]
+isOneToOne: false
+      referencedRelation: "matches"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "match_notifications_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"match_zone_prices": {
                   Row: {
                     "created_at": string,"match_id": string,"price_minor_units": number,"tenant_id": string,"updated_at": string,"zone_id": string
@@ -847,6 +899,12 @@ isOneToOne: false
 "_todo":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"admin_set_match_result":
+{ Args: { "p_away_score": number,"p_home_score": number,"p_match_id": string }; Returns: Json
+                           },
+"admin_set_match_status":
+{ Args: { "p_match_id": string,"p_reason"?: string,"p_status": Database["public"]['Enums']["match_status"] }; Returns: Json
+                           },
 "admin_update_match":
 { Args: { "p_match_id": string,"p_patch": Json,"p_reason"?: string }; Returns: Json
                            },
@@ -880,60 +938,6 @@ isOneToOne: false
                            },
 "current_tenant":
 { Args: Record<PropertyKey, never>; Returns: string
-                           },
-"dblink":
-{ Args: { "": string }; Returns: Record<string, unknown>[]
-                           },
-"dblink_cancel_query":
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_close":
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_connect":
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_connect_u":
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_current_query":
-{ Args: Record<PropertyKey, never>; Returns: string
-                           },
-"dblink_disconnect":
-{ Args: Record<PropertyKey, never>; Returns: string
-                           } |
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_error_message":
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_exec":
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_fdw_validator":
-{ Args: { "catalog": unknown,"options": (string)[] }; Returns: undefined
-                           },
-"dblink_get_connections":
-{ Args: Record<PropertyKey, never>; Returns: (string)[]
-                           },
-"dblink_get_notify":
-{ Args: { "conname": string }; Returns: Record<string, unknown>[]
-                           } |
-{ Args: Record<PropertyKey, never>; Returns: Record<string, unknown>[]
-                           },
-"dblink_get_pkey":
-{ Args: { "": string }; Returns: Database["public"]['CompositeTypes']["dblink_pkey_results"][]
-                          SetofOptions: {
-        from: "*"
-        to: "dblink_pkey_results"
-        isOneToOne: false
-        isSetofReturn: true
-      } },
-"dblink_get_result":
-{ Args: { "": string }; Returns: Record<string, unknown>[]
-                           },
-"dblink_is_busy":
-{ Args: { "": string }; Returns: number
                            },
 "diag":
 { Args: { "msg": unknown }; Returns: { error: true } & "Could not choose the best candidate function between: public.diag(msg => text), public.diag(msg => anyelement). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
@@ -1069,6 +1073,9 @@ isOneToOne: false
 "provision_tenant":
 { Args: { "p_currency"?: string,"p_locale"?: string,"p_name": string,"p_slug": string,"p_timezone"?: string }; Returns: string
                            },
+"record_match_clock":
+{ Args: { "p_now"?: string }; Returns: number
+                           },
 "release_hold":
 { Args: { "p_hold_id": string }; Returns: number
                            },
@@ -1122,13 +1129,11 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "match_status": "upcoming"|"live"|"completed","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded","scan_result": "valid"|"used"|"invalid"|"wrong_match","tenant_status": "active"|"suspended","ticket_status": "valid"|"used"|"void"
+            "match_status": "upcoming"|"live"|"completed"|"postponed"|"cancelled","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded","scan_result": "valid"|"used"|"invalid"|"wrong_match","tenant_status": "active"|"suspended","ticket_status": "valid"|"used"|"void"
           }
           CompositeTypes: {
             "_time_trial_type": {
                         "a_time": number | null
-                      },"dblink_pkey_results": {
-                        "position": number | null,"colname": string | null
                       }
           }
         }
@@ -1246,7 +1251,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "match_status": ["upcoming", "live", "completed"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded"],"scan_result": ["valid", "used", "invalid", "wrong_match"],"tenant_status": ["active", "suspended"],"ticket_status": ["valid", "used", "void"]
+            "match_status": ["upcoming", "live", "completed", "postponed", "cancelled"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded"],"scan_result": ["valid", "used", "invalid", "wrong_match"],"tenant_status": ["active", "suspended"],"ticket_status": ["valid", "used", "void"]
           }
         }
 } as const

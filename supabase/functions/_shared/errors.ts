@@ -21,6 +21,7 @@ export const STATUS_BY_CODE: Record<ErrorCode, number> = {
   forbidden: 403,
   not_found: 404,
   conflict: 409,
+  match_started: 409,
   validation: 422,
   rate_limited: 429,
   payment_required: 402,

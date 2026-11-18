@@ -21,10 +21,11 @@ import {
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Logo } from "@/components/logo";
 import { Badge } from "@/components/ui";
 import { useSessionGuard, useSignOut } from "@/lib/use-session";
+import { useMarkNotificationRead, useMatchNotifications } from "@/lib/queries/notifications";
 import { cn, displayName, initialsFor } from "@/lib/utils";
 
 /** The platform console's surface (ADR-004 §3) — the platform claim only. */
@@ -151,6 +152,11 @@ function AdminShell({
 }) {
   const pathname = usePathname();
   const signOut = useSignOut();
+  const [bellOpen, setBellOpen] = useState(false);
+  const notifications = useMatchNotifications(isAdmin);
+  const markRead = useMarkNotificationRead();
+  const notificationItems = notifications.data ?? [];
+  const unreadCount = notificationItems.filter((item) => !item.read).length;
   const name = displayName(user);
   const initials = initialsFor(name);
   const email = user.email ?? "";
@@ -258,12 +264,75 @@ function AdminShell({
                   ⌘K
                 </kbd>
               </div>
-              <button
-                type="button"
-                className="relative grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500">
-                <Bell size={16} />
-                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-white" />
-              </button>
+              {isAdmin ? (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setBellOpen((open) => !open)}
+                    aria-label={
+                      unreadCount > 0 ? `${unreadCount} unread match alerts` : "Match alerts"
+                    }
+                    aria-expanded={bellOpen}
+                    className="relative grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500">
+                    <Bell size={16} />
+                    {unreadCount > 0 ? (
+                      <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-white">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    ) : null}
+                  </button>
+                  {bellOpen ? (
+                    <div className="absolute right-0 top-11 z-40 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                        <span className="text-xs font-semibold text-slate-900">Match alerts</span>
+                        <span className="text-[10px] uppercase tracking-[0.12em] text-slate-400">
+                          {unreadCount} unread
+                        </span>
+                      </div>
+                      {notificationItems.length === 0 ? (
+                        <p className="px-4 py-6 text-center text-xs text-slate-400">
+                          No match alerts yet.
+                        </p>
+                      ) : (
+                        <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto">
+                          {notificationItems.map((item) => (
+                            <li key={item.id}>
+                              <Link
+                                href={`/dashboard/matches/${item.matchId}`}
+                                onClick={() => {
+                                  setBellOpen(false);
+                                  if (!item.read) markRead.mutate(item.id);
+                                }}
+                                className="block px-4 py-3 transition hover:bg-slate-50">
+                                <div className="flex items-start gap-2">
+                                  <span
+                                    className={
+                                      item.read
+                                        ? "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-200"
+                                        : "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-pitch"
+                                    }
+                                  />
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-semibold text-slate-800">
+                                      {item.title}
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] leading-4 text-slate-500">
+                                      {item.body}
+                                    </p>
+                                    <p className="mt-1 text-[9px] uppercase tracking-[0.1em] text-slate-400">
+                                      {formatNotificationTime(item.createdAt)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 sm:flex">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
                 <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">
@@ -310,4 +379,15 @@ function AdminShell({
       </div>
     </div>
   );
+}
+
+function formatNotificationTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }

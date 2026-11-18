@@ -36,6 +36,8 @@ import {
   useUpdateZone,
   useZoneAvailability,
   useZones,
+  useSetMatchResult,
+  useSetMatchStatus,
   type AdminMatchInput,
   type AdminZoneInput,
 } from "@/lib/queries/matches";
@@ -44,6 +46,7 @@ import {
   formatMatchDate,
   formatMatchTime,
   formatMoney,
+  matchPhase,
   potentialRevenueMinorUnits,
   summariseAvailability,
   type ZoneDto,
@@ -63,10 +66,19 @@ export default function SeatingPage() {
   const updateZone = useUpdateZone();
   const deleteZone = useDeleteZone();
   const updateMatch = useUpdateMatch();
+  const setMatchStatus = useSetMatchStatus();
+  const setMatchResult = useSetMatchResult();
 
   const [creatingZone, setCreatingZone] = useState(false);
   const [deletingZone, setDeletingZone] = useState<ZoneDto | null>(null);
   const [editingFixture, setEditingFixture] = useState(false);
+  const [resultOpen, setResultOpen] = useState(false);
+  const [statusAction, setStatusAction] = useState<"postponed" | "cancelled" | "upcoming" | null>(
+    null,
+  );
+  const [statusReason, setStatusReason] = useState("");
+  const [homeScore, setHomeScore] = useState("0");
+  const [awayScore, setAwayScore] = useState("0");
 
   if (matchQuery.isLoading || zonesQuery.isLoading || availabilityQuery.isLoading) {
     return (
@@ -159,6 +171,75 @@ export default function SeatingPage() {
     await updateMatch.mutateAsync({ id: match.id, patch: input });
     setEditingFixture(false);
     toast({ title: "Fixture updated", description: "Match details saved.", tone: "green" });
+  };
+
+  const phase = matchPhase(match);
+  const canEnterResult = phase === "live" || phase === "awaitingResult" || phase === "played";
+  const canChangeStatus =
+    phase === "scheduled" || match.status === "postponed" || match.status === "cancelled";
+  const paidOrders = salesQuery.data?.[match.id]?.ordersPaid ?? 0;
+
+  const openResult = () => {
+    setHomeScore(String(match.homeScore ?? 0));
+    setAwayScore(String(match.awayScore ?? 0));
+    setResultOpen(true);
+  };
+
+  const handleSaveResult = async () => {
+    const home = Number.parseInt(homeScore, 10);
+    const away = Number.parseInt(awayScore, 10);
+    if (!Number.isInteger(home) || !Number.isInteger(away) || home < 0 || away < 0) {
+      toast({ title: "Enter both scores", description: "Scores are whole numbers, 0 or more.", tone: "red" });
+      return;
+    }
+    try {
+      await setMatchResult.mutateAsync({ id: match.id, homeScore: home, awayScore: away });
+      setResultOpen(false);
+      toast({ title: "Result saved", description: "The fixture now shows the final score.", tone: "green" });
+    } catch (caught) {
+      toast({
+        title: "Could not save the result",
+        description: caught instanceof Error ? caught.message : "Try again in a moment.",
+        tone: "red",
+      });
+    }
+  };
+
+  const handleStatusChange = async () => {
+    if (!statusAction) return;
+    if (!statusReason.trim()) {
+      toast({
+        title: "A reason is required",
+        description: "Tell the next admin why this fixture moved.",
+        tone: "red",
+      });
+      return;
+    }
+    try {
+      await setMatchStatus.mutateAsync({
+        id: match.id,
+        status: statusAction,
+        reason: statusReason.trim(),
+      });
+      setStatusAction(null);
+      setStatusReason("");
+      toast({
+        title: "Fixture updated",
+        description:
+          statusAction === "postponed"
+            ? "The fixture is postponed and off sale."
+            : statusAction === "cancelled"
+              ? "The fixture is cancelled and off sale. Refunds stay manual."
+              : "The fixture is back on sale.",
+        tone: statusAction === "upcoming" ? "green" : "amber",
+      });
+    } catch (caught) {
+      toast({
+        title: "Could not change the fixture",
+        description: caught instanceof Error ? caught.message : "Try again in a moment.",
+        tone: "red",
+      });
+    }
   };
 
   return (
@@ -269,7 +350,56 @@ export default function SeatingPage() {
               Edit fixture details
               <ChevronRight size={14} />
             </button>
+
+            {canChangeStatus ? (
+              <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+                {match.status === "upcoming" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setStatusAction("postponed")}
+                      className="btn-ghost flex-1 px-3 py-2 text-[11px]">
+                      Postpone
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStatusAction("cancelled")}
+                      className="btn-ghost flex-1 px-3 py-2 text-[11px] text-red-600">
+                      Cancel match
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setStatusAction("upcoming")}
+                    className="btn-ghost w-full px-3 py-2 text-[11px]">
+                    Restore fixture
+                  </button>
+                )}
+              </div>
+            ) : null}
           </div>
+
+          {canEnterResult ? (
+            <div className="panel p-5">
+              <p className="label text-pitch">Result</p>
+              <h2 className="display mt-1 text-2xl text-slate-900">
+                {match.homeScore !== null && match.awayScore !== null
+                  ? `${match.homeScore}–${match.awayScore}`
+                  : "Awaiting result"}
+              </h2>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                {phase === "live"
+                  ? "The match is still playing. Saving a result before full time is possible but the clock will not have closed the fixture."
+                  : "Scores are entered by an admin. The clock never guesses a result."}
+              </p>
+              <button type="button" onClick={openResult} className="btn-primary mt-3 w-full">
+                {match.homeScore !== null && match.awayScore !== null
+                  ? "Edit result"
+                  : "Enter result"}
+              </button>
+            </div>
+          ) : null}
 
           <div className="relative overflow-hidden rounded-2xl bg-night p-5 text-white">
             <div className="absolute -right-12 -top-16 h-40 w-40 rounded-full border border-white/[0.07]" />
@@ -335,6 +465,97 @@ export default function SeatingPage() {
           submitting={updateMatch.isPending}
           onSubmit={handleUpdateFixture}
         />
+      </Modal>
+
+      <Modal
+        open={resultOpen}
+        onClose={() => setResultOpen(false)}
+        title="Enter the result"
+        description="One save writes both scores and closes the fixture."
+        wide>
+        <div className="space-y-4">
+          {phase === "live" ? (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-800">
+              This match has not reached full time. Continue only if it ended early.
+            </p>
+          ) : null}
+          <div className="grid grid-cols-2 gap-4">
+            <label className="block text-[11px] font-semibold text-slate-600">
+              KickOff score
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={homeScore}
+                onChange={(event) => setHomeScore(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
+              />
+            </label>
+            <label className="block text-[11px] font-semibold text-slate-600">
+              {match.opponent} score
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={awayScore}
+                onChange={(event) => setAwayScore(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            onClick={handleSaveResult}
+            disabled={setMatchResult.isPending}
+            className="btn-primary w-full">
+            {setMatchResult.isPending ? "Saving…" : "Save result"}
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={statusAction !== null}
+        onClose={() => {
+          setStatusAction(null);
+          setStatusReason("");
+        }}
+        title={
+          statusAction === "postponed"
+            ? "Postpone this fixture"
+            : statusAction === "cancelled"
+              ? "Cancel this fixture"
+              : "Restore this fixture"
+        }
+        description={
+          statusAction === "cancelled"
+            ? `Sales stop immediately and every valid ticket is voided. ${
+                paidOrders > 0
+                  ? `${paidOrders} paid order${paidOrders === 1 ? "" : "s"} need the refund flow — nothing moves money automatically.`
+                  : "There are no paid orders to refund."
+              }`
+            : statusAction === "postponed"
+              ? "Sales stop until the club sets a new kickoff. Tickets already sold stay valid."
+              : "The fixture returns to upcoming and the clock re-arms."
+        }>
+        <div className="space-y-4">
+          <label className="block text-[11px] font-semibold text-slate-600">
+            Reason (required, audited)
+            <textarea
+              value={statusReason}
+              onChange={(event) => setStatusReason(event.target.value)}
+              rows={3}
+              maxLength={400}
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={handleStatusChange}
+            disabled={setMatchStatus.isPending}
+            className={statusAction === "cancelled" ? "btn-danger w-full" : "btn-primary w-full"}>
+            {setMatchStatus.isPending ? "Saving…" : "Confirm"}
+          </button>
+        </div>
       </Modal>
 
       <ConfirmDialog

@@ -275,6 +275,34 @@ Both are the fan's own action, not an admin's — and both are the schedule in
 A fan account can be re-created later; the scrubbed identity rows of orders
 and scans are pseudonyms by then and are not restored.
 
+### 6.9 Matchday: the clock, postponement, and the result
+
+**The clock is automatic.** `xclub-match-clock` runs every minute
+(`record_match_clock()` in `0058`). It flips `upcoming → live` at kickoff,
+`upcoming/live → completed` at kickoff + 2 hours, and writes four bells for
+the console: kick-off, half-time (T+45), 15 minutes left (T+90), full-time
+(T+120). Each moment is unique per match, so a re-run is a no-op. Use
+`select * from cron.job where jobname = 'xclub-match-clock';` to confirm the
+job, and `select public.record_match_clock();` to run a pass by hand.
+
+**No score is ever automatic.** A completed fixture without scores shows as
+**Needs result** in the matches list, stays out of the fan Results list, and
+keeps its full-time bell unread. Enter the result on the fixture page —
+one save writes both scores and `completed` (`admin_set_match_result`).
+
+**Postpone or cancel** from the fixture page (reason required, audited):
+
+- **Postpone** stops sales, keeps sold tickets valid, and pauses the clock.
+  Setting a new kickoff (reschedule) returns the fixture to `upcoming` and
+  re-arms the clock.
+- **Cancel** stops sales and **voids every valid ticket**. It does **not**
+  move money: the orders page shows the paid orders that need the normal
+  refund flow. Cancellation is terminal except for an audited **Restore**
+  (mistake reversal) — restored tickets stay void and must be reissued.
+
+Sales stop at kickoff in the database (`stripe-checkout` returns
+`match_started`); a fixture whose stored status lags is still refused.
+
 ## 7. Backup and recovery
 
 - **Data:** Supabase managed Postgres — verify the project's backup schedule in

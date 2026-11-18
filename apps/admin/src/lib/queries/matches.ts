@@ -310,6 +310,55 @@ export function useUpdateMatch() {
   });
 }
 
+export interface MatchStatusInput {
+  id: string;
+  status: "upcoming" | "postponed" | "cancelled";
+  reason?: string;
+}
+
+/**
+ * Postpone, cancel, or restore. The database owns the rules and the audit row;
+ * `live` and `completed` belong to the match clock and are refused here.
+ */
+export function useSetMatchStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: MatchStatusInput) => {
+      const { data, error } = await client().rpc("admin_set_match_status", {
+        p_match_id: input.id,
+        p_status: input.status,
+        p_reason: input.reason,
+      });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: (_data, input) => invalidateMatchData(queryClient, input.id),
+  });
+}
+
+export interface MatchResultInput {
+  id: string;
+  homeScore: number;
+  awayScore: number;
+}
+
+/** Scores and `completed` are one write, so the row never disagrees with itself. */
+export function useSetMatchResult() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: MatchResultInput) => {
+      const { data, error } = await client().rpc("admin_set_match_result", {
+        p_match_id: input.id,
+        p_home_score: input.homeScore,
+        p_away_score: input.awayScore,
+      });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: (_data, input) => invalidateMatchData(queryClient, input.id),
+  });
+}
+
 export function useDeleteMatch() {
   const queryClient = useQueryClient();
   return useMutation({

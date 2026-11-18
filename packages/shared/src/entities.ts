@@ -6,7 +6,7 @@
 
 export type IsoTimestamp = string;
 
-export type MatchStatus = 'upcoming' | 'live' | 'completed';
+export type MatchStatus = 'upcoming' | 'live' | 'completed' | 'postponed' | 'cancelled';
 export type OrderStatus = 'pending' | 'paid' | 'failed' | 'cancelled' | 'refunded';
 export type TicketStatus = 'valid' | 'used' | 'void';
 export type ScanResultCode = 'valid' | 'used' | 'invalid' | 'wrong_match';

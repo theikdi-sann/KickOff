@@ -70,6 +70,12 @@ async function handler(request: Request): Promise<Response> {
     .single<{ opponent: string; kickoff_at: string }>();
   if (matchError || !match) throw matchError ?? new AppError("not_found", "Match not found");
 
+  // Sales stop at the whistle. The stored status can lag behind the clock, so
+  // the kickoff timestamp — the same truth the app displays — decides here.
+  if (new Date(match.kickoff_at).getTime() <= Date.now()) {
+    throw new AppError("match_started", "This match has already kicked off");
+  }
+
   const seatRows = (seats ?? []) as OrderSeatRow[];
   const total = seatRows.reduce((sum, seat) => sum + seat.price_minor_units, 0);
   if (total !== order.amount_minor_units) {

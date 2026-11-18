@@ -12,6 +12,7 @@ export type ErrorCode =
   | "forbidden"
   | "not_found"
   | "conflict"
+  | "match_started"
   | "validation"
   | "rate_limited"
   | "payment_required"

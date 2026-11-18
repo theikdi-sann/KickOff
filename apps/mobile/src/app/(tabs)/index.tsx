@@ -14,6 +14,7 @@ import {
   formatMatchDate,
   formatMatchTime,
   formatMoney,
+  groupMatches,
 } from '@kickoff/shared';
 import { MatchCard, ResultRow } from '@/components/match-card';
 import { NewsRow } from '@/components/news-row';
@@ -49,9 +50,12 @@ export default function HomeScreen() {
   const matches = matchesQuery.data ?? [];
   const news = newsQuery.data ?? [];
   const tickets = ticketsQuery.data ?? [];
-  const upcoming = matches.filter((match) => match.status === 'upcoming');
-  const results = matches.filter((match) => match.status === 'completed');
-  const nextMatch = upcoming[0];
+  // One clock decides what is next, live, and played — the stored status is
+  // intent, the kickoff is truth (a forgotten fixture must not stay "next").
+  const clock = groupMatches(matches);
+  const upcoming = clock.upcoming;
+  const results = clock.results;
+  const nextMatch = clock.nextMatch;
   const zonesQuery = useZones(nextMatch?.id);
   const zones = zonesQuery.data ?? [];
   // The seats on sale come from the database's own count — a seat reserved by

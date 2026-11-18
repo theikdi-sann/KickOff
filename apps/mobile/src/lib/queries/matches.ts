@@ -31,21 +31,3 @@ export function useMatch(id: string | undefined) {
     },
   });
 }
-
-export function useNextMatch() {
-  return useQuery({
-    queryKey: ['match', 'next'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('matches')
-        .select('*, venues(name)')
-        .eq('status', 'upcoming')
-        .gte('kickoff_at', new Date().toISOString())
-        .order('kickoff_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      if (error) throw new Error(error.message);
-      return data ? toMatchDto(data) : null;
-    },
-  });
-}

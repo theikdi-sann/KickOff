@@ -40,6 +40,7 @@ import {
   formatMatchDate,
   formatMatchTime,
   formatMoney,
+  matchPhase,
   sellThroughPercent,
   summariseAvailability,
   type MatchDto,
@@ -207,6 +208,9 @@ export default function MatchesPage() {
               ? Math.min(...matchZones.map((zone) => zone.priceMinorUnits))
               : 0;
             const completed = match.status === "completed";
+            // The clock closes a match at kickoff + 2h; without a score it is
+            // the console's job, and it must be visible before it rots.
+            const needsResult = matchPhase(match) === "awaitingResult";
             return (
               <div key={match.id} className="panel overflow-hidden">
                 <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
@@ -226,7 +230,11 @@ export default function MatchesPage() {
                       <h2 className="display truncate text-2xl leading-6 text-slate-900">
                         KickOff vs {match.opponent}
                       </h2>
-                      <Badge tone={completed ? "muted" : "green"}>{match.status}</Badge>
+                      {needsResult ? (
+                        <Badge tone="amber">Needs result</Badge>
+                      ) : (
+                        <Badge tone={completed ? "muted" : "green"}>{match.status}</Badge>
+                      )}
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
                       <span className="flex items-center gap-1">

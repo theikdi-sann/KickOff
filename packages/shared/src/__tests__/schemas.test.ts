@@ -50,7 +50,7 @@ const cases: InvalidCase[] = [
   { name: 'refundOrder: missing order id', schema: schemas.refundOrderSchema, payload: { reason: 'duplicate' } },
   { name: 'pagination: zero page', schema: schemas.paginationSchema, payload: { page: 0, perPage: 20 } },
   { name: 'pagination: perPage too large', schema: schemas.paginationSchema, payload: { page: 1, perPage: 1000 } },
-  { name: 'matchDto: bad status', schema: schemas.matchDtoSchema, payload: { ...validMatch, status: 'postponed' } },
+  { name: 'matchDto: bad status', schema: schemas.matchDtoSchema, payload: { ...validMatch, status: 'abandoned' } },
   { name: 'zoneDto: negative price', schema: schemas.zoneDtoSchema, payload: { ...validZone, priceMinorUnits: -100 } },
   { name: 'seatDto: label too long', schema: schemas.seatDtoSchema, payload: { id: 's-1', zoneId: 'z-1', row: 'A', number: 1, label: 'AAAAAAAAAAAAAAAA' } },
 ];
