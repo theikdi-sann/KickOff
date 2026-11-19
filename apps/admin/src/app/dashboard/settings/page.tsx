@@ -315,7 +315,7 @@ function SettingsForm({ settings, gateCount }: { settings: ClubSettings; gateCou
             </a>
           </section>
 
-          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[11px] leading-5 text-amber-800">
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[11px] leading-5 text-amber-700">
             <span className="font-semibold">Security note:</span> every settings change is recorded
             in the audit trail with the admin actor. QR signing keys are never displayed in the
             browser.

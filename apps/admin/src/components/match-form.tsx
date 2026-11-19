@@ -388,7 +388,7 @@ export function MatchForm({ initial, submitting = false, onSubmit }: MatchFormPr
               <div className="sm:col-span-2">
                 <span className="label mb-1.5 block">Gates for this fixture</span>
                 {venueGates.length === 0 ? (
-                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
                     This venue has no active gate. Add one on the Gates page before selling.
                   </p>
                 ) : (

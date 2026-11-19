@@ -299,7 +299,7 @@ export default function ScanPage() {
       />
 
       {queue.corrupted ? (
-        <div className="panel border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="panel border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
           <strong className="block font-semibold">The offline queue could not be read.</strong>
           {queue.payloadUnreadable ? (
             <>Its contents were kept for recovery. Re-scan any pass that was not admitted.</>
@@ -324,7 +324,7 @@ export default function ScanPage() {
       ) : (
         <>
           {selectedGate.currentMatchLabels.length === 0 ? (
-            <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+            <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
               <ShieldAlert size={15} className="mt-0.5 shrink-0" />
               {selectedGate.name} has no fixture today. The gate stays available — a past or
               unassigned gate only admits a pass whose own fixture is inside its gate window.
@@ -346,7 +346,7 @@ export default function ScanPage() {
           )}
 
           {notice ? (
-            <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-800">
+            <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-700">
               {notice}
             </div>
           ) : null}
@@ -412,7 +412,7 @@ export default function ScanPage() {
                   </div>
 
                   {cameraError ? (
-                    <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-800">
+                    <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-700">
                       <CameraOff size={14} className="mt-0.5 shrink-0" />
                       {cameraError}
                     </div>

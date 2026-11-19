@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: 14, fontSize: 14, lineHeight: 21 },
   errorBox: {
     marginTop: 20,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.status.red.bg,
     borderRadius: radii.sm,
     paddingHorizontal: 12,
     paddingVertical: 10,

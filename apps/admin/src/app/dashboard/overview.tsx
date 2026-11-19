@@ -162,7 +162,7 @@ export function DashboardOverview() {
           label="Gate scans"
           value={String(scans?.valid ?? 0)}
           note={`${scans?.total ?? 0} scans, last 30 days`}
-          tone="violet"
+          tone="muted"
         />
       </div>
 
@@ -332,8 +332,8 @@ export function DashboardOverview() {
             <div className="flex items-start gap-3">
               <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600" />
               <div>
-                <p className="text-xs font-semibold text-emerald-800">Live Supabase data</p>
-                <p className="mt-1 text-[11px] leading-5 text-emerald-700/75">
+                <p className="text-xs font-semibold text-emerald-700">Live Supabase data</p>
+                <p className="mt-1 text-[11px] leading-5 text-emerald-700">
                   Fixtures, orders, tickets and scans are served by Supabase. Checkout and gate
                   admission are enforced by database RPCs.
                 </p>
@@ -447,13 +447,13 @@ function StatCard({
   label: string;
   value: string;
   note: string;
-  tone: "green" | "gold" | "blue" | "violet";
+  tone: "green" | "gold" | "blue" | "muted";
 }) {
   const tones = {
-    green: "bg-emerald-50 text-pitch",
-    gold: "bg-amber-50 text-amber-600",
-    blue: "bg-sky-50 text-sky-600",
-    violet: "bg-violet-50 text-violet-600",
+    green: "bg-emerald-50 text-emerald-700",
+    gold: "bg-amber-50 text-amber-700",
+    blue: "bg-sky-50 text-sky-700",
+    muted: "bg-slate-100 text-slate-600",
   };
   return (
     <div className="panel p-4">

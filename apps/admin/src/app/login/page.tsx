@@ -129,7 +129,7 @@ function LoginForm() {
               <label className="label mb-1.5 block" htmlFor="email">
                 Email address
               </label>
-              <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 focus-within:border-emerald-600 focus-within:ring-4 focus-within:ring-emerald-600/10">
+              <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 focus-within:border-pitch focus-within:ring-4 focus-within:ring-pitch/10">
                 <Mail size={16} className="text-slate-400" />
                 <input
                   id="email"
@@ -155,7 +155,7 @@ function LoginForm() {
                   Forgot password?
                 </button>
               </div>
-              <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 focus-within:border-emerald-600 focus-within:ring-4 focus-within:ring-emerald-600/10">
+              <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 focus-within:border-pitch focus-within:ring-4 focus-within:ring-pitch/10">
                 <Lock size={16} className="text-slate-400" />
                 <input
                   id="password"

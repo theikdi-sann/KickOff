@@ -313,6 +313,7 @@ before the suite is green again.
 | `scripts/tests/share.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/signup.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/staff-roles.test.mjs` | test | covered | contract test — the staff role contract: the membership and the JWT claim move together, and no application code reads the legacy `profiles.role` column any more (SR-1…SR-11) |
+| `scripts/tests/status-tone.test.mjs` | test | covered | ST-1…ST-5 — one shared six-tone status scale, the console map, the app Pill border, the repointed tints and the retired tones |
 | `scripts/tests/sweep-fixes.test.mjs` | test | reviewed | repo contract test — fails when the repository drifts |
 | `scripts/tests/type-safety.test.mjs` | test | covered | contract test — no non-null assertion may return |
 | `scripts/tests/ui.test.mjs` | test | covered | contract test — fails when the repository drifts |

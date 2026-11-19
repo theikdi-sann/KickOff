@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     backgroundColor: colors.softGold,
-    borderColor: '#F3E3A7',
+    borderColor: colors.status.gold.border,
   },
   infoDot: {
     width: 7,

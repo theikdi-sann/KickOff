@@ -446,8 +446,8 @@ export default function SeatingPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[11px] leading-5 text-amber-800/80">
-            <span className="font-semibold text-amber-800">Inventory note:</span> seat rows and seat
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[11px] leading-5 text-amber-700">
+            <span className="font-semibold text-amber-700">Inventory note:</span> seat rows and seat
             counts are locked once a zone exists, so paid orders keep their snapshot. Add a new zone
             for a different layout.
           </div>

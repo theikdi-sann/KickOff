@@ -14,12 +14,15 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 
-type Tone = "green" | "gold" | "red" | "amber" | "muted" | "blue" | "dark";
+type Tone = "green" | "gold" | "red" | "muted" | "blue" | "dark";
 
+/**
+ * The Tailwind recipe for every tone in `status` (`packages/shared/src/theme.ts`).
+ * `gold` is the warning family — there is no separate "amber" tone.
+ */
 const tones: Record<Tone, string> = {
   green: "bg-emerald-50 text-emerald-700 border-emerald-200",
   gold: "bg-amber-50 text-amber-700 border-amber-200",
-  amber: "bg-amber-50 text-amber-800 border-amber-200",
   red: "bg-red-50 text-red-700 border-red-200",
   muted: "bg-slate-100 text-slate-600 border-slate-200",
   blue: "bg-sky-50 text-sky-700 border-sky-200",
@@ -318,9 +321,9 @@ interface ToastApi {
 }
 
 const toastTones: Record<ToastTone, string> = {
-  green: "border-emerald-200 bg-emerald-50 text-emerald-900",
-  amber: "border-amber-200 bg-amber-50 text-amber-900",
-  red: "border-red-200 bg-red-50 text-red-900",
+  green: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  amber: "border-amber-200 bg-amber-50 text-amber-700",
+  red: "border-red-200 bg-red-50 text-red-700",
   muted: "border-slate-200 bg-white text-slate-900",
 };
 

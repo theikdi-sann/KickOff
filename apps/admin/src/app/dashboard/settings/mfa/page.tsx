@@ -123,7 +123,7 @@ export default function MfaSettingsPage() {
       </header>
 
       {notice ? (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           {notice}
         </div>
       ) : null}
@@ -188,7 +188,7 @@ export default function MfaSettingsPage() {
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   placeholder="6-digit code"
-                  className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm tracking-[0.3em] outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+                  className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm tracking-[0.3em] outline-none focus:border-pitch focus:ring-4 focus:ring-pitch/10"
                 />
                 <div className="flex gap-2">
                   <button

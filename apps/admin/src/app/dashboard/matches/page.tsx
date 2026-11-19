@@ -250,7 +250,7 @@ export default function MatchesPage() {
                         KickOff vs {match.opponent}
                       </h2>
                       {needsResult ? (
-                        <Badge tone="amber">Needs result</Badge>
+                        <Badge tone="gold">Needs result</Badge>
                       ) : (
                         <Badge tone={completed ? "muted" : "green"}>{match.status}</Badge>
                       )}

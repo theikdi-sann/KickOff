@@ -207,9 +207,9 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: colors.text, paddingVertical: 0 },
   errorBox: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.status.red.bg,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: colors.status.red.border,
     padding: 11,
     borderRadius: radii.sm,
   },

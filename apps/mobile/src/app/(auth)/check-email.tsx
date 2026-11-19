@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   },
   errorBox: {
     marginTop: 16,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.status.red.bg,
     borderRadius: radii.sm,
     paddingHorizontal: 12,
     paddingVertical: 10,

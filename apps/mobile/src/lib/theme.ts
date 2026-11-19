@@ -1,17 +1,20 @@
 import { Platform } from 'react-native';
-import { brand } from '@kickoff/shared';
+import { brand, status } from '@kickoff/shared';
 
 /**
  * Semantic aliases for the mobile app. All brand colour values come from
- * `brand` in `@kickoff/shared` — edit that file to re-skin the app.
+ * `brand` in `@kickoff/shared` — edit that file to re-skin the app. The
+ * `status` tones are the same six the console draws, so a green chip means the
+ * same colour on both platforms.
  */
 export const colors = {
   ...brand,
   bg: brand.appBackground,
   text: brand.ink,
   line: brand.line,
-  softGreen: brand.softGreen,
-  softGold: brand.softGold,
+  softGreen: status.green.bg,
+  softGold: status.gold.bg,
+  status,
 };
 
 export const fonts = {

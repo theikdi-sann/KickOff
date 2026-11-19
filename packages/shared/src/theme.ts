@@ -62,6 +62,27 @@ export const brand = {
   warning: '#B45309',
 } as const;
 
+/**
+ * Status tones — the one language for badges, pills and alerts.
+ *
+ * Both products draw these: the console maps each tone to its Tailwind recipe
+ * in `apps/admin/src/components/ui.tsx`, and the app reads the hex values
+ * directly through `apps/mobile/src/lib/theme.ts`. Every light pair clears
+ * 4.5:1 on its own surface, which is what the 9–10 px bold uppercase chips
+ * need. `dark` is the on-navy variant.
+ */
+export const status = {
+  green: { bg: '#ECFDF5', fg: '#047857', border: '#A7F3D0' },
+  gold: { bg: '#FFFBEB', fg: '#B45309', border: '#FDE68A' },
+  red: { bg: '#FEF2F2', fg: '#B91C1C', border: '#FECACA' },
+  muted: { bg: '#F1F5F9', fg: '#475569', border: '#E2E8F0' },
+  blue: { bg: '#F0F9FF', fg: '#0369A1', border: '#BAE6FD' },
+  dark: { bg: 'rgba(255,255,255,0.10)', fg: '#FFFFFF', border: 'rgba(255,255,255,0.15)' },
+} as const;
+
+/** A status tone's name. */
+export type StatusTone = keyof typeof status;
+
 /** Backwards-compatible alias: prefer `brand` in new code. */
 export const palette = brand;
 

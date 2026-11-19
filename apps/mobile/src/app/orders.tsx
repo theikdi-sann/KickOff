@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
   bannerText: { flex: 1, lineHeight: 16 },
-  bannerError: { backgroundColor: '#FEE2E2', borderColor: '#FECACA' },
+  bannerError: { backgroundColor: colors.status.red.bg, borderColor: colors.status.red.border },
   retry: {
     minHeight: 44,
     paddingHorizontal: 12,

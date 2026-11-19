@@ -159,19 +159,16 @@ export function Pill({
   style,
 }: {
   label: string;
-  tone?: 'green' | 'gold' | 'dark' | 'muted' | 'red';
+  tone?: 'green' | 'gold' | 'red' | 'muted' | 'blue' | 'dark';
   style?: StyleProp<ViewStyle>;
 }) {
-  const map = {
-    green: { bg: colors.softGreen, text: colors.primary },
-    gold: { bg: colors.softGold, text: colors.goldInk },
-    dark: { bg: 'rgba(255,255,255,0.12)', text: '#FFFFFF' },
-    muted: { bg: colors.surfaceAlt, text: colors.muted },
-    red: { bg: '#FEE2E2', text: colors.danger },
-  }[tone];
+  // One recipe for both products: the console maps these six tones to Tailwind
+  // classes, the app draws the same bg/fg/border hex from `status`.
+  const map = colors.status[tone];
   return (
-    <View style={[styles.pill, { backgroundColor: map.bg }, style]}>
-      <Text style={[styles.pillText, { color: map.text }]}>{label}</Text>
+    <View
+      style={[styles.pill, { backgroundColor: map.bg, borderColor: map.border }, style]}>
+      <Text style={[styles.pillText, { color: map.fg }]}>{label}</Text>
     </View>
   );
 }
@@ -417,6 +414,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: radii.pill,
+    borderWidth: 1,
     alignSelf: 'flex-start',
   },
   pillText: { fontFamily: fonts.bold, fontSize: 10, letterSpacing: 0.5 },
@@ -468,12 +466,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radii.pill,
   },
-  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.primary },
+  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.status.green.fg },
   liveText: {
     fontFamily: fonts.bold,
     fontSize: 8,
     letterSpacing: 1,
-    color: colors.primary,
+    color: colors.status.green.fg,
   },
   emptyState: {
     alignItems: 'center',
@@ -498,7 +496,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FEE2E2', // same soft-red as the `Pill` tone above
+    backgroundColor: colors.status.red.bg, // same soft-red as the `Pill` tone above
     marginBottom: 6,
   },
   errorRetry: { marginTop: 10, minWidth: 168 },

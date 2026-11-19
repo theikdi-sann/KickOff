@@ -58,7 +58,7 @@ export function MatchResultDialog({
       wide>
       <div className="space-y-4">
         {playing ? (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-800">
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-700">
             This match has not reached full time. Continue only if it ended early.
           </p>
         ) : null}

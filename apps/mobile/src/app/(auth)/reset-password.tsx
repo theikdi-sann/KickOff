@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, fontSize: 14, fontFamily: fonts.body, color: colors.ink },
   errorBox: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.status.red.bg,
     borderRadius: radii.sm,
     paddingHorizontal: 12,
     paddingVertical: 10,
