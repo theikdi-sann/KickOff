@@ -11,6 +11,7 @@ const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 const gatesQuery = read('apps/admin/src/lib/queries/gates.ts');
 const gatesPage = read('apps/admin/src/app/dashboard/gates/page.tsx');
+const gateForm = read('apps/admin/src/components/gate-form.tsx');
 const scanPage = read('apps/admin/src/app/dashboard/scan/page.tsx');
 
 test('AG-1 the gate query knows which assignment is current', () => {
@@ -28,9 +29,9 @@ test('AG-1 the gate query knows which assignment is current', () => {
 });
 
 test('AG-2 the gate form only offers open fixtures and keeps past assignments', () => {
-  assert.match(gatesPage, /isGateFixtureOpen/, 'the selectable list must be filtered by the clock');
+  assert.match(gateForm, /isGateFixtureOpen/, 'the selectable list must be filtered by the clock');
   assert.match(
-    gatesPage,
+    gateForm,
     /pastMatchIds|historyMatchIds|disabled/,
     'past assignments must stay visible or preserved, never silently dropped',
   );
@@ -84,9 +85,9 @@ test('AG-8 a gate names the stand it serves', () => {
     /venue_zone_id|zoneId/,
     'the gate query must carry the stand, not only the venue',
   );
-  assert.match(gatesPage, /useVenueLayout/, 'the gate form must offer the venue stands');
+  assert.match(gateForm, /useVenueLayout/, 'the gate form must offer the venue stands');
   assert.match(
-    gatesPage,
+    gateForm,
     /Whole ground|All stands|Any stand/i,
     'a gate may still serve the whole ground',
   );

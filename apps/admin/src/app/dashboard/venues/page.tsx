@@ -2,7 +2,6 @@
 
 import { Building2, Home, Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { majorToMinorUnits } from "@kickoff/shared";
 import {
   Badge,
   ConfirmDialog,
@@ -15,15 +14,12 @@ import {
 import {
   useCreateVenue,
   useDeleteVenue,
-  useDeleteVenueZone,
-  useSaveVenueZone,
   useUpdateVenue,
-  useVenueLayout,
   useVenues,
   type AdminVenue,
   type AdminVenueInput,
-  type AdminVenueZone,
 } from "@/lib/queries/venues";
+import { VenueLayoutEditor } from "@/components/venue-layout-editor";
 
 interface VenueFormValues {
   name: string;
@@ -290,7 +286,7 @@ export default function VenuesPage() {
       </Modal>
 
       {layoutVenue ? (
-        <VenueLayoutDialog venue={layoutVenue} onClose={() => setLayoutVenue(null)} />
+        <VenueLayoutEditor venue={layoutVenue} onClose={() => setLayoutVenue(null)} />
       ) : null}
 
       <ConfirmDialog
@@ -307,273 +303,5 @@ export default function VenuesPage() {
         onClose={() => setDeleting(null)}
       />
     </div>
-  );
-}
-
-function VenueLayoutDialog({ venue, onClose }: { venue: AdminVenue; onClose: () => void }) {
-  const { toast } = useToast();
-  const layout = useVenueLayout(venue.id);
-  const saveZone = useSaveVenueZone();
-  const deleteZone = useDeleteVenueZone();
-  const [editing, setEditing] = useState<AdminVenueZone | null>(null);
-  const [adding, setAdding] = useState(false);
-  const [deleting, setDeleting] = useState<AdminVenueZone | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [values, setValues] = useState({
-    name: "",
-    description: "",
-    color: "#22C55E",
-    rows: "A,B,C,D,E,F",
-    seatsPerRow: "12",
-    price: "350",
-  });
-
-  const current = layout.data ?? [];
-  const capacity = current.reduce((total, zone) => total + zone.capacity, 0);
-
-  const openCreate = () => {
-    setEditing(null);
-    setValues({ name: "", description: "", color: "#22C55E", rows: "A,B,C,D,E,F", seatsPerRow: "12", price: "350" });
-    setError(null);
-    setAdding(true);
-  };
-
-  const openEdit = (zone: AdminVenueZone) => {
-    setEditing(zone);
-    setValues({
-      name: zone.name,
-      description: zone.description,
-      color: zone.color,
-      rows: zone.rows.join(","),
-      seatsPerRow: String(zone.seatsPerRow),
-      price: String(zone.defaultPriceMinorUnits / 100),
-    });
-    setError(null);
-    setAdding(true);
-  };
-
-  const submit = async () => {
-    setError(null);
-    const rows = values.rows
-      .split(",")
-      .map((row) => row.trim().toUpperCase())
-      .filter(Boolean);
-    if (!values.name.trim()) {
-      setError("Give the zone a name.");
-      return;
-    }
-    if (!editing && rows.length === 0) {
-      setError("Enter at least one row (for example A,B,C).");
-      return;
-    }
-    const seatsPerRow = Number.parseInt(values.seatsPerRow, 10);
-    const priceMinorUnits = majorToMinorUnits(Number(values.price), "THB");
-    if (!editing && (!Number.isInteger(seatsPerRow) || seatsPerRow < 1)) {
-      setError("Seats per row must be a whole number, 1 or more.");
-      return;
-    }
-    try {
-      await saveZone.mutateAsync({
-        venueId: venue.id,
-        zoneId: editing?.id,
-        patch: {
-          name: values.name,
-          description: values.description,
-          color: values.color,
-          rows: editing ? editing.rows : rows,
-          seatsPerRow: editing ? editing.seatsPerRow : seatsPerRow,
-          defaultPriceMinorUnits: priceMinorUnits,
-        },
-      });
-      setAdding(false);
-      setEditing(null);
-      toast({ title: editing ? "Zone updated" : "Zone added", description: values.name, tone: "green" });
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not save the zone.");
-    }
-  };
-
-  const remove = async () => {
-    if (!deleting) return;
-    try {
-      await deleteZone.mutateAsync({ venueId: venue.id, zoneId: deleting.id });
-      toast({ title: "Zone deleted", description: deleting.name, tone: "amber" });
-    } catch (caught) {
-      toast({
-        title: "Could not delete the zone",
-        description: caught instanceof Error ? caught.message : "Try again in a moment.",
-        tone: "red",
-      });
-    } finally {
-      setDeleting(null);
-    }
-  };
-
-  return (
-    <>
-      <Modal
-        open
-        onClose={onClose}
-        title={`${venue.name} layout`}
-        description={`${capacity} seats across ${current.length} zone${current.length === 1 ? "" : "s"}. Fixtures clone this layout when they are created.`}
-        wide
-        footer={
-          <>
-            <button type="button" onClick={onClose} className="btn-ghost">
-              Close
-            </button>
-            <button type="button" onClick={openCreate} className="btn-primary">
-              <Plus size={14} /> Add zone
-            </button>
-          </>
-        }>
-        <div className="space-y-2">
-          {layout.isLoading ? (
-            <p className="py-8 text-center text-sm text-slate-500">Loading layout…</p>
-          ) : current.length === 0 ? (
-            <p className="py-8 text-center text-sm text-slate-500">
-              No zones yet. Add the first stand to make this venue sellable.
-            </p>
-          ) : (
-            current.map((zone) => (
-              <div
-                key={zone.id}
-                className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5">
-                <span
-                  className="h-8 w-1.5 rounded-full"
-                  style={{ backgroundColor: zone.color }}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-slate-800">{zone.name}</p>
-                  <p className="text-[10px] text-slate-400">
-                    {zone.capacity} seats · {zone.rows.length} rows × {zone.seatsPerRow} ·{" "}
-                    {zone.defaultPriceMinorUnits / 100} THB default
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openEdit(zone)}
-                  className="grid h-7 w-7 place-items-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50"
-                  aria-label={`Edit ${zone.name}`}>
-                  <Pencil size={11} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeleting(zone)}
-                  className="grid h-7 w-7 place-items-center rounded-lg border border-slate-200 text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                  aria-label={`Delete ${zone.name}`}>
-                  <Trash2 size={11} />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </Modal>
-
-      {adding ? (
-        <Modal
-          open
-          onClose={() => setAdding(false)}
-          title={editing ? `Edit ${editing.name}` : "Add zone"}
-          description={
-            editing
-              ? "Layout is locked once the zone exists. Name, colour and default price can change."
-              : "Seats are generated from the rows and seats-per-row."
-          }
-          wide>
-          <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block text-[11px] font-semibold text-slate-600">
-                Name
-                <input
-                  value={values.name}
-                  onChange={(event) => setValues((current) => ({ ...current, name: event.target.value }))}
-                  className="input mt-1"
-                  placeholder="North Stand"
-                />
-              </label>
-              <label className="block text-[11px] font-semibold text-slate-600">
-                Default price (THB)
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={values.price}
-                  onChange={(event) => setValues((current) => ({ ...current, price: event.target.value }))}
-                  className="input mt-1"
-                />
-              </label>
-              <label className="block text-[11px] font-semibold text-slate-600 sm:col-span-2">
-                Description
-                <input
-                  value={values.description}
-                  onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
-                  className="input mt-1"
-                />
-              </label>
-              {!editing ? (
-                <>
-                  <label className="block text-[11px] font-semibold text-slate-600">
-                    Rows (comma separated)
-                    <input
-                      value={values.rows}
-                      onChange={(event) => setValues((current) => ({ ...current, rows: event.target.value }))}
-                      className="input mt-1"
-                      placeholder="A,B,C,D,E,F"
-                    />
-                  </label>
-                  <label className="block text-[11px] font-semibold text-slate-600">
-                    Seats per row
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={values.seatsPerRow}
-                      onChange={(event) => setValues((current) => ({ ...current, seatsPerRow: event.target.value }))}
-                      className="input mt-1"
-                    />
-                  </label>
-                </>
-              ) : null}
-              <label className="block text-[11px] font-semibold text-slate-600">
-                Colour
-                <input
-                  type="color"
-                  value={values.color}
-                  onChange={(event) => setValues((current) => ({ ...current, color: event.target.value }))}
-                  className="input mt-1 h-11 p-1"
-                />
-              </label>
-            </div>
-            {error ? (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                {error}
-              </p>
-            ) : null}
-            <button
-              type="button"
-              onClick={submit}
-              disabled={saveZone.isPending}
-              className="btn-primary w-full">
-              {saveZone.isPending ? "Saving…" : editing ? "Save zone" : "Add zone"}
-            </button>
-          </div>
-        </Modal>
-      ) : null}
-
-      <ConfirmDialog
-        open={deleting !== null}
-        title="Delete zone?"
-        description={
-          deleting
-            ? `${deleting.name} and its ${deleting.capacity} seats will be removed from the venue layout. Fixtures already created keep their copy.`
-            : undefined
-        }
-        confirmLabel="Delete zone"
-        busy={deleteZone.isPending}
-        onConfirm={() => void remove()}
-        onClose={() => setDeleting(null)}
-      />
-    </>
   );
 }

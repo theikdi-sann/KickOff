@@ -12,6 +12,8 @@ const root = resolve(import.meta.dirname, '..', '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 const venuesPage = read('apps/admin/src/app/dashboard/venues/page.tsx');
+const venueLayoutEditor = read('apps/admin/src/components/venue-layout-editor.tsx');
+const venueScreen = `${venuesPage}\n${venueLayoutEditor}`;
 const venuesQuery = read('apps/admin/src/lib/queries/venues.ts');
 const matchesQuery = read('apps/admin/src/lib/queries/matches.ts');
 const matchForm = read('apps/admin/src/components/match-form.tsx');
@@ -19,9 +21,9 @@ const seed = read('supabase/seed.sql');
 
 test('VL-1 the venue screen owns home/away, layout and derived capacity', () => {
   assert.match(venuesPage, /isHome/, 'the venue form must offer the home badge');
-  assert.match(venuesPage, /useVenueLayout/, 'the venue shows its physical zones');
+  assert.match(venueScreen, /useVenueLayout/, 'the venue shows its physical zones');
   assert.match(venuesPage, /venue\.capacity/, 'capacity comes from the seat count');
-  assert.match(venuesPage, /Add zone|Layout/, 'the venue manages its zones');
+  assert.match(venueScreen, /Add zone|Layout/, 'the venue manages its zones');
   assert.match(
     venuesQuery,
     /admin_save_venue_zone/,

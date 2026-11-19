@@ -88,12 +88,15 @@ before the suite is green again.
 | `apps/admin/src/app/login/mfa/page.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/login/page.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/page.tsx` | source | reviewed | staff console screen |
+| `apps/admin/src/components/gate-form.tsx` | source | reviewed | one gate's fields: code, name, venue, stand, and the venue-scoped fixtures the clock still allows; used by the Gates page and the fixture dialog |
 | `apps/admin/src/components/logo.tsx` | source | reviewed | presentational component |
 | `apps/admin/src/components/match-form.tsx` | source | reviewed | presentational component |
 | `apps/admin/src/components/match-result-dialog.tsx` | source | reviewed | the one score form — used by the matches list and the fixture page; validates non-negative integers and warns before full time |
 | `apps/admin/src/components/news-form.tsx` | source | reviewed | presentational component |
 | `apps/admin/src/components/providers.tsx` | source | reviewed | presentational component |
 | `apps/admin/src/components/ui.tsx` | source | reviewed | presentational component |
+| `apps/admin/src/components/venue-layout-editor.tsx` | source | reviewed | the venue's physical layout: zone list, generated capacity and the add/edit/delete dialogs |
+| `apps/admin/src/components/venue-zone-form.tsx` | source | reviewed | one venue zone's fields; geometry (rows and seats per row) is collected only while creating, then locked |
 | `apps/admin/src/components/zone-create-form.tsx` | source | reviewed | presentational component |
 | `apps/admin/src/components/zone-editor.tsx` | source | reviewed | presentational component |
 | `apps/admin/src/lib/analytics.ts` | source | reviewed | app library |
@@ -283,6 +286,7 @@ before the suite is green again.
 | `scripts/tests/display-config.test.mjs` | test | covered | contract test — C8.2d: both apps read the tenants row through one hook, no formatTHB remains, dates carry the club timezone, the greeting follows the club clock, the Edge display copy is generated (DC-1…DC-6) |
 | `scripts/tests/docs.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/edge-types.test.mjs` | test | covered | contract test — GAP-09.0: the Edge clients are typed against the generated schema and the deployed schema copy is generated (ET-1…ET-3) |
+| `scripts/tests/editor-extraction.test.mjs` | test | covered | contract test — C10.10a: the venue zone form, venue layout editor and gate form are components with one implementation each; the pages only render them (ED-1…ED-4) |
 | `scripts/tests/erasure.test.mjs` | test | covered | contract test — GAP-09.3 fan erasure: `delete-account` implements `docs/PRIVACY.md`'s schedule (EC-1…EC-6) |
 | `scripts/tests/export.test.mjs` | test | covered | contract test — GAP-09.2 the fan export: the registry names the subject's inventory tables, the function queries them, the audit and the admin guard (EX-1…EX-3) |
 | `scripts/tests/file-coverage.test.mjs` | test | reviewed | repo contract test — fails when the repository drifts |
