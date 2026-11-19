@@ -11,7 +11,7 @@ const WINDOW_HOURS = 24;
 const WINDOW_MS = WINDOW_HOURS * 60 * 60 * 1000;
 
 const ORDER_STATUSES = ["pending", "paid", "refunded", "cancelled", "failed"] as const;
-const SCAN_RESULTS = ["valid", "used", "invalid", "wrong_match"] as const;
+const SCAN_RESULTS = ["valid", "used", "invalid", "wrong_match", "wrong_zone"] as const;
 
 type OrderStatus = (typeof ORDER_STATUSES)[number];
 type ScanResult = (typeof SCAN_RESULTS)[number];
@@ -95,6 +95,7 @@ async function handler(request: Request): Promise<Response> {
         failed: failedScans({
           invalid: scansByResult.invalid,
           wrongMatch: scansByResult.wrong_match,
+          wrongZone: scansByResult.wrong_zone,
         }),
       },
       holds: {

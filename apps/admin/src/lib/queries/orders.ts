@@ -140,7 +140,14 @@ export interface OrdersAggregate {
   ordersPaid: number;
   ordersRefunded: number;
   ticketsSold: number;
-  scans: { total: number; valid: number; used: number; invalid: number; wrongMatch: number };
+  scans: {
+    total: number;
+    valid: number;
+    used: number;
+    invalid: number;
+    wrongMatch: number;
+    wrongZone: number;
+  };
 }
 
 export function useOrdersAggregate(

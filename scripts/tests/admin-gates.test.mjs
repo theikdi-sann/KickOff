@@ -77,3 +77,28 @@ test('AG-7 a new RPC asks PostgREST to reload its schema cache', () => {
   const migration = read('supabase/migrations/0061_reload_schema_cache.sql');
   assert.match(migration, /notify pgrst,\s*'reload schema'/, 'the RPC must not wait for a reboot');
 });
+
+test('AG-8 a gate names the stand it serves', () => {
+  assert.match(
+    gatesQuery,
+    /venue_zone_id|zoneId/,
+    'the gate query must carry the stand, not only the venue',
+  );
+  assert.match(gatesPage, /useVenueLayout/, 'the gate form must offer the venue stands');
+  assert.match(
+    gatesPage,
+    /Whole ground|All stands|Any stand/i,
+    'a gate may still serve the whole ground',
+  );
+});
+
+test('AG-9 the scanner refuses a pass for another stand', () => {
+  const migration = read('supabase/migrations/0066_gate_stands.sql');
+  assert.match(migration, /wrong_zone/, 'the scan result must distinguish the wrong stand');
+  assert.match(
+    migration,
+    /venue_zone_id/,
+    'the scan compares the ticket zone with the gate stand',
+  );
+  assert.match(scanPage, /wrong_zone/, 'the console must label the wrong-stand result');
+});

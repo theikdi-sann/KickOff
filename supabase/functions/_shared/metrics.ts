@@ -35,9 +35,10 @@ export function countHoldConflicts(seatIds: readonly string[]): number {
 export interface ScanResultCounts {
   invalid: number;
   wrongMatch: number;
+  wrongZone: number;
 }
 
-/** A failed scan is anything the gate refused as invalid or wrong-fixture. */
+/** A failed scan is anything the gate refused: invalid, wrong fixture, wrong stand. */
 export function failedScans(counts: ScanResultCounts): number {
-  return counts.invalid + counts.wrongMatch;
+  return counts.invalid + counts.wrongMatch + counts.wrongZone;
 }

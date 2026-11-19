@@ -9,7 +9,12 @@ export type IsoTimestamp = string;
 export type MatchStatus = 'upcoming' | 'live' | 'completed' | 'postponed' | 'cancelled';
 export type OrderStatus = 'pending' | 'paid' | 'failed' | 'cancelled' | 'refunded';
 export type TicketStatus = 'valid' | 'used' | 'void';
-export type ScanResultCode = 'valid' | 'used' | 'invalid' | 'wrong_match';
+export type ScanResultCode =
+  | 'valid'
+  | 'used'
+  | 'invalid'
+  | 'wrong_match'
+  | 'wrong_zone';
 export type HomeAway = 'home' | 'away';
 export type NewsCategory = 'Club News' | 'Match Report' | 'Announcement';
 export type DevicePlatform = 'ios' | 'android' | 'web';

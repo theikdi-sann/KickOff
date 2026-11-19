@@ -19,6 +19,9 @@ export interface AdminGate {
   name: string;
   venueId: string;
   venueName: string | null;
+  /** The stand this turnstile serves; null means the whole ground. */
+  venueZoneId: string | null;
+  venueZoneName: string | null;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -39,6 +42,8 @@ export interface AdminGateInput {
   id: string;
   name: string;
   venueId: string;
+  /** The stand this turnstile serves; null admits the whole ground. */
+  venueZoneId: string | null;
   matchIds: string[];
   active: boolean;
 }
@@ -47,6 +52,7 @@ interface GateRow {
   id: string;
   name: string;
   venue_id: string;
+  venue_zone_id: string | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -65,7 +71,8 @@ interface AssignmentRow {
   } | null;
 }
 
-const GATE_SELECT = "id,name,venue_id,active,created_at,updated_at,venues(name)";
+const GATE_SELECT =
+  "id,name,venue_id,venue_zone_id,active,created_at,updated_at,venues(name)";
 const ASSIGNMENT_SELECT =
   "gate_id,match_id,matches(opponent,kickoff_at,status,home_score,away_score)";
 
@@ -73,12 +80,14 @@ function client() {
   return createClient();
 }
 
-function mapGate(row: GateRow): AdminGate {
+function mapGate(row: GateRow, zoneName: string | null): AdminGate {
   return {
     id: row.id,
     name: row.name,
     venueId: row.venue_id,
     venueName: row.venues?.name ?? null,
+    venueZoneId: row.venue_zone_id,
+    venueZoneName: zoneName,
     active: row.active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -94,16 +103,28 @@ function mapGate(row: GateRow): AdminGate {
 /** Gates with their assignments, fixtures ordered by kick-off. */
 async function loadGates(): Promise<AdminGate[]> {
   const db = client();
-  const [gates, assignments] = await Promise.all([
+  const [gates, assignments, zones] = await Promise.all([
     db.from("gates").select(GATE_SELECT).order("id"),
     db.from("match_gates").select(ASSIGNMENT_SELECT),
+    db.from("venue_zones").select("id,name"),
   ]);
   if (gates.error) throw new Error(gates.error.message);
   if (assignments.error) throw new Error(assignments.error.message);
+  if (zones.error) throw new Error(zones.error.message);
+
+  const zoneNames = new Map(
+    ((zones.data ?? []) as Array<{ id: string; name: string }>).map((zone) => [
+      zone.id,
+      zone.name,
+    ]),
+  );
 
   const byGate = new Map<string, AdminGate>();
   for (const row of (gates.data ?? []) as unknown as GateRow[]) {
-    byGate.set(row.id, mapGate(row));
+    byGate.set(
+      row.id,
+      mapGate(row, row.venue_zone_id ? (zoneNames.get(row.venue_zone_id) ?? null) : null),
+    );
   }
 
   type GateFixture = { id: string; label: string; kickoffAt: string; open: boolean };
@@ -161,6 +182,7 @@ export function useCreateGate() {
         id: input.id,
         name: input.name,
         venue_id: input.venueId,
+        venue_zone_id: input.venueZoneId,
         active: input.active,
       });
       if (error) throw new Error(error.message);
@@ -179,6 +201,7 @@ export function useCreateGate() {
         metadata: {
           name: input.name,
           venue_id: input.venueId,
+          venue_zone_id: input.venueZoneId,
           match_ids: input.matchIds,
           active: input.active,
         },
@@ -197,9 +220,10 @@ export function useUpdateGate() {
   return useMutation({
     mutationFn: async (input: { id: string; patch: Partial<Omit<AdminGateInput, "id">> }) => {
       const db = client();
-      const patch: { name?: string; venue_id?: string; active?: boolean } = {};
+      const patch: { name?: string; venue_id?: string; venue_zone_id?: string | null; active?: boolean } = {};
       if (input.patch.name !== undefined) patch.name = input.patch.name;
       if (input.patch.venueId !== undefined) patch.venue_id = input.patch.venueId;
+      if (input.patch.venueZoneId !== undefined) patch.venue_zone_id = input.patch.venueZoneId;
       if (input.patch.active !== undefined) patch.active = input.patch.active;
 
       if (Object.keys(patch).length > 0) {

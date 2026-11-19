@@ -271,7 +271,7 @@ before the suite is green again.
 | `scripts/sync-edge-schemas.mjs` | source | reviewed | generates the Edge copy of a shared Zod contract; drift fails CI |
 | `scripts/sync-error-codes.mjs` | source | reviewed | tool or gate script |
 | `scripts/tests/admin-access.test.mjs` | test | covered | contract test — fails when the repository drifts |
-| `scripts/tests/admin-gates.test.mjs` | test | covered | AG-1…AG-7 — reusable gates, current fixture in the scanner, per-zone pending state, seating lock UI, one-click result and the schema-cache reload |
+| `scripts/tests/admin-gates.test.mjs` | test | covered | AG-1…AG-9 — reusable gates, current fixture in the scanner, per-zone pending state, seating lock UI, one-click result, the schema-cache reload, the gate's stand and the wrong-stand scan label |
 | `scripts/tests/atomicity.test.mjs` | test | covered | contract test — the atomic RPCs are wired and service-role only |
 | `scripts/tests/audit-coverage.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/availability.test.mjs` | test | covered | contract test — availability comes from the view, not the layout |
@@ -450,11 +450,14 @@ before the suite is green again.
 | `supabase/migrations/0062_lock_seating_after_kickoff.sql` | data | reviewed | migration — seating guard: admin zone/price/seat writes are refused once kickoff has passed or the clock closed the fixture; trusted setup bypasses |
 | `supabase/migrations/0063_venue_layout.sql` | data | reviewed | migration — `venues.is_home`, `venue_zones`, `venue_seats`, `venue_capacity`, the zone RPCs and `admin_create_match_from_venue()` (clone layout/prices/gates atomically) |
 | `supabase/migrations/0064_tenant_scope_venue_layout.sql` | data | reviewed | migration — venue zones/seats join the export and erase registries (seats before zone, both before the venue) |
+| `supabase/migrations/0065_wrong_zone_enum.sql` | data | reviewed | migration — adds the `wrong_zone` scan outcome; the enum lives alone because Postgres cannot use a new value in the adding transaction |
+| `supabase/migrations/0066_gate_stands.sql` | data | reviewed | migration — `gates.venue_zone_id` and `zones.venue_zone_id`, the stand/venue integrity triggers, the clone provenance in `admin_create_match_from_venue()`, and `scan_ticket` refusing another stand without consuming the pass |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/connect.test.sql` | test | covered | pgTAP suite — C8.1 Stripe Connect: the platform fee in minor units, the club a connected account belongs to, the event ledger; 0050's omittable payment-intent and account parameters (16 assertions) |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/gate-ops.test.sql` | test | covered | pgTAP suite — C7.2 venue-bound gates, fixture assignment join, scan/undo audit columns, append-only log (38 assertions) |
+| `supabase/tests/gate-zone.test.sql` | test | covered | pgTAP suite — C10.9 stand-level gates: the stand columns, a gate cannot serve another venue's stand, an assignment cannot cross grounds, `wrong_zone` leaves the pass valid, a whole-ground gate admits every stand, and the clone records its provenance (12 assertions) |
 | `supabase/tests/hold-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/hold-ttl.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/identity.test.sql` | test | covered | pgTAP suite — C6.2 membership as the authority, the legacy column and its bridge gone, membership integrity, fan/staff RLS, the service-role promotion helper (28 assertions) |

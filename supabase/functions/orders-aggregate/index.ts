@@ -87,6 +87,7 @@ async function handler(request: Request): Promise<Response> {
         used: scansByResult.used ?? 0,
         invalid: scansByResult.invalid ?? 0,
         wrongMatch: scansByResult.wrong_match ?? 0,
+        wrongZone: scansByResult.wrong_zone ?? 0,
       },
     },
     request,

@@ -74,6 +74,7 @@ const RESULT_LABEL: Record<DisplayCode, string> = {
   used: "Already scanned",
   invalid: "Rejected",
   wrong_match: "Wrong fixture",
+  wrong_zone: "Wrong stand",
   queued: "Queued offline",
   error: "Scan failed",
 };

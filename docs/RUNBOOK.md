@@ -316,6 +316,13 @@ attach the same turnstile to the new fixture on the Gates page. Past
 assignments stay as history and are not selectable; the scanner shows the
 fixture the gate is admitting now, not the earliest date it ever served.
 
+**A gate serves one stand of one ground.** Name the stand on the Gates page —
+*Whole ground* is only for an entrance that admits every stand. A pass for a
+different stand is refused as **Wrong stand** and the pass stays valid, so the
+fan can walk to the right gate. A gate cannot be assigned to a fixture at
+another venue, and once it has any assignment its venue is fixed: create a new
+gate rather than moving a turnstile with history.
+
 **Seating locks at kickoff.** Once a fixture has started or been closed,
 admin writes to zones, prices and seats are refused by trigger
 (`0062_lock_seating_after_kickoff`), and the fixture page hides the controls.
@@ -345,7 +352,8 @@ directly. Saving writes both scores and `completed` in one audited call.
 - [ ] Migrations applied; no pending `supabase/migrations`.
 - [ ] `ALLOWED_ORIGINS`/`ADMIN_APP_URL` point at the production admin origin.
 - [ ] Stripe webhook endpoint shows recent successful deliveries.
-- [ ] Gates registered and `active` for the fixture; gate staff can sign in.
+- [ ] Gates registered and `active` for the fixture; each gate names its stand
+      (or **Whole ground**), and gate staff can sign in.
 - [ ] `TICKET_HMAC_KEY` unchanged since the passes were issued (or rotated
       *before* issuance, never between issue and gate).
 - [ ] Rate-limit budgets reviewed (`SECURITY.md` §7) — raise `scan` if the

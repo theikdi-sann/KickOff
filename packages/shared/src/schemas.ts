@@ -34,7 +34,13 @@ export const passwordSchema = z.string().min(8).max(72);
 export const matchStatusSchema = z.enum(['upcoming', 'live', 'completed', 'postponed', 'cancelled']);
 export const orderStatusSchema = z.enum(['pending', 'paid', 'failed', 'cancelled', 'refunded']);
 export const ticketStatusSchema = z.enum(['valid', 'used', 'void']);
-export const scanResultCodeSchema = z.enum(['valid', 'used', 'invalid', 'wrong_match']);
+export const scanResultCodeSchema = z.enum([
+  'valid',
+  'used',
+  'invalid',
+  'wrong_match',
+  'wrong_zone',
+]);
 export const homeAwaySchema = z.enum(['home', 'away']);
 export const newsCategorySchema = z.enum(['Club News', 'Match Report', 'Announcement']);
 
@@ -57,6 +63,7 @@ export const matchDtoSchema = z.object({
   opponentShort: nonEmptyTextSchema.max(8),
   kickoffAt: isoTimestampSchema,
   venue: nonEmptyTextSchema.max(120),
+  venueId: idSchema,
   competition: nonEmptyTextSchema.max(120),
   homeAway: homeAwaySchema,
   status: matchStatusSchema,

@@ -169,6 +169,7 @@ export function toMatchDto(row: MatchRowLike): MatchDto {
     opponentShort: row.opponent_short,
     kickoffAt: row.kickoff_at,
     venue: row.venues?.name ?? STADIUM,
+    venueId: row.venue_id,
     competition: row.competition,
     homeAway: row.home_away === 'away' ? 'away' : 'home',
     status: row.status,

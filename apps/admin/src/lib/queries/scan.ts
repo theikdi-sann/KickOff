@@ -50,7 +50,13 @@ interface ScanEventRow {
   } | null;
 }
 
-const RESULT_CODES: readonly ScanResultCode[] = ["valid", "used", "invalid", "wrong_match"];
+const RESULT_CODES: readonly ScanResultCode[] = [
+  "valid",
+  "used",
+  "invalid",
+  "wrong_match",
+  "wrong_zone",
+];
 
 const SCAN_EVENT_SELECT =
   "id,result,gate_id,created_at,undone_at,tickets(id,user_id,matches(opponent),seats(row_label,number,zones(name)))";

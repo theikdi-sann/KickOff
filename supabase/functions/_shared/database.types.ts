@@ -135,14 +135,14 @@ isOneToOne: true
                   ]
                 },"gates": {
                   Row: {
-                    "active": boolean,"created_at": string,"id": string,"name": string,"tenant_id": string,"updated_at": string,"venue_id": string
+                    "active": boolean,"created_at": string,"id": string,"name": string,"tenant_id": string,"updated_at": string,"venue_id": string,"venue_zone_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "active"?: boolean,"created_at"?: string,"id": string,"name": string,"tenant_id"?: string,"updated_at"?: string,"venue_id": string
+                    "active"?: boolean,"created_at"?: string,"id": string,"name": string,"tenant_id"?: string,"updated_at"?: string,"venue_id": string,"venue_zone_id"?: string | null
                   }
                   Update: {
-                    "active"?: boolean,"created_at"?: string,"id"?: string,"name"?: string,"tenant_id"?: string,"updated_at"?: string,"venue_id"?: string
+                    "active"?: boolean,"created_at"?: string,"id"?: string,"name"?: string,"tenant_id"?: string,"updated_at"?: string,"venue_id"?: string,"venue_zone_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -156,6 +156,12 @@ isOneToOne: false
       columns: ["venue_id","tenant_id"]
 isOneToOne: false
       referencedRelation: "venues"
+      referencedColumns: ["id","tenant_id"]
+    },{
+      foreignKeyName: "gates_venue_zone_fkey"
+      columns: ["venue_zone_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "venue_zones"
       referencedColumns: ["id","tenant_id"]
     }
                   ]
@@ -801,14 +807,14 @@ isOneToOne: false
                   ]
                 },"zones": {
                   Row: {
-                    "color": string,"created_at": string,"description": string,"id": string,"match_id": string,"name": string,"rows": (string)[],"seats_per_row": number,"tenant_id": string,"updated_at": string
+                    "color": string,"created_at": string,"description": string,"id": string,"match_id": string,"name": string,"rows": (string)[],"seats_per_row": number,"tenant_id": string,"updated_at": string,"venue_zone_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "color"?: string,"created_at"?: string,"description"?: string,"id"?: string,"match_id": string,"name": string,"rows"?: (string)[],"seats_per_row": number,"tenant_id"?: string,"updated_at"?: string
+                    "color"?: string,"created_at"?: string,"description"?: string,"id"?: string,"match_id": string,"name": string,"rows"?: (string)[],"seats_per_row": number,"tenant_id"?: string,"updated_at"?: string,"venue_zone_id"?: string | null
                   }
                   Update: {
-                    "color"?: string,"created_at"?: string,"description"?: string,"id"?: string,"match_id"?: string,"name"?: string,"rows"?: (string)[],"seats_per_row"?: number,"tenant_id"?: string,"updated_at"?: string
+                    "color"?: string,"created_at"?: string,"description"?: string,"id"?: string,"match_id"?: string,"name"?: string,"rows"?: (string)[],"seats_per_row"?: number,"tenant_id"?: string,"updated_at"?: string,"venue_zone_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -823,6 +829,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "tenants"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "zones_venue_zone_fkey"
+      columns: ["venue_zone_id","tenant_id"]
+isOneToOne: false
+      referencedRelation: "venue_zones"
+      referencedColumns: ["id","tenant_id"]
     }
                   ]
                 }
@@ -1204,7 +1216,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "match_status": "upcoming"|"live"|"completed"|"postponed"|"cancelled","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded","scan_result": "valid"|"used"|"invalid"|"wrong_match","tenant_status": "active"|"suspended","ticket_status": "valid"|"used"|"void"
+            "match_status": "upcoming"|"live"|"completed"|"postponed"|"cancelled","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded","scan_result": "valid"|"used"|"invalid"|"wrong_match"|"wrong_zone","tenant_status": "active"|"suspended","ticket_status": "valid"|"used"|"void"
           }
           CompositeTypes: {
             "_time_trial_type": {
@@ -1326,7 +1338,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "match_status": ["upcoming", "live", "completed", "postponed", "cancelled"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded"],"scan_result": ["valid", "used", "invalid", "wrong_match"],"tenant_status": ["active", "suspended"],"ticket_status": ["valid", "used", "void"]
+            "match_status": ["upcoming", "live", "completed", "postponed", "cancelled"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded"],"scan_result": ["valid", "used", "invalid", "wrong_match", "wrong_zone"],"tenant_status": ["active", "suspended"],"ticket_status": ["valid", "used", "void"]
           }
         }
 } as const

@@ -29,6 +29,7 @@ export interface MatchDto {
   opponentShort: string;
   kickoffAt: IsoTimestamp;
   venue: string;
+  venueId: string;
   competition: string;
   homeAway: HomeAway;
   status: MatchStatus;

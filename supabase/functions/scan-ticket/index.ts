@@ -19,7 +19,7 @@ const bodySchema = z.object({
 const KEY_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 
 interface ScanRpcResult {
-  code: "valid" | "used" | "invalid" | "wrong_match";
+  code: "valid" | "used" | "invalid" | "wrong_match" | "wrong_zone";
   scanEventId: string;
   ticketId: string | null;
   message?: string;
@@ -38,6 +38,7 @@ const TITLES: Record<ScanRpcResult["code"], string> = {
   used: "Already scanned",
   invalid: "Pass rejected",
   wrong_match: "Wrong fixture",
+  wrong_zone: "Wrong stand",
 };
 
 function idempotencyKey(request: Request): string {

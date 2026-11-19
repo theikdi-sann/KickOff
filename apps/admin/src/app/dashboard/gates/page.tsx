@@ -14,13 +14,13 @@ import {
 } from "@/lib/queries/gates";
 import { useMatches } from "@/lib/queries/matches";
 import { useTenantDisplay } from "@/lib/queries/tenant";
-import { useVenues } from "@/lib/queries/venues";
+import { useVenues, useVenueLayout } from "@/lib/queries/venues";
 import { formatMatchDate, isGateFixtureOpen } from "@kickoff/shared";
 
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,31}$/;
 
 function emptyForm(): AdminGateInput {
-  return { id: "", name: "", venueId: "", matchIds: [], active: true };
+  return { id: "", name: "", venueId: "", venueZoneId: null, matchIds: [], active: true };
 }
 
 function formFrom(gate: AdminGate): AdminGateInput {
@@ -28,6 +28,7 @@ function formFrom(gate: AdminGate): AdminGateInput {
     id: gate.id,
     name: gate.name,
     venueId: gate.venueId,
+    venueZoneId: gate.venueZoneId,
     matchIds: gate.matchIds,
     active: gate.active,
   };
@@ -46,14 +47,34 @@ export default function GatesPage() {
   const [editing, setEditing] = useState<AdminGate | null>(null);
   const [form, setForm] = useState<AdminGateInput>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
+  const { data: venueZones } = useVenueLayout(form.venueId || undefined);
 
   // A gate is physical: the same turnstile serves today's match and the ones
-  // after it. Only fixtures that are still scheduled or live may be ticked;
-  // everything already assigned in the past stays in `form.matchIds` so saving
-  // the gate never rewrites its history.
-  const openMatches = (matches ?? []).filter((match) => isGateFixtureOpen(match));
+  // after it, and only fixtures at its own ground may be ticked. Only
+  // fixtures that are still scheduled or live may be ticked; everything
+  // already assigned in the past stays in `form.matchIds` so saving the gate
+  // never rewrites its history.
+  const openMatches = (matches ?? []).filter(
+    (match) => match.venueId === form.venueId && isGateFixtureOpen(match),
+  );
   const openMatchIds = new Set(openMatches.map((match) => match.id));
   const historyMatchIds = form.matchIds.filter((id) => !openMatchIds.has(id));
+
+  // A turnstile does not relocate: once a gate has admitted anything, its
+  // ground is history. Create a new gate instead of rewriting the log.
+  const venueLocked = editing !== null && editing.matchIds.length > 0;
+
+  const changeVenue = (venueId: string) => {
+    setForm((current) => ({
+      ...current,
+      venueId,
+      // A stand belongs to one ground, and a fixture belongs to one ground.
+      venueZoneId: null,
+      matchIds: current.matchIds.filter((id) =>
+        (matches ?? []).some((match) => match.id === id && match.venueId === venueId),
+      ),
+    }));
+  };
 
   const openCreate = () => {
     setForm(emptyForm());
@@ -106,6 +127,7 @@ export default function GatesPage() {
           patch: {
             name: form.name.trim(),
             venueId: form.venueId,
+            venueZoneId: form.venueZoneId,
             matchIds: form.matchIds,
             active: form.active,
           },
@@ -133,7 +155,7 @@ export default function GatesPage() {
       <SectionTitle
         eyebrow="Gate operations"
         title="Gates"
-        description="Each gate is a turnstile at a venue. Assign every fixture it should admit — the scanner reads this list, so a pass for anything else is rejected as the wrong fixture."
+        description="Each gate is a turnstile at one stand of a venue. Assign every fixture it should admit — the scanner reads this list, so a pass for anything else is rejected as the wrong fixture or the wrong stand."
         action={
           <div className="flex items-center gap-2">
             <Link href="/dashboard/scan" className="btn-ghost">
@@ -197,7 +219,10 @@ export default function GatesPage() {
                       <p className="font-mono text-[10px] text-slate-400">{gate.id}</p>
                     </td>
                     <td className="px-4 py-3.5 text-xs text-slate-600">
-                      {gate.venueName ?? gate.venueId}
+                      <span className="block">{gate.venueName ?? gate.venueId}</span>
+                      <span className="block text-[10px] text-slate-400">
+                        {gate.venueZoneName ?? "Whole ground"}
+                      </span>
                     </td>
                     <td className="px-4 py-3.5 text-xs text-slate-600">
                       {gate.currentMatchLabels.length === 0 ? (
@@ -261,7 +286,7 @@ export default function GatesPage() {
         open={creating || editing !== null}
         onClose={close}
         title={creating ? "New gate" : "Edit gate"}
-        description="A gate stands at one venue and admits every fixture assigned to it. Each scan is recorded against this code."
+        description="A gate stands at one stand of one venue and admits every fixture assigned to it. Each scan is recorded against this code."
         footer={
           <>
             <button type="button" onClick={close} className="btn-ghost">
@@ -307,8 +332,9 @@ export default function GatesPage() {
             <span className="label mb-1.5 block">Venue</span>
             <select
               value={form.venueId}
-              onChange={(event) => setForm({ ...form, venueId: event.target.value })}
-              className="input">
+              onChange={(event) => changeVenue(event.target.value)}
+              disabled={venueLocked}
+              className="input disabled:bg-slate-50 disabled:text-slate-400">
               <option value="">Choose a venue…</option>
               {(venues ?? []).map((venue) => (
                 <option key={venue.id} value={venue.id}>
@@ -318,16 +344,47 @@ export default function GatesPage() {
               ))}
             </select>
             <span className="mt-1 block text-[10px] text-slate-400">
-              Where this turnstile physically stands.
+              {venueLocked
+                ? "This gate already has assignments, so its ground is fixed. Create a new gate to serve another venue."
+                : "Where this turnstile physically stands."}
+            </span>
+          </label>
+
+          <label className="block">
+            <span className="label mb-1.5 block">Stand</span>
+            <select
+              value={form.venueZoneId ?? ""}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  venueZoneId: event.target.value === "" ? null : event.target.value,
+                })
+              }
+              disabled={form.venueId === ""}
+              className="input disabled:bg-slate-50 disabled:text-slate-400">
+              <option value="">Whole ground</option>
+              {(venueZones ?? []).map((zone) => (
+                <option key={zone.id} value={zone.id}>
+                  {zone.name}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block text-[10px] text-slate-400">
+              A pass for another stand is refused here — choose <em>Whole ground</em> only for an
+              entrance that admits every stand.
             </span>
           </label>
 
           <div className="block">
             <span className="label mb-1.5 block">Current &amp; upcoming fixtures</span>
             <div className="max-h-44 space-y-0.5 overflow-y-auto rounded-xl border border-slate-200 p-2">
-              {openMatches.length === 0 ? (
+              {form.venueId === "" ? (
                 <p className="px-1 py-2 text-xs text-slate-400">
-                  No scheduled fixture — create one first.
+                  Choose a venue first — only fixtures at that ground can be admitted.
+                </p>
+              ) : openMatches.length === 0 ? (
+                <p className="px-1 py-2 text-xs text-slate-400">
+                  No scheduled fixture at this venue — create one first.
                 </p>
               ) : (
                 openMatches.map((match) => (

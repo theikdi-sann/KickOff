@@ -9,6 +9,7 @@ const validMatch = {
   opponentShort: 'BKR',
   kickoffAt: '2026-11-14T18:00:00+07:00',
   venue: 'KickOff Arena',
+  venueId: 'v-kickoff',
   competition: 'Thai Premier League',
   homeAway: 'home',
   status: 'upcoming',
