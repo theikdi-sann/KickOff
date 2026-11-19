@@ -9,7 +9,7 @@ gate locally it will break the build.
 |---|---|---|
 | Workspace unit tests | `npm test` | shared schemas/format/i18n/greeting (Vitest), admin node tests, mobile Jest tests, repo script tests |
 | Typecheck + lint | `npm run check` | TypeScript across shared/mobile/admin, ESLint |
-| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning, identity split, tenancy columns, sales restructure, gate ops, tenant isolation, per-club uniques, Stripe Connect, tenant export and erase, the platform authority, observability, the match clock, venue layout and stand-level gates (422 assertions, 28 suites) |
+| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning, identity split, tenancy columns, sales restructure, gate ops, tenant isolation, per-club uniques, Stripe Connect, tenant export and erase, the platform authority, observability, the match clock, venue layout, stand-level gates and atomic fixture creation (444 assertions, 29 suites) |
 | Edge Functions (unit) | `cd supabase/functions && deno test --allow-env --allow-net tests/` | HMAC, config, error mapping, metrics helpers |
 | Edge Functions (integration) | `RUN_INTEGRATION=1 deno test --allow-env --allow-net tests/` | real checkout → webhook → ticket → receipt, scan/undo |
 | Functions typecheck | `npm run functions:check` | `deno check` on every `supabase/functions/*/index.ts` |
@@ -70,7 +70,7 @@ The script prefers a local Supabase/Docker instance and falls back to running
 the same SQL against the hosted project when Docker is unavailable. It applies
 the `supabase/tests/*.sql` suites and reports pass/fail per assertion.
 
-**422 assertions across 28 suites**, verified against the local stack on
+**444 assertions across 29 suites**, verified against the local stack on
 2026-11-19: constraints, hold concurrency, hold TTL, order expiry, reschedule
 audit, RLS (auth + anonymous), scan concurrency, seat reservation, venues, the
 F-07 atomicity suite (reschedule and refund), the GAP-03a staff-role suite
@@ -98,9 +98,12 @@ RPCs, provisioning and the tombstone rules) and the C10.1 observability
 suite (OE-1…OE-9 — the durable error record's lockdown and its two
 scheduled jobs), the C10.5 match-clock suite (the enum values, the clock
 transitions and the result RPC), the C10.6 seating-lock suite (inventory is
-frozen once a fixture starts) and the C10.9 gate-zone suite (GZ-1…GZ-12 —
+frozen once a fixture starts), the C10.9 gate-zone suite (GZ-1…GZ-12 —
 stand-level gates, the `wrong_zone` refusal that does not consume a pass,
-and the clone provenance).
+and the clone provenance) and the C10.10 create-match-full suite
+(CMF-1…CMF-22 — one atomic call builds a fixture with a new or existing
+venue, generated stands, inline gates and per-fixture prices, and rolls the
+whole draft back on refusal).
 
 Read assertions run under `set local role authenticated`: the runner's
 `postgres` session bypasses RLS, so a policy can only be proven from a role

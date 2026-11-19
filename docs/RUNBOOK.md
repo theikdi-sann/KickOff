@@ -303,18 +303,25 @@ one save writes both scores and `completed` (`admin_set_match_result`).
 Sales stop at kickoff in the database (`stripe-checkout` returns
 `match_started`); a fixture whose stored status lags is still refused.
 
-**The venue owns the physical ground.** Set up the venue first: zones (with a
-default price), their generated seats, and gates. The home ground is the one
-venue marked **Home** and is preselected for home fixtures; away grounds are
-chosen from the dropdown at fixture creation, or added inline with **Add away
-venue**. Creating a fixture clones the venue layout (zones, seats, prices and
-gates) in one transaction — edit the venue only when you mean future fixtures,
-because a played fixture keeps its own copy.
+**The venue owns the physical ground.** Set up the venue first, or build it
+inside **Create fixture**: the dialog keeps one draft for the match, the
+ground, its stands and its gates, then sends the whole draft in one atomic
+call. The home ground is the one venue marked **Home** and is preselected for
+home fixtures; a second home ground cannot be created from the dialog — use
+the Venues page. Away grounds are chosen from the dropdown, or added inline.
+An existing venue can gain stands without leaving the dialog. Stand geometry
+(rows and seats per row) is fixed once the stand exists; fixtures clone the
+layout (zones, seats, prices and gates) in the same transaction, so edit the
+venue only when you mean future fixtures — a played fixture keeps its own
+copy.
 
 **Gates are physical and reusable.** A gate is never recreated for a match:
-attach the same turnstile to the new fixture on the Gates page. Past
-assignments stay as history and are not selectable; the scanner shows the
-fixture the gate is admitting now, not the earliest date it ever served.
+attach the same turnstile to the new fixture on the Gates page, or add one
+inline while creating the fixture. An inline gate is a permanent venue-level
+turnstile: it appears on the Gates page and survives deletion of the fixture
+that introduced it. Past assignments stay as history and are not selectable;
+the scanner shows the fixture the gate is admitting now, not the earliest date
+it ever served.
 
 **A gate serves one stand of one ground.** Name the stand on the Gates page —
 *Whole ground* is only for an entrance that admits every stand. A pass for a
