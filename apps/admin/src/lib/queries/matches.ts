@@ -32,6 +32,47 @@ export interface AdminMatchInput {
   reason?: string;
 }
 
+/** A ground the create dialog would build in the same call as the fixture. */
+export interface AdminNewVenue {
+  name: string;
+  city?: string | null;
+  address?: string | null;
+  isHome?: boolean;
+}
+
+/** A venue zone the create dialog would add before the fixture is cloned. */
+export interface AdminDraftZone {
+  /** Draft handle so a gate can name a stand that does not exist yet. */
+  key: string;
+  name: string;
+  description: string;
+  color: string;
+  rows: string[];
+  seatsPerRow: number;
+  defaultPriceMinorUnits: number;
+}
+
+/** A venue gate the create dialog would add and assign in the same call. */
+export interface AdminDraftGate {
+  id: string;
+  name: string;
+  active?: boolean;
+  /** Existing venue zone this turnstile serves; omit for the whole ground. */
+  zoneId?: string;
+  /** A zone created in the same draft, by its key. */
+  zoneKey?: string;
+}
+
+/**
+ * The create dialog's whole draft: the fixture, the ground it needs and the
+ * turnstiles that admit it. One mutation, one database call.
+ */
+export interface AdminCreateMatchInput extends AdminMatchInput {
+  newVenue?: AdminNewVenue;
+  draftZones?: AdminDraftZone[];
+  draftGates?: AdminDraftGate[];
+}
+
 export interface AdminZoneInput {
   name: string;
   description: string;
@@ -223,19 +264,53 @@ function invalidateMatchData(queryClient: ReturnType<typeof useQueryClient>, mat
 export function useCreateMatch() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: AdminMatchInput) => {
-      const venueId = requireDefined(input.venueId, "venue id");
-      const { data, error } = await client().rpc("admin_create_match_from_venue", {
+    mutationFn: async (input: AdminCreateMatchInput) => {
+      // The ground is either an existing venue or the fields of a new one;
+      // either way it travels with the fixture in the same call.
+      let venuePayload: { id: string } | {
+        name: string;
+        city: string | null;
+        address: string | null;
+        isHome: boolean;
+      };
+      if (input.venueId) {
+        venuePayload = { id: input.venueId };
+      } else {
+        const venue = requireDefined(input.newVenue, "new venue");
+        venuePayload = {
+          name: venue.name,
+          city: venue.city ?? null,
+          address: venue.address ?? null,
+          isHome: venue.isHome ?? false,
+        };
+      }
+      const { data, error } = await client().rpc("admin_create_match_full", {
         p_match: {
           opponent: input.opponent,
           opponentShort: input.opponentShort,
           kickoffAt: input.kickoffAt,
-          venueId,
           competition: input.competition,
           homeAway: input.homeAway,
           posterColors: input.posterColors,
           accent: input.accent,
         },
+        p_venue: venuePayload,
+        p_zones: (input.draftZones ?? []).map((zone) => ({
+          key: zone.key,
+          name: zone.name,
+          description: zone.description,
+          color: zone.color,
+          rows: zone.rows,
+          seatsPerRow: zone.seatsPerRow,
+          defaultPriceMinorUnits: zone.defaultPriceMinorUnits,
+        })),
+        p_gates: (input.draftGates ?? []).map((gate) => ({
+          id: gate.id,
+          name: gate.name,
+          active: gate.active ?? true,
+          ...(gate.zoneId !== undefined ? { zoneId: gate.zoneId } : {}),
+          ...(gate.zoneKey !== undefined ? { zoneKey: gate.zoneKey } : {}),
+        })),
         p_gate_ids: input.gateIds ?? [],
         p_prices: input.zonePrices ?? {},
       });

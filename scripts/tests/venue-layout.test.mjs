@@ -16,7 +16,7 @@ const venueLayoutEditor = read('apps/admin/src/components/venue-layout-editor.ts
 const venueScreen = `${venuesPage}\n${venueLayoutEditor}`;
 const venuesQuery = read('apps/admin/src/lib/queries/venues.ts');
 const matchesQuery = read('apps/admin/src/lib/queries/matches.ts');
-const matchForm = read('apps/admin/src/components/match-form.tsx');
+const matchForm = read('apps/admin/src/components/create-fixture-form.tsx');
 const seed = read('supabase/seed.sql');
 
 test('VL-1 the venue screen owns home/away, layout and derived capacity', () => {
@@ -34,15 +34,21 @@ test('VL-1 the venue screen owns home/away, layout and derived capacity', () => 
 test('VL-2 a fixture is created from the venue in one call', () => {
   assert.match(
     matchesQuery,
-    /admin_create_match_from_venue/,
-    'fixture creation clones the venue layout atomically',
+    /admin_create_match_full/,
+    'fixture creation builds the ground atomically',
   );
   assert.match(matchesQuery, /p_gate_ids/, 'the fixture carries its gates');
   assert.match(matchesQuery, /p_prices/, 'the fixture carries its per-zone prices');
+  assert.match(matchesQuery, /p_zones/, 'the fixture carries the stands it creates');
   assert.match(matchForm, /useVenueLayout/, 'the create form reads the venue layout');
   assert.match(matchForm, /useGates/, 'the create form offers the venue gates');
-  assert.match(matchForm, /Add away venue/, 'an away ground can be added without leaving the form');
-  assert.match(matchForm, /venueId/, 'the form sends the venue id, not a name');
+  assert.match(
+    matchForm,
+    /Add a new away venue|Create the home venue/,
+    'a ground can be added without leaving the form',
+  );
+  assert.match(matchForm, /venueId/, 'the form sends an existing venue id');
+  assert.match(matchForm, /newVenue/, 'the form sends the ground it creates');
 });
 
 test('VL-3 the seed gives the home venue a physical layout', () => {

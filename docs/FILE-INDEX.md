@@ -88,9 +88,10 @@ before the suite is green again.
 | `apps/admin/src/app/login/mfa/page.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/login/page.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/page.tsx` | source | reviewed | staff console screen |
+| `apps/admin/src/components/create-fixture-form.tsx` | source | reviewed | the draft-first create dialog: Match → Venue → Zones → Gates, including a new ground, generated stands and inline venue-level gates, sent in one atomic call |
 | `apps/admin/src/components/gate-form.tsx` | source | reviewed | one gate's fields: code, name, venue, stand, and the venue-scoped fixtures the clock still allows; used by the Gates page and the fixture dialog |
 | `apps/admin/src/components/logo.tsx` | source | reviewed | presentational component |
-| `apps/admin/src/components/match-form.tsx` | source | reviewed | presentational component |
+| `apps/admin/src/components/match-form.tsx` | source | reviewed | edit-only fixture form: match details, venue picker and the reschedule reason |
 | `apps/admin/src/components/match-result-dialog.tsx` | source | reviewed | the one score form — used by the matches list and the fixture page; validates non-negative integers and warns before full time |
 | `apps/admin/src/components/news-form.tsx` | source | reviewed | presentational component |
 | `apps/admin/src/components/providers.tsx` | source | reviewed | presentational component |
@@ -106,7 +107,7 @@ before the suite is green again.
 | `apps/admin/src/lib/functions.ts` | source | reviewed | app library |
 | `apps/admin/src/lib/offline-queue.ts` | source | reviewed | app library |
 | `apps/admin/src/lib/queries/gates.ts` | source | reviewed | React Query data access |
-| `apps/admin/src/lib/queries/matches.ts` | source | reviewed | React Query data access |
+| `apps/admin/src/lib/queries/matches.ts` | source | reviewed | React Query data access; fixture creation sends the whole ground draft to `admin_create_match_full()` in one call |
 | `apps/admin/src/lib/queries/news.ts` | source | reviewed | React Query data access |
 | `apps/admin/src/lib/queries/notifications.ts` | source | reviewed | the console bell — reads `match_notifications` with this admin's read state, polls every 30s, marks a notification read |
 | `apps/admin/src/lib/queries/orders.ts` | source | reviewed | React Query data access |
@@ -281,6 +282,7 @@ before the suite is green again.
 | `scripts/tests/brand-assets.test.mjs` | test | covered | contract test — BRAND-1…BRAND-5: every icon path exists, the store tile is 1024 opaque, the splash/adaptive marks keep alpha, the in-app marks render the crest, and the set stays under the size budget |
 | `scripts/tests/ci.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/connect.test.mjs` | test | covered | contract test — C8.1 Stripe Connect: the checkout, the webhook and the refund run on the club's connected account (CN-1…CN-7) |
+| `scripts/tests/create-fixture-dialog.test.mjs` | test | covered | contract test — C10.10c: one draft, four ordered sections, one atomic call, inline ground/stands/gates and an edit-only MatchForm (CF-1…CF-6) |
 | `scripts/tests/db-gate.test.mjs` | test | covered | contract test — the pgTAP gate must run locally |
 | `scripts/tests/dep-drift.test.mjs` | test | covered | contract test — the Expo SDK compatibility check runs in CI (GAP-07) |
 | `scripts/tests/display-config.test.mjs` | test | covered | contract test — C8.2d: both apps read the tenants row through one hook, no formatTHB remains, dates carry the club timezone, the greeting follows the club clock, the Edge display copy is generated (DC-1…DC-6) |

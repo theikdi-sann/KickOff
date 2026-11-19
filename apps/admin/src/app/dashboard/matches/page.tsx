@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { CreateFixtureForm } from "@/components/create-fixture-form";
 import { MatchForm } from "@/components/match-form";
 import { MatchResultDialog, type MatchResultInput } from "@/components/match-result-dialog";
 import { track } from "@/lib/analytics";
@@ -34,6 +35,7 @@ import {
   useSetMatchResult,
   useUpdateMatch,
   useZoneAvailability,
+  type AdminCreateMatchInput,
   type AdminMatchInput,
 } from "@/lib/queries/matches";
 import { useTenantDisplay } from "@/lib/queries/tenant";
@@ -88,7 +90,7 @@ export default function MatchesPage() {
       });
   }, [allMatches, filter, query]);
 
-  const handleCreate = async (input: AdminMatchInput) => {
+  const handleCreate = async (input: AdminCreateMatchInput) => {
     const match = await createMatch.mutateAsync(input);
     setCreating(false);
     track("fixture_created", { matchId: match.id, opponent: match.opponent });
@@ -327,9 +329,9 @@ export default function MatchesPage() {
         open={creating}
         onClose={() => setCreating(false)}
         title="Create fixture"
-        description="Choose the venue: its zones, seats and gates are copied into the fixture, with per-fixture prices."
+        description="Build the match and the ground it needs in one draft. Venue, stands, seats and gates are created with the fixture in a single transaction."
         wide>
-        <MatchForm submitting={createMatch.isPending} onSubmit={handleCreate} />
+        <CreateFixtureForm submitting={createMatch.isPending} onSubmit={handleCreate} />
       </Modal>
 
       <Modal
