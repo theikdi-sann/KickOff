@@ -456,10 +456,12 @@ before the suite is green again.
 | `supabase/migrations/0064_tenant_scope_venue_layout.sql` | data | reviewed | migration — venue zones/seats join the export and erase registries (seats before zone, both before the venue) |
 | `supabase/migrations/0065_wrong_zone_enum.sql` | data | reviewed | migration — adds the `wrong_zone` scan outcome; the enum lives alone because Postgres cannot use a new value in the adding transaction |
 | `supabase/migrations/0066_gate_stands.sql` | data | reviewed | migration — `gates.venue_zone_id` and `zones.venue_zone_id`, the stand/venue integrity triggers, the clone provenance in `admin_create_match_from_venue()`, and `scan_ticket` refusing another stand without consuming the pass |
+| `supabase/migrations/0067_admin_create_match_full.sql` | data | reviewed | one atomic call builds the fixture and its ground: new or existing venue, zones and generated seats, inline stand-level gates, per-fixture prices and the gate assignment |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/connect.test.sql` | test | covered | pgTAP suite — C8.1 Stripe Connect: the platform fee in minor units, the club a connected account belongs to, the event ledger; 0050's omittable payment-intent and account parameters (16 assertions) |
 | `supabase/tests/constraints.test.sql` | data | covered | pgTAP suite — asserts the database contract |
+| `supabase/tests/create-match-full.test.sql` | test | covered | pgTAP CMF-1…CMF-22 — the atomic fixture-and-ground call, its clone provenance, home-venue and duplicate-name refusals, cross-ground gates and rollback |
 | `supabase/tests/gate-ops.test.sql` | test | covered | pgTAP suite — C7.2 venue-bound gates, fixture assignment join, scan/undo audit columns, append-only log (38 assertions) |
 | `supabase/tests/gate-zone.test.sql` | test | covered | pgTAP suite — C10.9 stand-level gates: the stand columns, a gate cannot serve another venue's stand, an assignment cannot cross grounds, `wrong_zone` leaves the pass valid, a whole-ground gate admits every stand, and the clone records its provenance (12 assertions) |
 | `supabase/tests/hold-concurrency.test.sql` | data | covered | pgTAP suite — asserts the database contract |

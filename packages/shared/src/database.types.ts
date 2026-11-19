@@ -966,6 +966,9 @@ isOneToOne: false
 "admin_create_match_from_venue":
 { Args: { "p_gate_ids"?: (string)[],"p_match": Json,"p_prices"?: Json }; Returns: Json
                            },
+"admin_create_match_full":
+{ Args: { "p_gate_ids"?: (string)[],"p_gates"?: Json,"p_match": Json,"p_prices"?: Json,"p_venue": Json,"p_zones"?: Json }; Returns: Json
+                           },
 "admin_delete_venue_zone":
 { Args: { "p_zone_id": string }; Returns: undefined
                            },
