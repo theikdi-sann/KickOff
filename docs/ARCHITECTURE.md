@@ -57,7 +57,7 @@ authenticate → authorize → validate.
 ## 2. Runtime layers
 
 | Layer | Location | Responsibility | Trust |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Presentation | `apps/mobile/src/app`, `apps/admin/src/app` | routes, screens, forms | untrusted input |
 | Domain/contract | `packages/shared` | Zod schemas, DTOs, mappers, money, format, theme, QR-adjacent types | pure, framework-free |
 | Client data access | `apps/*/src/lib/queries/*` | React Query hooks, polling, cache policy | user JWT |
@@ -121,29 +121,29 @@ packages/shared/src/
   theme.ts             brand tokens
 
 supabase/
-  migrations/          39 ordered SQL migrations: schema, RLS, RPCs, views, cron
+  migrations/          67 ordered SQL migrations: schema, RLS, RPCs, views, cron
   functions/_shared/   auth, config, validate, hmac, stripe, rate-limit,
                        metrics, audit, http envelope, logger, qr
-  functions/<name>/    one directory per function (16)
-  tests/               pgTAP suites (10)
+  functions/<name>/    one directory per function (20)
+  tests/               pgTAP suites (29)
 ```
 
 ## 3. Data model
 
 | Group | Tables | Invariant |
-|---|---|---|
+| --- | --- | --- |
 | Catalogue | `matches`, `zones`, `seats`, `venues` | a seat belongs to exactly one zone of one fixture; a fixture plays at one venue |
 | Availability | `seat_holds` | one *active* hold per seat (partial unique index) |
 | Commerce | `orders`, `order_seats` | an order holds seats for a TTL, then is paid/cancelled/expired |
 | Fulfilment | `tickets` | one ticket per `order_seats` row, issued exactly once |
-| Access | `profiles`, `app_settings`, `app_secrets` | role lives in the JWT claim, mirrored in `profiles`; vocabulary is `customer` / `gatekeeper` / `admin` |
+| Access | `profiles`, `app_settings`, `app_secrets`, `staff_members`, `staff_roles` | identity is global; authority is the per-club membership (`staff_members` + `staff_roles`); the legacy `profiles.role` is gone since `0048` |
 | Operations | `scan_events`, `audit_logs`, `stripe_events`, `rate_limits` | append-only history except `stripe_events` dedupe |
 | Engagement | `news_items`, `device_tokens` | device tokens are per user, revocable |
 
 **Key invariants (each has a test):**
 
 | Invariant | Enforced by | Test |
-|---|---|---|
+| --- | --- | --- |
 | One active hold per seat | partial unique index | `hold-concurrency.test.sql` |
 | A ticket is issued exactly once | `mark_order_paid` + `stripe_events` dedupe | `order-expiry.test.sql` |
 | A seat leaves `available` only via hold/order | RPC-only transitions | `seat-reservation.test.sql` |
@@ -152,14 +152,14 @@ supabase/
 | Nothing but admins reads `audit_logs` / `scan_events` | RLS policies | `rls.test.sql` |
 | Only admins write `audit_logs` | `0037` grant + policy; `0038` RPCs write their own rows atomically | `reschedule-audit.test.sql` + `atomicity.test.sql` |
 
-### 3.1 Target model (C6–C7 — `0040`–`0048` landed, `0049` landed)
+### 3.1 Current model (C6–C7 delivered in `0040`–`0048`)
 
-The B2B account and tenancy model agreed on 2026-11-14 replaces the
-single-tenant shape above. It is delivered as the migration series
-`0040`–`0048`; until a step lands, the current tables stay authoritative.
+The B2B account and tenancy model agreed on 2026-11-14 replaced the
+single-tenant shape above. The migration series `0040`–`0048` is complete, so
+the tenant-scoped tables below are authoritative:
 
 | Group | Tables | Invariant |
-|---|---|---|
+| --- | --- | --- |
 | Tenancy | `tenants` | one row per club; `slug` binds the white-label app; `status = 'active'` gates every predicate |
 | Identity | `profiles`, `fans`, `staff_members`, `staff_roles` | identity is global; authority is per `(tenant, profile)`; capability flags (`can_manage_staff`, `can_operate_gate`) drive every predicate |
 | Catalogue | `venues`, `matches`, `zones`, `seats`, `match_zone_prices` | seats are physical inventory (no status); price is per `(match, zone)` |
@@ -209,7 +209,9 @@ onboarded yet keeps selling on the platform account — the bridge.
 assigned to the gate (`match_gates`) → ticket is `valid` → kickoff window →
 mark used → write `scan_events`. `Idempotency-Key` makes offline replays safe;
 `scan-undo` reverses an accepted scan for 60 s. A scan result code set
-(`valid`, `used`, `invalid`, `wrong_match`) is a shared contract.
+(`valid`, `used`, `invalid`, `wrong_match`, `wrong_zone`) is a shared contract.
+`wrong_zone` means the gate serves another stand: the pass stays `valid`, the
+attempt is logged, and the fan can walk to the right gate.
 
 ### 4.3 Refund
 
@@ -221,32 +223,29 @@ refund instead of creating a second one.
 
 ### 4.4 Reschedule a kickoff
 
-The rules live in the **shared Zod schema** (`adminRescheduleSchema`), enforced
-in the admin UI — no database trigger enforces them (walkthrough decision).
+The rules live in the **shared Zod schema** (`adminRescheduleSchema`) and are
+enforced by `admin_update_match()` since migration `0038`.
 Upcoming-only, future, outside the lock window, never earlier, at most +10
-days, reason required. Since migration `0038` the *write* goes through
-`admin_update_match()`: the kickoff change and its `{from, to, reason}` audit
+days, reason required. The kickoff change and its `{from, to, reason}` audit
 row are one transaction, and the database itself refuses a kickoff move
-without a reason.
-
-> Known limitation (documented, not hidden): because the rules are client-side,
-> a direct PostgREST write could still move a kickoff. Recorded in
-> `PLAN.md` → `PB-RESCHEDULE` → Errors / Notes.
+without a reason. A direct PostgREST kickoff update is refused by the RPC-only
+write path; `atomicity.test.sql` asserts it.
 
 ### 4.5 Kickoff reminders
 
 `pg_cron` (hourly) → `send-kickoff-reminders` (scheduler secret) → fixtures
-starting in 24 h / 2 h → `device_tokens` → Expo Push Service.
+starting in 24 h / 2 h → `device_tokens` → Expo Push Service. The match clock
+is a separate `pg_cron` job that runs every minute (`0058`).
 
 ## 5. Trust boundaries
 
 | Boundary | Enforcement |
-|---|---|
+| --- | --- |
 | Browser/app → Postgres | RLS + grants on every table |
 | Browser/app → Edge Function | JWT verification + staff/admin role check (`_shared/auth.ts`) |
 | Edge Function → Postgres | service role — **no RLS**; authorization is the function's job |
 | Scheduler → Edge Function | shared secret, constant-time compare |
-| QR payload → gate | HMAC signature over `ticket|match|order|nonce` |
+| QR payload → gate | HMAC signature over `ticket | match | order | nonce` |
 | Payments → Stripe | `stripe-signature` verification + idempotent event ledger |
 
 Full matrix and secrets layout: [`SECURITY.md`](SECURITY.md).
@@ -279,6 +278,7 @@ These are the rules a change is expected to follow. They are enforced where a
 tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
 
 ### 6.1 Type safety
+
 - `strict: true` plus `noImplicitOverride`, `noFallthroughCasesInSwitch`,
   `noUncheckedIndexedAccess` (an indexed read is `T | undefined`; contracts
   TS-4/TS-5 keep it on).
@@ -289,6 +289,7 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
   `npx supabase gen types typescript --remote > packages/shared/src/database.types.ts`.
 
 ### 6.2 Boundaries and validation
+
 - Every value crossing a trust boundary is parsed by a **Zod schema** in
   `packages/shared/src/schemas.ts` (clients) or `_shared/validate.ts`
   (functions). No ad-hoc `if (!x) throw` for structured input.
@@ -296,6 +297,7 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
   `ApiError`), never a raw string or a stack.
 
 ### 6.3 Naming and structure
+
 - Files are kebab-case; components are PascalCase; hooks are `useX`.
 - One domain per file: a screen owns its screen, a query module owns its
   entity.
@@ -308,13 +310,15 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
   function logger.
 
 ### 6.4 State and effects
+
 - Server state lives in React Query, never in local component state.
 - Mutations invalidate the queries they affect and surface failures to the
   user (no silent `catch`).
-- Local persistence is only for: the auth session (SecureStore) and, in
-  future, cached pass payloads (`GAP-01`).
+- Local persistence is only for: the auth session (SecureStore) and cached
+  pass payloads (`GAP-01`).
 
 ### 6.5 Database
+
 - Schema changes are **migrations only** — never manual edits on a database.
 - Every new table ships with RLS enabled, a policy per role, matching
   grants, and a pgTAP assertion.
@@ -323,6 +327,7 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
 - Anything money-bearing is idempotent and audit-logged.
 
 ### 6.6 Testing
+
 - One behaviour per test; the test name states the behaviour.
 - Contract tests live in `scripts/tests/` and assert *shape* across the repo
   (a README count, a route table, a migration shape).
@@ -331,12 +336,14 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
 - A bug fix starts with a failing test that reproduces it.
 
 ### 6.7 Documentation
+
 - One fact, one home. The README never restates what a linked document owns.
 - Documentation drift fails CI (`scripts/tests/docs.test.mjs`).
 - Decisions that change the shape of the system are recorded in
   `PLAN.md` → Decision index, with the reasoning.
 
 ### 6.8 Single source of truth
+
 - A value that more than one tier needs lives in exactly one place: the
   shared package for client-visible constants, SQL for server-computed ones,
   `_shared/` for the server contract.
@@ -347,6 +354,7 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
   review comment.
 
 ### 6.9 Logging
+
 - One convention, one owner: `createLogger('<scope>')` from
   `packages/shared/src/logging.ts` — exactly one JSON line per event
   (`level`, `message`, `time`, `scope`, then the caller's context).
@@ -363,54 +371,71 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
   Contract: `scripts/tests/logging.test.mjs` (LG-1…LG-4).
 
 ### 6.10 Authorization
-- The role vocabulary is exactly `customer` | `gatekeeper` | `admin`
-  (D-20), owned by `packages/shared/src/roles.ts` and generated into
-  `supabase/functions/_shared/roles.ts` (§6.8). The database mirrors it in the
-  `profiles_role_check` constraint.
-- Two SQL predicates read the JWT claim and nothing else:
-  `public.is_admin()` (admin only) and `public.is_staff()` (admin or
-  gatekeeper). RLS keeps every operational table behind `is_admin()`; only
-  `gates` (read), the caller's own `scan_events`, and tickets the caller
-  scanned open to a gatekeeper.
-- Edge Functions use `requireAdmin` everywhere except `scan-ticket` and
-  `scan-undo`, which use `requireStaff`. The SQL gate functions repeat the
+
+- **Staff roles are exactly `admin` and `gatekeeper`.** `customer` is not a
+  staff role: it is the absence of a `staff_members` row at the current club.
+  The shared vocabulary in `packages/shared/src/roles.ts` includes `customer`
+  only so the console and the JWT claim can name the no-authority state.
+- **Two projections, one role (D-23).** A role change writes the
+  `staff_members` row (database authority, read by `is_admin()` /
+  `is_staff()` / `is_gate_operator()` at `current_tenant()`) and the
+  `app_metadata.role` claim (Edge authority, read by `requireAdmin` /
+  `requireStaff`). Membership first, claim second; a failed claim write
+  restores the membership. Assigning `customer` deletes the membership and
+  sets the claim to `customer`.
+- **No third projection.** `profiles.role` was dropped in `0048`; no code may
+  read or write it.
+- **Capability flags drive the database.** `staff_roles(tenant_id, code)`
+  carries `can_manage_staff` and `can_operate_gate`; the SQL predicates read
+  those flags, not role names. RLS keeps every operational table behind the
+  staff predicate; only `gates` (read), the caller's own `scan_events`, and
+  tickets the caller scanned open to a gatekeeper.
+- **Edge Functions use `requireAdmin` everywhere except `scan-ticket` and
+  `scan-undo`, which use `requireStaff`.** The SQL gate functions repeat the
   check and refuse a scan filed under another user's id.
-- The console applies the same boundary twice: the Next proxy admits staff and
-  confines a gatekeeper to `/dashboard/scan`, and the dashboard layout filters
-  the navigation. The database remains the final authority.
-- Contract: `scripts/tests/staff-roles.test.mjs` (SR-1…SR-7),
-  `scripts/tests/admin-access.test.mjs` (AA-1…AA-7), and
+- **The console applies the same boundary twice:** the Next proxy admits staff
+  and confines a gatekeeper to `/dashboard/scan`, and the dashboard layout
+  filters the navigation. The database remains the final authority.
+- **Custom roles (REQ-046, NFR-10, GAP-11) are open.** A club cannot add a
+  role today. When they ship, authorization moves from the two built-in
+  capability flags to the closed capability catalogue in REQ-046; no policy or
+  guard may branch on the literal `admin`/`gatekeeper` role name.
+- Contract: `scripts/tests/staff-roles.test.mjs` (SR-1…SR-11),
+  `scripts/tests/admin-access.test.mjs` (AA-1…AA-7),
+  `scripts/tests/rbac-docs.test.mjs` (RBAC-D1…RBAC-D6), and
   `supabase/tests/staff-roles.test.sql`.
 
 ## 7. Decision index
 
 | # | Decision | Why | Where |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | D-01 | Holds and orders are RPCs, not client-side transactions | seat integrity under concurrency | `0019`, `0020` |
 | D-02 | Amounts computed server-side from the database | the client must never price a ticket | `stripe-checkout` |
 | D-03 | Stripe webhooks are idempotent via `stripe_events` | Stripe retries | `0015`, `stripe-webhook` |
 | D-04 | QR payload is HMAC-signed and server-generated | tamper-evident entry | `_shared/qr.ts` |
-| D-05 | Staff authorization is a JWT claim (`app_metadata.role`) | RLS cannot read the app JWT | `0001`, `0018`, `0039` |
-| D-06 | Reschedule rules live in shared Zod + UI, **no trigger/RPC** | walkthrough decision; the audit trail carries the reason | `0037`, `PB-RESCHEDULE` |
+| D-05 | Staff authority is the per-club membership (`staff_members` + `staff_roles`); the Edge guard additionally reads the `app_metadata.role` claim | RLS cannot read the app JWT, so the DB uses the membership and the Edge uses the claim | `0001`, `0018`, `0039`, `0045`, `0047`, `0048` |
+| D-06 | Reschedule rules live in shared Zod **and** `admin_update_match()` | the RPC makes the kickoff change and its audit row one transaction | `0037`, `0038` |
 | D-07 | Venues normalized into a table with a FK | free-text venues could not be managed | `0035`, `0036` |
 | D-08 | Edge Functions refuse non-`sk_test_` Stripe keys | Stripe test mode only, enforced | `_shared/config.ts` |
 | D-09 | Shared package holds contracts, not UI state | one place for schemas/DTOs | `packages/shared` |
 | D-10 | The QR contract lives only in `_shared` | the app renders, never parses, payloads | §5.2 |
 
-## 8. Extension points (B2B roadmap)
+## 8. Delivered capability and open extensions
 
-| Workstream | Shape of the change | Notes |
-|---|---|---|
-| Multi-tenancy (`GAP-02`) | `clubs` table + `club_id` on every tenant table, `is_club_member(club_id)` RLS helper, per-club settings/branding/currency | the single biggest change; needs a data-migration plan and an RLS rewrite |
-| Staff roles (`GAP-03`) | `roles`/`permissions` tables, `user_roles(club_id, user_id, role)`, function-level checks | **GAP-03a delivered** the two-role scope (`admin` \| `gatekeeper`, migration `0039`); richer per-club RBAC remains |
-| Observability (`GAP-04`) | structured logger with request IDs, error tracking, metrics push, alerts | the `_shared/logger.ts` seam already exists |
-| Locale & currency (`GAP-05`) | per-club locale + currency columns, `money.ts` gains a currency argument | the unused English string table was removed in Phase C2; localization must be rebuilt per tenant |
-| Error tracking & tracing | request id propagation from client → function → logs | `ApiError.requestId` already carries it |
+| Workstream | State |
+| --- | --- |
+| Multi-tenancy (`GAP-02`) | **Delivered** at `0045`: `tenants`, `tenant_id` on every scoped table, composite FKs, `current_tenant()`, `provision_tenant()` and the isolation suite. |
+| Staff roles (`GAP-03`) | **Delivered** built-in pair (`admin` \| `gatekeeper`), per-club `staff_roles` with capability flags and `staff_members`. |
+| Custom staff roles (`GAP-11`, REQ-046, NFR-10) | **Open.** A club cannot add a role yet; acceptance `RBAC-1…RBAC-8` is pending. Design: [`ADR-005`](adr/ADR-005-custom-rbac.md). |
+| Observability (`GAP-04`) | **Delivered** (C10.1): structured logger, request ids, `error_events`, alert webhook, reconciliation sweep. |
+| Locale & currency (`GAP-05`) | **Delivered** (C10.2): per-club locale/currency/time zone, source-key translation, Thai catalog. |
+| Ticket transfer (`GAP-08`) | **Open / out of scope:** a buyer holds every pass for their order. |
+| White-label release overhead (`GAP-10`) | **Open:** the onboarding checklist ships; the first second-tenant build is unproven. |
 
 ## 9. Operational pointers
 
 | Task | Where |
-|---|---|
+| --- | --- |
 | Local stack | `npx supabase start` · `npm run db:reset` · `npm run db:seed-demo` |
 | Database tests | `npm run db:test` (local) · `bash scripts/run-pgtap.sh` (hosted) |
 | Edge function checks | `npm run functions:check` · `cd supabase/functions && deno lint && deno test` |

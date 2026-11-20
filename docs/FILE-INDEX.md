@@ -9,7 +9,7 @@ before the suite is green again.
 - **Enforced by:** `scripts/tests/file-coverage.test.mjs` (FI-1 … FI-7).
 - **Kept in step by:** `node scripts/build-file-index.mjs --check` (CI) and
   `--sync` (adds new files as `unreviewed`, so they must be reviewed).
-- **Last verified:** 2026-11-15 · **Owner:** engineering
+- **Last verified:** 2026-11-20 · **Owner:** engineering
 - **Related:** [`FLOW-AUDIT.md`](FLOW-AUDIT.md) (the flow findings) ·
   [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`PLAN.md`](../PLAN.md)
 
@@ -125,7 +125,8 @@ before the suite is green again.
 | `apps/admin/src/lib/use-session.ts` | source | reviewed | app library |
 | `apps/admin/src/lib/utils.ts` | source | reviewed | app library |
 | `apps/admin/src/proxy.ts` | source | reviewed | source |
-| `apps/admin/tests/offline-queue.test.ts` | test | covered | contract test — fails when the repository drifts |
+| `apps/admin/tests/export.test.ts` | test | covered | REQ-24 — CSV BOM, CRLF, quoting and empty cells |
+| `apps/admin/tests/offline-queue.test.ts` | test | covered | REQ-23 — corruption/quarantine/clear, retry key, no double-admit |
 | `apps/admin/tests/phase9.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `apps/admin/tests/search.test.ts` | test | reviewed | unit test — the search term cannot inject a filter |
 | `apps/admin/tsconfig.json` | config | reviewed | admin TypeScript config |
@@ -161,6 +162,8 @@ before the suite is green again.
 | `apps/mobile/src/app/(tabs)/index.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/(tabs)/profile.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/(tabs)/tickets.tsx` | source | reviewed | supporter app screen |
+| `apps/mobile/src/app/__tests__/news-test.tsx` | test | covered | REQ-03 — news list renders, plus empty and error states |
+| `apps/mobile/src/app/__tests__/orders-test.tsx` | test | covered | REQ-09 — order history, statuses and lifetime spend |
 | `apps/mobile/src/app/_layout.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/checkout.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/fixtures.tsx` | source | reviewed | supporter app screen |
@@ -170,8 +173,10 @@ before the suite is green again.
 | `apps/mobile/src/app/news/[id].tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/orders.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/orders/[id].tsx` | source | reviewed | supporter app screen |
+| `apps/mobile/src/app/profile/__tests__/profile-edit-test.tsx` | test | covered | REQ-12 — profile validation and update payload |
 | `apps/mobile/src/app/profile/edit.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/seats/[matchId].tsx` | source | reviewed | supporter app screen |
+| `apps/mobile/src/app/seats/__tests__/seat-grid-test.tsx` | test | covered | NFR-15 — seat grid names, selected state, sold-seat disabled |
 | `apps/mobile/src/app/settings.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/ticket/[id].tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/components/__tests__/ui-test.tsx` | test | covered | mobile component test — renders the shared Pill primitive |
@@ -211,14 +216,19 @@ before the suite is green again.
 | `docs/PRIVACY.md` | doc | reviewed | the data inventory and the retention/erasure schedule (GAP-09): what personal data is held, for how long, and what a fan's export and erasure cover |
 | `docs/PUSH.md` | doc | reviewed | the end-to-end push guide: Firebase project and `google-services.json`, the FCM V1 key via `eas credentials`, the EAS project id, the dev build, obtaining/verifying the Expo token, send and receipt `curl`s, the `send-kickoff-reminders` trigger, SQL editor recipes, troubleshooting and FCM rotation |
 | `docs/REQUIREMENTS.md` | doc | reviewed | product requirements, traceability, known gaps |
+| `docs/REQTRACE.md` | doc | reviewed | dated requirements → test coverage matrix, uncovered risks and gap decisions |
 | `docs/RUNBOOK.md` | doc | reviewed | operational procedures: deploy, rotate (incl. the FCM V1 key), incident, recovery, manual reminder trigger (§6.7), pre-event push check (§8), hardware push proof and the recorded run (§11/§11.7, linking `PUSH.md`), fan rights (§6.8), club exit (§9) |
 | `docs/SECURITY.md` | doc | reviewed | RLS matrix, secrets, payments, QR, audit |
 | `docs/SRS.md` | doc | reviewed | detailed specification of REQ/NFR/SC with acceptance criteria |
-| `docs/TESTING.md` | doc | reviewed | test layers and commands |
+| `docs/TESTING.md` | doc | reviewed | test layers, commands, pending REQ-046 acceptance |
+| `docs/TRUTH.md` | doc | reviewed | canonical verified facts: counts, authority model, requirement states |
+| `docs/GLOSSARY.md` | doc | reviewed | one meaning per term: club/tenant, stand/zone, gate/turnstile, role/capability, customer |
+| `docs/DOCSCHECK.md` | doc | reviewed | documentation quality review and remediation record |
 | `docs/adr/ADR-001-account-model.md` | doc | reviewed | identity is global; per-tenant staff roles with capability flags |
 | `docs/adr/ADR-002-multi-tenancy.md` | doc | reviewed | tenants, tenant_id, composite FKs, open-read catalogue |
 | `docs/adr/ADR-003-stripe-connect.md` | doc | reviewed | Connect accounts, platform fee, webhook tenancy |
 | `docs/adr/ADR-004-white-label.md` | doc | reviewed | white-label delivery and the cross-tenant console |
+| `docs/adr/ADR-005-custom-rbac.md` | doc | reviewed | proposed per-club custom staff roles (REQ-046, open) |
 | `docs/archive/PLAN-history.md` | doc | reviewed | archived task history of the original build |
 | `docs/evidence/push-hardware-xiaomi-pad-6-2026-11-19.jpg` | asset | asset | the tray notification from the Android hardware run that closed GAP-06 (Xiaomi Pad 6, Android 14, app swiped out of recents) — cited by RUNBOOK §11.7 and PUSH-HW-7 |
 | `eas.json` | config | reviewed | root EAS build profiles — development, preview and production, with remote app-version source |
@@ -260,7 +270,7 @@ before the suite is green again.
 | `packages/shared/src/platform.ts` | source | reviewed | shared contract — the platform claim key, `isPlatformMetadata`, `CLUB_SLUG_PATTERN`, `planBootstrapClaim` (C9) |
 | `packages/shared/src/refund.ts` | source | reviewed | shared contract — canonical refund body, no relative imports (F-11) |
 | `packages/shared/src/require.ts` | source | reviewed | narrowing helper — no non-null assertions |
-| `packages/shared/src/roles.ts` | source | reviewed | canonical staff role vocabulary (`customer` / `admin` / `gatekeeper`); generates the Edge copy |
+| `packages/shared/src/roles.ts` | source | reviewed | staff role contract: built-ins `admin` / `gatekeeper`; `customer` is the no-membership sentinel; plans the membership + JWT claim together; generates the Edge copy |
 | `packages/shared/src/schemas.ts` | source | reviewed | shared contract |
 | `packages/shared/src/theme.ts` | source | reviewed | shared contract |
 | `packages/shared/tsconfig.json` | config | reviewed | shared TypeScript config |
@@ -270,8 +280,10 @@ before the suite is green again.
 | `scripts/check-no-mocks.sh` | config | reviewed | configuration |
 | `scripts/mvp-gate.mjs` | source | reviewed | tool or gate script |
 | `scripts/pg-url-parts.mjs` | source | covered | splits a DB URL so the password stays out of the command line |
+| `scripts/run-integration.sh` | config | reviewed | executes the Edge commerce/scan/refund suites against the local stack with a Stripe stub |
 | `scripts/run-pgtap.sh` | config | reviewed | configuration |
-| `scripts/seed-demo.mjs` | source | reviewed | tool or gate script |
+| `scripts/stripe-stub.mjs` | source | reviewed | local Stripe stub used only by `run-integration.sh`; accepts test keys only |
+| `scripts/seed-demo.mjs` | source | reviewed | tool or gate script — seeds the demo fan/admin, staff membership and paid tickets |
 | `scripts/sync-edge-schemas.mjs` | source | reviewed | generates the Edge copy of a shared Zod contract; drift fails CI |
 | `scripts/sync-error-codes.mjs` | source | reviewed | tool or gate script |
 | `scripts/tests/admin-access.test.mjs` | test | covered | contract test — fails when the repository drifts |
@@ -293,7 +305,7 @@ before the suite is green again.
 | `scripts/tests/export.test.mjs` | test | covered | contract test — GAP-09.2 the fan export: the registry names the subject's inventory tables, the function queries them, the audit and the admin guard (EX-1…EX-3) |
 | `scripts/tests/file-coverage.test.mjs` | test | reviewed | repo contract test — fails when the repository drifts |
 | `scripts/tests/hygiene.test.mjs` | test | covered | contract test — fails when the repository drifts |
-| `scripts/tests/i18n.test.mjs` | test | covered | contract test — C10.2: catalog coverage (no missing, no orphans), club locale on dates/money, the receipt, generated Edge copies, literal keys, no unwrapped copy (I18N-1…I18N-8) |
+| `scripts/tests/i18n.test.mjs` | test | covered | contract test — C10.2: catalog coverage (no missing, no orphans), club locale on on-screen dates/money, the receipt's ASCII fallback, generated Edge copies, literal keys, no unwrapped copy (I18N-1…I18N-8) |
 | `scripts/tests/lan.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/language.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/logging.test.mjs` | test | covered | contract test — one logger, generated Edge copy, no raw console (LG-1…LG-4) |
@@ -312,7 +324,11 @@ before the suite is green again.
 | `scripts/tests/push.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/readme.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/redirects.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/reqtrace.test.mjs` | test | covered | RT-1…RT-5 — keeps `docs/REQTRACE.md` honest |
 | `scripts/tests/reschedule.test.mjs` | test | covered | contract test — fails when the repository drifts |
+| `scripts/tests/service-key.test.mjs` | test | covered | NFR-02 — no service-role JWT reaches client source or static chunks |
+| `scripts/tests/rbac-acceptance.test.mjs` | test | deferred | REQ-046 acceptance scaffold — RBAC-1…RBAC-8 registered as `test.todo` until custom roles ship |
+| `scripts/tests/rbac-docs.test.mjs` | test | covered | doc contract — REQ-046/NFR-10 stay open, the pending IDs exist, no document claims custom RBAC shipped (RBAC-D1…RBAC-D6) |
 | `scripts/tests/scan-stats.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/schema-usage.test.mjs` | test | covered | contract test — the shared schemas are actually used (F-11) |
 | `scripts/tests/seeall.test.mjs` | test | covered | contract test — fails when the repository drifts |
@@ -339,7 +355,7 @@ before the suite is green again.
 | `supabase/functions/_shared/export.ts` | source | reviewed | shared contract — the subject-export registry (`USER_EXPORT_TABLES`) and the document builder (GAP-09.2) |
 | `supabase/functions/_shared/hmac.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/http.ts` | source | reviewed | Edge Function helper |
-| `supabase/functions/_shared/i18n.ts` | source | generated | GENERATED from packages/shared/src/i18n.ts — do not edit; the receipt translates in the club's language (C10.2) |
+| `supabase/functions/_shared/i18n.ts` | source | generated | GENERATED from packages/shared/src/i18n.ts — do not edit; the receipt uses its English labels until a Thai font fits the Edge worker (C10.2, REQTRACE §10) |
 | `supabase/functions/_shared/logger.ts` | source | generated | GENERATED from packages/shared/src/logging.ts — do not edit |
 | `supabase/functions/_shared/messages.th.ts` | source | generated | GENERATED from packages/shared/src/messages.th.ts — do not edit; the receipt's Thai catalog |
 | `supabase/functions/_shared/metrics.ts` | source | reviewed | Edge Function helper |
@@ -387,6 +403,7 @@ before the suite is green again.
 | `supabase/functions/tests/orders.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/platform.test.ts` | test | covered | Deno test — the generated platform vocabulary under Deno's module rules |
 | `supabase/functions/tests/probe.test.ts` | test | reviewed | unit test — the probe depth needs the token |
+| `supabase/functions/tests/refund-order.test.ts` | test | covered | REQ-24 — executed refund ledger, void pass and audit, idempotent retry |
 | `supabase/functions/tests/roles.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/scan.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/validate.test.ts` | test | covered | contract test — fails when the repository drifts |

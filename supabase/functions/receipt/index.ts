@@ -5,8 +5,8 @@ import { isAdmin, requireUser } from "../_shared/auth.ts";
 import { PLATFORM_DISPLAY } from "../_shared/display.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
-import { localeFromTag, translate, type AppLocale } from "../_shared/i18n.ts";
-import { formatMoney } from "../_shared/money.ts";
+import { translate, type AppLocale } from "../_shared/i18n.ts";
+import { minorUnitScale } from "../_shared/money.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { validateBody } from "../_shared/validate.ts";
 
@@ -39,12 +39,35 @@ interface ReceiptRow {
   seats: ReceiptSeat[];
 }
 
-function longDate(iso: string, timezone: string, locale: AppLocale): string {
-  return new Intl.DateTimeFormat(locale, {
+/**
+ * PDFs embed the standard Helvetica faces, which only cover WinAnsi — they
+ * cannot draw Thai glyphs or the baht sign (`฿`). Until a Unicode font fits
+ * the Edge runtime's memory budget, the receipt is written in the platform's
+ * English copy with ASCII money (`THB 350`); every on-screen surface still
+ * uses the club's locale. A 500 here means the fan gets no receipt at all.
+ *
+ * This is a documented residual (REQTRACE §10): replace it when a Thai font
+ * can be embedded without exhausting the worker heap.
+ */
+const PDF_LOCALE: AppLocale = "en";
+
+function longDate(iso: string, timezone: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: timezone,
   }).format(new Date(iso));
+}
+
+/** ASCII-only money for the PDF: ISO code + grouped number, never a symbol. */
+function pdfMoney(minorUnits: number, currency: string): string {
+  const scale = minorUnitScale(currency);
+  const major = minorUnits / 10 ** scale;
+  const formatted = new Intl.NumberFormat("en-GB", {
+    minimumFractionDigits: major % 1 === 0 ? 0 : scale,
+    maximumFractionDigits: scale,
+  }).format(major);
+  return `${currency.toUpperCase()} ${formatted}`;
 }
 
 async function handler(request: Request): Promise<Response> {
@@ -76,9 +99,9 @@ async function handler(request: Request): Promise<Response> {
     .maybeSingle<{ timezone: string; locale: string }>();
   if (clubError) throw clubError;
   const timezone = club?.timezone ?? PLATFORM_DISPLAY.timezone;
-  // The receipt is the fan's copy of the club's document: it is spelled in
-  // the club's language and the club's date conventions (C10.2).
-  const locale = localeFromTag(club?.locale ?? PLATFORM_DISPLAY.locale);
+  // The club's locale still chooses the on-screen language; the PDF uses its
+  // ASCII-safe copy (see `PDF_LOCALE`) and the club's timezone.
+  const locale = PDF_LOCALE;
 
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([595, 842]);
@@ -111,11 +134,11 @@ async function handler(request: Request): Promise<Response> {
       translate(locale, "Fixture"),
       translate(locale, "KickOff vs {opponent}", { opponent: receipt.opponent }),
     ],
-    [translate(locale, "Kick-off"), longDate(receipt.kickoff_at, timezone, locale)],
+    [translate(locale, "Kick-off"), longDate(receipt.kickoff_at, timezone)],
     [translate(locale, "Venue"), receipt.venue],
     [
       translate(locale, "Paid"),
-      receipt.paid_at ? longDate(receipt.paid_at, timezone, locale) : "—",
+      receipt.paid_at ? longDate(receipt.paid_at, timezone) : "-",
     ],
     [translate(locale, "Payment ref"), receipt.payment_ref ?? "—"],
   ];
@@ -138,7 +161,7 @@ async function handler(request: Request): Promise<Response> {
       font,
       color: ink,
     });
-    page.drawText(formatMoney(seat.priceMinorUnits, receipt.currency, locale), {
+    page.drawText(pdfMoney(seat.priceMinorUnits, receipt.currency), {
       x: 430,
       y,
       size: 10,
@@ -155,13 +178,13 @@ async function handler(request: Request): Promise<Response> {
   page.drawLine({ start: { x: 48, y }, end: { x: 547, y }, thickness: 1, color: rgb(0.88, 0.9, 0.92) });
   y -= 24;
   page.drawText(translate(locale, "Net"), { x: 360, y, size: 10, font, color: muted });
-  page.drawText(formatMoney(net, receipt.currency, locale), { x: 450, y, size: 10, font, color: ink });
+  page.drawText(pdfMoney(net, receipt.currency), { x: 450, y, size: 10, font, color: ink });
   y -= 18;
   page.drawText(translate(locale, "VAT 7% (included)"), { x: 360, y, size: 10, font, color: muted });
-  page.drawText(formatMoney(vat, receipt.currency, locale), { x: 450, y, size: 10, font, color: ink });
+  page.drawText(pdfMoney(vat, receipt.currency), { x: 450, y, size: 10, font, color: ink });
   y -= 22;
   page.drawText(translate(locale, "Total"), { x: 360, y, size: 12, font: bold, color: ink });
-  page.drawText(formatMoney(receipt.amount_minor_units, receipt.currency, locale), {
+  page.drawText(pdfMoney(receipt.amount_minor_units, receipt.currency), {
     x: 450,
     y,
     size: 12,

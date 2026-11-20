@@ -200,23 +200,21 @@ test('I18N-3 the apps render dates and money in the club locale', () => {
   }
 });
 
-test('I18N-4 the receipt renders in the club locale, labels included', () => {
+test('I18N-4 the receipt stays ASCII-safe and uses the club timezone', () => {
   const receipt = read(RECEIPT);
   assert.match(
     receipt,
     /from "\.\.\/_shared\/i18n\.ts"/,
-    'the receipt translates through the shared layer',
+    'the receipt still translates through the shared layer',
   );
-  assert.match(receipt, /localeFromTag\(/, 'the club tag becomes a catalog locale');
+  // Helvetica cannot encode Thai or `฿`; using the club locale here would
+  // throw and return 500 (REQTRACE §10). Pin the documented ASCII fallback.
+  assert.match(receipt, /const PDF_LOCALE: AppLocale = "en";/, 'the PDF locale is pinned to ASCII English');
+  assert.doesNotMatch(receipt, /localeFromTag\(/, 'do not feed a Thai locale to the StandardFonts encoder');
   assert.match(
     receipt,
     /\.select\("timezone, locale"\)/,
-    'the club lookup carries the locale',
-  );
-  assert.doesNotMatch(
-    receipt,
-    /Intl\.DateTimeFormat\("en-GB"/,
-    'no pinned display locale — the club says how dates are spelled',
+    'the club lookup carries the timezone the PDF renders in',
   );
   assert.match(
     receipt,

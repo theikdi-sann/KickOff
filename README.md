@@ -16,8 +16,13 @@ mock data layer.
   Stripe webhooks, signed QR passes, audit logs, scheduled reminders and a
   token-guarded metrics endpoint.
 
-> **Deployment model today:** one club per deployment. Multi-tenancy is the
-> next architecture phase for the B2B model — see
+> **Deployment model.** The platform is multi-tenant since `0045`. One
+> Supabase project serves many clubs; every tenant-scoped row carries
+> `tenant_id`, composite foreign keys prevent cross-club references, and RLS
+> resolves the club through `current_tenant()`. Branding, currency, locale,
+> time zone and the Stripe connected account are per club. The remaining B2B
+> gaps are `GAP-08` (ticket transfer), `GAP-10` (per-club release overhead)
+> and `GAP-11` (custom staff roles). See
 > [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) → *Known gaps*.
 
 
@@ -382,8 +387,9 @@ assignment), the pass status, and the
 `Idempotency-Key` makes offline replays safe; `scan-undo` restores a pass within
 60 seconds. `scan-demo` issues a real signed pass for staff demonstrations.
 
-**Accounts, push and audit.** Supabase Auth with `app_metadata.role` claims
-drives admin access (`is_admin()` in RLS). Device tokens power Expo push; two
+**Accounts, push and audit.** Supabase Auth; the database authorises on the
+per-club membership (`staff_members` + `staff_roles`) and the Edge guards read
+`app_metadata.role`. Device tokens power Expo push; two
 hourly `pg_cron` jobs send the 24-hour and 2-hour kickoff reminders
 (`send-kickoff-reminders`, guarded by a scheduler secret). Account deletion,
 refunds and settings changes are written to `audit_logs`.
@@ -429,7 +435,7 @@ push and the Playwright suites when E2E secrets are configured.
 ## Brand and design
 
 Club **KickOff**, stadium **KickOff Arena**, deep link `kickoff://`. Palette:
-pitch green `#0B6B3A`, trophy gold `#F4C430`, night `#07130D`, ink `#0F172A`.
+black `#000000`, royal blue `#184794`, trophy gold `#FFCA6F`, night `#070C17`.
 Barlow Condensed for display, Inter for body. `packages/shared/src/theme.ts` is
 the single source of truth; see [`docs/BRAND.md`](docs/BRAND.md).
 
@@ -444,13 +450,18 @@ Stripe mode, and store deployment via EAS.
 | Document | Owns |
 |---|---|
 | [`PLAN.md`](PLAN.md) | delivery plan, current status, decision index (SSOT) |
+| [`docs/TRUTH.md`](docs/TRUTH.md) | canonical verified facts: counts, authority model, requirement states |
+| [`docs/GLOSSARY.md`](docs/GLOSSARY.md) | one meaning per term: club/tenant, stand/zone, gate/turnstile, role/capability, customer |
+| [`docs/DOCSCHECK.md`](docs/DOCSCHECK.md) | documentation quality review and remediation record |
 | [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | what the product must do, traceability, known gaps |
+| [`docs/REQTRACE.md`](docs/REQTRACE.md) | dated requirements → test coverage matrix, uncovered risks and gap decisions |
 | [`docs/SRS.md`](docs/SRS.md) | detailed specification of every requirement with acceptance criteria |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | how it is built: layers, data model, flows, standards |
 | [`docs/adr/ADR-001-account-model.md`](docs/adr/ADR-001-account-model.md) | account model: profiles, fans, staff_members, staff_roles |
 | [`docs/adr/ADR-002-multi-tenancy.md`](docs/adr/ADR-002-multi-tenancy.md) | tenancy: `tenants`, `tenant_id`, composite FKs, open-read catalogue |
 | [`docs/adr/ADR-003-stripe-connect.md`](docs/adr/ADR-003-stripe-connect.md) | payments: Connect accounts, platform fee, webhook tenancy |
 | [`docs/adr/ADR-004-white-label.md`](docs/adr/ADR-004-white-label.md) | white-label delivery and the cross-tenant platform console |
+| [`docs/adr/ADR-005-custom-rbac.md`](docs/adr/ADR-005-custom-rbac.md) | proposed per-club custom staff roles (`REQ-046`, open) |
 | [`docs/FLOW-AUDIT.md`](docs/FLOW-AUDIT.md) | the flow-by-flow audit: 29 flows, findings and severities |
 | [`docs/FILE-INDEX.md`](docs/FILE-INDEX.md) | every file in the repository and the verdict on it |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | RLS matrix, secrets, payments, QR, audit, ops |

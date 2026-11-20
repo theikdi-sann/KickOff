@@ -56,15 +56,30 @@ Personal data by table (the columns that name or reach a person):
 | `refunds` | ledger row | **RETAIN** | financial record |
 | `scan_events` | `admin_id`, `operator_id`, `undone_by` (all ids, no names) | **RETAIN** | append-only gate log (stadium safety); person references pseudonymous after SCRUB |
 | `audit_logs` | `actor_id`, `metadata` | **RETAIN** | the platform's own audit trail; metadata holds ids and reasons, never secrets |
-| `stripe_events.payload` | the raw Stripe event — **may carry the payer's name/email** as Stripe recorded them | **RETAIN, bounded** | post-mortem only, never trusted as data; covered by the offboarding erase |
+| `stripe_events.payload` | the raw Stripe event — **may carry the payer's name/email** as Stripe recorded them | **RETAIN, bounded** | post-mortem only, never trusted as data; pruned at **90 days** |
+| `error_events` | request id, error code, sanitised context | **RETAIN, bounded** | operational record; pruned at **30 days** |
 | `staff_members` / `staff_roles` | membership of a person | **ERASE** (per club at offboarding) | authority rows; erased with the tenant |
-| `tenants` | club branding, Connect account id | **ERASE** (at offboarding) | the club's own row |
+| `tenants` | club branding, Connect account id | **SCRUB** (at offboarding) | the row survives as the tombstone: `erased_at`, name and slug kept; branding and Connect account erased |
 | `venues`, `matches`, `zones`, `seats`, `match_zone_prices`, `match_gates`, `gates`, `news_items`, `app_settings` | — | **ERASE** (at offboarding) | no personal data; erased as part of the tenant |
 | `rate_limits`, `app_secrets` | operational only | **RETAIN** | no fan or club identity |
 
 `order_receipt_view` and the CSV export are projections of `profiles` +
 `orders`/`tickets` — they hold no data the inventory does not, and they
 inherit SCRUB automatically.
+
+### Retention durations
+
+| Data | Maximum retention | Enforcement |
+|---|---|---|
+| Orders, tickets, refunds, audit logs | **7 years** | financial/safety records; annual purge job |
+| `scan_events` | **3 years** | stadium-safety window; annual purge job |
+| `stripe_events` | **90 days** | scheduled prune |
+| `error_events` | **30 days** | scheduled prune (C10.1) |
+| Unused `device_tokens` | **90 days** | sweep on registration/reminder |
+| A fan's erasure request | **30 days** to complete | `delete-account` + the schedule above |
+
+Retention is a maximum, not a promise to keep: a row is deleted at the end of
+its window even if no erasure request was made.
 
 ## What a fan gets (GAP-09.2 — export)
 

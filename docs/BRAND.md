@@ -16,7 +16,7 @@ to change it.
 | Deep link scheme | `kickoff://` |
 | npm scope | `@kickoff/*` |
 | Tagline | `MATCHDAY, SIMPLIFIED` |
-| Locale | English only (Thai deferred — see `PLAN.md` `P11-08`) |
+| Locale | English source strings with a contracted Thai catalog (C10.2); the admin console stays English |
 
 ## Typography
 

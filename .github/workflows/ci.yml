@@ -54,6 +54,11 @@ jobs:
       - name: Repo script tests (node:test)
         run: node --test scripts/tests/
 
+      # REQ-046 is open: these contracts keep the docs honest and the
+      # acceptance tests pending until custom roles are built.
+      - name: RBAC documentation contracts
+        run: node --test scripts/tests/rbac-docs.test.mjs scripts/tests/rbac-acceptance.test.mjs
+
       - name: Start local Supabase stack
         run: npx supabase start
 
@@ -68,6 +73,12 @@ jobs:
 
       - name: Edge function type check
         run: npm run functions:check
+
+      # Checkout → webhook → ticket, scan/undo and refunds run against the
+      # local stack with a Stripe stub. Previously these suites skipped unless
+      # RUN_INTEGRATION=1 and hosted secrets were supplied.
+      - name: Edge integration tests
+        run: bash scripts/run-integration.sh
 
       - name: Edge function lint + tests
         working-directory: supabase/functions

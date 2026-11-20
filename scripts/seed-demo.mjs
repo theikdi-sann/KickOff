@@ -121,7 +121,6 @@ async function main() {
         id: customer.id,
         email: customer.email,
         full_name: customer.fullName,
-        role: 'customer',
         phone: customer.phone,
         created_at: '2026-08-12T09:00:00+07:00',
       },
@@ -129,9 +128,23 @@ async function main() {
         id: admin.id,
         email: admin.email,
         full_name: admin.fullName,
-        role: 'admin',
         phone: admin.phone,
         created_at: '2026-01-05T09:00:00+07:00',
+      },
+    ],
+  });
+
+  // Staff authority lives in `staff_members` since 0045; `profiles.role` was
+  // dropped in 0048. The admin's `app_metadata.role` claim (set above) is what
+  // the Edge guards read, but the console and RLS need the membership row.
+  await api('/rest/v1/staff_members?on_conflict=id,tenant_id', {
+    method: 'POST',
+    prefer: 'resolution=merge-duplicates,return=minimal',
+    body: [
+      {
+        id: admin.id,
+        tenant_id: '00000000-0000-0000-0000-000000000001',
+        staff_role: 'admin',
       },
     ],
   });
@@ -234,12 +247,7 @@ async function main() {
     });
   }
 
-  await api('/rest/v1/seats?id=in.(m-bkk-north-C7,m-ryg-east-B11)', {
-    method: 'PATCH',
-    prefer: 'return=minimal',
-    body: { status: 'sold' },
-  });
-
+  // Occupancy is the order line since 0043; `seats` has no status flag to set.
   console.log('seed-demo: demo admin, fan, 2 paid orders and 2 tickets are ready.');
 }
 

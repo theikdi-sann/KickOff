@@ -94,26 +94,23 @@ test('MF-5 the deployed Edge money copy is generated, never hand-edited', async 
   );
 });
 
-test('MF-6 the receipt formats with formatMoney and the order currency', () => {
+test('MF-6 the receipt formats money from the order currency with an ASCII scale', () => {
   const receipt = read(RECEIPT);
 
   assert.match(
     receipt,
-    /import \{ formatMoney \} from "\.\.\/_shared\/money\.ts";/,
-    'the receipt must use the generated formatter, not a private one',
+    /import \{ minorUnitScale \} from "\.\.\/_shared\/money\.ts";/,
+    'the receipt must take the scale from the generated money module',
   );
-  // The order's own currency (0043 snapshots it on the view) — not a
-  // hardcoded THB: the receipt row type must carry it, and the formatter
-  // must take it from the row.
   assert.match(receipt, /currency: string/, 'the receipt row must carry the order currency');
   assert.match(
     receipt,
-    /formatMoney\([^,]+,\s*receipt\.currency(,|\))/,
+    /pdfMoney\([^,]+,\s*receipt\.currency\)/,
     'the receipt must format with the order currency',
   );
+  assert.match(receipt, /currency\.toUpperCase\(\).*formatted/s, 'the PDF uses the ISO code');
   assert.doesNotMatch(receipt, /function thb\(/, 'the private thb() formatter is gone');
   assert.doesNotMatch(receipt, /\/ *100\b/, 'no hardcoded scale division');
-  assert.doesNotMatch(receipt, /"THB /, 'no hardcoded THB label');
 });
 
 test('MF-7 the receipt renders dates in the club time zone', () => {

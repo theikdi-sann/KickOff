@@ -13,6 +13,7 @@ import {
   clearQueue,
   enqueueScan,
   listQueue,
+  markAttempt,
   readQueue,
 } from '../src/lib/offline-queue.ts';
 
@@ -91,6 +92,30 @@ test('unreadable entries are quarantined while the valid ones survive', () => {
   assert.equal(state.quarantined, 2, 'both unreadable entries must be counted');
   assert.equal(state.payloadUnreadable, false);
   assert.ok(storage.getItem('kickoff.scan.queue.corrupt'), 'the unreadable entries must be kept');
+});
+
+test('a replayed scan keeps its idempotency key across attempts', () => {
+  const storage = fakeStorage();
+  const queued = enqueueScan(
+    { qr: 'KICKOFF-V2:{"tid":"t1"}', gateId: 'gate-1', id: 'scan-retry-1' },
+    storage,
+  );
+
+  markAttempt(queued.id, 'network down', storage);
+  markAttempt(queued.id, 'network down', storage);
+  const [entry] = listQueue(storage);
+
+  assert.equal(entry?.id, 'scan-retry-1', 'the retry must reuse the server idempotency key');
+  assert.equal(entry?.attempts, 2);
+  assert.equal(entry?.lastError, 'network down');
+});
+
+test('re-enqueuing the same id replaces instead of double-admitting', () => {
+  const storage = fakeStorage();
+  enqueueScan({ qr: 'KICKOFF-V2:{"tid":"t1"}', gateId: 'gate-1', id: 'scan-1' }, storage);
+  enqueueScan({ qr: 'KICKOFF-V2:{"tid":"t1"}', gateId: 'gate-1', id: 'scan-1' }, storage);
+
+  assert.equal(listQueue(storage).length, 1, 'one scan key must never become two admissions');
 });
 
 test('clearing the queue leaves nothing behind', () => {

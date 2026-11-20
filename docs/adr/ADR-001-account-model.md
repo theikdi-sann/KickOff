@@ -6,8 +6,9 @@
 
 ## Context
 
-`profiles.role` is a single text column constrained to
-`customer | admin | gatekeeper` (migrations `0002`, `0039`). It cannot express
+`profiles.role` was a single text column constrained to
+`customer | admin | gatekeeper` (migrations `0002`, `0039`; **dropped in
+`0048`**). It could not express
 "a person is staff at one club and a supporter at another", it cannot grow a
 new role without a migration, and the vocabulary is duplicated between the
 column check, `is_admin()`/`is_staff()` and the shared `roles.ts`.
@@ -28,12 +29,13 @@ column check, `is_admin()`/`is_staff()` and the shared `roles.ts`.
 5. **Predicates derive from capabilities**, not role names:
    `is_admin()` = `can_manage_staff`, `is_gate_operator()` = `can_operate_gate`.
    Both stay `security definer`, schema-pinned and revoked from `public`.
-6. **JWT projection:** `app_metadata.tenant_id` + `app_metadata.staff_role`
-   (absent for pure fans). The legacy `app_metadata.role` is dual-written for
-   one release (`0041`), then dropped (`0048`).
-7. **Invariants:** `staff_members.staff_role` is effectively immutable (one
-   write path), and a last-admin guard counts rows whose role has
-   `can_manage_staff`.
+6. **JWT projection:** `app_metadata.tenant_id` + `app_metadata.role` (the
+   current role code; absent for pure fans). `app_metadata.capabilities` is
+   added by `REQ-046` when custom roles ship. The legacy `profiles.role`
+   mirror was dropped in `0048`; the claim is written with the membership.
+7. **Invariants:** `staff_members.staff_role` has one write path
+   (`admin-users` / the promotion helper), and a last-admin guard counts rows
+   whose role has `can_manage_staff`.
 
 ## Consequences
 
@@ -43,5 +45,7 @@ column check, `is_admin()`/`is_staff()` and the shared `roles.ts`.
   everywhere without touching a predicate.
 - The account split lands in migration series `0040`–`0048`
   (see [`../../PLAN.md`](../../PLAN.md) C6/C7), not as a standalone refactor.
+- Custom per-club roles are a separate, still-open decision:
+  [`ADR-005`](ADR-005-custom-rbac.md) (`REQ-046`, `GAP-11`).
 - Ticket transfer/claim (a fan holding another fan's pass) is explicitly out
   of scope; tracked as `GAP-08`.

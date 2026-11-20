@@ -30,6 +30,7 @@
     "db:types": "npx supabase gen types typescript --local > packages/shared/src/database.types.ts",
     "db:test": "bash scripts/run-pgtap.sh",
     "functions:serve": "npx supabase functions serve",
-    "functions:check": "bash scripts/check-functions.sh"
+    "functions:check": "bash scripts/check-functions.sh",
+    "test:integration": "bash scripts/run-integration.sh"
   }
 }

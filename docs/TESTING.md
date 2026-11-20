@@ -11,7 +11,7 @@ gate locally it will break the build.
 | Typecheck + lint | `npm run check` | TypeScript across shared/mobile/admin, ESLint |
 | Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning, identity split, tenancy columns, sales restructure, gate ops, tenant isolation, per-club uniques, Stripe Connect, tenant export and erase, the platform authority, observability, the match clock, venue layout, stand-level gates and atomic fixture creation (444 assertions, 29 suites) |
 | Edge Functions (unit) | `cd supabase/functions && deno test --allow-env --allow-net tests/` | HMAC, config, error mapping, metrics helpers |
-| Edge Functions (integration) | `RUN_INTEGRATION=1 deno test --allow-env --allow-net tests/` | real checkout → webhook → ticket → receipt, scan/undo |
+| Edge Functions (integration) | `npm run test:integration` | local checkout → webhook → ticket → receipt, scan/undo, refunds |
 | Functions typecheck | `npm run functions:check` | `deno check` on every `supabase/functions/*/index.ts` |
 | Admin E2E | `npm run test:e2e --workspace @kickoff/admin` | Playwright: auth + full ops walkthrough |
 | Mobile smoke | `maestro test maestro/flows/buy-ticket.yaml` | buy flow up to Pay + signed QR pass |
@@ -143,16 +143,22 @@ cd supabase/functions
 deno test --allow-env --allow-net tests/
 ```
 
-Integration tests are opt-in and hit a real project:
+The executed integration suite runs on every push against the local stack:
 
 ```bash
-cd supabase/functions
-set -a && . ../../.env && set +a
-RUN_INTEGRATION=1 deno test --allow-env --allow-net tests/orders.test.ts
+npm run test:integration
 ```
 
-They create and then delete their own orders/scan events (`tests/_commerce.ts`,
-`tests/scan.test.ts`).
+`scripts/run-integration.sh` resets the local database, starts a Stripe stub
+container, serves the functions, seeds the demo fan/admin, moves the demo
+fixtures into the future and runs `orders`, `webhook`, `scan` and
+`refund-order`. The Stripe stub accepts `sk_test_` keys only and the webhook is
+signed locally, so no live money can move. To run a single suite against a
+hosted project instead, export `RUN_INTEGRATION=1` plus the Supabase, Stripe
+and demo credentials and use `deno test` directly.
+
+The suites create and then delete their own orders/scan events
+(`tests/_commerce.ts`, `tests/scan.test.ts`).
 
 Typecheck every function:
 
@@ -219,12 +225,12 @@ npm run functions:check         # every Edge Function typechecks
 ## 8. CI
 
 `.github/workflows/ci.yml` runs, in order: install → typecheck/lint → workspace
-and script tests → local Supabase stack → DB lint → pgTAP → Deno function checks
-→ admin build → Playwright (`auth` and `ops`) when the `E2E_ADMIN_*` secrets
-exist → MVP gate.
+and script tests → local Supabase stack → DB lint → pgTAP → Deno function
+checks → executed Edge integration suite (local Stripe stub) → admin build →
+Playwright (`auth` and `ops`) when the `E2E_ADMIN_*` secrets exist → MVP gate.
 
-E2E and integration suites skip themselves when their secrets are absent, so
-pull requests without secrets still pass the deterministic layers.
+The Edge integration suite needs no repository secrets; the hosted E2E suites
+still skip themselves when their secrets are absent.
 
 ## 9. Troubleshooting
 
@@ -237,3 +243,29 @@ pull requests without secrets still pass the deterministic layers.
 | pgTAP: “password or GSSAPI delegated credentials required” | the runner could not set `kickoff.dblink_password` — check that the stack is up and `SUPABASE_DB_PASSWORD` is exported on the hosted path |
 | Deno integration tests ignored | set `RUN_INTEGRATION=1` plus the Supabase/Stripe/demo env vars |
 | `functions deploy` fails with `Relative import path "zod" not prefixed` | Docker is absent, so the API bundler needs the import map: `npx supabase functions deploy --import-map supabase/functions/deno.json --yes --remote=<ref>` |
+
+## 10. Pending acceptance — REQ-046 (custom staff roles)
+
+`REQ-046` / `GAP-11` / `NFR-10` are **open**: a club cannot define its own
+staff roles yet. The tests below are the definition of done. They are listed
+here and registered in `scripts/tests/rbac-acceptance.test.mjs` as
+`test.todo`, so `npm test` stays green without pretending the behaviour exists.
+
+| ID | Acceptance | Status |
+|---|---|---|
+| `RBAC-1` | Create a custom role with a capability subset; duplicate code `409`, reserved code `422`; one audit row. | **pending** |
+| `RBAC-2` | `admin` seeds all ten capabilities; `gatekeeper` seeds `operate_gate`; built-ins are immutable; unknown capability `422`. | **pending** |
+| `RBAC-3` | Assign a custom role: membership + claim agree and access equals the capability set; assign Customer removes the membership. | **pending** |
+| `RBAC-4` | No privilege escalation, no self-demotion, last `manage_staff` holder protected. | **pending** |
+| `RBAC-5` | Cross-tenant role read/write returns `404`/`23503`/`42501` and leaks no row. | **pending** |
+| `RBAC-6` | Authorization is capability-driven; no literal `admin`/`gatekeeper` branch. | **pending** |
+| `RBAC-7` | Claim-write failure restores the membership; change applies at the next token refresh and the console says so. | **pending** |
+| `RBAC-8` | Users screen lists club roles + Customer; Roles screen validates; docs stay `open` until 1–7 pass. | **pending** |
+
+**/testgen convention.** Emit each ID with `status: "pending"` and the
+requirement ID `REQ-046`. A generated test is `todo` with the reason
+`REQ-046 not implemented`. `scripts/tests/rbac-docs.test.mjs`
+(`RBAC-D1…RBAC-D6`) fails if a pending ID is removed or a document claims the
+feature shipped while it is open. When the feature lands, the requirement flips
+to `shipped`, the `todo` becomes a real test, and this table is deleted in the
+same change.

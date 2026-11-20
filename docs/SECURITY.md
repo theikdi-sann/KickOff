@@ -59,18 +59,20 @@ tickets and scans are created through `security definer` functions
 (`create_hold`, `create_order_from_hold`, `scan_ticket`, …) or Edge Functions.
 `supabase/tests/rls.test.sql` asserts the matrix above (pgTAP).
 
-A second staff role, `gatekeeper` (GAP-03a), is narrower than `admin`: it may
+A second built-in staff role, `gatekeeper`, is narrower than `admin`: it may
 read `gates`, the fixture assignments on `match_gates` (the scanner console
 shows which fixtures a gate serves), its **own** `scan_events`, and the
 `tickets` rows of passes it scanned; every other row marked admin-only above
 stays closed. It may not read the audit trail, other profiles, or write the
-gate registry or the assignments.
+gate registry or the assignments. `customer` is not a role: it is the absence
+of a `staff_members` row at the club.
 
-Helpers: `public.is_admin()` reads the JWT claim and is the single predicate
-used by every admin policy; `public.is_staff()` is the broader predicate for
-the gate surface (admin or gatekeeper). Both read `app_metadata.role`, so a
-role change is applied everywhere at once. `supabase/tests/staff-roles.test.sql`
-asserts the boundary.
+Helpers: `public.is_admin()`, `public.is_staff()` and `public.is_gate_operator()`
+are `security definer` membership checks at `current_tenant()`: they read
+`staff_members` joined to `staff_roles` and its capability flags. They do
+**not** read the JWT claim. The Edge guards separately read
+`app_metadata.role`. `supabase/tests/staff-roles.test.sql` asserts the
+boundary.
 
 ### 2.1 Multi-tenant model (C6–C7 — `0040`–`0048` landed)
 
@@ -82,7 +84,7 @@ live since `0045` (ADR-001, ADR-002):
   the default club (the single-club bridge), a present claim stays strict;
   `is_admin()` / `is_staff()` / `is_gate_operator()` are tenant-scoped
   capability checks on `staff_members` + `staff_roles`; `is_platform_admin()`
-  gates the cross-tenant console and arrives with C9.
+  gates the cross-tenant console (`0054`, shipped).
 - **Scoped tables** (`orders`, `order_seats`, `tickets`, `seat_holds`,
   `refunds`, `scan_events`, `staff_members`, `staff_roles`, `app_settings`,
   `audit_logs`) require `tenant_id = current_tenant()` **and** the row
@@ -112,6 +114,33 @@ live since `0045` (ADR-001, ADR-002):
 
 The isolation suite (pgTAP T-01…T-24) asserts, per scoped table, that a
 cross-tenant read returns 0 rows and a cross-tenant write errors.
+
+### 2.2 Custom staff roles (REQ-046, NFR-10 — open)
+
+The built-in pair ships. A club **cannot** add a role today (`GAP-11`). The
+requirement that closes it is normative in
+[`REQUIREMENTS.md`](REQUIREMENTS.md) REQ-046 and is designed in
+[`adr/ADR-005-custom-rbac.md`](adr/ADR-005-custom-rbac.md). Security rules that
+must hold when it ships:
+
+- **Closed capability catalogue:** `manage_staff`, `operate_gate`,
+  `manage_matches`, `manage_venues`, `publish_news`, `refund_orders`,
+  `read_audit`, `manage_settings`, `export_data`, `view_reports`.
+  `admin` = all ten; `gatekeeper` = `operate_gate`.
+- **Capability checks only:** no RLS policy or Edge guard may branch on the
+  literal role name.
+- **No escalation:** an actor cannot grant a capability it does not hold.
+- **No last-manager removal:** the last role holding `manage_staff` cannot be
+  deactivated or lose its last holder.
+- **Two projections, compensated:** membership first, claim second; restore on
+  failure. The claim carries `role` and `capabilities` and applies at the next
+  token refresh.
+- **Tenant boundary:** a cross-club role read/write returns zero rows,
+  `404 role_not_found`, or `23503`/`42501`.
+- **Audit:** `admin.role.create`, `admin.role.update`, `admin.role.deactivate`,
+  `admin.user.update`.
+
+Acceptance is `RBAC-1…RBAC-8`, pending in [`TESTING.md`](TESTING.md) §10.
 
 ## 3. Edge Function authorization
 
@@ -200,7 +229,8 @@ cross-tenant read returns 0 rows and a cross-tenant write errors.
   one fixture and is assigned to the ticket's fixture through `match_gates`
   (`wrong_match`), the fixture has not completed, and the
   current time is within **kick-off −2h … +2h**.
-- Every attempt — valid, used, invalid, wrong fixture — writes a `scan_events`
+- Every attempt — valid, used, invalid, wrong fixture, wrong stand
+  (`wrong_zone`, pass not consumed) — writes a `scan_events`
   row with the gate id, the fixture it admitted for (`match_id`), the
   operator's membership row (`operator_id`, null when the account holds none —
   `admin_id` stays the accountable account identity) and an

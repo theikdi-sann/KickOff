@@ -68,10 +68,13 @@ async function readKickoff(env: ReturnType<typeof requireEnv>): Promise<string> 
 }
 
 async function setKickoff(env: ReturnType<typeof requireEnv>, iso: string): Promise<void> {
+  // The match-clock cron flips a fixture to `completed` once its old kickoff
+  // passes. Re-open it alongside the new time so this suite tests the gate
+  // window, not whichever state the scheduler left behind.
   await rest(env, "matches?id=eq.m-bkk", {
     token: env.service,
     method: "PATCH",
-    body: { kickoff_at: iso },
+    body: { kickoff_at: iso, status: "upcoming" },
     prefer: "return=minimal",
   });
 }
@@ -131,7 +134,7 @@ Deno.test({
         idempotencyKey,
       });
       assertEquals(first.status, 200);
-      assertEquals(first.body.data?.code, "valid");
+      assertEquals(first.body.data?.code, "valid", JSON.stringify(first.body));
       assertExists(first.body.data);
       const scanEventId = first.body.data.scanEventId;
       assertExists(scanEventId);
@@ -252,7 +255,10 @@ Deno.test({
       await rest(env, "matches?id=eq.m-bkk", {
         token: env.service,
         method: "PATCH",
-        body: { kickoff_at: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString() },
+        body: {
+          kickoff_at: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString(),
+          status: "upcoming",
+        },
         prefer: "return=minimal",
       });
 
@@ -262,13 +268,13 @@ Deno.test({
         idempotencyKey: key(),
       });
       assertEquals(result.status, 200);
-      assertEquals(result.body.data?.code, "invalid");
-      assertEquals(result.body.data?.message.includes("not open"), true);
+      assertEquals(result.body.data?.code, "invalid", JSON.stringify(result.body));
+      assertEquals(result.body.data?.message.includes("not open"), true, JSON.stringify(result.body));
     } finally {
       await rest(env, "matches?id=eq.m-bkk", {
         token: env.service,
         method: "PATCH",
-        body: { kickoff_at: match.kickoff_at },
+        body: { kickoff_at: match.kickoff_at, status: "upcoming" },
         prefer: "return=minimal",
       });
       await cleanup(env, { orderId: ticket.orderId, eventId: ticket.eventId });

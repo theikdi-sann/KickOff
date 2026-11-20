@@ -223,9 +223,14 @@ every override (SECURITY §9).
 
 ### 6.6 Role change / last admin
 
-`admin-users` writes the profile row and the JWT claim together; the console
-states when the new role applies (re-login). The last-admin guard counts
-admins that can act — if it refuses, promote another admin first.
+`admin-users` writes the `staff_members` row and the JWT claim together; the
+console states when the new role applies (re-login). The last-admin guard
+counts admins that can act — if it refuses, promote another admin first.
+Assigning **Customer** deletes the membership; `customer` is the absence of a
+`staff_members` row, not a staff role.
+The built-in roles are `admin` and `gatekeeper`; per-club custom roles
+(REQ-046 / `GAP-11`) are **not available yet**, so there is no role-management
+screen to operate.
 
 ### 6.7 Reminders not sent
 

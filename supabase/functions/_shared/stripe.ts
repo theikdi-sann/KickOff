@@ -4,12 +4,29 @@ import { getEnv } from "./config.ts";
 
 let cached: Stripe | null = null;
 
+/**
+ * Optional test seam: point the SDK at a local Stripe stub so the integration
+ * suite can exercise checkout, refunds and webhooks without the network. The
+ * value is never set in a deployment; config.ts still enforces a test-mode key.
+ */
+function stubConfig(): Pick<Stripe.StripeConfig, "host" | "port" | "protocol"> {
+  const base = Deno.env.get("STRIPE_API_BASE");
+  if (!base) return {};
+  const url = new URL(base);
+  return {
+    host: url.hostname,
+    port: url.port || (url.protocol === "https:" ? 443 : 80),
+    protocol: url.protocol === "https:" ? "https" : "http",
+  };
+}
+
 /** Lazily constructs the Stripe client (test-mode key enforced by config.ts). */
 export function stripeClient(): Stripe {
   if (!cached) {
     cached = new Stripe(getEnv().STRIPE_SECRET_KEY, {
       maxNetworkRetries: 2,
       timeout: 20_000,
+      ...stubConfig(),
     });
   }
   return cached;

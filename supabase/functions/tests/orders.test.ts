@@ -50,7 +50,10 @@ Deno.test({
       assertEquals(receipt.status, 200);
 
       assertExists(receipt.body.data);
-      const pdf = await fetch(receipt.body.data.url);
+      // Local Storage signs a container-internal URL (`http://kong:8000`);
+      // rewrite it to the API the test can reach. Hosted URLs pass through.
+      const receiptUrl = receipt.body.data.url.replace("http://kong:8000", env.url);
+      const pdf = await fetch(receiptUrl);
       assertEquals(pdf.status, 200);
       const bytes = new Uint8Array(await pdf.arrayBuffer());
       assertEquals(new TextDecoder().decode(bytes.slice(0, 5)), "%PDF-");

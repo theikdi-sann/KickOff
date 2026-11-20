@@ -21,6 +21,27 @@ test('P11-13 CI runs the no-mocks gate', () => {
   );
 });
 
+test('P11-13 CI runs the executed Edge integration suite', () => {
+  assert.match(
+    workflow,
+    /scripts\/run-integration\.sh/,
+    'CI must execute the local commerce/scan integration suite, not only the stubbed unit tests',
+  );
+});
+
+test('RBAC-D7 CI runs the RBAC documentation contracts', () => {
+  assert.match(
+    workflow,
+    /rbac-docs\.test\.mjs/,
+    'CI must run the REQ-046 doc contract so the open state cannot drift',
+  );
+  assert.match(
+    workflow,
+    /rbac-acceptance\.test\.mjs/,
+    'CI must run the pending acceptance scaffold so a deleted RBAC ID fails the build',
+  );
+});
+
 test('P11-13 the no-mocks gate actually fails on a mock reference', () => {
   // The probe lives in a temporary directory, never in the source tree: a
   // test that writes into `apps/*/src` races every other test that reads it.

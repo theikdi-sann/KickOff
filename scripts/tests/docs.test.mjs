@@ -71,8 +71,9 @@ test('DOC-3 every route is documented', () => {
   const mobileApp = resolve(root, 'apps/mobile/src/app');
   const adminApp = resolve(root, 'apps/admin/src/app');
 
+  // Colocated tests live under `__tests__` but are not routes.
   const mobile = walk(mobileApp)
-    .filter((f) => /\.(tsx|ts)$/.test(f) && !f.endsWith('_layout.tsx'))
+    .filter((f) => /\.(tsx|ts)$/.test(f) && !f.endsWith('_layout.tsx') && !f.includes('/__tests__/'))
     .map((f) => routeOf(f, mobileApp));
   const admin = walk(adminApp)
     .filter((f) => /page\.tsx$/.test(f))
@@ -122,7 +123,7 @@ test('DOC-5 there is one front door — no per-app README files', () => {
 test('DOC-6 the requirements document is traceable', () => {
   const requirements = read('docs/REQUIREMENTS.md');
 
-  const ids = [...requirements.matchAll(/\bREQ-\d{2}\b/g)].map((m) => m[0]);
+  const ids = [...requirements.matchAll(/\bREQ-\d{2,3}\b/g)].map((m) => m[0]);
   assert.ok(new Set(ids).size >= 12, 'every MVP requirement needs a REQ id');
   assert.match(
     requirements,
@@ -134,7 +135,7 @@ test('DOC-6 the requirements document is traceable', () => {
   // implementation pointer is a claim, not a requirement. Scoped to the
   // traceability section, not the requirement tables further up.
   const section = requirements.split(/^##\s+(?:\d+\.\s*)?Traceability/m)[1]?.split(/^##\s+/m)[0] ?? '';
-  const rows = section.split('\n').filter((line) => /^\|\s*REQ-\d{2}\s*\|/.test(line));
+  const rows = section.split('\n').filter((line) => /^\|\s*REQ-\d{2,3}\s*\|/.test(line));
   assert.ok(rows.length >= 12, `expected a traceability row per requirement, found ${rows.length}`);
   for (const row of rows) {
     // A requirement is either implemented (pointer to code) or explicitly

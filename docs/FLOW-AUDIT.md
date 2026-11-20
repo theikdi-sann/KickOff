@@ -5,8 +5,9 @@ finding recorded with a severity and a status. This document is the evidence
 behind the changes in the Phase C commits; the fixes themselves are separate
 TDD cycles.
 
-- **Scope:** 29 user flows — 14 supporter (mobile) flows and 15 staff (admin)
-  flows.
+- **Scope:** 29 audited user flows — 14 supporter (mobile) and 15 staff
+  (admin). One additional flow, A16 (custom roles), is **planned** and not
+  built (`REQ-046` / `GAP-11`).
 - **Questions per flow:** entry · trust boundary · validation · failure path ·
   audit trail · test proof.
 - **Last verified:** 2026-11-13 · **Owner:** engineering
@@ -80,15 +81,22 @@ display-only.
 | A14 Club settings | `dashboard/settings/page.tsx` | direct PostgREST upsert, RLS | ad-hoc (`clampInt` silently coerces) | surfaced | **none** — but the page claims otherwise (F-06) | source-text assertions only |
 | A15 Reschedule kickoff | `components/match-form.tsx` | atomic RPC `admin_update_match` (`0038`) | Zod (shared `adminRescheduleSchema`) | surfaced; **atomic** — the database refuses a move without a reason | `audit_logs` (`reschedule`, same transaction) | unit + contract + pgTAP `atomicity.test.sql` |
 
-**Effective authorisation** for every admin mutation is RLS `public.is_admin()`
-(JWT claim `app_metadata.role`) or `requireAdmin` in the Edge Function. Since
-F-09 the application layer repeats the check instead of only proving "signed
-in": `proxy.ts` admits staff server-side, confines a gatekeeper to
-`/dashboard/scan`, and the dashboard layout filters the navigation (AA-1…AA-7).
-Since GAP-03a the gate surface authorises on `public.is_staff()`/`requireStaff`,
-while every other operation stays admin-only; a gatekeeper can read the gate
-registry, its own scan events and the tickets it scanned, and nothing else
-(SR-1…SR-7).
+**Planned flow (not built).**
+
+| Flow | Entry | Trust boundary | Validation | Failure path | Audit | Test proof |
+|---|---|---|---|---|---|---|
+| A16 Define / assign a custom role | no screen yet (`REQ-046`) | planned `admin-roles` — `manage_staff` capability | closed capability catalogue | planned `403`/`409`/`422` | planned `admin.role.*` | `RBAC-1…RBAC-8` **pending** |
+
+**Effective authorisation** for every admin mutation is the RLS membership
+predicate (`is_admin()` reading `staff_members` + `staff_roles`, not the JWT
+claim) or `requireAdmin` in the Edge Function (which reads
+`app_metadata.role`). Since F-09 the application layer repeats the check instead
+of only proving "signed in": `proxy.ts` admits staff server-side, confines a
+gatekeeper to `/dashboard/scan`, and the dashboard layout filters the
+navigation (AA-1…AA-7). Since GAP-03a the gate surface authorises on
+`public.is_staff()`/`requireStaff`, while every other operation stays
+admin-only; a gatekeeper can read the gate registry, its own scan events and
+the tickets it scanned, and nothing else (SR-1…SR-7).
 
 ---
 
@@ -96,7 +104,7 @@ registry, its own scan events and the tickets it scanned, and nothing else
 
 | ID | Sev | Flow | Finding | Status |
 |---|---|---|---|---|
-| **F-10** | Critical | A13 | `admin-users` wrote only `profiles.role`, but every guard authorises on the JWT claim `app_metadata.role`. A promoted staff member was displayed as ADMIN and had **no** access; a demoted one kept access until its token refreshed. | ✅ **fixed** — the claim is written with the profile row (`scripts/tests/staff-roles.test.mjs`) |
+| **F-10** | Critical | A13 | `admin-users` wrote only `profiles.role`, but every guard authorises on the JWT claim `app_metadata.role`. A promoted staff member was displayed as ADMIN and had **no** access; a demoted one kept access until its token refreshed. | ✅ **fixed** — the membership and the claim are written together (`scripts/tests/staff-roles.test.mjs`) |
 | **F-01** | High | M5, M6 | `fixtures.tsx` and `news.tsx` render the *empty* state when the query **fails**. A network error looks like "no upcoming fixtures" / "no news yet". | ✅ **fixed** — each list has its own error state with a retry (`scripts/tests/mobile-resilience.test.mjs`) |
 | **F-04** | High | A9 | A corrupted offline scan queue is discarded silently (`catch { return [] }`). Scanned passes are lost at the gate with no notice to the operator. | ✅ **fixed** — the queue reports what it could not read and quarantines the unreadable payload; the gate screen warns the operator (`apps/admin/tests/offline-queue.test.ts`) |
 | **F-05** | High | A3–A6, A10, A12, A14 | 17 of 19 direct-write admin mutations write **no** `audit_logs` row, although NFR-05 states privileged mutations are audited. Fixture, zone, seat, venue, gate, news, settings and CSV export are all unlogged. | ✅ **fixed** — every privileged change now records an action from one vocabulary (`scripts/tests/audit-coverage.test.mjs`) |
