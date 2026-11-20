@@ -31,6 +31,7 @@
     "db:test": "bash scripts/run-pgtap.sh",
     "functions:serve": "npx supabase functions serve",
     "functions:check": "bash scripts/check-functions.sh",
-    "test:integration": "bash scripts/run-integration.sh"
+    "test:integration": "bash scripts/run-integration.sh",
+    "availability:probe": "node scripts/availability-probe.mjs"
   }
 }

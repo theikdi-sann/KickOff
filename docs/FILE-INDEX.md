@@ -275,13 +275,15 @@ before the suite is green again.
 | `packages/shared/src/theme.ts` | source | reviewed | shared contract |
 | `packages/shared/tsconfig.json` | config | reviewed | shared TypeScript config |
 | `packages/shared/vitest.config.ts` | source | reviewed | source |
+| `scripts/availability-probe.mjs` | source | reviewed | NFR-14 — records one health probe and reports the monthly SLO |
 | `scripts/build-file-index.mjs` | source | reviewed | tool or gate script |
 | `scripts/check-functions.sh` | config | reviewed | configuration |
 | `scripts/check-no-mocks.sh` | config | reviewed | configuration |
 | `scripts/mvp-gate.mjs` | source | reviewed | tool or gate script |
 | `scripts/pg-url-parts.mjs` | source | covered | splits a DB URL so the password stays out of the command line |
 | `scripts/run-integration.sh` | config | reviewed | executes the Edge commerce/scan/refund/account/MFA/fixture/news/push suites against the local stack with Stripe and Expo stubs |
-| `scripts/run-pgtap.sh` | config | reviewed | configuration |
+| `scripts/restore-drill.sh` | config | reviewed | NFR-17 — dump → scratch restore → count check → pgTAP |
+| `scripts/run-pgtap.sh` | config | reviewed | configuration; accepts `KICKOFF_PGTAP_DB_URL`/`KICKOFF_PGTAP_SKIP` for the restore drill |
 | `scripts/push-stub.mjs` | source | reviewed | local Expo Push stub used only by `run-integration.sh`; records the batch for assertions |
 | `scripts/stripe-stub.mjs` | source | reviewed | local Stripe stub used only by `run-integration.sh`; accepts test keys only |
 | `scripts/seed-demo.mjs` | source | reviewed | tool or gate script — seeds the demo fan/admin, staff membership and paid tickets |
@@ -395,6 +397,7 @@ before the suite is green again.
 | `supabase/functions/stripe-webhook/index.ts` | source | reviewed | Edge Function |
 | `supabase/functions/tests/_commerce.ts` | test | covered | shared integration helpers (login, REST, mail, auth admin) |
 | `supabase/functions/tests/account-lifecycle.test.ts` | test | covered | REQ-01/REQ-13 — reset + confirmation mail, profile edit, erasure and audit |
+| `supabase/functions/tests/availability.test.ts` | test | covered | NFR-14 — probe row, monthly SLO view/metrics, synthetic 5xx page |
 | `supabase/functions/tests/config.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/errors.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/export-user.test.ts` | test | covered | integration test — GAP-09.2 the fan export against the live stack (skipped without `RUN_INTEGRATION`) |
@@ -482,6 +485,7 @@ before the suite is green again.
 | `supabase/migrations/0065_wrong_zone_enum.sql` | data | reviewed | migration — adds the `wrong_zone` scan outcome; the enum lives alone because Postgres cannot use a new value in the adding transaction |
 | `supabase/migrations/0066_gate_stands.sql` | data | reviewed | migration — `gates.venue_zone_id` and `zones.venue_zone_id`, the stand/venue integrity triggers, the clone provenance in `admin_create_match_from_venue()`, and `scan_ticket` refusing another stand without consuming the pass |
 | `supabase/migrations/0067_admin_create_match_full.sql` | data | reviewed | one atomic call builds the fixture and its ground: new or existing venue, zones and generated seats, inline stand-level gates, per-fixture prices and the gate assignment |
+| `supabase/migrations/0068_availability_probes.sql` | data | reviewed | NFR-14 — probe table, monthly SLO view and service-only grants |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/connect.test.sql` | test | covered | pgTAP suite — C8.1 Stripe Connect: the platform fee in minor units, the club a connected account belongs to, the event ledger; 0050's omittable payment-intent and account parameters (16 assertions) |

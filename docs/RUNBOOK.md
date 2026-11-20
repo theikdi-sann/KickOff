@@ -350,9 +350,16 @@ directly. Saving writes both scores and `completed` in one audited call.
 - **Data:** Supabase managed Postgres — verify the project's backup schedule in
   the dashboard; before risky migrations take a manual backup
   (dashboard → Database → Backups) and keep the `db push` output.
-- **Restore drill (quarterly):** restore the latest backup into a scratch
-  project, run `npm run db:test`-equivalent sanity checks, confirm
-  `profiles`/`orders`/`tickets` counts match, then discard.
+- **Restore drill (quarterly):**
+  `bash scripts/restore-drill.sh --fresh` dumps the local database, restores it
+  into a scratch database, compares `profiles`/`orders`/`tickets`/`audit_logs`
+  counts and runs the pgTAP suite against the restored copy. Record the
+  elapsed time (RTO target 4 h) and the counts in the release ticket. The
+  observability suite is skipped because `pg_cron` is bound to the cluster's
+  configured database; its jobs are migration-owned.
+- **Availability (NFR-14):** schedule
+  `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... METRICS_TOKEN=... node scripts/availability-probe.mjs`.
+  It records one `availability_probes` row and exits non-zero below 99.5 %.
 - **Code:** everything is in git; the repo (plus `supabase/migrations`) is the
   full recovery source. Secrets are **not** in git — they live in Supabase,
   Vercel, EAS and CI secret stores; keep an offline record of *where* each

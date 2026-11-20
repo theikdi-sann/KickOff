@@ -13,7 +13,7 @@ re-checked instead of trusted.
 
 | Fact | Value | Verified by |
 |---|---|---|
-| Migrations | **67** ordered SQL files; next is `0068` | `ls supabase/migrations/*.sql \| wc -l` |
+| Migrations | **68** ordered SQL files; next is `0069` | `ls supabase/migrations/*.sql \| wc -l` |
 | Edge Functions | **20** (excluding `_shared` and `tests`) | `supabase/functions/*/index.ts` |
 | pgTAP | **444 assertions across 29 suites** | `bash scripts/run-pgtap.sh` |
 | Repo/JS tests | **309** | `npm test` |

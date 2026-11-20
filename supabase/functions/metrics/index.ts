@@ -28,6 +28,16 @@ interface HoldRow {
   seat_id: string;
 }
 
+interface AvailabilityRow {
+  month: string;
+  probes: number;
+  ok_probes: number;
+  availability_pct: number | null;
+}
+
+/** NFR-14: the monthly availability target. */
+const AVAILABILITY_TARGET = 99.5;
+
 async function handler(request: Request): Promise<Response> {
   const env = getEnv();
   if (!metricsTokenMatches(request.headers.get("x-metrics-token"), env.METRICS_TOKEN)) {
@@ -74,6 +84,14 @@ async function handler(request: Request): Promise<Response> {
   if (holdsResult.error) throw new Error(holdsResult.error.message);
   const holds = (holdsResult.data ?? []) as HoldRow[];
 
+  const { data: availabilityRows, error: availabilityError } = await db
+    .from("availability_monthly")
+    .select("month,probes,ok_probes,availability_pct")
+    .order("month", { ascending: false })
+    .limit(1);
+  if (availabilityError) throw new Error(availabilityError.message);
+  const availabilityRow = ((availabilityRows ?? []) as AvailabilityRow[])[0];
+
   const ordersByStatus = Object.fromEntries(
     ORDER_STATUSES.map((status, index) => [status, orderCounts[index] ?? 0]),
   ) as Record<OrderStatus, number>;
@@ -107,6 +125,17 @@ async function handler(request: Request): Promise<Response> {
       },
       reconciliation: {
         unsettled: unsettledCount,
+      },
+      availability: {
+        month: availabilityRow?.month ?? null,
+        probes: availabilityRow?.probes ?? 0,
+        okProbes: availabilityRow?.ok_probes ?? 0,
+        pct: availabilityRow?.availability_pct ?? null,
+        target: AVAILABILITY_TARGET,
+        met:
+          availabilityRow?.availability_pct === null || availabilityRow?.availability_pct === undefined
+            ? null
+            : availabilityRow.availability_pct >= AVAILABILITY_TARGET,
       },
     },
     request,

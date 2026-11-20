@@ -83,10 +83,10 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 | NFR-11 | Observability: logs, metrics, error tracking | §3 | `observability.test.mjs` OBS-1…7, `observability.test.ts` (7), `observability.test.sql` (9), `logging.test.mjs` | **full** | Blind to production failure |
 | NFR-12 | Multi-language and multi-currency | §3 | `i18n.test.ts` (9), `i18n.test.mjs` I18N-1…8, `money.test.ts` (20), `display-config.test.mjs` DC-1…6 | **partial** — on-screen copy is proven; the PDF receipt falls back to ASCII/English | Wrong currency/locale on money |
 | NFR-13 | Seat availability p95 ≤ 300 ms, 3 s poll | §3 | `phaseb.test.mjs` PB1-1 (poll interval), `availability.test.mjs` (mapping only) | **partial** — no latency measurement | Slow map; stale availability |
-| NFR-14 | 99.5 % monthly availability, 5xx alert | §3 | `metrics.test.ts`, `phase11.test.mjs` P11-18 (token guard), `observability` (alert helper) | **none** — no SLO measurement or alert-firing test | Outage unnoticed; SLO unproven |
+| NFR-14 | 99.5 % monthly availability, 5xx alert | §3 | `availability.test.ts` (probe + SLO + burst page), `availability-probe.mjs`, `metrics.test.ts`, `observability` | **full** | Outage unnoticed; SLO unproven |
 | NFR-15 | Accessibility: names, contrast, keyboard/SR seat grid | §3 | `seat-grid-test.tsx` (button names, selected/sold state), `theme.test.ts` THEME-1 (contrast), `phase11.test.mjs` P11-14/24, `admin-access.test.mjs` AA-3 | **full** | Unusable for assistive-tech fans |
 | NFR-16 | Retention: 7 y / 3 y / 90 d / 30 d / erasure ≤30 d | §3 | `observability.test.mjs` OBS-7 (`error_events` retention), `erasure.test.mjs` EC-1…6, `docs.test.mjs` DOC-12 | **partial** — only `error_events` prune is proven; 7 y/3 y/90 d jobs untested | Compliance / data-hoarding breach |
-| NFR-17 | RPO ≤24 h, RTO ≤4 h, quarterly restore drill | §3 | none | **none** | Unrecoverable data loss |
+| NFR-17 | RPO ≤24 h, RTO ≤4 h, quarterly restore drill | §3 | `restore-drill.sh` (dump → restore → counts → pgTAP), `run-pgtap.sh` | **full** | Unrecoverable data loss |
 
 ## 4. Scope constraints
 
@@ -122,9 +122,7 @@ deferrals; anything else must move to `full` before the next release.
 | NFR-10 | none | accept | Same open requirement as REQ-046: built-in roles are done; custom per-club roles are not. Owner: product. Review: 2027-02-20. |
 | NFR-12 | partial | close | Bundle a Unicode font that fits the Edge worker budget so the receipt can use the club's language. |
 | NFR-13 | partial | close | Timed availability read at a representative seat count; assert p95 ≤ 300 ms and the 3 s poll. |
-| NFR-14 | none | close | Add the SLO probe and fire a synthetic 5xx burst to assert the page; see §9 item 6. |
 | NFR-16 | partial | close | Seed rows older than each window, run the prune, assert every retention period. |
-| NFR-17 | none | close | Automate the restore drill and wire it into the quarterly release ticket; see §9 item 7. |
 | SC-01 | n/a | reclassify | Superseded by multi-tenancy at migration `0045`; the tenancy suites are the real guard. |
 | SC-04 | none | reclassify | A scope exclusion: the absence of season-ticket code is the evidence; no behaviour to test. |
 | SC-05 | none | reclassify | A scope exclusion: no loyalty code exists; no behaviour to test. |
@@ -137,8 +135,6 @@ These carry **partial** or **none** and are on the money, entry, identity or com
 | Requirement | Coverage | Why it is P0/P1 |
 |---|---|---|
 | **REQ-046 / NFR-10** | none | Whole feature unbuilt; 8 acceptance IDs are `todo`. Documentation correctly says open, but there is zero executable proof. |
-| **NFR-14** availability | none | 99.5 % SLO and 5xx page are configured, never measured or fired in a test. |
-| **NFR-17** backup | none | RPO/RTO and restore drill exist only as prose. |
 | **NFR-16** retention | partial | Only `error_events` prune is exercised; the 7-year / 3-year / 90-day jobs are unproven. |
 | **REQ-01** account lifecycle | partial | Reset, verification and profile edit are executed; registration and sign-out screens still rely on source/hosted E2E. |
 | **REQ-15** staff MFA | partial | TOTP enrol/challenge/aal2 now runs in default CI; the admin UI redirect is still source/hosted-E2E. |
@@ -175,27 +171,23 @@ Orphans are not waste — they defend engineering standards — but they must no
 
 Closed since the audit: executed checkout → webhook → ticket → receipt,
 scan/undo, refunds, CSV export, service-key bundle scanning, the seat-grid
-accessibility contract, profile/orders/news screens, push fan-out and the offline retry key.
+accessibility contract, profile/orders/news screens, push fan-out, the availability SLO/restore drill and the offline retry key.
 The remaining list is ranked by risk removed per test added.
 
 1. **RBAC-1…RBAC-8** — replace the `todo`s with real pgTAP + unit/contract tests when REQ-046 is built. Closes REQ-046/NFR-10.
 2. **Retention jobs** — implement and test the 7 y / 3 y / 90 d prunes; today only `error_events` (30 d) is enforced. Closes NFR-16.
-3. **Availability SLO test** — record request outcomes, compute monthly availability, and fire a synthetic 5xx burst to assert the page. Closes NFR-14.
-4. **Restore-drill automation** — restore a backup into a scratch database and run the pgTAP suite; wire the result into the quarterly release ticket. Closes NFR-17.
-5. **Account lifecycle remaining screens** — registration and sign-out against local Supabase. Closes the rest of REQ-01.
-6. **MFA UI acceptance** — complete the local admin redirect and TOTP form, not just the Auth API. Closes REQ-15.
-7. **Seat-availability latency check** — a timed pgTAP/k6 read of `zone_availability` asserting p95 ≤ 300 ms at a representative seat count. Closes NFR-13.
-8. **Thai-capable receipt font** — bundle a Unicode font (or a Thai subset) so the PDF can use the club's language instead of the current ASCII/English fallback. Closes the residual on REQ-10/NFR-12.
+3. **Account lifecycle remaining screens** — registration and sign-out against local Supabase. Closes the rest of REQ-01.
+4. **MFA UI acceptance** — complete the local admin redirect and TOTP form, not just the Auth API. Closes REQ-15.
+5. **Seat-availability latency check** — a timed pgTAP/k6 read of `zone_availability` asserting p95 ≤ 300 ms at a representative seat count. Closes NFR-13.
+6. **Thai-capable receipt font** — bundle a Unicode font (or a Thai subset) so the PDF can use the club's language instead of the current ASCII/English fallback. Closes the residual on REQ-10/NFR-12.
 
 ## 10. Top 10 risks
 
 1. **Custom RBAC is entirely unbuilt** (`REQ-046`, `NFR-10`, `GAP-11`): 8 acceptance IDs are `todo`. The docs are honest, but any "roles are done" claim is false.
 2. **Retention is mostly unimplemented** (NFR-16): only `error_events` has a prune job; the 7-year, 3-year and 90-day windows are policy, not code-under-test.
-3. **Backup/restore is not executable** (NFR-17): RPO 24 h / RTO 4 h and the quarterly drill have no script or test.
-4. **The 99.5 % availability SLO is unmeasured** (NFR-14); the alert has never been fired in a test.
-5. **Registration/sign-out and the MFA UI redirect** (REQ-01/REQ-15) are still source/hosted-E2E; the Auth API paths are executed.
-6. **The receipt is ASCII/English only** (REQ-10/NFR-12): the standard PDF font cannot render Thai or `฿`, so a Thai club's receipt is English with `THB 350`.
-7. **Seat-availability latency is unmeasured** (NFR-13).
-8. **News audit writes are source-contracted** (REQ-25/NFR-05): the DB flow is executed, but the console's audit row is not.
+3. **Registration/sign-out and the MFA UI redirect** (REQ-01/REQ-15) are still source/hosted-E2E; the Auth API paths are executed.
+4. **The receipt is ASCII/English only** (REQ-10/NFR-12): the standard PDF font cannot render Thai or `฿`, so a Thai club's receipt is English with `THB 350`.
+5. **Seat-availability latency is unmeasured** (NFR-13).
+6. **News audit writes are source-contracted** (REQ-25/NFR-05): the DB flow is executed, but the console's audit row is not.
 
 Honourable mentions: **SC-04/SC-05** rely on absence rather than a guard; **NFR-13** still needs a latency probe; **REQ-02/REQ-04** still lack a rendered list/selection interaction test.

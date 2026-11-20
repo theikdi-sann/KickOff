@@ -77,6 +77,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"availability_probes": {
+                  Row: {
+                    "checked_at": string,"id": number,"latency_ms": number | null,"ok": boolean,"source": string,"status": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "checked_at"?: string,"id"?: number,"latency_ms"?: number | null,"ok": boolean,"source"?: string,"status"?: number | null
+                  }
+                  Update: {
+                    "checked_at"?: string,"id"?: number,"latency_ms"?: number | null,"ok"?: boolean,"source"?: string,"status"?: number | null
+                  }
+                  Relationships: [
+
+                  ]
                 },"device_tokens": {
                   Row: {
                     "created_at": string,"id": string,"platform": string,"token": string,"user_id": string
@@ -832,7 +846,15 @@ isOneToOne: false
                 }
           }
           Views: {
-            "match_sales_summary": {
+            "availability_monthly": {
+                  Row: {
+                    "availability_pct": number | null,"month": string | null,"ok_probes": number | null,"probes": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+
+                  ]
+                },"match_sales_summary": {
                   Row: {
                     "match_id": string,"orders_paid": number | null,"revenue_minor_units": number | null,"tickets_sold": number | null
                   }

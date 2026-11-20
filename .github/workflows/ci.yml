@@ -80,6 +80,11 @@ jobs:
       - name: Edge integration tests
         run: bash scripts/run-integration.sh
 
+      # NFR-17: dump, restore into a scratch database, compare counts and run
+      # the pgTAP suites against the restored copy.
+      - name: Restore drill
+        run: bash scripts/restore-drill.sh --fresh
+
       - name: Edge function lint + tests
         working-directory: supabase/functions
         run: |

@@ -173,6 +173,12 @@ curl -sS -X DELETE "$api_url/rest/v1/rate_limits?key=neq.__never__" \
   -H "apikey: $service_key" \
   -H "authorization: Bearer $service_key" >/dev/null || true
 
+# Exercise the scheduled probe against the running stack before the suites.
+SUPABASE_URL="$api_url" \
+SUPABASE_SERVICE_ROLE_KEY="$service_key" \
+METRICS_TOKEN="local-integration-metrics-token" \
+node scripts/availability-probe.mjs >/dev/null
+
 echo "integration: running the Edge Function suites"
 export RUN_INTEGRATION=1
 export SUPABASE_URL="$api_url"
@@ -185,6 +191,7 @@ export ADMIN_EMAIL="admin@kickoff.app"
 export ADMIN_PASSWORD="kickoffadmin"
 export MAILPIT_URL="${MAILPIT_URL:-}"
 export PUSH_STUB_URL="http://127.0.0.1:$push_port"
+export METRICS_TOKEN="local-integration-metrics-token"
 
 (
   cd supabase/functions
@@ -197,7 +204,8 @@ export PUSH_STUB_URL="http://127.0.0.1:$push_port"
     tests/mfa.test.ts \
     tests/fixture-admin.test.ts \
     tests/news-admin.test.ts \
-    tests/push-delivery.test.ts
+    tests/push-delivery.test.ts \
+    tests/availability.test.ts
 )
 
 echo "integration: all executed suites passed"

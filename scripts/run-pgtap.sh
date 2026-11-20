@@ -43,7 +43,11 @@ run_psql() {
   fi
 }
 
-if npx supabase status >/dev/null 2>&1; then
+if [ -n "${KICKOFF_PGTAP_DB_URL:-}" ]; then
+  echo "pgtap: using the supplied database (restore drill)"
+  PGURL="$KICKOFF_PGTAP_DB_URL"
+  export KICKOFF_DBLINK_PASSWORD="${PGPASSWORD:?PGPASSWORD is required with KICKOFF_PGTAP_DB_URL}"
+elif npx supabase status >/dev/null 2>&1; then
   echo "pgtap: using local Supabase stack"
   DB_URL="$(npx supabase status -o env 2>/dev/null | grep '^DB_URL=' | cut -d= -f2- | tr -d '"')"
   # The stack publishes its own connection URL. The password is taken out of
@@ -74,6 +78,10 @@ fi
 
 fail=0
 for file in supabase/tests/*.test.sql; do
+  if [ -n "${KICKOFF_PGTAP_SKIP:-}" ] && printf '%s\n' "$file" | grep -Eq "$KICKOFF_PGTAP_SKIP"; then
+    printf '── %s (skipped: %s)\n' "$file" "${KICKOFF_PGTAP_SKIP_REASON:-supplied skip}"
+    continue
+  fi
   printf '── %s\n' "$file"
   out="$(run_psql "$PREAMBLE" "$file" 2>&1)"
   rc=$?

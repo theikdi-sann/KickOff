@@ -290,10 +290,10 @@ Each NFR states the measurable target and the enforcement mechanism.
 | NFR-11 | Observability | structured logs (single JSON line, redacted), request IDs, error tracking, alerting | **shipped** — C10.1: `error_events` carries the same request id as the envelope and the log line, `ALERT_WEBHOOK_URL` pages (optional, cooldown-gated), and the reconciliation sweep finds unsettled payments; the logger itself landed in C4.11 |
 | NFR-12 | Multi-language/currency | per-tenant locale and currency | **shipped with a documented residual** — `GAP-05` closed at C10.2: schema (C6/C7), formatting (C8.2), the translation layer with a coverage-contracted Thai catalog (C10.2). The PDF receipt stays ASCII/English until a Thai font fits the Edge worker (REQ-10). |
 | NFR-13 | Seat availability performance | p95 read-to-render ≤ 300 ms; 3 s poll; >5 s marked stale | `zone_availability`; `availability.test.mjs` |
-| NFR-14 | Availability | monthly p95 API availability ≥ 99.5 %; >5 5xx in 5 min pages | `health`, `metrics`, alert channel |
+| NFR-14 | Availability | monthly p95 API availability ≥ 99.5 %; >5 5xx in 5 min pages | `health`, `availability-probe.mjs`, `availability_probes`, `metrics`, alert channel |
 | NFR-15 | Accessibility | accessible name on every control; contrast ≥ 4.5:1; keyboard/screen-reader seat grid | a11y tests, Playwright |
 | NFR-16 | Retention | 7 y orders/tickets/refunds/audit; 3 y `scan_events`; 90 d `stripe_events`/unused tokens; 30 d `error_events`; erasure ≤ 30 d | `PRIVACY.md`, prune jobs |
-| NFR-17 | Backup / recovery | RPO ≤ 24 h; RTO ≤ 4 h; quarterly restore drill | `RUNBOOK.md` §7 |
+| NFR-17 | Backup / recovery | RPO ≤ 24 h; RTO ≤ 4 h; quarterly restore drill | `scripts/restore-drill.sh`, `RUNBOOK.md` §7 |
 
 ### 4.1 Cross-cutting quality rules
 

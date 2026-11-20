@@ -11,8 +11,8 @@ integration suite (checkout → webhook → ticket → receipt, scan/undo, refun
 the client-screen/accessibility tests, the service-key bundle scan and the
 `REQTRACE.md` contract were added. **Wave 1** then added executed local suites
 for account lifecycle (reset/confirmation mail, erasure), TOTP MFA, fixture
-edit/delete, news publish/edit/unpublish and push fan-out through a local Expo
-stub. The receipt's default club is `th-TH`; its
+edit/delete, news publish/edit/unpublish, push fan-out through a local Expo
+stub, the availability SLO and the scratch-database restore drill. The receipt's default club is `th-TH`; its
 PDF now uses the documented ASCII/English fallback because a Thai font does not
 fit the Edge worker heap. `REQTRACE.md` is the dated coverage register.
 
@@ -20,7 +20,7 @@ fit the Edge worker heap. `REQTRACE.md` is the dated coverage register.
 
 | Fact | Verified value | How |
 |---|---|---|
-| Migrations | **67** | `ls supabase/migrations \| wc -l` |
+| Migrations | **68** | `ls supabase/migrations \| wc -l` |
 | Edge Functions | **20** (excluding `_shared` and `tests`) | `supabase/functions/*/index.ts` |
 | pgTAP suites | **29** | `ls supabase/tests/*.test.sql` |
 | pgTAP assertions | **444** | `bash scripts/run-pgtap.sh` |
@@ -29,7 +29,7 @@ fit the Edge worker heap. `REQTRACE.md` is the dated coverage register.
 | `is_platform_admin()` | **exists since `0054`** | `0054_platform.sql` |
 | Scan outcomes | `valid`, `used`, `invalid`, `wrong_match`, **`wrong_zone`** | `database.types.ts`, `0065` |
 | Match clock | **every minute** | `0058_match_clock.sql` |
-| Next migration | **`0068`** | 67 applied, `0067` is the last |
+| Next migration | **`0069`** | 68 applied, `0068` is the last |
 
 ---
 
@@ -100,13 +100,13 @@ After fixing those six (and the ~12 High items), the set moves to **READY WITH C
 | ID | Doc & section | Issue | Proposed fix |
 |---|---|---|---|
 | **DS-001** | `README.md` lines 19–21; `REQUIREMENTS.md` lines 25–28; `ARCHITECTURE.md` §8; `BRAND.md` identity | Multi-tenancy is described as future in four places and shipped in five others. | Replace all four with the “shipped since `0045`” statement in §5.1 below. |
-| **DS-002** | `ARCHITECTURE.md` §2.2 lines 124–128 | `migrations/ 39 ordered SQL migrations`, `functions/<name>/ (16)`, `tests/ pgTAP suites (10)` are all false. | `migrations/ 67 ordered SQL migrations`; `functions/<name>/ one directory per function (20)`; `tests/ pgTAP suites (29)`. |
+| **DS-002** | `ARCHITECTURE.md` §2.2 lines 124–128 | `migrations/ 39 ordered SQL migrations`, `functions/<name>/ (16)`, `tests/ pgTAP suites (10)` are all false. | `migrations/ 68 ordered SQL migrations`; `functions/<name>/ one directory per function (20)`; `tests/ pgTAP suites (29)`. |
 | **DS-003** | `ARCHITECTURE.md` §4.4 vs SRS REQ-19 / `admin_update_match()` | §4.4 says “The rules live in the shared Zod schema … no database trigger enforces them” then says the database refuses a move without a reason. | Rewrite §4.4 as: “The *policy* (upcoming-only, future, lock window, never earlier, ≤10 days, reason) is parsed by `adminRescheduleSchema`; the *write* is `admin_update_match()`, which re-checks the reason and writes the change + audit row in one transaction. A direct PostgREST update is not a supported path and must be tested as refused.” |
 | **DS-004** | `SECURITY.md` §2.1 line 85 | “`is_platform_admin()` gates the cross-tenant console and arrives with C9.” | “`is_platform_admin()` (since `0054`) gates the cross-tenant console; `platform_admins` is RLS-on with no policies and `set_platform_admin()` is the only writer.” |
 | **DS-005** | `ARCHITECTURE.md` §3 line 139; SRS REQ-01 rule 3 | “role lives in the JWT claim, mirrored in `profiles`”; “role defaults to `customer`” — `profiles.role` was dropped in `0048`. | “Authority is `staff_members` + `staff_roles` per tenant; the Edge guards read `app_metadata.role`. `profiles` carries no role column since `0048`.” |
 | **DS-006** | `PRIVACY.md` §The three rules line 32 vs §What a club’s exit does line 102 | `seat_holds` is “ERASE — the row is deleted” but the table says “active holds released”; `tenants` is “ERASE (at offboarding)” but the exit section says the row survives as a tombstone. | “`seat_holds`: DELETE at account deletion (not released).” / “`tenants`: retained as a tombstone with `erased_at` set; all other tenant-scoped rows are deleted.” |
 | **DS-007** | `TESTING.md` §3 line 79 | “Tenant isolation (C7, planned)” contradicts the quick-reference table that already lists tenant isolation. | “Tenant isolation (C7.3, shipped): T-01…T-24.” |
-| **DS-008** | `RUNBOOK.md` §3.2 line 96 | “`0050…` is the next free number.” | “`0068` is the next free number (67 applied).” |
+| **DS-008** | `RUNBOOK.md` §3.2 line 96 | “`0050…` is the next free number.” | “`0069` is the next free number (68 applied).” |
 | **DS-009** | `SRS.md` §6 line 327 | “(308 assertions / 20 suites)” | “(444 assertions across 29 suites; verified 2026-11-19).” |
 | **DS-010** | `ARCHITECTURE.md` §4.2; `SECURITY.md` §6; `SRS.md` REQ-21 | Scan result sets omit `wrong_zone`, so a generated test cannot know the stand refusal exists. | Add `wrong_zone` to every result set and state: “a pass for another stand returns `wrong_zone`, records a `scan_events` row, and does **not** consume the pass.” |
 
@@ -203,10 +203,10 @@ After fixing those six (and the ~12 High items), the set moves to **READY WITH C
 | **NFR-11** | “Every 5xx writes one `error_events` row sharing the response `x-request-id`; rows are pruned at 30 days. An alert fires at most once per function+code per 30 minutes. `metrics` exposes `errors.total` and `reconciliation.unsettled`.” |
 | **NFR-12** | “The supporter app renders every user-facing string through `translate()`; the Thai catalog covers 100 % of used keys and contains 0 orphan keys. Every on-screen date and money value renders with `tenants.locale`, `tenants.currency` and `tenants.timezone`. The PDF receipt is the documented exception: it uses English copy and ISO money because the standard PDF font cannot encode Thai or `฿` (REQTRACE §10).” |
 | **NFR-13 (new)** | “Seat availability: p95 read-to-render ≤ 300 ms; the map polls every 3 s; a value older than 5 s is marked stale, never shown as current.” |
-| **NFR-14 (new)** | “Availability: monthly p95 API availability ≥ 99.5 %, measured by `health`; a 5xx burst of >5 in 5 minutes pages.” |
+| **NFR-14 (new)** | “Availability: monthly probe availability ≥ 99.5 %, recorded in `availability_probes` and exposed by `metrics`; a 5xx burst pages once per source+code per cooldown.” |
 | **NFR-15 (new)** | “Accessibility: every interactive control has an accessible name; text contrast ≥ 4.5:1; the seat grid is operable by keyboard and screen reader.” |
 | **NFR-16 (new)** | “Retention: orders/tickets/refunds/audit 7 years; `scan_events` 3 years; `stripe_events` 90 days; `error_events` 30 days; `device_tokens` 90 days unused. Erasure completes within 30 days of request.” |
-| **NFR-17 (new)** | “Backup: RPO ≤ 24 h, RTO ≤ 4 h; a quarterly restore drill must restore into a scratch project and pass the pgTAP suite before sign-off.” |
+| **NFR-17 (new)** | “Backup: RPO ≤ 24 h, RTO ≤ 4 h; `scripts/restore-drill.sh` dumps, restores into a scratch database, compares counts and runs the pgTAP suite; the result goes in the quarterly release ticket.” |
 
 ### 5.3 Testable functional requirements (replace the listed rows)
 
@@ -258,7 +258,7 @@ After fixing those six (and the ~12 High items), the set moves to **READY WITH C
 
 ### 5.6 Architecture corrections (paste into the named sections)
 
-- **§2.2:** `migrations/ 67 ordered SQL migrations`; `functions/<name>/ 20 functions`; `tests/ 29 pgTAP suites (444 assertions)`.
+- **§2.2:** `migrations/ 68 ordered SQL migrations`; `functions/<name>/ 20 functions`; `tests/ 29 pgTAP suites (444 assertions)`.
 - **§3 Access row:** `profiles`, `app_settings`, `app_secrets`, `staff_members`, `staff_roles` | “identity is global; authority is the per-club membership; the legacy `profiles.role` is gone since `0048`.”
 - **§3.1 heading:** “Current model (C6–C7 delivered in `0040`–`0048`)”.
 - **§4.2:** add `wrong_zone`; add “the gate’s stand is compared with the ticket’s venue zone; a mismatch does not consume the pass.”

@@ -134,6 +134,22 @@ composite-FK insert must raise a foreign-key error even as the service role.
 The harness sets `request.jwt.claims` per simulated user, exactly as
 `rls-auth.test.sql` already does.
 
+## 3b. Availability and restore drill
+
+```bash
+# One availability probe; records a row and exits 1 below 99.5 %.
+npm run availability:probe
+
+# Dump → scratch restore → count check → pgTAP against the restored copy.
+bash scripts/restore-drill.sh --fresh
+```
+
+`availability_probes` is a platform-only table; `availability_monthly` is the
+SLO view, and `metrics` exposes `availability.pct`/`met`. The probe runs in the
+integration suite, so a broken health endpoint fails the build. The restore
+drill is a CI step; the observability suite is skipped there because `pg_cron`
+only exists in the cluster's configured database (its jobs are migration-owned).
+
 ## 4. Edge Functions
 
 Unit tests (no network required for most suites):
@@ -230,7 +246,7 @@ npm run functions:check         # every Edge Function typechecks
 
 `.github/workflows/ci.yml` runs, in order: install → typecheck/lint → workspace
 and script tests → local Supabase stack → DB lint → pgTAP → Deno function
-checks → executed Edge integration suite (local Stripe stub) → admin build →
+checks → executed Edge integration suite (local Stripe/Expo stubs) → restore drill → admin build →
 Playwright (`auth` and `ops`) when the `E2E_ADMIN_*` secrets exist → MVP gate.
 
 The Edge integration suite needs no repository secrets; the hosted E2E suites

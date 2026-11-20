@@ -71,7 +71,7 @@ const fileIndex = (() => {
   return byBasename;
 })();
 
-const TEST_FILE = /\.(?:mjs|js|ts|tsx|sql)$/;
+const TEST_FILE = /\.(?:mjs|js|ts|tsx|sql|sh)$/;
 const referencedFiles = (text) =>
   [...text.matchAll(/`([^`\n]+)`/g)]
     .map((match) => match[1])
