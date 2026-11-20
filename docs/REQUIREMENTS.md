@@ -199,7 +199,7 @@ pending tests are listed in [`TESTING.md`](TESTING.md) §10 and registered as
 | SC-04 | No season tickets — single-match only | yes |
 | SC-05 | No membership/loyalty tiers | yes |
 | SC-06 | Simulated QR entry — no turnstile hardware | yes |
-| SC-07 | Free-tier hosting, limited concurrency | yes — hold/unique index, rate limits |
+| SC-07 | Free-tier hosting, limited concurrency | yes — hold/unique indexes, scan concurrency and the 11th-request rate limit are tested; the platform tier caps remain configuration |
 | SC-08 | Offline use is limited to already-issued passes | **shipped** — only payloads the server already issued are cached, byte for byte; nothing is minted or re-signed locally |
 
 ## 5. Traceability

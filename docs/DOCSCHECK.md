@@ -15,7 +15,7 @@ edit/delete, news publish/edit/unpublish, push fan-out through a local Expo
 stub, the availability SLO, the scratch-database restore drill, the
 7y/3y/90d retention sweep, sign-up/sign-out, the seat-map latency budget and
 the Thai receipt font, the news audit trigger, the MFA browser redirect,
-settings round-trip and live metrics. The receipt's default club is `th-TH`; its
+settings round-trip, live metrics and the SC-07 rate-limit proof. The receipt's default club is `th-TH`; its
 PDF embeds a bundled Noto Sans Thai subset so the club's language fits the Edge
 worker heap. `REQTRACE.md` is the dated coverage register.
 

@@ -420,6 +420,7 @@ before the suite is green again.
 | `supabase/functions/tests/platform.test.ts` | test | covered | Deno test — the generated platform vocabulary under Deno's module rules |
 | `supabase/functions/tests/probe.test.ts` | test | reviewed | unit test — the probe depth needs the token |
 | `supabase/functions/tests/push-delivery.test.ts` | test | covered | REQ-11 — reminder fan-out through the local Expo stub, no-device and bad-secret paths |
+| `supabase/functions/tests/rate-limit.test.ts` | test | covered | SC-07 — the 11th checkout request in a minute is refused |
 | `supabase/functions/tests/refund-order.test.ts` | test | covered | REQ-24 — executed refund ledger, void pass and audit, idempotent retry |
 | `supabase/functions/tests/roles.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/settings.test.ts` | test | covered | REQ-27 — admin settings round-trip, fan write refused |

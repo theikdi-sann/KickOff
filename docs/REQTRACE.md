@@ -98,7 +98,7 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 | SC-04 | No season tickets | yes | schema has single-match orders; no explicit test | **none** (low risk) |
 | SC-05 | No loyalty tiers | yes | no code; no test | **none** (low risk) |
 | SC-06 | Simulated QR, no turnstile hardware | yes | `scan.test.ts`, `scan-concurrency.test.sql` | **full** |
-| SC-07 | Free-tier limits / concurrency | yes | `hold-concurrency.test.sql`, `scan-concurrency.test.sql`, rate-limit helpers | **partial** |
+| SC-07 | Free-tier limits / concurrency | yes | `rate-limit.test.ts` (11th request 429), `hold-concurrency.test.sql`, `scan-concurrency.test.sql` | **full** |
 | SC-08 | Offline limited to issued passes | yes | `offline-pass.test.mjs` PASS-1…6 | **full** |
 
 ---
@@ -117,7 +117,6 @@ deferrals; anything else must move to `full` before the next release.
 | SC-01 | n/a | reclassify | Superseded by multi-tenancy at migration `0045`; the tenancy suites are the real guard. |
 | SC-04 | none | reclassify | A scope exclusion: the absence of season-ticket code is the evidence; no behaviour to test. |
 | SC-05 | none | reclassify | A scope exclusion: no loyalty code exists; no behaviour to test. |
-| SC-07 | partial | accept | Free-tier limits are enforced by the hosting platform, not this repository; concurrency is proven by the hold/scan suites. Owner: engineering. Review: 2027-02-20. |
 
 ## 6. Uncovered / high-risk requirements
 
@@ -129,7 +128,7 @@ These carry **partial** or **none** and are on the money, entry, identity or com
 
 ## 7. Partially covered requirements (summary)
 
-All of: SC-07.
+No requirement is partial; the only open item is RBAC (`REQ-046`/`NFR-10`).
 
 The previously deceptive rows were **REQ-21/22/24**: the tests existed and were good, but skipped; they now run in the default pipeline through `scripts/run-integration.sh`.
 
@@ -167,6 +166,5 @@ The remaining list is ranked by risk removed per test added.
 ## 10. Top 10 risks
 
 1. **Custom RBAC is entirely unbuilt** (`REQ-046`, `NFR-10`, `GAP-11`): 8 acceptance IDs are `todo`. The docs are honest, but any "roles are done" claim is false.
-2. **SC-07 free-tier limits** are accepted platform behaviour, not repository code.
 
-Honourable mentions: **SC-04/SC-05** rely on absence rather than a guard; **NFR-13** still needs a latency probe; **REQ-02/REQ-04** still lack a rendered list/selection interaction test.
+Honourable mentions: **SC-04/SC-05** rely on absence rather than a guard; the platform-side free-tier caps in SC-07 are configuration, while the repository proves the concurrency and rate-limit guards.

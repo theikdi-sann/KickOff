@@ -57,7 +57,7 @@ staff use a web console. As a **B2B platform** it will be sold to many clubs
 | A-03 | Seat allocation is a rectangular grid per zone (`SC-03`); no 3D map. |
 | A-04 | Single-match tickets only; no season tickets or membership tiers (`SC-04`, `SC-05`). |
 | A-05 | Entry verification is simulated QR scan (`SC-06`); no turnstile hardware integration. |
-| A-06 | Free-tier hosting with limited concurrency (`SC-07`); holds, unique indexes and rate limits absorb load. |
+| A-06 | Free-tier hosting with limited concurrency (`SC-07`); holds, unique indexes and rate limits absorb load, proven by the concurrency suites and `rate-limit.test.ts`. |
 | A-07 | Offline use is limited to already-issued passes (`SC-08`); the server stays authoritative at scan time. |
 
 ## 2. Functional requirements — supporter app (mobile)
