@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { requireAdmin } from "../_shared/auth.ts";
+import { requireCapability } from "../_shared/auth.ts";
 import { getEnv } from "../_shared/config.ts";
 import { AppError } from "../_shared/errors.ts";
 import { signHmac } from "../_shared/hmac.ts";
@@ -26,7 +26,7 @@ interface TicketSecret {
 }
 
 async function handler(request: Request): Promise<Response> {
-  await requireAdmin(request);
+  await requireCapability(request, "operate_gate");
   const { gateId } = await validateBody(request, bodySchema);
   const db = serviceClient();
   const env = getEnv();

@@ -78,3 +78,55 @@ export function staffRoleOf(value: unknown): StaffRole | null {
   const parsed = staffRoleSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
 }
+
+/** The closed capability catalogue (REQ-046/NFR-10). */
+export const STAFF_CAPABILITIES = [
+  'manage_staff',
+  'operate_gate',
+  'manage_matches',
+  'manage_venues',
+  'publish_news',
+  'refund_orders',
+  'read_audit',
+  'manage_settings',
+  'export_data',
+  'view_reports',
+] as const;
+
+export type Capability = (typeof STAFF_CAPABILITIES)[number];
+
+/**
+ * The capabilities a signed-in user carries.
+ *
+ * Built-in `admin` always has all ten and `gatekeeper` has `operate_gate`,
+ * even for tokens issued before custom roles existed. A custom role reads the
+ * `capabilities` claim assigned with it.
+ */
+export function capabilitiesOf(
+  metadata: Record<string, unknown> | undefined,
+): Capability[] {
+  const role = metadata?.role;
+  if (role === 'admin') return [...STAFF_CAPABILITIES];
+  if (role === 'gatekeeper') return ['operate_gate'];
+  const held = metadata?.capabilities;
+  if (!Array.isArray(held)) return [];
+  return STAFF_CAPABILITIES.filter((capability) => held.includes(capability));
+}
+
+/** True when the claim carries one capability. */
+export function hasCapability(
+  metadata: Record<string, unknown> | undefined,
+  capability: Capability,
+): boolean {
+  return capabilitiesOf(metadata).includes(capability);
+}
+
+/** True for any staff member (at least one capability). */
+export function isConsoleStaff(metadata: Record<string, unknown> | undefined): boolean {
+  return capabilitiesOf(metadata).length > 0;
+}
+
+/** True for an admin-equivalent claim (all ten capabilities). */
+export function isFullAdmin(metadata: Record<string, unknown> | undefined): boolean {
+  return capabilitiesOf(metadata).length === STAFF_CAPABILITIES.length;
+}

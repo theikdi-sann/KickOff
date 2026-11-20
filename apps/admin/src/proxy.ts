@@ -1,5 +1,5 @@
 import type { Database } from '@kickoff/shared';
-import { isAdminRole, isPlatformMetadata, isStaffRole } from '@kickoff/shared';
+import { isConsoleStaff, isFullAdmin, isPlatformMetadata } from '@kickoff/shared';
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
@@ -67,9 +67,8 @@ export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   const metadata = user?.app_metadata as Record<string, unknown> | undefined;
-  const role = metadata?.role;
-  const isAdmin = isAdminRole(role);
-  const isStaff = isStaffRole(role);
+  const isAdmin = isFullAdmin(metadata);
+  const isStaff = isConsoleStaff(metadata);
   const isPlatform = isPlatformMetadata(metadata);
 
   let requiresMfa = false;

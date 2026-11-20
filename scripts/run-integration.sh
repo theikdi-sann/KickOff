@@ -140,7 +140,7 @@ fi
 # compile can outrun the gateway timeout and surface as a 502 in the first
 # test, so warm every function the suites use and ignore the auth result.
 echo "integration: warming the Edge Functions"
-for fn in stripe-checkout stripe-webhook scan-ticket scan-undo ticket-qr receipt refund-order delete-account send-kickoff-reminders; do
+for fn in stripe-checkout stripe-webhook scan-ticket scan-undo ticket-qr receipt refund-order delete-account send-kickoff-reminders admin-users admin-roles; do
   curl -s -o /dev/null -X POST "$api_url/functions/v1/$fn" \
     -H "apikey: $anon_key" \
     -H "content-type: application/json" \
@@ -211,6 +211,7 @@ export METRICS_TOKEN="local-integration-metrics-token"
     tests/settings.test.ts \
     tests/metrics-integration.test.ts \
     tests/news-admin.test.ts \
+    tests/rbac-api.test.ts \
     tests/rate-limit.test.ts \
     tests/push-delivery.test.ts \
     tests/availability.test.ts

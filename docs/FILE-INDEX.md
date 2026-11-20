@@ -77,6 +77,7 @@ before the suite is green again.
 | `apps/admin/src/app/dashboard/scan/error.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/dashboard/scan/page.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/dashboard/settings/mfa/page.tsx` | source | reviewed | staff console screen |
+| `apps/admin/src/app/dashboard/settings/roles/page.tsx` | source | reviewed | REQ-046 — create/edit/delete capability roles |
 | `apps/admin/src/app/dashboard/settings/page.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/dashboard/tickets/[orderId]/page.tsx` | source | reviewed | staff console screen |
 | `apps/admin/src/app/dashboard/tickets/page.tsx` | source | reviewed | staff console screen |
@@ -113,6 +114,7 @@ before the suite is green again.
 | `apps/admin/src/lib/queries/orders.ts` | source | reviewed | React Query data access |
 | `apps/admin/src/lib/queries/platform.ts` | source | reviewed | React Query data access — the platform RPCs and `stripe-onboard` (one module per surface) |
 | `apps/admin/src/lib/queries/scan.ts` | source | reviewed | React Query data access |
+| `apps/admin/src/lib/queries/roles.ts` | source | reviewed | REQ-046 — admin-roles queries/mutations and capability catalogue |
 | `apps/admin/src/lib/queries/settings.ts` | source | reviewed | React Query data access |
 | `apps/admin/src/lib/queries/tenant.ts` | source | reviewed | the admin's club resolver — `currentTenantId()` wraps the `current_tenant()` RPC so name lookups and upserts (0046) scope to the own club |
 | `apps/admin/src/lib/queries/users.ts` | source | reviewed | React Query data access |
@@ -221,7 +223,7 @@ before the suite is green again.
 | `docs/RUNBOOK.md` | doc | reviewed | operational procedures: deploy, rotate (incl. the FCM V1 key), incident, recovery, manual reminder trigger (§6.7), pre-event push check (§8), hardware push proof and the recorded run (§11/§11.7, linking `PUSH.md`), fan rights (§6.8), club exit (§9) |
 | `docs/SECURITY.md` | doc | reviewed | RLS matrix, secrets, payments, QR, audit |
 | `docs/SRS.md` | doc | reviewed | detailed specification of REQ/NFR/SC with acceptance criteria |
-| `docs/TESTING.md` | doc | reviewed | test layers, commands, pending REQ-046 acceptance |
+| `docs/TESTING.md` | doc | reviewed | test layers, commands, REQ-046 acceptance |
 | `docs/TRUTH.md` | doc | reviewed | canonical verified facts: counts, authority model, requirement states |
 | `docs/GLOSSARY.md` | doc | reviewed | one meaning per term: club/tenant, stand/zone, gate/turnstile, role/capability, customer |
 | `docs/DOCSCHECK.md` | doc | reviewed | documentation quality review and remediation record |
@@ -229,7 +231,7 @@ before the suite is green again.
 | `docs/adr/ADR-002-multi-tenancy.md` | doc | reviewed | tenants, tenant_id, composite FKs, open-read catalogue |
 | `docs/adr/ADR-003-stripe-connect.md` | doc | reviewed | Connect accounts, platform fee, webhook tenancy |
 | `docs/adr/ADR-004-white-label.md` | doc | reviewed | white-label delivery and the cross-tenant console |
-| `docs/adr/ADR-005-custom-rbac.md` | doc | reviewed | proposed per-club custom staff roles (REQ-046, open) |
+| `docs/adr/ADR-005-custom-rbac.md` | doc | reviewed | per-club custom staff roles (REQ-046, shipped) |
 | `docs/archive/PLAN-history.md` | doc | reviewed | archived task history of the original build |
 | `docs/evidence/push-hardware-xiaomi-pad-6-2026-11-19.jpg` | asset | asset | the tray notification from the Android hardware run that closed GAP-06 (Xiaomi Pad 6, Android 14, app swiped out of recents) — cited by RUNBOOK §11.7 and PUSH-HW-7 |
 | `eas.json` | config | reviewed | root EAS build profiles — development, preview and production, with remote app-version source |
@@ -335,8 +337,8 @@ before the suite is green again.
 | `scripts/tests/retention.test.mjs` | test | covered | NFR-16 — daily cron, window constants, append-only maintenance flag |
 | `scripts/tests/reschedule.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/service-key.test.mjs` | test | covered | NFR-02 — no service-role JWT reaches client source or static chunks |
-| `scripts/tests/rbac-acceptance.test.mjs` | test | deferred | REQ-046 acceptance scaffold — RBAC-1…RBAC-8 registered as `test.todo` until custom roles ship |
-| `scripts/tests/rbac-docs.test.mjs` | test | covered | doc contract — REQ-046/NFR-10 stay open, the pending IDs exist, no document claims custom RBAC shipped (RBAC-D1…RBAC-D6) |
+| `scripts/tests/rbac-acceptance.test.mjs` | test | covered | REQ-046 acceptance contract — RBAC-1…RBAC-8 across the DB, Edge and console |
+| `scripts/tests/rbac-docs.test.mjs` | test | covered | doc contract — REQ-046/NFR-10 shipped, acceptance IDs mapped, capability catalogue closed (RBAC-D1…RBAC-D6) |
 | `scripts/tests/scan-stats.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/schema-usage.test.mjs` | test | covered | contract test — the shared schemas are actually used (F-11) |
 | `scripts/tests/seeall.test.mjs` | test | covered | contract test — fails when the repository drifts |
@@ -381,6 +383,7 @@ before the suite is green again.
 | `supabase/functions/_shared/supabase.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/ticket-view.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/validate.ts` | source | reviewed | Edge Function helper |
+| `supabase/functions/admin-roles/index.ts` | source | reviewed | REQ-046 — role CRUD over the capability RPCs |
 | `supabase/functions/admin-users/index.ts` | source | reviewed | Edge Function |
 | `supabase/functions/bootstrap/index.ts` | source | reviewed | Edge Function — binds a session to a club by slug (`app_metadata.tenant_id`, D-29) |
 | `supabase/functions/cancel-order/index.ts` | source | reviewed | Edge Function |
@@ -419,6 +422,7 @@ before the suite is green again.
 | `supabase/functions/tests/orders.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/platform.test.ts` | test | covered | Deno test — the generated platform vocabulary under Deno's module rules |
 | `supabase/functions/tests/probe.test.ts` | test | reviewed | unit test — the probe depth needs the token |
+| `supabase/functions/tests/rbac-api.test.ts` | test | covered | REQ-046 — role CRUD API, assignment membership + capability claim |
 | `supabase/functions/tests/push-delivery.test.ts` | test | covered | REQ-11 — reminder fan-out through the local Expo stub, no-device and bad-secret paths |
 | `supabase/functions/tests/rate-limit.test.ts` | test | covered | SC-07 — the 11th checkout request in a minute is refused |
 | `supabase/functions/tests/refund-order.test.ts` | test | covered | REQ-24 — executed refund ledger, void pass and audit, idempotent retry |

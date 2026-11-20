@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { requireAdmin } from "../_shared/auth.ts";
+import { requireCapability } from "../_shared/auth.ts";
 import { ok, serveJson } from "../_shared/http.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { validateBody, validateQuery } from "../_shared/validate.ts";
@@ -30,7 +30,7 @@ function defaultRange(): { from: string; to: string } {
 }
 
 async function handler(request: Request): Promise<Response> {
-  await requireAdmin(request);
+  await requireCapability(request, "view_reports");
   const query =
     request.method === "POST"
       ? await validateBody(request, querySchema)

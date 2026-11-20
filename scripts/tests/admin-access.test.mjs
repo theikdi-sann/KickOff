@@ -40,7 +40,7 @@ test('AA-1 the proxy checks the staff role on the server', () => {
   );
   assert.match(
     proxySource,
-    /isStaffRole/,
+    /isConsoleStaff/,
     'the proxy must use the shared staff predicate, not a second role comparison',
   );
   assert.match(

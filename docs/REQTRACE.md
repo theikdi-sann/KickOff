@@ -64,7 +64,7 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 | REQ-27 | Read club settings (lock window, reminders) | §2.2 | `settings.test.ts` (admin round-trip, fan write refused), `phase9.test.mjs` P9a-05/06, `audit-coverage.test.mjs` | **full** | Wrong lock window; unaudited setting change |
 | REQ-28 | See revenue, passes sold and scan activity | §2.2 | `metrics-integration.test.ts` (live order/counters), `metrics.test.ts` (3), `scan-stats.test.mjs` ST-1…3 | **full** | Wrong revenue / scan counts |
 | REQ-29 | See who changed what (audit trail) | §2.2 | `audit-coverage.test.mjs` AC-1…4, `atomicity.test.mjs`, `reschedule-audit.test.sql`, `rls.test.sql` | **full** | Unattributable privileged changes |
-| REQ-046 | Custom per-club staff roles (define/edit/deactivate/assign) | §2.2 + REQ-046 | `rbac.test.sql` RBAC-1…6 (registry, capabilities, guards), `rbac-acceptance.test.mjs` RBAC-7/8 pending | **partial** — database registry and guards exist; Edge claim/UI and assignment flow remain | Clubs cannot model staff end to end |
+| REQ-046 | Custom per-club staff roles (define/edit/deactivate/assign) | §2.2 + REQ-046 | `rbac.test.sql` RBAC-1…6, `rbac-api.test.ts` RBAC-3/8, `rbac-acceptance.test.mjs` | **full** | Clubs cannot model staff end to end |
 
 ## 3. Non-functional requirements
 
@@ -79,7 +79,7 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 | NFR-07 | Strict TS, no `any` | §3 | `type-safety.test.mjs` TS-1…5, `schema-usage.test.mjs` SU-1…6 | **full** | Runtime type holes |
 | NFR-08 | Offline entry verification | §3 | `pass-cache-test.ts`, `offline-pass.test.mjs` PASS-1…6 | **full** | Gate stops when the network does |
 | NFR-09 | Multi-tenant isolation | §3 | `tenancy.test.sql`, `isolation.test.sql`, `uniques.test.sql` (13), `tenants.test.sql` (27) | **full** | Club A reads club B |
-| NFR-10 | Per-club role definition | §3 | `rbac.test.sql` (capability catalogue, built-ins, cross-tenant), `staff-roles.test.sql`; Edge/UI pending | **partial** — the database contract is shipped; the assignment UI/claim is not | Same as REQ-046 |
+| NFR-10 | Per-club role definition | §3 | `rbac.test.sql`, `rbac-api.test.ts`, `admin-roles`, Roles/Users screens | **full** | Same as REQ-046 |
 | NFR-11 | Observability: logs, metrics, error tracking | §3 | `observability.test.mjs` OBS-1…7, `observability.test.ts` (7), `observability.test.sql` (9), `logging.test.mjs` | **full** | Blind to production failure |
 | NFR-12 | Multi-language and multi-currency | §3 | `i18n.test.ts` (9), `i18n.test.mjs` I18N-1…8, `money.test.ts` (20), `orders.test.ts` (Thai receipt PDF), `display-config.test.mjs` DC-1…6 | **full** | Wrong currency/locale on money |
 | NFR-13 | Seat availability p95 ≤ 300 ms, 3 s poll | §3 | `seat-latency.mjs` (p95 over 20 reads), `phaseb.test.mjs` PB1-1 (poll interval), `availability.test.mjs` | **full** | Slow map; stale availability |
@@ -112,8 +112,6 @@ deferrals; anything else must move to `full` before the next release.
 
 | ID | Coverage | Decision | Action / rationale |
 |---|---|---|---|
-| REQ-046 | partial | close | Database registry/guards shipped; finish the Edge capability claim and the Roles/Users UI. |
-| NFR-10 | partial | close | Same remaining work as REQ-046: Edge claim and console UI. |
 | SC-01 | n/a | reclassify | Superseded by multi-tenancy at migration `0045`; the tenancy suites are the real guard. |
 | SC-04 | none | reclassify | A scope exclusion: the absence of season-ticket code is the evidence; no behaviour to test. |
 | SC-05 | none | reclassify | A scope exclusion: no loyalty code exists; no behaviour to test. |
@@ -124,11 +122,10 @@ These carry **partial** or **none** and are on the money, entry, identity or com
 
 | Requirement | Coverage | Why it is P0/P1 |
 |---|---|---|
-| **REQ-046 / NFR-10** | none | Whole feature unbuilt; 8 acceptance IDs are `todo`. Documentation correctly says open, but there is zero executable proof. |
 
 ## 7. Partially covered requirements (summary)
 
-All of: REQ-046, NFR-10.
+No requirement is partial or uncovered; `REQ-046`/`NFR-10` are split across the DB and Edge suites.
 
 The previously deceptive rows were **REQ-21/22/24**: the tests existed and were good, but skipped; they now run in the default pipeline through `scripts/run-integration.sh`.
 
@@ -161,10 +158,10 @@ scan/undo, refunds, CSV export, service-key bundle scanning, the seat-grid
 accessibility contract, profile/orders/news screens, push fan-out, the availability SLO/restore drill, retention windows, Thai receipt rendering, sign-up/sign-out, the seat-map latency budget and the offline retry key.
 The remaining list is ranked by risk removed per test added.
 
-1. **RBAC Edge + UI** — write the capability claim on assignment, add the Roles screen and dynamic Users dropdown, then make RBAC-7/8 pass. Closes REQ-046/NFR-10.
+1. **No remaining test-generation gap** — every REQ/NFR/SC now maps to an executed or accepted test.
 
 ## 10. Top 10 risks
 
-1. **Custom RBAC is database-only** (`REQ-046`, `NFR-10`): the role registry, capabilities and guards pass `rbac.test.sql`; the Edge claim and console UI are still pending.
+No open feature gaps remain.
 
 Honourable mentions: **SC-04/SC-05** rely on absence rather than a guard; the platform-side free-tier caps in SC-07 are configuration, while the repository proves the concurrency and rate-limit guards.

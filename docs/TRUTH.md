@@ -14,9 +14,9 @@ re-checked instead of trusted.
 | Fact | Value | Verified by |
 |---|---|---|
 | Migrations | **71** ordered SQL files; next is `0072` | `ls supabase/migrations/*.sql \| wc -l` |
-| Edge Functions | **20** (excluding `_shared` and `tests`) | `supabase/functions/*/index.ts` |
+| Edge Functions | **21** (excluding `_shared` and `tests`) | `supabase/functions/*/index.ts` |
 | pgTAP | **476 assertions across 31 suites** | `bash scripts/run-pgtap.sh` |
-| Repo/JS tests | **312** | `npm test` |
+| Repo/JS tests | **317** | `npm test` |
 | Postgres | **17** | deployment / `supabase/config.toml` |
 | Availability target | **99.5 % monthly** | NFR-14 |
 | Latest requirement ID | `REQ-046` is the latest assigned | `docs/REQUIREMENTS.md` |
@@ -36,17 +36,17 @@ re-checked instead of trusted.
 | `customer` | **Not a staff role.** It means *no `staff_members` row* at the current club. It appears in the role vocabulary only so the console and the claim can name the no-authority state. |
 | Role assignment | An admin writes the **membership** and the **JWT claim** together, membership first; a failed claim write restores the membership. Assigning `customer` deletes the membership and sets the claim to `customer`. |
 | Apply window | A role change reaches an existing session at the next access-token refresh; the console states this. |
-| Custom roles | **Not implemented.** `REQ-046` / `GAP-11` are **open**. A club cannot add a role today. |
+| Custom roles | **Shipped.** `REQ-046` / `GAP-11` closed; a club defines capability roles from the Roles screen. |
 
 ## 3. Requirement states that are easy to get wrong
 
 | Requirement | State | Note |
 |---|---|---|
 | NFR-09 multi-tenant isolation | **shipped** | `0045`, isolation suite T-01…T-24 |
-| NFR-10 per-club role definition | **open** | built-in pair shipped; custom roles are REQ-046 / GAP-11 |
+| NFR-10 per-club role definition | **shipped** | `0071` capability roles + `admin-roles` |
 | GAP-02 multi-tenancy | **closed** | `0045` |
 | GAP-03 fixed staff-role pair | **closed** | `0039`/`0041` delivered the built-in pair with per-club capability flags |
-| GAP-11 custom club roles | **open** | REQ-046; acceptance `RBAC-1…RBAC-8` pending |
+| GAP-11 custom club roles | **closed** | REQ-046; `RBAC-1…RBAC-8` |
 | `is_platform_admin()` | **shipped** | `0054` |
 | Offline pass cache | **shipped** | `GAP-01` closed at C10.3 |
 

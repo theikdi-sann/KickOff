@@ -625,3 +625,8 @@ begin
   );
 end;
 $$;
+
+drop policy if exists staff_role_capabilities_read on public.staff_role_capabilities;
+create policy staff_role_capabilities_read on public.staff_role_capabilities
+for select to authenticated
+using (tenant_id = public.current_tenant());

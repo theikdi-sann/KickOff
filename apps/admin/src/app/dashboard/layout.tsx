@@ -40,6 +40,7 @@ const navItems = [
   { href: "/dashboard/scan", label: "Gate scan", icon: QrCode },
   { href: "/dashboard/tickets", label: "Orders & passes", icon: Ticket },
   { href: "/dashboard/users", label: "Users", icon: Users },
+  { href: "/dashboard/settings/roles", label: "Roles", icon: ShieldCheck },
   { href: "/dashboard/settings", label: "Settings", icon: Settings, exact: true },
   { href: "/dashboard/settings/mfa", label: "Security", icon: ShieldCheck },
 ];
@@ -60,6 +61,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard/users": "Users",
   "/dashboard/settings": "Settings",
   "/dashboard/settings/mfa": "Security",
+  "/dashboard/settings/roles": "Staff roles",
   "/dashboard/platform": "Platform",
 };
 

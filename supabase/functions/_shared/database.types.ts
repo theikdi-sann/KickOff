@@ -643,16 +643,36 @@ isOneToOne: false
       referencedColumns: ["tenant_id","code"]
     }
                   ]
-                },"staff_roles": {
+                },"staff_role_capabilities": {
                   Row: {
-                    "can_manage_staff": boolean,"can_operate_gate": boolean,"code": string,"created_at": string,"name": string,"sort_order": number,"tenant_id": string
+                    "capability": string,"role_code": string,"tenant_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "can_manage_staff"?: boolean,"can_operate_gate"?: boolean,"code": string,"created_at"?: string,"name": string,"sort_order"?: number,"tenant_id": string
+                    "capability": string,"role_code": string,"tenant_id": string
                   }
                   Update: {
-                    "can_manage_staff"?: boolean,"can_operate_gate"?: boolean,"code"?: string,"created_at"?: string,"name"?: string,"sort_order"?: number,"tenant_id"?: string
+                    "capability"?: string,"role_code"?: string,"tenant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "staff_role_capabilities_tenant_id_role_code_fkey"
+      columns: ["tenant_id","role_code"]
+isOneToOne: false
+      referencedRelation: "staff_roles"
+      referencedColumns: ["tenant_id","code"]
+    }
+                  ]
+                },"staff_roles": {
+                  Row: {
+                    "active": boolean,"can_manage_staff": boolean,"can_operate_gate": boolean,"code": string,"created_at": string,"is_system": boolean,"name": string,"sort_order": number,"tenant_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"can_manage_staff"?: boolean,"can_operate_gate"?: boolean,"code": string,"created_at"?: string,"is_system"?: boolean,"name": string,"sort_order"?: number,"tenant_id": string
+                  }
+                  Update: {
+                    "active"?: boolean,"can_manage_staff"?: boolean,"can_operate_gate"?: boolean,"code"?: string,"created_at"?: string,"is_system"?: boolean,"name"?: string,"sort_order"?: number,"tenant_id"?: string
                   }
                   Relationships: [
                     {
@@ -993,11 +1013,20 @@ isOneToOne: false
 "_todo":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"admin_assign_role":
+{ Args: { "p_role": string,"p_user_id": string }; Returns: Json
+                           },
 "admin_create_match_from_venue":
 { Args: { "p_gate_ids"?: (string)[],"p_match": Json,"p_prices"?: Json }; Returns: Json
                            },
 "admin_create_match_full":
 { Args: { "p_gate_ids"?: (string)[],"p_gates"?: Json,"p_match": Json,"p_prices"?: Json,"p_venue": Json,"p_zones"?: Json }; Returns: Json
+                           },
+"admin_create_role":
+{ Args: { "p_capabilities": (string)[],"p_code": string,"p_name": string }; Returns: Json
+                           },
+"admin_delete_role":
+{ Args: { "p_code": string }; Returns: Json
                            },
 "admin_delete_venue_zone":
 { Args: { "p_zone_id": string }; Returns: undefined
@@ -1013,6 +1042,9 @@ isOneToOne: false
                            },
 "admin_update_match":
 { Args: { "p_match_id": string,"p_patch": Json,"p_reason"?: string }; Returns: Json
+                           },
+"admin_update_role":
+{ Args: { "p_active"?: boolean,"p_capabilities": (string)[],"p_code": string,"p_name": string }; Returns: Json
                            },
 "application_fee_minor_units":
 { Args: { "p_amount_minor_units": number,"p_fee_bps": number }; Returns: number
@@ -1050,60 +1082,6 @@ isOneToOne: false
                            },
 "current_tenant":
 { Args: Record<PropertyKey, never>; Returns: string
-                           },
-"dblink":
-{ Args: { "": string }; Returns: Record<string, unknown>[]
-                           },
-"dblink_cancel_query":
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_close":
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_connect":
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_connect_u":
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_current_query":
-{ Args: Record<PropertyKey, never>; Returns: string
-                           },
-"dblink_disconnect":
-{ Args: Record<PropertyKey, never>; Returns: string
-                           } |
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_error_message":
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_exec":
-{ Args: { "": string }; Returns: string
-                           },
-"dblink_fdw_validator":
-{ Args: { "catalog": unknown,"options": (string)[] }; Returns: undefined
-                           },
-"dblink_get_connections":
-{ Args: Record<PropertyKey, never>; Returns: (string)[]
-                           },
-"dblink_get_notify":
-{ Args: { "conname": string }; Returns: Record<string, unknown>[]
-                           } |
-{ Args: Record<PropertyKey, never>; Returns: Record<string, unknown>[]
-                           },
-"dblink_get_pkey":
-{ Args: { "": string }; Returns: Database["public"]['CompositeTypes']["dblink_pkey_results"][]
-                          SetofOptions: {
-        from: "*"
-        to: "dblink_pkey_results"
-        isOneToOne: false
-        isSetofReturn: true
-      } },
-"dblink_get_result":
-{ Args: { "": string }; Returns: Record<string, unknown>[]
-                           },
-"dblink_is_busy":
-{ Args: { "": string }; Returns: number
                            },
 "diag":
 { Args: { "msg": unknown }; Returns: { error: true } & "Could not choose the best candidate function between: public.diag(msg => text), public.diag(msg => anyelement). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
@@ -1146,6 +1124,9 @@ isOneToOne: false
                            },
 "grant_admin":
 { Args: { "p_email": string }; Returns: undefined
+                           },
+"has_capability":
+{ Args: { "p_capability": string }; Returns: boolean
                            },
 "has_unique":
 { Args: { "": string }; Returns: string
@@ -1303,8 +1284,6 @@ isOneToOne: false
           CompositeTypes: {
             "_time_trial_type": {
                         "a_time": number | null
-                      },"dblink_pkey_results": {
-                        "position": number | null,"colname": string | null
                       }
           }
         }

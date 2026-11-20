@@ -436,6 +436,10 @@ enabled = true
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
 
 # Edge Functions — share the dependency import map in functions/deno.json.
+[functions.admin-roles]
+enabled = true
+verify_jwt = true
+
 [functions.admin-users]
 enabled = true
 verify_jwt = true

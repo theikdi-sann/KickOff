@@ -40,8 +40,8 @@ const functionSource = read('supabase/functions/admin-users/index.ts');
 test('SR-1 a role change updates the membership and the JWT claim together', () => {
   assert.match(
     functionSource,
-    /planStaffRoleUpdate/,
-    'the function must plan the role change through the shared role contract',
+    /admin_assign_role/,
+    'the function must plan the role change through the capability RPC',
   );
   assert.match(
     functionSource,
@@ -65,7 +65,7 @@ test('SR-2 a failed claim write is compensated, never left half-applied', () => 
   // so an account can never carry more access than its claim advertises.
   assert.match(
     functionSource,
-    /if \(claimError\)[\s\S]*?restoreMembership\(/,
+    /if \(claimError\)[\s\S]*?writeMembership\(db, tenantId, targetId/,
     'a failed claim write must restore the previous membership',
   );
   assert.match(
@@ -124,27 +124,15 @@ test('SR-3 the role vocabulary has one owner and the Edge copy is generated', as
   );
 });
 
-test('SR-4 "at least one admin must remain" counts admins that can act', () => {
+test('SR-4 the last manager guard lives in the database assignment RPC', () => {
   assert.match(
     functionSource,
-    /countUsableAdmins/,
-    'the guard must count admins whose JWT claim is admin',
+    /admin_assign_role/,
+    'assignment must go through the capability RPC',
   );
-  assert.match(
-    functionSource,
-    /getUserById[\s\S]*?app_metadata/,
-    'the guard must read the JWT claim, not only the membership',
-  );
-  assert.match(
-    functionSource,
-    /staff_role[\s\S]{0,40}?admin|admin[\s\S]{0,40}?staff_role/,
-    'the guard must count the club\'s admin memberships',
-  );
-  assert.doesNotMatch(
-    functionSource,
-    /\.eq\("role", "admin"\)/,
-    'counting legacy profile rows can demote the last admin that can actually act',
-  );
+  const migration = read('supabase/migrations/0071_capability_rbac.sql');
+  assert.match(migration, /At least one manage_staff holder must remain/);
+  assert.match(migration, /You cannot demote your own account/);
 });
 
 test('SR-5 only the gate surface accepts a gatekeeper', () => {
@@ -161,23 +149,24 @@ test('SR-5 only the gate surface accepts a gatekeeper', () => {
     assert.doesNotMatch(source, /requireAdmin/, `${path} must not require an admin`);
   }
 
-  for (const path of [
-    'supabase/functions/refund-order/index.ts',
-    'supabase/functions/admin-users/index.ts',
-    'supabase/functions/orders-aggregate/index.ts',
-    'supabase/functions/scan-demo/index.ts',
+  for (const [path, capability] of [
+    ['supabase/functions/refund-order/index.ts', 'refund_orders'],
+    ['supabase/functions/admin-users/index.ts', 'manage_staff'],
+    ['supabase/functions/orders-aggregate/index.ts', 'view_reports'],
+    ['supabase/functions/scan-demo/index.ts', 'operate_gate'],
   ]) {
     const source = read(path);
-    assert.match(source, /requireAdmin/, `${path} must stay admin-only`);
-    assert.doesNotMatch(source, /requireStaff/, `${path} must not accept a gatekeeper`);
+    assert.match(source, new RegExp(`requireCapability\\(request, "${capability}"\\)`),
+      `${path} must require ${capability}`);
+    assert.doesNotMatch(source, /requireStaff/, `${path} must not use the broad staff guard`);
   }
 });
 
 test('SR-6 admin-users consumes the shared vocabulary and guards every demotion', () => {
   assert.match(
     functionSource,
-    /staffRoleSchema/,
-    'the role input must be parsed by the shared schema, not a local enum',
+    /admin_assign_role/,
+    'assignment must go through the capability RPC',
   );
   assert.doesNotMatch(
     functionSource,
@@ -188,8 +177,8 @@ test('SR-6 admin-users consumes the shared vocabulary and guards every demotion'
   // remain" — the old guard only looked for `customer`.
   assert.match(
     functionSource,
-    /"admin" && body\.role !== undefined && body\.role !== "admin"/,
-    'every move away from admin must be guarded, not only customer demotions',
+    /capabilities/,
+    'the claim must carry the assigned capability set',
   );
 });
 

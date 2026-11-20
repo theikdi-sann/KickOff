@@ -1,4 +1,4 @@
-import { requireAdmin } from "../_shared/auth.ts";
+import { requireCapability } from "../_shared/auth.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
 import { refundOrderSchema } from "../_shared/refund.ts";
@@ -14,7 +14,7 @@ interface OrderRow {
 }
 
 async function handler(request: Request): Promise<Response> {
-  const context = await requireAdmin(request);
+  const context = await requireCapability(request, "refund_orders");
   const body = await validateBody(request, refundOrderSchema);
   const db = serviceClient();
 

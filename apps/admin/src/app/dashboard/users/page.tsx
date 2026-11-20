@@ -7,37 +7,24 @@ import { useUsers, useUpdateUser } from "@/lib/queries/users";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { StaffRole } from "@kickoff/shared";
+import { useRoles } from "@/lib/queries/roles";
 
-type Filter = "all" | StaffRole;
+type Filter = "all" | StaffRole | string;
 
-const filters: Array<{ value: Filter; label: string }> = [
-  { value: "all", label: "All" },
-  { value: "admin", label: "Admins" },
-  { value: "gatekeeper", label: "Gatekeepers" },
-  { value: "customer", label: "Customers" },
-];
-
-const COUNT_LABELS: Record<Filter, string> = {
-  all: "users",
-  admin: "admins",
-  gatekeeper: "gatekeepers",
-  customer: "customers",
-};
-
-const ROLE_LABELS: Record<StaffRole, string> = {
-  admin: "ADMIN",
-  gatekeeper: "GATEKEEPER",
-  customer: "CUSTOMER",
-};
-
-const ROLE_TONES: Record<StaffRole, "green" | "gold" | "muted"> = {
+const ROLE_TONES: Record<string, "green" | "gold" | "muted"> = {
   admin: "green",
   gatekeeper: "gold",
   customer: "muted",
 };
 
-/** The roles an admin may assign — the same vocabulary the database accepts. */
-const ASSIGNABLE_ROLES: StaffRole[] = ["customer", "gatekeeper", "admin"];
+function roleTone(role: string): "green" | "gold" | "muted" {
+  return ROLE_TONES[role] ?? "gold";
+}
+
+function roleLabel(role: string, roles: Array<{ code: string; name: string }>): string {
+  if (role === "customer") return "CUSTOMER";
+  return roles.find((entry) => entry.code === role)?.name.toUpperCase() ?? role.toUpperCase();
+}
 
 export default function UsersPage() {
   const [filter, setFilter] = useState<Filter>("all");
@@ -46,6 +33,10 @@ export default function UsersPage() {
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const { data: users, isLoading, error } = useUsers(filter === "all" ? undefined : filter);
   const updateUser = useUpdateUser();
+  const { data: roles } = useRoles();
+  const roleList = roles ?? [];
+  const assignable = [{ code: "customer", name: "Customer" }, ...roleList];
+  const filterOptions = [{ value: "all", label: "All" }, { value: "customer", label: "Customers" }, ...roleList.map((role) => ({ value: role.code, label: role.name }))];
 
   useEffect(() => {
     let active = true;
@@ -59,18 +50,14 @@ export default function UsersPage() {
     };
   }, []);
 
-  const changeRole = async (id: string, role: StaffRole) => {
+  const changeRole = async (id: string, role: string) => {
     setActionError(null);
     setActionNotice(null);
     try {
       const result = await updateUser.mutateAsync({ id, role });
       if (result.roleAppliesAtNextSignIn) {
         setActionNotice(
-          role === "admin"
-            ? "Role updated. They can sign in to the console now — an open session keeps its old role until it is refreshed."
-            : role === "gatekeeper"
-              ? "Role updated. A gatekeeper can scan passes and undo their own scans — an open session keeps its old role until it is refreshed."
-              : "Role updated. An open session keeps its old access until it is refreshed.",
+          "Role updated. An open session keeps the old permissions until its token is refreshed.",
         );
       }
     } catch (caught) {
@@ -91,12 +78,12 @@ export default function UsersPage() {
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
           <Users size={15} />
-          {users?.length ?? 0} {COUNT_LABELS[filter]}
+          {users?.length ?? 0} {filter === "all" ? "users" : filter === "customer" ? "customers" : `${filter}s`}
         </div>
       </header>
 
       <div className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1 text-xs">
-        {filters.map((item) => (
+        {filterOptions.map((item) => (
           <button
             key={item.value}
             type="button"
@@ -159,7 +146,7 @@ export default function UsersPage() {
                       <p className="text-xs text-slate-400">{user.email}</p>
                     </td>
                     <td className="px-4 py-3.5">
-                      <Badge tone={ROLE_TONES[user.role]}>{ROLE_LABELS[user.role]}</Badge>
+                      <Badge tone={roleTone(user.role)}>{roleLabel(user.role, roleList)}</Badge>
                     </td>
                     <td className="px-4 py-3.5 text-xs text-slate-500">
                       {new Date(user.joinedAt).toLocaleDateString("en-GB", {
@@ -174,11 +161,11 @@ export default function UsersPage() {
                         aria-label={`Role for ${user.fullName || user.email}`}
                         value={user.role}
                         disabled={isSelf || updateUser.isPending}
-                        onChange={(event) => void changeRole(user.id, event.target.value as StaffRole)}
+                        onChange={(event) => void changeRole(user.id, event.target.value)}
                         className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition disabled:cursor-not-allowed disabled:opacity-40">
-                        {ASSIGNABLE_ROLES.map((role) => (
-                          <option key={role} value={role}>
-                            {ROLE_LABELS[role]}
+                        {assignable.map((role) => (
+                          <option key={role.code} value={role.code}>
+                            {role.name.toUpperCase()}
                           </option>
                         ))}
                       </select>

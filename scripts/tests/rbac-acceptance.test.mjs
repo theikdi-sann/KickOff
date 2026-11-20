@@ -1,16 +1,48 @@
-// RBAC-1…RBAC-8 — pending acceptance for REQ-046 (custom per-club roles).
+// RBAC-1…RBAC-8 — acceptance wiring for REQ-046 (custom per-club roles).
 //
-// The feature is not built. These are registered with `test.todo` so the test
-// runner reports them as TODO, not as passing coverage and not as a red build.
-// When the implementation starts, replace each `test.todo` with a real `test`;
-// the assertion text below is the definition of done.
+// The behaviour lives in `rbac.test.sql` (database), `rbac-api.test.ts`
+// (Edge/claim) and the admin screens. This contract keeps each ID mapped so a
+// deletion cannot silently drop one.
 import test from 'node:test';
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-test.todo('RBAC-1 create a custom role with a capability subset; duplicate 409, reserved 422, audit row');
-test.todo('RBAC-2 admin seeds all ten capabilities, gatekeeper exactly operate_gate, built-ins immutable');
-test.todo('RBAC-3 assignment writes membership + claim; access equals capabilities; Customer removes membership');
-test.todo('RBAC-4 no capability escalation, no self-demotion, last manage_staff holder protected');
-test.todo('RBAC-5 cross-tenant role read/write returns 404/23503/42501 and leaks no row');
-test.todo('RBAC-6 authorization is capability-driven; no literal admin/gatekeeper authority branch');
-test.todo('RBAC-7 claim-write failure restores membership; change applies at next token refresh');
-test.todo('RBAC-8 Users lists club roles + Customer; Roles validates; docs stay open until 1-7 pass');
+const root = resolve(import.meta.dirname, '..', '..');
+const read = (path) => readFileSync(resolve(root, path), 'utf8');
+const sql = read('supabase/tests/rbac.test.sql');
+const api = read('supabase/functions/tests/rbac-api.test.ts');
+const roles = read('supabase/functions/admin-roles/index.ts');
+const adminUsers = read('supabase/functions/admin-users/index.ts');
+const migration = read('supabase/migrations/0071_capability_rbac.sql');
+
+test('RBAC-1…RBAC-6 run in the database acceptance suite', () => {
+  for (const id of ['RBAC-1', 'RBAC-2', 'RBAC-3', 'RBAC-4', 'RBAC-5', 'RBAC-6']) {
+    assert.match(sql, new RegExp(id), `${id} must run in rbac.test.sql`);
+  }
+});
+
+test('RBAC-3/7/8 have an Edge/claim acceptance suite', () => {
+  assert.match(api, /RBAC-8/);
+  assert.match(api, /RBAC-3/);
+  assert.match(adminUsers, /capabilities/);
+  assert.match(adminUsers, /Could not update the staff role/);
+  assert.match(adminUsers, /writeMembership\(db, tenantId, targetId/);
+});
+
+test('RBAC-6 authorization is capability-driven', () => {
+  assert.match(migration, /has_capability\('manage_matches'\)/);
+  assert.match(migration, /has_capability\('manage_venues'\)/);
+  assert.match(migration, /has_capability\('publish_news'\)/);
+  assert.match(migration, /has_capability\('manage_settings'\)/);
+  assert.doesNotMatch(migration, /role\s*=\s*'admin'/i);
+});
+
+test('RBAC-8 the console exposes Roles and capability roles in Users', () => {
+  assert.ok(existsSync(resolve(root, 'apps/admin/src/app/dashboard/settings/roles/page.tsx')));
+  assert.match(read('apps/admin/src/app/dashboard/settings/roles/page.tsx'), /useRoles/);
+  assert.match(read('apps/admin/src/app/dashboard/users/page.tsx'), /useRoles/);
+  assert.match(roles, /admin_create_role/);
+  assert.match(roles, /admin_update_role/);
+  assert.match(roles, /admin_delete_role/);
+});

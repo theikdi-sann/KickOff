@@ -115,13 +115,12 @@ live since `0045` (ADR-001, ADR-002):
 The isolation suite (pgTAP T-01…T-24) asserts, per scoped table, that a
 cross-tenant read returns 0 rows and a cross-tenant write errors.
 
-### 2.2 Custom staff roles (REQ-046, NFR-10 — open)
+### 2.2 Custom staff roles (REQ-046, NFR-10 — shipped)
 
-The built-in pair ships. A club **cannot** add a role today (`GAP-11`). The
-requirement that closes it is normative in
-[`REQUIREMENTS.md`](REQUIREMENTS.md) REQ-046 and is designed in
-[`adr/ADR-005-custom-rbac.md`](adr/ADR-005-custom-rbac.md). Security rules that
-must hold when it ships:
+The built-in pair ships, and a club can add capability roles from the Roles
+screen. The normative requirement is
+[`REQUIREMENTS.md`](REQUIREMENTS.md) REQ-046, designed in
+[`adr/ADR-005-custom-rbac.md`](adr/ADR-005-custom-rbac.md). Security rules:
 
 - **Closed capability catalogue:** `manage_staff`, `operate_gate`,
   `manage_matches`, `manage_venues`, `publish_news`, `refund_orders`,
@@ -140,7 +139,7 @@ must hold when it ships:
 - **Audit:** `admin.role.create`, `admin.role.update`, `admin.role.deactivate`,
   `admin.user.update`.
 
-Acceptance is `RBAC-1…RBAC-8`, pending in [`TESTING.md`](TESTING.md) §10.
+Acceptance is `RBAC-1…RBAC-8` in [`TESTING.md`](TESTING.md) §10.
 
 ## 3. Edge Function authorization
 

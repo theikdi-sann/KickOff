@@ -1,16 +1,16 @@
 import { z } from "zod";
 
 import { writeAudit } from "../_shared/audit.ts";
-import { requireAdmin, type AuthContext } from "../_shared/auth.ts";
+import { requireCapability, type AuthContext } from "../_shared/auth.ts";
 import type { Database } from "../_shared/database.types.ts";
 import { AppError } from "../_shared/errors.ts";
 import { ok, serveJson } from "../_shared/http.ts";
-import { planStaffRoleUpdate, staffRoleSchema, type StaffRole } from "../_shared/roles.ts";
+import type { Capability } from "../_shared/roles.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { validateBody, validateQuery } from "../_shared/validate.ts";
 
 const listQuerySchema = z.object({
-  role: staffRoleSchema.optional(),
+  role: z.string().regex(/^[a-z][a-z0-9_]*$/).optional(),
   page: z.coerce.number().int().min(1).max(1000).default(1),
   perPage: z.coerce.number().int().min(1).max(100).default(50),
 });
@@ -18,7 +18,7 @@ const listQuerySchema = z.object({
 const patchSchema = z
   .object({
     id: z.string().min(1).max(64).optional(),
-    role: staffRoleSchema.optional(),
+    role: z.string().regex(/^[a-z][a-z0-9_]*$/).optional(),
     fullName: z.string().trim().min(1).max(120).optional(),
     phone: z.string().max(32).nullable().optional(),
   })
@@ -42,7 +42,7 @@ type MembershipRow = {
   staff_role: string;
 };
 
-function toDto(row: ProfileRow, role: StaffRole) {
+function toDto(row: ProfileRow, role: string) {
   return {
     id: row.id,
     email: row.email,
@@ -101,7 +101,7 @@ async function writeMembership(
   db: ReturnType<typeof serviceClient>,
   tenantId: string,
   userId: string,
-  staffRole: StaffRole | null,
+  staffRole: string | null,
 ): Promise<void> {
   if (staffRole === null) {
     const { error } = await db
@@ -122,48 +122,9 @@ async function writeMembership(
   if (error) throw error;
 }
 
-/** Puts the membership back when the claim write fails. */
-async function restoreMembership(
-  db: ReturnType<typeof serviceClient>,
-  tenantId: string,
-  userId: string,
-  previousRole: StaffRole,
-): Promise<void> {
-  await writeMembership(db, tenantId, userId, previousRole === "customer" ? null : previousRole);
-}
-
-/**
- * Counts the admins that can actually act.
- *
- * A membership says the account *may* act; the JWT claim says the Edge
- * guards *will* let it. Counting the memberships alone would let the club
- * demote its last *usable* admin while an unusable one (for example an
- * account promoted before the claim was written) still carries the role.
- *
- * A user whose claim cannot be read is not counted — "cannot prove it works"
- * must never count as "works".
- */
-async function countUsableAdmins(
-  db: ReturnType<typeof serviceClient>,
-  memberships: MembershipRow[],
-  excludeUserId: string,
-): Promise<number> {
-  let usable = 0;
-
-  for (const membership of memberships) {
-    if (membership.staff_role !== "admin") continue;
-    if (membership.id === excludeUserId) continue;
-    const { data: user, error: userError } = await db.auth.admin.getUserById(membership.id);
-    if (userError) continue;
-    const claim = (user?.user.app_metadata as Record<string, unknown> | undefined)?.role;
-    if (claim === "admin") usable += 1;
-  }
-
-  return usable;
-}
 
 async function handler(request: Request): Promise<Response> {
-  const context = await requireAdmin(request);
+  const context = await requireCapability(request, "manage_staff");
   const db = serviceClient();
 
   if (request.method === "GET") {
@@ -199,7 +160,7 @@ async function handler(request: Request): Promise<Response> {
     if (error) throw error;
 
     const items = ((data ?? []) as ProfileRow[])
-      .map((row) => toDto(row, (roles.get(row.id) as StaffRole | undefined) ?? "customer"))
+      .map((row) => toDto(row, (roles.get(row.id) as string | undefined) ?? "customer"))
       .filter((item) => (role ? item.role === role : true));
 
     return ok(
@@ -218,10 +179,6 @@ async function handler(request: Request): Promise<Response> {
   const targetId = body.id ?? idFromRequest(request);
   if (!targetId) throw new AppError("validation", "Missing user id");
 
-  if (targetId === context.user.id && body.role && body.role !== "admin") {
-    throw new AppError("conflict", "You cannot demote your own account");
-  }
-
   const { data: target, error: targetError } = await db
     .from("profiles")
     .select("id,email,full_name,phone,created_at")
@@ -233,14 +190,7 @@ async function handler(request: Request): Promise<Response> {
   const tenantId = await callerClub(context);
   const memberships = await clubMemberships(context);
   const currentRole =
-    (memberships.find((m) => m.id === targetId)?.staff_role as StaffRole | undefined) ?? "customer";
-
-  if (currentRole === "admin" && body.role !== undefined && body.role !== "admin") {
-    const usableAdmins = await countUsableAdmins(db, memberships, targetId);
-    if (usableAdmins === 0) {
-      throw new AppError("conflict", "At least one admin must remain");
-    }
-  }
+    memberships.find((m) => m.id === targetId)?.staff_role ?? "customer";
 
   const patch: Database["public"]["Tables"]["profiles"]["Update"] = {};
   if (body.fullName !== undefined) patch.full_name = body.fullName;
@@ -258,34 +208,47 @@ async function handler(request: Request): Promise<Response> {
     updated = data;
   }
 
-  // The membership is the authority the database reads; the claim is what
-  // every Edge guard reads. Order matters: the membership is written first
-  // and the claim second, so a failure can never leave an account with more
-  // access than its claim advertises. If the claim write fails, the
-  // membership is restored and nothing is changed.
+  // The membership is the authority; the claim is what every Edge guard reads.
+  // Both move together: the RPC enforces escalation/self-demotion/last-manager
+  // guards, and the claim is compensated back if it fails.
   let roleChanged = false;
+  let assignedCapabilities: Capability[] = [];
   if (body.role !== undefined) {
-    const plan = planStaffRoleUpdate(body.role);
-    roleChanged = (plan.membership.staff_role ?? "customer") !== currentRole;
+    roleChanged = body.role !== currentRole;
 
-    await writeMembership(db, tenantId, targetId, plan.membership.staff_role);
+    const assigned = await context.client.rpc("admin_assign_role", {
+      p_user_id: targetId,
+      p_role: body.role,
+    });
+    if (assigned.error) throw assigned.error;
+
+    if (body.role !== "customer") {
+      const { data: caps, error: capError } = await db
+        .from("staff_role_capabilities")
+        .select("capability")
+        .eq("tenant_id", tenantId)
+        .eq("role_code", body.role);
+      if (capError) throw capError;
+      assignedCapabilities = ((caps ?? []) as Array<{ capability: Capability }>).map(
+        (row) => row.capability,
+      );
+    }
 
     const { data: authUser, error: authError } = await db.auth.admin.getUserById(targetId);
     const claimError = authError
       ? authError
       : (
         await db.auth.admin.updateUserById(targetId, {
-          // Merge, never replace: a claim another tier owns (a tenant, say)
-          // must survive a role change.
           app_metadata: {
             ...((authUser?.user.app_metadata as Record<string, unknown> | undefined) ?? {}),
-            role: plan.auth.app_metadata.role,
+            role: body.role,
+            capabilities: assignedCapabilities,
           },
         })
       ).error;
 
     if (claimError) {
-      await restoreMembership(db, tenantId, targetId, currentRole);
+      await writeMembership(db, tenantId, targetId, currentRole === "customer" ? null : currentRole);
       throw new AppError("internal", "Could not update the staff role. Nothing was changed.");
     }
   }

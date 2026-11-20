@@ -242,7 +242,7 @@ membership). Settings are read by staff, written by admin.
 Overview metrics via `orders-aggregate` and the `metrics` machine endpoint
 (token-guarded). `audit_logs` readable by admin, console is read-only over it.
 
-### REQ-046 — Per-club staff role definition and assignment (`open`)
+### REQ-046 — Per-club staff role definition and assignment (`shipped`)
 
 **Behaviour.** An admin holding `manage_staff` can create, rename, deactivate
 and assign club-scoped staff roles beyond the two built-in roles. Authority is
@@ -262,8 +262,7 @@ manager protected, cross-tenant access refused. RLS and Edge guards check
 capabilities only. The full rules and error codes are normative in
 [`REQUIREMENTS.md`](REQUIREMENTS.md) REQ-046.
 
-**Verified by.** `RBAC-1…RBAC-8` — **pending** (`TESTING.md` §10). The feature
-is not built; NFR-10 and `GAP-11` are **open**.
+**Verified by.** `RBAC-1…RBAC-8` — `rbac.test.sql`, `rbac-api.test.ts` and `TESTING.md` §10.
 
 ## 4. Non-functional requirements
 
@@ -280,7 +279,7 @@ Each NFR states the measurable target and the enforcement mechanism.
 | NFR-07 | Type safety | strict TS, `noUncheckedIndexedAccess` on, no `any`, no non-null assertions | `tsconfig.base.json`, ESLint, `scripts/tests/type-safety.test.mjs` |
 | NFR-08 | Offline entry verification | cached signed payload; server authoritative | **shipped** — `GAP-01` closed at C10.3 |
 | NFR-09 | Multi-tenant isolation | per-club data isolation, branding, currency | **shipped** — `GAP-02` closed at `0045` (isolation suite green); ADR-002, C6–C7 |
-| NFR-10 | Per-club role definition | beyond `admin`/`gatekeeper`: a club may add roles | **open** — built-in pair shipped (`0039`, `0041`, `0047`, `0048`); custom roles are REQ-046 / GAP-11, `RBAC-1…RBAC-8` pending |
+| NFR-10 | Per-club role definition | beyond `admin`/`gatekeeper`: a club may add roles | **shipped** — `0071` capability catalogue/RLS, `admin-roles`, capability claims, `RBAC-1…RBAC-8` |
 | NFR-11 | Observability | structured logs (single JSON line, redacted), request IDs, error tracking, alerting | **shipped** — C10.1: `error_events` carries the same request id as the envelope and the log line, `ALERT_WEBHOOK_URL` pages (optional, cooldown-gated), and the reconciliation sweep finds unsettled payments; the logger itself landed in C4.11 |
 | NFR-12 | Multi-language/currency | per-tenant locale and currency | **shipped** — `GAP-05` closed at C10.2: schema (C6/C7), formatting (C8.2), the translation layer with a coverage-contracted Thai catalog (C10.2), and a bundled Thai font subset for the PDF receipt. |
 | NFR-13 | Seat availability performance | p95 read-to-render ≤ 300 ms; 3 s poll; >5 s marked stale | `zone_availability`; `availability.test.mjs` |
@@ -326,7 +325,7 @@ anon key + user JWT.
 | `ticket-qr` | user JWT | signed pass payload |
 | `scan-ticket` / `scan-undo` | staff JWT | gate surface |
 | `admin-users` | admin JWT | staff list and role assignment (membership + claim atomic) |
-| `admin-roles` (**planned, REQ-046**) | admin JWT with `manage_staff` | custom role CRUD (not built) |
+| `admin-roles` | JWT with `manage_staff` | custom role CRUD, capability subset, built-in immutability |
 | `receipt` | user JWT | PDF receipt |
 | `delete-account` | user JWT | account deletion |
 | `devices` | user JWT | push token registration |
@@ -408,7 +407,7 @@ the execution order fixed in `PLAN.md`:
   2026-11-19; iOS uses the same procedure with an APNs key and is unrun).
 - **GAP-08** — ticket transfer/claim is explicitly out of scope; a buyer holds
   every pass for their order until it is designed as its own feature.
-- **GAP-11 (REQ-046, NFR-10)** — a club cannot define its own staff roles yet.
+- **GAP-11 (REQ-046, NFR-10)** — **closed** by the capability roles in `0071` and `admin-roles`.
   The built-in pair ships; custom role CRUD, capability assignment and the
   `RBAC-1…RBAC-8` acceptance suite are **pending**. Design:
   [`ADR-005`](adr/ADR-005-custom-rbac.md).

@@ -2,7 +2,7 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 import { AppError } from "./errors.ts";
 import { isPlatformMetadata } from "./platform.ts";
-import { isAdminRole, isStaffRole } from "./roles.ts";
+import { capabilitiesOf, isConsoleStaff, isFullAdmin, type Capability } from "./roles.ts";
 import { userClient } from "./supabase.ts";
 
 export interface AuthContext {
@@ -21,13 +21,13 @@ function bearerToken(request: Request): string | null {
 
 export function isAdmin(user: User): boolean {
   const appMetadata = user.app_metadata as Record<string, unknown> | undefined;
-  return isAdminRole(appMetadata?.role);
+  return isFullAdmin(appMetadata);
 }
 
 /** True for either staff role — an admin or a gatekeeper. */
 export function isStaff(user: User): boolean {
   const appMetadata = user.app_metadata as Record<string, unknown> | undefined;
-  return isStaffRole(appMetadata?.role);
+  return isConsoleStaff(appMetadata);
 }
 
 /**
@@ -54,7 +54,20 @@ export async function requireUser(request: Request): Promise<AuthContext> {
   return { user: data.user, client, accessToken: token };
 }
 
-/** Requires a signed-in user whose `app_metadata.role` is `admin`. */
+/** Requires one capability from the caller's claim. */
+export async function requireCapability(
+  request: Request,
+  capability: Capability,
+): Promise<AuthContext> {
+  const context = await requireUser(request);
+  const metadata = context.user.app_metadata as Record<string, unknown> | undefined;
+  if (!capabilitiesOf(metadata).includes(capability)) {
+    throw new AppError("forbidden", `Capability required: ${capability}`);
+  }
+  return context;
+}
+
+/** Requires a signed-in user whose claim holds all ten capabilities. */
 export async function requireAdmin(request: Request): Promise<AuthContext> {
   const context = await requireUser(request);
   if (!isAdmin(context.user)) {

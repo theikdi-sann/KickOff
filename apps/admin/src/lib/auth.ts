@@ -1,7 +1,7 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
-import { isAdminRole, isPlatformMetadata, isStaffRole, staffRoleOf, type StaffRole } from "@kickoff/shared";
+import { isFullAdmin, isConsoleStaff, isPlatformMetadata, staffRoleOf, type StaffRole } from "@kickoff/shared";
 import { identify, reset, track } from "@/lib/analytics";
 import { createClient } from "@/lib/supabase/client";
 
@@ -14,13 +14,13 @@ export function roleOf(user: User | null | undefined): StaffRole | null {
 /** True for an admin — the only role that may manage the club. */
 export function isAdminUser(user: User | null | undefined): boolean {
   const metadata = user?.app_metadata as Record<string, unknown> | undefined;
-  return isAdminRole(metadata?.role);
+  return isFullAdmin(metadata);
 }
 
 /** True for either staff role — an admin or a gatekeeper. */
 export function isStaffUser(user: User | null | undefined): boolean {
   const metadata = user?.app_metadata as Record<string, unknown> | undefined;
-  return isStaffRole(metadata?.role);
+  return isConsoleStaff(metadata);
 }
 
 /**

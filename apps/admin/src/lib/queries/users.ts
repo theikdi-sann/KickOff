@@ -5,11 +5,14 @@ import type { StaffRole } from "@kickoff/shared";
 import { invokeFunction } from "@/lib/functions";
 import { createClient } from "@/lib/supabase/client";
 
+/** Built-in codes keep their union; custom codes are strings. */
+export type AdminRole = StaffRole | string;
+
 export interface AdminUser {
   id: string;
   email: string;
   fullName: string;
-  role: StaffRole;
+  role: AdminRole;
   phone: string | null;
   joinedAt: string;
 }
@@ -27,7 +30,7 @@ interface MembershipRow {
   staff_role: string;
 }
 
-function toUser(row: ProfileRow, role: StaffRole): AdminUser {
+function toUser(row: ProfileRow, role: string): AdminUser {
   return {
     id: row.id,
     email: row.email,
@@ -38,7 +41,7 @@ function toUser(row: ProfileRow, role: StaffRole): AdminUser {
   };
 }
 
-export function useUsers(role?: StaffRole) {
+export function useUsers(role?: string) {
   return useQuery({
     queryKey: ["admin-users", role ?? "all"],
     queryFn: async (): Promise<AdminUser[]> => {
@@ -61,7 +64,7 @@ export function useUsers(role?: StaffRole) {
       const roles = new Map(
         ((memberships.data ?? []) as MembershipRow[]).map((membership) => [
           membership.id,
-          membership.staff_role as StaffRole,
+          membership.staff_role,
         ]),
       );
 
@@ -86,7 +89,7 @@ export function useUpdateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { id: string; role?: StaffRole }): Promise<AdminUserUpdate> => {
+    mutationFn: async (input: { id: string; role?: string }): Promise<AdminUserUpdate> => {
       return invokeFunction<AdminUserUpdate>("admin-users", {
         method: "PATCH",
         body: input,

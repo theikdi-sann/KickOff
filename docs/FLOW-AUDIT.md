@@ -85,7 +85,7 @@ display-only.
 
 | Flow | Entry | Trust boundary | Validation | Failure path | Audit | Test proof |
 |---|---|---|---|---|---|---|
-| A16 Define / assign a custom role | no screen yet (`REQ-046`) | planned `admin-roles` — `manage_staff` capability | closed capability catalogue | planned `403`/`409`/`422` | planned `admin.role.*` | `RBAC-1…RBAC-8` **pending** |
+| A16 Define / assign a custom role | Roles screen (`REQ-046`, shipped) | `admin-roles` — `manage_staff` capability | closed capability catalogue | `403`/`409`/`422` | `rbac.role.*` | `RBAC-1…RBAC-8` |
 
 **Effective authorisation** for every admin mutation is the RLS membership
 predicate (`is_admin()` reading `staff_members` + `staff_roles`, not the JWT

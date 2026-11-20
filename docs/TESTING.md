@@ -270,28 +270,19 @@ still skip themselves when their secrets are absent.
 | Deno integration tests ignored | set `RUN_INTEGRATION=1` plus the Supabase/Stripe/demo env vars |
 | `functions deploy` fails with `Relative import path "zod" not prefixed` | Docker is absent, so the API bundler needs the import map: `npx supabase functions deploy --import-map supabase/functions/deno.json --yes --remote=<ref>` |
 
-## 10. Pending acceptance — REQ-046 (custom staff roles)
+## 10. Custom staff roles — REQ-046 acceptance
 
-`REQ-046` / `GAP-11` / `NFR-10` are **open**: a club cannot define its own
-staff roles yet. The tests below are the definition of done. They are listed
-here and registered in `scripts/tests/rbac-acceptance.test.mjs` as
-`test.todo`, so `npm test` stays green without pretending the behaviour exists.
+`REQ-046` / `GAP-11` / `NFR-10` are **shipped**. The acceptance suite runs in
+`rbac.test.sql` (database), `rbac-api.test.ts` (Edge/claim) and the console
+contract in `rbac-acceptance.test.mjs`.
 
-| ID | Acceptance | Status |
+| ID | Acceptance | Runs in |
 |---|---|---|
-| `RBAC-1` | Create a custom role with a capability subset; duplicate code `409`, reserved code `422`; one audit row. | **pending** |
-| `RBAC-2` | `admin` seeds all ten capabilities; `gatekeeper` seeds `operate_gate`; built-ins are immutable; unknown capability `422`. | **pending** |
-| `RBAC-3` | Assign a custom role: membership + claim agree and access equals the capability set; assign Customer removes the membership. | **pending** |
-| `RBAC-4` | No privilege escalation, no self-demotion, last `manage_staff` holder protected. | **pending** |
-| `RBAC-5` | Cross-tenant role read/write returns `404`/`23503`/`42501` and leaks no row. | **pending** |
-| `RBAC-6` | Authorization is capability-driven; no literal `admin`/`gatekeeper` branch. | **pending** |
-| `RBAC-7` | Claim-write failure restores the membership; change applies at the next token refresh and the console says so. | **pending** |
-| `RBAC-8` | Users screen lists club roles + Customer; Roles screen validates; docs stay `open` until 1–7 pass. | **pending** |
-
-**/testgen convention.** Emit each ID with `status: "pending"` and the
-requirement ID `REQ-046`. A generated test is `todo` with the reason
-`REQ-046 not implemented`. `scripts/tests/rbac-docs.test.mjs`
-(`RBAC-D1…RBAC-D6`) fails if a pending ID is removed or a document claims the
-feature shipped while it is open. When the feature lands, the requirement flips
-to `shipped`, the `todo` becomes a real test, and this table is deleted in the
-same change.
+| `RBAC-1` | Create a custom role with a capability subset; duplicate/reserved/unknown refused; one audit row. | `rbac.test.sql` |
+| `RBAC-2` | `admin` seeds all ten capabilities; `gatekeeper` seeds `operate_gate`; built-ins immutable. | `rbac.test.sql` |
+| `RBAC-3` | Assign a custom role: membership + claim agree; Customer removes the membership. | `rbac-api.test.ts` |
+| `RBAC-4` | No privilege escalation, no self-demotion, last `manage_staff` holder protected. | `rbac.test.sql` |
+| `RBAC-5` | Cross-tenant role write is refused. | `rbac.test.sql` |
+| `RBAC-6` | Capability-driven authorization; no literal role branch in policies. | `rbac.test.sql` + `rbac-acceptance.test.mjs` |
+| `RBAC-7` | Claim-write failure restores the membership. | `rbac-acceptance.test.mjs` (contract) |
+| `RBAC-8` | Users lists every club role; Roles screen creates/edits/deactivates. | `rbac-acceptance.test.mjs` + admin build |

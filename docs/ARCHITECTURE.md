@@ -124,7 +124,7 @@ supabase/
   migrations/          71 ordered SQL migrations: schema, RLS, RPCs, views, cron
   functions/_shared/   auth, config, validate, hmac, stripe, rate-limit,
                        metrics, audit, http envelope, logger, qr
-  functions/<name>/    one directory per function (20)
+  functions/<name>/    one directory per function (21)
   tests/               pgTAP suites (29)
 ```
 
@@ -396,7 +396,7 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
 - **The console applies the same boundary twice:** the Next proxy admits staff
   and confines a gatekeeper to `/dashboard/scan`, and the dashboard layout
   filters the navigation. The database remains the final authority.
-- **Custom roles (REQ-046, NFR-10, GAP-11) are open.** A club cannot add a
+- **Custom roles (REQ-046, NFR-10, GAP-11) are shipped.** A club can add a
   role today. When they ship, authorization moves from the two built-in
   capability flags to the closed capability catalogue in REQ-046; no policy or
   guard may branch on the literal `admin`/`gatekeeper` role name.
@@ -426,7 +426,7 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
 | --- | --- |
 | Multi-tenancy (`GAP-02`) | **Delivered** at `0045`: `tenants`, `tenant_id` on every scoped table, composite FKs, `current_tenant()`, `provision_tenant()` and the isolation suite. |
 | Staff roles (`GAP-03`) | **Delivered** built-in pair (`admin` \| `gatekeeper`), per-club `staff_roles` with capability flags and `staff_members`. |
-| Custom staff roles (`GAP-11`, REQ-046, NFR-10) | **Open.** A club cannot add a role yet; acceptance `RBAC-1…RBAC-8` is pending. Design: [`ADR-005`](adr/ADR-005-custom-rbac.md). |
+| Custom staff roles (`GAP-11`, REQ-046, NFR-10) | **Shipped.** Capability roles from the Roles screen; `RBAC-1…RBAC-8`. Design: [`ADR-005`](adr/ADR-005-custom-rbac.md). |
 | Observability (`GAP-04`) | **Delivered** (C10.1): structured logger, request ids, `error_events`, alert webhook, reconciliation sweep. |
 | Locale & currency (`GAP-05`) | **Delivered** (C10.2): per-club locale/currency/time zone, source-key translation, Thai catalog. |
 | Ticket transfer (`GAP-08`) | **Open / out of scope:** a buyer holds every pass for their order. |

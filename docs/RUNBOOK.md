@@ -229,7 +229,7 @@ counts admins that can act — if it refuses, promote another admin first.
 Assigning **Customer** deletes the membership; `customer` is the absence of a
 `staff_members` row, not a staff role.
 The built-in roles are `admin` and `gatekeeper`; per-club custom roles
-(REQ-046 / `GAP-11`) are **not available yet**, so there is no role-management
+(REQ-046 / `GAP-11`) are available from the Roles screen, so the role-management
 screen to operate.
 
 ### 6.7 Reminders not sent

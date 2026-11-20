@@ -12,7 +12,7 @@ mock data layer.
   profile, settings and push notifications.
 - **Admin console** (Next.js 16) — fixtures and seating inventory, gates,
   scanner, orders, refunds, CSV export, news, users, settings and TOTP.
-- **Backend** (Supabase) — Postgres with row-level security, 20 Edge Functions,
+- **Backend** (Supabase) — Postgres with row-level security, 21 Edge Functions,
   Stripe webhooks, signed QR passes, audit logs, scheduled reminders and a
   token-guarded metrics endpoint.
 
@@ -361,7 +361,7 @@ Expo Router strips group segments, so the URLs below are the real ones
 | `/dashboard/news` | Article publishing and editing |
 | `/dashboard/users` | Roles, accounts |
 | `/dashboard/platform` | Cross-club registry: status, platform fee, provisioning, Stripe onboarding (platform claim only) |
-| `/dashboard/settings`, `/dashboard/settings/mfa` | Club settings, security |
+| `/dashboard/settings`, `/dashboard/settings/mfa`, `/dashboard/settings/roles` | Club settings, security, staff roles |
 
 ---
 

@@ -82,9 +82,9 @@ Supabase backend with Stripe payments and the Expo Push Service.
 | REQ-27 | Read club settings (lock window, reminders) | shipped | `app_settings` |
 | REQ-28 | See revenue, passes sold and scan activity | shipped | overview page + `metrics` endpoint |
 | REQ-29 | See who changed what (audit trail) | shipped | `audit_logs` + admin console |
-| REQ-046 | Define, edit, deactivate and assign **custom per-club staff roles** | **open** | REQ-046 below; `GAP-11`; acceptance `RBAC-1…RBAC-8` pending |
+| REQ-046 | Define, edit, deactivate and assign **custom per-club staff roles** | **shipped** | `admin-roles`, capability claims, `rbac.test.sql` + `rbac-api.test.ts` |
 
-### REQ-046 — Per-club staff role definition and assignment (`open`)
+### REQ-046 — Per-club staff role definition and assignment (`shipped`)
 
 **Behaviour.** An admin that holds `manage_staff` can define, rename, deactivate
 and assign club-scoped staff roles beyond the two built-in roles. A role is a
@@ -163,7 +163,7 @@ capabilities, never from the role's name.
 **Non-goals.** Venue-scoped roles, per-user capability overrides, role
 inheritance, and delegated role administration below `manage_staff`.
 
-**Acceptance.** `RBAC-1…RBAC-8` (pending — the feature is not built). The
+**Acceptance.** `RBAC-1…RBAC-8` (executed in `rbac.test.sql`, `rbac-api.test.ts` and the console contracts). The
 pending tests are listed in [`TESTING.md`](TESTING.md) §10 and registered as
 `test.todo` until the implementation lands.
 
@@ -180,7 +180,7 @@ pending tests are listed in [`TESTING.md`](TESTING.md) §10 and registered as
 | NFR-07 | Type safety: strict TS, no `any` | shipped | `tsconfig.base.json`, ESLint `no-explicit-any` |
 | NFR-08 | Offline entry verification without a network | **shipped** | `GAP-01` closed at C10.3 — `useTicketQr`/`useTicket` fall back to the cache with `fromCache`, proven by PASS-1…PASS-6 and the cache unit tests |
 | NFR-09 | Multi-tenant isolation | **shipped** | `GAP-02` closed at `0045` — ADR-002; C6–C7 (`0040`–`0045`), isolation suite green |
-| NFR-10 | Per-club role definition | a club can add staff roles without a migration; each role is a tenant-scoped row with a subset of the closed capability catalogue; no authorization path names a role; cross-tenant role reads/writes return zero rows or `23503`/`42501`; every role write is audited | **open** — built-in `admin` / `gatekeeper` and per-club capability flags shipped in `0039`/`0041`/`0047`/`0048`; custom definitions are REQ-046 / GAP-11, acceptance `RBAC-1…RBAC-8` pending |
+| NFR-10 | Per-club role definition | a club can add staff roles without a migration; each role is a tenant-scoped row with a subset of the closed capability catalogue; no authorization path names a role; cross-tenant role reads/writes return zero rows or `23503`/`42501`; every role write is audited | **shipped** — `0071` capability catalogue/RLS, `admin-roles`, capability claims; `RBAC-1…RBAC-8` |
 | NFR-11 | Observability: structured logs, metrics, error tracking | **shipped** | `GAP-04` closed at C10.1 — `error_events` (durable, one request id across response, log and record), the optional `ALERT_WEBHOOK_URL` channel with a per-function cooldown, and `xclub-reconcile-payments` finding the C8.1 unsettled payments |
 | NFR-12 | Multi-language and multi-currency | **shipped** | `GAP-05` closed at C10.2 — schema (`tenants.locale`/`currency`/`timezone`) in C6/C7, formatting in C8.2, and the translation layer in C10.2: source-as-key `translate()`, a contract-enforced Thai catalog, `useTranslator()` in the app, the club locale on every date and money call, and the receipt in the club's language through a bundled Thai font subset. |
 | NFR-13 | Seat availability performance | p95 read-to-render ≤ 300 ms; the map polls every 3 s; a value older than 5 s is marked stale, never shown as current | `zone_availability`, `scripts/tests/availability.test.mjs`; enforced by review until a load test lands |
@@ -239,7 +239,7 @@ Requirement → implementation → the test that proves it. Tests live in
 | REQ-27 | `apps/admin/src/app/dashboard/settings/page.tsx` | `scripts/tests/reschedule.test.mjs` (RS-7) |
 | REQ-28 | `apps/admin/src/app/dashboard/page.tsx`, `functions/metrics` | `scripts/tests/phase11.test.mjs` |
 | REQ-29 | `apps/admin/src/lib/audit.ts`, `supabase/migrations/0012_audit_logs.sql` | `supabase/tests/reschedule-audit.test.sql` |
-| REQ-046 | none — **open** (`GAP-11`) | `RBAC-1…RBAC-8` (pending, `TESTING.md` §10) |
+| REQ-046 | `supabase/migrations/0071_capability_rbac.sql`, `functions/admin-roles`, `functions/admin-users`, admin Roles/Users screens | `rbac.test.sql`, `rbac-api.test.ts`, `RBAC-1…RBAC-8` |
 | NFR-01 | `supabase/migrations/0016–0018`, `0035–0037` | `supabase/tests/rls*.test.sql` |
 | NFR-03 | `supabase/functions/_shared/config.ts` | `scripts/tests/ci.test.mjs` |
 | NFR-06 | `.github/workflows/ci.yml` | `scripts/tests/ci.test.mjs` |
@@ -262,7 +262,7 @@ tracked decision, not an accident.
 | **GAP-08** | **No ticket transfer/claim.** A fan who buys four seats holds all four passes in their own account; friends cannot claim their own pass. | Buying for friends works at the gate (four QRs) but not in the app. | Out of scope now — revisit after C9; needs buyer/holder split on `tickets`. |
 | **GAP-09** | **Closed at GAP-09.6 — before the first club is onboarded (C8.2/C9).** A club leaving the platform now gets a clean, auditable exit: the schedule ([`docs/PRIVACY.md`](PRIVACY.md)), the fan export (`export-user`) and erasure (the `delete-account` repair plus the schedule), the club archive (`export_tenant()`), and the erase behind the human money gate (`mark_tenant_offboarded()` / `erase_tenant()`), with the exit runbook (RUNBOOK §9) and fan-rights procedure (§6.8). | The platform must not hold a club's money with no agreed way to hand it back (ADR-003 §6). The Connect *plumbing* (C8.1) shipped first — it changes nothing while no club holds a connected account, and the exit procedure now lands before the platform could hold a club's money on its own account. | ✅ closed at GAP-09.6 |
 | **GAP-10** | **White-label release overhead is unproven.** One app per club means per-club EAS projects, bundle ids, Expo push credentials and store listings. | The delivery model multiplies release work. | Onboarding checklist delivered in C9 (`RUNBOOK` §10 — provision → fee → Connect → build → verify); the first second-tenant build remains open. |
-| **GAP-11** | **A club cannot define its own staff roles.** `staff_roles` is per club but the code still ships exactly two seeded roles, the shared `STAFF_ROLES` union, and Edge guards that read a role name. | A club with a box-office lead, a matchday manager or a read-only auditor must reuse `admin` (too broad) or `gatekeeper` (too narrow). | **Open** — REQ-046. Owner: engineering. Definition of done: `RBAC-1…RBAC-8` pass and NFR-10 flips to `shipped`. |
+| **GAP-11** | **A club cannot define its own staff roles.** `staff_roles` is per club but the code still ships exactly two seeded roles, the shared `STAFF_ROLES` union, and Edge guards that read a role name. | A club with a box-office lead, a matchday manager or a read-only auditor must reuse `admin` (too broad) or `gatekeeper` (too narrow). | ✅ **closed at 0071** — capability roles, `admin-roles`, capability claims and `RBAC-1…RBAC-8`. |
 
 ## 7. Change control
 
