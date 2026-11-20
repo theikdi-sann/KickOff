@@ -14,7 +14,8 @@ for account lifecycle (reset/confirmation mail, erasure), TOTP MFA, fixture
 edit/delete, news publish/edit/unpublish, push fan-out through a local Expo
 stub, the availability SLO, the scratch-database restore drill, the
 7y/3y/90d retention sweep, sign-up/sign-out, the seat-map latency budget and
-the Thai receipt font. The receipt's default club is `th-TH`; its
+the Thai receipt font, the news audit trigger, the MFA browser redirect,
+settings round-trip and live metrics. The receipt's default club is `th-TH`; its
 PDF embeds a bundled Noto Sans Thai subset so the club's language fits the Edge
 worker heap. `REQTRACE.md` is the dated coverage register.
 
@@ -22,16 +23,16 @@ worker heap. `REQTRACE.md` is the dated coverage register.
 
 | Fact | Verified value | How |
 |---|---|---|
-| Migrations | **69** | `ls supabase/migrations \| wc -l` |
+| Migrations | **70** | `ls supabase/migrations \| wc -l` |
 | Edge Functions | **20** (excluding `_shared` and `tests`) | `supabase/functions/*/index.ts` |
-| pgTAP suites | **29** | `ls supabase/tests/*.test.sql` |
+| pgTAP suites | **30** | `ls supabase/tests/*.test.sql` |
 | pgTAP assertions | **458** | `bash scripts/run-pgtap.sh` |
 | JS/repo tests | **312** | `npm test` |
 | `profiles.role` | **dropped in `0048`** | `0048_drop_legacy_role.sql` |
 | `is_platform_admin()` | **exists since `0054`** | `0054_platform.sql` |
 | Scan outcomes | `valid`, `used`, `invalid`, `wrong_match`, **`wrong_zone`** | `database.types.ts`, `0065` |
 | Match clock | **every minute** | `0058_match_clock.sql` |
-| Next migration | **`0070`** | 69 applied, `0069` is the last |
+| Next migration | **`0071`** | 70 applied, `0070` is the last |
 
 ---
 
@@ -102,13 +103,13 @@ After fixing those six (and the ~12 High items), the set moves to **READY WITH C
 | ID | Doc & section | Issue | Proposed fix |
 |---|---|---|---|
 | **DS-001** | `README.md` lines 19–21; `REQUIREMENTS.md` lines 25–28; `ARCHITECTURE.md` §8; `BRAND.md` identity | Multi-tenancy is described as future in four places and shipped in five others. | Replace all four with the “shipped since `0045`” statement in §5.1 below. |
-| **DS-002** | `ARCHITECTURE.md` §2.2 lines 124–128 | `migrations/ 39 ordered SQL migrations`, `functions/<name>/ (16)`, `tests/ pgTAP suites (10)` are all false. | `migrations/ 69 ordered SQL migrations`; `functions/<name>/ one directory per function (20)`; `tests/ pgTAP suites (29)`. |
+| **DS-002** | `ARCHITECTURE.md` §2.2 lines 124–128 | `migrations/ 39 ordered SQL migrations`, `functions/<name>/ (16)`, `tests/ pgTAP suites (10)` are all false. | `migrations/ 70 ordered SQL migrations`; `functions/<name>/ one directory per function (20)`; `tests/ pgTAP suites (30)`. |
 | **DS-003** | `ARCHITECTURE.md` §4.4 vs SRS REQ-19 / `admin_update_match()` | §4.4 says “The rules live in the shared Zod schema … no database trigger enforces them” then says the database refuses a move without a reason. | Rewrite §4.4 as: “The *policy* (upcoming-only, future, lock window, never earlier, ≤10 days, reason) is parsed by `adminRescheduleSchema`; the *write* is `admin_update_match()`, which re-checks the reason and writes the change + audit row in one transaction. A direct PostgREST update is not a supported path and must be tested as refused.” |
 | **DS-004** | `SECURITY.md` §2.1 line 85 | “`is_platform_admin()` gates the cross-tenant console and arrives with C9.” | “`is_platform_admin()` (since `0054`) gates the cross-tenant console; `platform_admins` is RLS-on with no policies and `set_platform_admin()` is the only writer.” |
 | **DS-005** | `ARCHITECTURE.md` §3 line 139; SRS REQ-01 rule 3 | “role lives in the JWT claim, mirrored in `profiles`”; “role defaults to `customer`” — `profiles.role` was dropped in `0048`. | “Authority is `staff_members` + `staff_roles` per tenant; the Edge guards read `app_metadata.role`. `profiles` carries no role column since `0048`.” |
 | **DS-006** | `PRIVACY.md` §The three rules line 32 vs §What a club’s exit does line 102 | `seat_holds` is “ERASE — the row is deleted” but the table says “active holds released”; `tenants` is “ERASE (at offboarding)” but the exit section says the row survives as a tombstone. | “`seat_holds`: DELETE at account deletion (not released).” / “`tenants`: retained as a tombstone with `erased_at` set; all other tenant-scoped rows are deleted.” |
 | **DS-007** | `TESTING.md` §3 line 79 | “Tenant isolation (C7, planned)” contradicts the quick-reference table that already lists tenant isolation. | “Tenant isolation (C7.3, shipped): T-01…T-24.” |
-| **DS-008** | `RUNBOOK.md` §3.2 line 96 | “`0050…` is the next free number.” | “`0070` is the next free number (69 applied).” |
+| **DS-008** | `RUNBOOK.md` §3.2 line 96 | “`0050…` is the next free number.” | “`0071` is the next free number (70 applied).” |
 | **DS-009** | `SRS.md` §6 line 327 | “(308 assertions / 20 suites)” | “(444 assertions across 29 suites; verified 2026-11-19).” |
 | **DS-010** | `ARCHITECTURE.md` §4.2; `SECURITY.md` §6; `SRS.md` REQ-21 | Scan result sets omit `wrong_zone`, so a generated test cannot know the stand refusal exists. | Add `wrong_zone` to every result set and state: “a pass for another stand returns `wrong_zone`, records a `scan_events` row, and does **not** consume the pass.” |
 
@@ -199,7 +200,7 @@ After fixing those six (and the ~12 High items), the set moves to **READY WITH C
 | **NFR-01** | “Every table in schema `public` has `relrowsecurity = true` and at least one policy for each API role that may touch it. A new table without RLS fails `pgTAP NFR-01`. Exception: `platform_admins` has RLS enabled and **zero** policies (deny-all).” |
 | **NFR-02** | “No client bundle contains `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TICKET_HMAC_KEY` or `METRICS_TOKEN`. A CI scan of every built bundle fails on any of those literals; `EXPO_PUBLIC_*`/`NEXT_PUBLIC_*` may contain only the URL, anon key and boolean flags.” |
 | **NFR-04** | “Every pass payload matches `KICKOFF-V2:` + HMAC-SHA256 over `v2\|ticket_id\|match_id\|order_id\|qr_nonce`. A payload with a modified field, an unknown nonce, or a signature computed with another key returns `invalid`; verification is constant-time.” |
-| **NFR-06** | “Every push to `main` runs these jobs and fails the build on any non-zero exit: typecheck, lint, unit (312), no-mocks, pgTAP (458), Edge `deno check`, executed edge integration, admin build. The job list itself is asserted by `CI-1`.” |
+| **NFR-06** | “Every push to `main` runs these jobs and fails the build on any non-zero exit: typecheck, lint, unit (312), no-mocks, pgTAP (458), Edge `deno check`, executed edge integration, restore drill, admin build, local MFA redirect E2E. The job list itself is asserted by `CI-1`.” |
 | **NFR-09** | “For every tenant-scoped table, a session with club A's claim reads 0 rows of club B and a write referencing club B fails with `23503`/`42501`. Asserted by T-01…T-24 for all 13 scoped tables.” |
 | **NFR-10** | “Per-club role definition: a club can add staff roles without a migration; each role is a tenant-scoped row with a subset of the closed capability catalogue; no authorization path names a role; cross-tenant role reads/writes return zero rows or `23503`/`42501`; every role write is audited. Built-in `admin`/`gatekeeper` shipped; custom roles are `REQ-046` / `GAP-11`, acceptance `RBAC-1…RBAC-8` pending.” |
 | **NFR-11** | “Every 5xx writes one `error_events` row sharing the response `x-request-id`; rows are pruned at 30 days. An alert fires at most once per function+code per 30 minutes. `metrics` exposes `errors.total` and `reconciliation.unsettled`.” |
@@ -260,7 +261,7 @@ After fixing those six (and the ~12 High items), the set moves to **READY WITH C
 
 ### 5.6 Architecture corrections (paste into the named sections)
 
-- **§2.2:** `migrations/ 69 ordered SQL migrations`; `functions/<name>/ 20 functions`; `tests/ 30 pgTAP suites (458 assertions)`.
+- **§2.2:** `migrations/ 70 ordered SQL migrations`; `functions/<name>/ 20 functions`; `tests/ 30 pgTAP suites (458 assertions)`.
 - **§3 Access row:** `profiles`, `app_settings`, `app_secrets`, `staff_members`, `staff_roles` | “identity is global; authority is the per-club membership; the legacy `profiles.role` is gone since `0048`.”
 - **§3.1 heading:** “Current model (C6–C7 delivered in `0040`–`0048`)”.
 - **§4.2:** add `wrong_zone`; add “the gate’s stand is compared with the ticket’s venue zone; a mismatch does not consume the pass.”

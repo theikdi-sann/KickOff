@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toNewsDto, type NewsCategory } from "@kickoff/shared";
-import { AUDIT_ACTIONS, changedFields, recordAudit } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/client";
 
 export interface AdminNewsInput {
@@ -48,13 +47,6 @@ export function useCreateNews() {
         .single();
       if (error) throw new Error(error.message);
 
-      await recordAudit({
-        action: AUDIT_ACTIONS.newsCreate,
-        entity: "news_items",
-        entityId: data.id,
-        metadata: { title: input.title, category: input.category },
-      });
-
       return toNewsDto(data);
     },
     onSuccess: () => {
@@ -92,13 +84,6 @@ export function useUpdateNews() {
         .single();
       if (error) throw new Error(error.message);
 
-      await recordAudit({
-        action: AUDIT_ACTIONS.newsUpdate,
-        entity: "news_items",
-        entityId: input.id,
-        metadata: { fields: changedFields(patch) },
-      });
-
       return toNewsDto(data);
     },
     onSuccess: () => {
@@ -113,12 +98,6 @@ export function useDeleteNews() {
     mutationFn: async (id: string) => {
       const { error } = await createClient().from("news_items").delete().eq("id", id);
       if (error) throw new Error(error.message);
-
-      await recordAudit({
-        action: AUDIT_ACTIONS.newsDelete,
-        entity: "news_items",
-        entityId: id,
-      });
 
       return id;
     },

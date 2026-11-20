@@ -208,6 +208,8 @@ export METRICS_TOKEN="local-integration-metrics-token"
     tests/account-lifecycle.test.ts \
     tests/mfa.test.ts \
     tests/fixture-admin.test.ts \
+    tests/settings.test.ts \
+    tests/metrics-integration.test.ts \
     tests/news-admin.test.ts \
     tests/push-delivery.test.ts \
     tests/availability.test.ts

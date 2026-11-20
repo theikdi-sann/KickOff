@@ -33,9 +33,9 @@ const REQUIRED_AUDITS = [
   { file: 'apps/admin/src/lib/queries/gates.ts', action: 'gateCreate' },
   { file: 'apps/admin/src/lib/queries/gates.ts', action: 'gateUpdate' },
   { file: 'apps/admin/src/lib/queries/gates.ts', action: 'gateDelete' },
-  { file: 'apps/admin/src/lib/queries/news.ts', action: 'newsCreate' },
-  { file: 'apps/admin/src/lib/queries/news.ts', action: 'newsUpdate' },
-  { file: 'apps/admin/src/lib/queries/news.ts', action: 'newsDelete' },
+  { file: 'apps/admin/src/lib/queries/news.ts', action: 'newsCreate', database: true },
+  { file: 'apps/admin/src/lib/queries/news.ts', action: 'newsUpdate', database: true },
+  { file: 'apps/admin/src/lib/queries/news.ts', action: 'newsDelete', database: true },
   { file: 'apps/admin/src/lib/queries/settings.ts', action: 'settingsUpdate' },
   { file: 'apps/admin/src/app/dashboard/tickets/page.tsx', action: 'ordersExport' },
 ];
@@ -67,12 +67,12 @@ test('AC-2 every privileged mutation records an action', () => {
         new RegExp(`AUDIT_ACTIONS\\.${action}\\b`),
         `${file} must record the "${action}" action`,
       );
+      assert.match(
+        source,
+        /recordAudit\(/,
+        `${file} must write an audit row`,
+      );
     }
-    assert.match(
-      source,
-      /recordAudit\(/,
-      `${file} must write an audit row`,
-    );
   }
 });
 
@@ -119,6 +119,7 @@ test('AC-4 no action is defined but never used', () => {
   const databaseWriters = [
     'supabase/migrations/0038_atomic_reschedule_refund.sql',
     'supabase/migrations/0063_venue_layout.sql',
+    'supabase/migrations/0070_news_audit_trigger.sql',
   ]
     .map((file) => (existsSync(resolve(root, file)) ? read(file) : ''))
     .join('\n');

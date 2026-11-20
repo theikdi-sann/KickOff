@@ -119,6 +119,22 @@ describe('seat grid accessibility', () => {
     });
   });
 
+  it('continues with the selected seat to the hold call', async () => {
+    const { getByLabelText, getByText } = await render(<SeatSelectionScreen />);
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('Seat A1'));
+    });
+    await act(async () => {
+      fireEvent.press(getByText('Continue'));
+    });
+
+    expect(mockMutateAsync).toHaveBeenCalledWith({
+      matchId: 'm-bkk',
+      seatIds: ['seat-a1'],
+    });
+  });
+
   it('does not select a sold seat when it is activated', async () => {
     const { getByLabelText } = await render(<SeatSelectionScreen />);
 

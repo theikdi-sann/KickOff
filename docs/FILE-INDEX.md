@@ -58,7 +58,7 @@ before the suite is green again.
 | `apps/admin/.env.local.example` | config | reviewed | admin environment template |
 | `apps/admin/.gitignore` | config | reviewed | admin ignore rules |
 | `apps/admin/AGENTS.md` | doc | reviewed | documentation |
-| `apps/admin/e2e/auth.spec.ts` | test | covered | contract test — fails when the repository drifts |
+| `apps/admin/e2e/auth.spec.ts` | test | covered | wrong password, sign in/out and the TOTP challenge redirect |
 | `apps/admin/e2e/ops.spec.ts` | test | covered | contract test — fails when the repository drifts |
 | `apps/admin/eslint.config.mjs` | source | reviewed | source |
 | `apps/admin/next.config.ts` | source | reviewed | source |
@@ -162,6 +162,7 @@ before the suite is green again.
 | `apps/mobile/src/app/(tabs)/index.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/(tabs)/profile.tsx` | source | reviewed | supporter app screen |
 | `apps/mobile/src/app/(tabs)/tickets.tsx` | source | reviewed | supporter app screen |
+| `apps/mobile/src/app/__tests__/fixtures-test.tsx` | test | covered | REQ-02 — upcoming/postponed/results rendering and counts |
 | `apps/mobile/src/app/__tests__/news-test.tsx` | test | covered | REQ-03 — news list renders, plus empty and error states |
 | `apps/mobile/src/app/__tests__/orders-test.tsx` | test | covered | REQ-09 — order history, statuses and lifetime spend |
 | `apps/mobile/src/app/_layout.tsx` | source | reviewed | supporter app screen |
@@ -277,10 +278,12 @@ before the suite is green again.
 | `packages/shared/vitest.config.ts` | source | reviewed | source |
 | `scripts/availability-probe.mjs` | source | reviewed | NFR-14 — records one health probe and reports the monthly SLO |
 | `scripts/build-file-index.mjs` | source | reviewed | tool or gate script |
+| `scripts/enroll-admin-mfa.mjs` | source | reviewed | creates a fresh local admin and enrols TOTP for the MFA E2E |
 | `scripts/check-functions.sh` | config | reviewed | configuration |
 | `scripts/check-no-mocks.sh` | config | reviewed | configuration |
 | `scripts/mvp-gate.mjs` | source | reviewed | tool or gate script |
 | `scripts/pg-url-parts.mjs` | source | covered | splits a DB URL so the password stays out of the command line |
+| `scripts/run-admin-mfa-e2e.sh` | config | reviewed | builds the admin locally, enrols TOTP and runs the Playwright auth spec |
 | `scripts/run-integration.sh` | config | reviewed | executes the Edge commerce/scan/refund/account/MFA/fixture/news/push suites against the local stack with Stripe and Expo stubs |
 | `scripts/restore-drill.sh` | config | reviewed | NFR-17 — dump → scratch restore → count check → pgTAP |
 | `scripts/run-pgtap.sh` | config | reviewed | configuration; accepts `KICKOFF_PGTAP_DB_URL`/`KICKOFF_PGTAP_SKIP` for the restore drill |
@@ -408,6 +411,7 @@ before the suite is green again.
 | `supabase/functions/tests/fixture-admin.test.ts` | test | covered | REQ-16 — create/edit/reschedule/delete, sold-ticket refusal and audit |
 | `supabase/functions/tests/hmac.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/http.test.ts` | test | covered | contract test — fails when the repository drifts |
+| `supabase/functions/tests/metrics-integration.test.ts` | test | covered | REQ-28 — live revenue/pass/scan counters from `metrics` |
 | `supabase/functions/tests/mfa.test.ts` | test | covered | REQ-15 — TOTP enrol/challenge/verify to aal2 |
 | `supabase/functions/tests/metrics.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/observability.test.ts` | test | covered | Deno test — failure classification, the 5xx predicate, the alert cooldown, the alert text and the unsettled-payment verdict |
@@ -418,6 +422,7 @@ before the suite is green again.
 | `supabase/functions/tests/push-delivery.test.ts` | test | covered | REQ-11 — reminder fan-out through the local Expo stub, no-device and bad-secret paths |
 | `supabase/functions/tests/refund-order.test.ts` | test | covered | REQ-24 — executed refund ledger, void pass and audit, idempotent retry |
 | `supabase/functions/tests/roles.test.ts` | test | covered | contract test — fails when the repository drifts |
+| `supabase/functions/tests/settings.test.ts` | test | covered | REQ-27 — admin settings round-trip, fan write refused |
 | `supabase/functions/tests/scan.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/validate.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/webhook.test.ts` | test | covered | contract test — fails when the repository drifts |
@@ -491,6 +496,7 @@ before the suite is green again.
 | `supabase/migrations/0067_admin_create_match_full.sql` | data | reviewed | one atomic call builds the fixture and its ground: new or existing venue, zones and generated seats, inline stand-level gates, per-fixture prices and the gate assignment |
 | `supabase/migrations/0068_availability_probes.sql` | data | reviewed | NFR-14 — probe table, monthly SLO view and service-only grants |
 | `supabase/migrations/0069_retention_windows.sql` | data | reviewed | NFR-16 — retention sweep, device `last_seen_at`, daily cron |
+| `supabase/migrations/0070_news_audit_trigger.sql` | data | reviewed | NFR-05 — news create/update/delete audit row in the same transaction |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/connect.test.sql` | test | covered | pgTAP suite — C8.1 Stripe Connect: the platform fee in minor units, the club a connected account belongs to, the event ledger; 0050's omittable payment-intent and account parameters (16 assertions) |

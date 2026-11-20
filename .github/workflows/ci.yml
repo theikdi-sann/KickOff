@@ -94,6 +94,15 @@ jobs:
       - name: Admin production build
         run: npm run build:admin
 
+      # REQ-15: the console must redirect an MFA-enrolled admin to the TOTP
+      # challenge. This builds the admin against the local stack and drives the
+      # real browser; the hosted E2E remains the release check.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Local MFA redirect E2E
+        run: bash scripts/run-admin-mfa-e2e.sh
+
   # Runs manually once a hosted Supabase project exists. Configure the repository
   # secrets listed below; without them the job is skipped by GitHub.
   e2e-auth:

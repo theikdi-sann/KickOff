@@ -44,6 +44,6 @@ test.describe("admin authentication", () => {
     await page.getByRole("button", { name: /sign in to dashboard/i }).click();
 
     await expect(page).toHaveURL(/\/login\/mfa/);
-    await expect(page.getByText(/two-factor check/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /two-factor check/i })).toBeVisible();
   });
 });

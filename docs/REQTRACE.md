@@ -31,9 +31,9 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 | REQ ID | Description (short) | Source | Tests | Coverage | Risk if untested |
 |---|---|---|---|---|---|
 | REQ-01 | Register, sign in/out, password reset, email verification, profile management | REQUIREMENTS §2.1 | `account-lifecycle.test.ts` (sign-up, sign-out, reset + confirmation mail, profile edit), `signup.test.mjs` SU-1…4 | **full** | Locked-out users; broken verification silently strands new accounts |
-| REQ-02 | Browse upcoming fixtures and past results | §2.1 | `seeall.test.mjs` SA-1/SA-3, `match-phase.test.ts` MP-1…7, `e2e/ops.spec.ts` create fixture | **partial** — grouping unit-tested; list rendering source-only | Past fixtures shown as upcoming; wrong "next match" |
+| REQ-02 | Browse upcoming fixtures and past results | §2.1 | `fixtures-test.tsx` (upcoming/postponed/results render), `seeall.test.mjs` SA-1/SA-3, `match-phase.test.ts` MP-1…7 | **full** | Past fixtures shown as upcoming; wrong "next match" |
 | REQ-03 | Read club news and match reports | §2.1 | `news-test.tsx` (render, empty, error), `seeall.test.mjs` SA-2/SA-4, `mobile-resilience.test.mjs` MR-2 | **full** | Empty or stale news with no error state |
-| REQ-04 | Select a seating zone and an exact seat | §2.1 | `venues.test.mjs` VEN-1…8, `availability.test.mjs` AV-1…4, `create-fixture-dialog.test.mjs` CF-1…6 | **partial** — inventory is proven; seat-selection interaction is not | Double-booked / unselectable seats |
+| REQ-04 | Select a seating zone and an exact seat | §2.1 | `seat-grid-test.tsx` (select → hold call), `venues.test.mjs` VEN-1…8, `availability.test.mjs` AV-1…4 | **full** | Double-booked / unselectable seats |
 | REQ-05 | Live seat availability (3 s poll, selection preserved) | §2.1 | `phaseb.test.mjs` PB1-1…4, `availability.test.mjs` AV-1…4 | **full** | Stale map; selection wiped by polling |
 | REQ-06 | Hold a seat while paying (10 min TTL, one active hold) | §2.1 | `hold-ttl.test.sql` (3), `hold-concurrency.test.sql` (1), `constraints.test.sql`, `seat-reservation.test.sql` (16) | **full** | Double-sold seats |
 | REQ-07 | Pay with Stripe (server-computed amount) | §2.1 | `orders.test.ts`, `webhook.test.ts` (executed by `run-integration.sh` in default CI), `connect.test.sql` CN-1…9, `connect.test.mjs` CN-1…7 | **full** | Revenue loss; wrong amount; unfulfilled order |
@@ -49,7 +49,7 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 
 | REQ ID | Description (short) | Source | Tests | Coverage | Risk if untested |
 |---|---|---|---|---|---|
-| REQ-15 | Staff sign-in with TOTP MFA | §2.2 | `mfa.test.ts` (enrol → challenge → aal2 in default CI), `e2e/auth.spec.ts` (UI redirect, hosted), `admin-access.test.mjs` AA-1…7 | **partial** — the TOTP factor is executed; the admin UI redirect is still source/hosted-E2E | Console reachable without the second factor |
+| REQ-15 | Staff sign-in with TOTP MFA | §2.2 | `run-admin-mfa-e2e.sh` (real browser redirect to `/login/mfa`), `mfa.test.ts` (enrol → challenge → aal2), `admin-access.test.mjs` AA-1…7 | **full** | Console reachable without the second factor |
 | REQ-16 | Create, edit and delete fixtures | §2.2 | `fixture-admin.test.ts` (create → edit → reschedule → blocked delete → delete), `create-match-full.test.sql` (22), `venue-layout.test.sql` (11) | **full** | Orphaned / unremovable fixtures |
 | REQ-17 | Configure zones, rows, seats and prices | §2.2 | `venues.test.mjs`, `create-match-full.test.sql`, `seating-lock.test.sql` (6), `editor-extraction.test.mjs` ED-1…4 | **full** | Bad inventory, wrong prices |
 | REQ-18 | Manage venues (add/delete) | §2.2 | `venues.test.sql` (8), `venues.test.mjs` VEN-1…8, `venue-layout.test.sql` (11) | **full** | Cross-club venue leakage |
@@ -61,8 +61,8 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 | REQ-24 | List, filter, refund and export orders | §2.2 | `refund-order.test.ts` (executed refund + audit + retry), `export.test.ts` (CSV/BOM/escaping), `atomicity.test.mjs` AT-2…4, `search.test.ts` | **full** | Wrong refund, no audit, PII export |
 | REQ-25 | Publish and edit news and results | §2.2 | `news-admin.test.ts` (publish → edit → block fan write → unpublish → public read), `audit-coverage.test.mjs` | **full** | Unpublished/unaudited content |
 | REQ-26 | Manage users and roles (built-in `admin` / `gatekeeper` pair) | §2.2 | `roles.test.ts` (9), `staff-roles.test.mjs` SR-1…12, `staff-roles.test.sql` (26), `identity.test.sql` (28), `rls-auth.test.sql` | **full** — custom roles are tracked separately as REQ-046 | Privilege escalation; stale claim |
-| REQ-27 | Read club settings (lock window, reminders) | §2.2 | `phase9.test.mjs` P9a-05/06, `audit-coverage.test.mjs`, `reschedule.test.ts` RS-1 | **partial** — source contracts, no read/write round-trip | Wrong lock window; unaudited setting change |
-| REQ-28 | See revenue, passes sold and scan activity | §2.2 | `metrics.test.ts` (3), `phase11.test.mjs` P11-18, `scan-stats.test.mjs` ST-1…3 | **partial** — aggregation math only lightly asserted | Wrong revenue / scan counts |
+| REQ-27 | Read club settings (lock window, reminders) | §2.2 | `settings.test.ts` (admin round-trip, fan write refused), `phase9.test.mjs` P9a-05/06, `audit-coverage.test.mjs` | **full** | Wrong lock window; unaudited setting change |
+| REQ-28 | See revenue, passes sold and scan activity | §2.2 | `metrics-integration.test.ts` (live order/counters), `metrics.test.ts` (3), `scan-stats.test.mjs` ST-1…3 | **full** | Wrong revenue / scan counts |
 | REQ-29 | See who changed what (audit trail) | §2.2 | `audit-coverage.test.mjs` AC-1…4, `atomicity.test.mjs`, `reschedule-audit.test.sql`, `rls.test.sql` | **full** | Unattributable privileged changes |
 | REQ-046 | Custom per-club staff roles (define/edit/deactivate/assign) | §2.2 + REQ-046 | `rbac-acceptance.test.mjs` RBAC-1…8 — **all `test.todo`**; `rbac-docs.test.mjs` RBAC-D1…6 (doc only) | **none** | Clubs cannot model staff; feature is entirely unbuilt |
 
@@ -112,11 +112,6 @@ deferrals; anything else must move to `full` before the next release.
 
 | ID | Coverage | Decision | Action / rationale |
 |---|---|---|---|
-| REQ-02 | partial | close | Render the fixture list and assert past/upcoming grouping and the next-match label. |
-| REQ-04 | partial | close | Drive seat selection end to end and assert the selected seat reaches the hold call. |
-| REQ-15 | partial | close | Run the TOTP MFA path locally; the hosted-secret E2E stays as the release check. |
-| REQ-27 | partial | close | Round-trip club settings (lock window, reminders) and assert validation and audit. |
-| REQ-28 | partial | close | Compute revenue / passes sold / scan counts from a seeded fixture and compare to SQL aggregates. |
 | REQ-046 | none | accept | Feature is open and deliberately unbuilt (`GAP-11`, ADR-005); the 8 acceptance IDs stay `test.todo`. Owner: product. Review: 2027-02-20. |
 | NFR-10 | none | accept | Same open requirement as REQ-046: built-in roles are done; custom per-club roles are not. Owner: product. Review: 2027-02-20. |
 | SC-01 | n/a | reclassify | Superseded by multi-tenancy at migration `0045`; the tenancy suites are the real guard. |
@@ -131,11 +126,10 @@ These carry **partial** or **none** and are on the money, entry, identity or com
 | Requirement | Coverage | Why it is P0/P1 |
 |---|---|---|
 | **REQ-046 / NFR-10** | none | Whole feature unbuilt; 8 acceptance IDs are `todo`. Documentation correctly says open, but there is zero executable proof. |
-| **REQ-15** staff MFA | partial | TOTP enrol/challenge/aal2 now runs in default CI; the admin UI redirect is still source/hosted-E2E. |
 
 ## 7. Partially covered requirements (summary)
 
-All of: REQ-02, 04, 15, 27, 28; SC-07.
+All of: SC-07.
 
 The previously deceptive rows were **REQ-21/22/24**: the tests existed and were good, but skipped; they now run in the default pipeline through `scripts/run-integration.sh`.
 
@@ -169,13 +163,10 @@ accessibility contract, profile/orders/news screens, push fan-out, the availabil
 The remaining list is ranked by risk removed per test added.
 
 1. **RBAC-1…RBAC-8** — replace the `todo`s with real pgTAP + unit/contract tests when REQ-046 is built. Closes REQ-046/NFR-10.
-2. **MFA UI acceptance** — complete the local admin redirect and TOTP form, not just the Auth API. Closes REQ-15.
 
 ## 10. Top 10 risks
 
 1. **Custom RBAC is entirely unbuilt** (`REQ-046`, `NFR-10`, `GAP-11`): 8 acceptance IDs are `todo`. The docs are honest, but any "roles are done" claim is false.
-2. **The MFA UI redirect** (REQ-15) is still source/hosted-E2E; the TOTP Auth API path is executed.
-3. **News audit writes are source-contracted** (REQ-25/NFR-05): the DB flow is executed, but the console's audit row is not.
-4. **Fixture/order screens** (REQ-02/REQ-04) still lack rendered list/selection interaction tests.
+2. **SC-07 free-tier limits** are accepted platform behaviour, not repository code.
 
 Honourable mentions: **SC-04/SC-05** rely on absence rather than a guard; **NFR-13** still needs a latency probe; **REQ-02/REQ-04** still lack a rendered list/selection interaction test.

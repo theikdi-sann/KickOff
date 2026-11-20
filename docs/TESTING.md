@@ -171,7 +171,7 @@ npm run test:integration
 `scripts/run-integration.sh` resets the local database, starts Stripe and Expo
 push stub containers, serves the functions, seeds the demo fan/admin, moves the demo
 fixtures into the future and runs `orders`, `webhook`, `scan`, `refund-order`,
-`account-lifecycle`, `mfa`, `fixture-admin`, `news-admin` and `push-delivery`. The Stripe stub
+`account-lifecycle`, `mfa`, `fixture-admin`, `settings`, `metrics-integration`, `news-admin` and `push-delivery`. The Stripe stub
 accepts `sk_test_` keys only and the webhook is signed locally, so no live
 money can move. Push is sent to the local Expo stub, which records the batch
 for assertions. Password-reset and signup-confirmation mail is read from
@@ -200,7 +200,10 @@ npm run test:e2e --workspace @kickoff/admin
 `E2E_ADMIN_PASSWORD` (falling back to `NEXT_PUBLIC_DEMO_*`); the suite skips
 itself when neither is set.
 
-- `e2e/auth.spec.ts` — wrong password, sign in/out, optional TOTP.
+- `e2e/auth.spec.ts` — wrong password, sign in/out, TOTP challenge. Run the
+  local MFA redirect against the real browser with
+  `bash scripts/run-admin-mfa-e2e.sh` (builds the admin against the local
+  stack, creates a fresh admin, enrols TOTP and deletes it afterwards).
 - `e2e/ops.spec.ts` — signs in, creates a fixture through the UI, provisions a
   stable `e2e-gate` on the seeded pass, scans the demo pass, exports the orders
   CSV and (when keys are available) refunds a paid order.
@@ -249,7 +252,7 @@ npm run functions:check         # every Edge Function typechecks
 
 `.github/workflows/ci.yml` runs, in order: install → typecheck/lint → workspace
 and script tests → local Supabase stack → DB lint → pgTAP → Deno function
-checks → executed Edge integration suite (local Stripe/Expo stubs) → restore drill → admin build →
+checks → executed Edge integration suite (local Stripe/Expo stubs) → restore drill → admin build → local MFA redirect E2E →
 Playwright (`auth` and `ops`) when the `E2E_ADMIN_*` secrets exist → MVP gate.
 
 The Edge integration suite needs no repository secrets; the hosted E2E suites

@@ -54,6 +54,13 @@ Deno.test({
     assertExists(articleId);
 
     try {
+      const createAudit = await rest<Array<{ action: string }>>(
+        env,
+        `audit_logs?entity_id=eq.${articleId}&action=eq.news.create&select=action`,
+        { token: env.service },
+      );
+      assertEquals(createAudit.length, 1, "publishing writes its audit row in the same transaction");
+
       const live = await rest<Array<{ title: string }>>(
         env,
         `news_items?id=eq.${articleId}&select=title`,
@@ -70,6 +77,13 @@ Deno.test({
 
       // RLS makes the fan's UPDATE a zero-row no-op (PostgREST returns 204),
       // so prove the row did not change rather than trusting the status code.
+      const updateAudit = await rest<Array<{ action: string }>>(
+        env,
+        `audit_logs?entity_id=eq.${articleId}&action=eq.news.update&select=action`,
+        { token: env.service },
+      );
+      assertEquals(updateAudit.length, 1, "editing writes an audit row");
+
       const asFan = await raw(env, `news_items?id=eq.${articleId}`, {
         token: fan,
         method: "PATCH",
@@ -98,6 +112,13 @@ Deno.test({
         method: "DELETE",
       });
       assertEquals(removed.status, 204, removed.text);
+
+      const deleteAudit = await rest<Array<{ action: string }>>(
+        env,
+        `audit_logs?entity_id=eq.${articleId}&action=eq.news.delete&select=action`,
+        { token: env.service },
+      );
+      assertEquals(deleteAudit.length, 1, "unpublishing writes an audit row");
 
       const after = await rest<Array<{ id: string }>>(
         env,

@@ -29,6 +29,14 @@ test('P11-13 CI runs the executed Edge integration suite', () => {
   );
 });
 
+test('P11-13 CI runs the local MFA redirect E2E', () => {
+  assert.match(
+    workflow,
+    /scripts\/run-admin-mfa-e2e\.sh/,
+    'CI must drive the browser MFA redirect, not only the Auth API',
+  );
+});
+
 test('RBAC-D7 CI runs the RBAC documentation contracts', () => {
   assert.match(
     workflow,
