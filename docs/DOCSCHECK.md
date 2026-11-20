@@ -9,7 +9,9 @@ review record; where it says “proposed”, the applied text is in the named do
 **Second remediation 2026-11-20 (verification-gap pass):** the executed Edge
 integration suite (checkout → webhook → ticket → receipt, scan/undo, refunds),
 the client-screen/accessibility tests, the service-key bundle scan and the
-`REQTRACE.md` contract were added. The receipt's default club is `th-TH`; its
+`REQTRACE.md` contract were added. **Wave 1** then added executed local suites
+for account lifecycle (reset/confirmation mail, erasure), TOTP MFA, fixture
+edit/delete and news publish/edit/unpublish. The receipt's default club is `th-TH`; its
 PDF now uses the documented ASCII/English fallback because a Thai font does not
 fit the Edge worker heap. `REQTRACE.md` is the dated coverage register.
 

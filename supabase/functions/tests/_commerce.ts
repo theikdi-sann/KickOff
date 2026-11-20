@@ -254,3 +254,84 @@ export async function scanUndo(
   });
   return { status: response.status, body: await response.json() };
 }
+
+/** Calls the Supabase Auth admin API with the service-role key. */
+export async function authAdmin<T>(
+  env: ReturnType<typeof requireEnv>,
+  path: string,
+  options: { method?: string; body?: unknown } = {},
+): Promise<{ status: number; body: T }> {
+  const response = await fetch(`${env.url}/auth/v1/admin/${path}`, {
+    method: options.method ?? "GET",
+    headers: {
+      apikey: env.service,
+      authorization: `Bearer ${env.service}`,
+      ...(options.body ? { "content-type": "application/json" } : {}),
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const text = await response.text();
+  return { status: response.status, body: (text ? JSON.parse(text) : null) as T };
+}
+
+/** Calls a public Auth endpoint (recover, resend, token) with the anon key. */
+export async function authPublic<T>(
+  env: ReturnType<typeof requireEnv>,
+  path: string,
+  options: { method?: string; body?: unknown; token?: string } = {},
+): Promise<{ status: number; body: T }> {
+  const response = await fetch(`${env.url}/auth/v1/${path}`, {
+    method: options.method ?? "POST",
+    headers: {
+      apikey: env.anon,
+      ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
+      ...(options.body ? { "content-type": "application/json" } : {}),
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const text = await response.text();
+  return { status: response.status, body: (text ? JSON.parse(text) : null) as T };
+}
+
+export interface MailpitMessage {
+  ID: string;
+  Subject: string;
+  To: Array<{ Address: string }>;
+}
+
+/** Messages Mailpit has captured, newest first. Empty when Mailpit is absent. */
+export async function mailpitMessages(_env: ReturnType<typeof requireEnv>): Promise<MailpitMessage[]> {
+  const base = Deno.env.get("MAILPIT_URL");
+  if (!base) return [];
+  const response = await fetch(`${base.replace(/\/$/, "")}/api/v1/messages?limit=100`);
+  if (!response.ok) return [];
+  const body = (await response.json()) as { messages?: MailpitMessage[] };
+  return body.messages ?? [];
+}
+
+/** Waits for a captured message for one address; returns null after the timeout. */
+export async function waitForMail(
+  env: ReturnType<typeof requireEnv>,
+  address: string,
+  timeoutMs = 10_000,
+): Promise<MailpitMessage | null> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const found = (await mailpitMessages(env)).find((message) =>
+      message.To?.some((to) => to.Address?.toLowerCase() === address.toLowerCase()),
+    );
+    if (found) return found;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  return null;
+}
+
+/** The text/HTML body of one captured message. */
+export async function mailpitBody(_env: ReturnType<typeof requireEnv>, id: string): Promise<string> {
+  const base = Deno.env.get("MAILPIT_URL");
+  if (!base) return "";
+  const response = await fetch(`${base.replace(/\/$/, "")}/api/v1/message/${id}`);
+  if (!response.ok) return "";
+  const body = (await response.json()) as { HTML?: string; Text?: string };
+  return `${body.HTML ?? ""}\n${body.Text ?? ""}`;
+}

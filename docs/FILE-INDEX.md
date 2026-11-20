@@ -344,7 +344,7 @@ before the suite is green again.
 | `scripts/tests/venues.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `supabase/.env.example` | config | reviewed | Edge Function secrets template |
 | `supabase/.gitignore` | config | reviewed | local secrets ignore rules |
-| `supabase/config.toml` | config | reviewed | local Supabase stack + function settings |
+| `supabase/config.toml` | config | reviewed | local Supabase stack + function settings — TOTP enabled for the `mfa.test.ts` acceptance suite |
 | `supabase/functions/_shared/audit.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/auth.ts` | source | reviewed | Edge Function helper |
 | `supabase/functions/_shared/config.ts` | source | reviewed | Edge Function helper |
@@ -392,14 +392,18 @@ before the suite is green again.
 | `supabase/functions/stripe-checkout/index.ts` | source | reviewed | Edge Function |
 | `supabase/functions/stripe-onboard/index.ts` | source | reviewed | Edge Function — platform-gated Express account creation + hosted onboarding link (ADR-003/004, D-08) |
 | `supabase/functions/stripe-webhook/index.ts` | source | reviewed | Edge Function |
-| `supabase/functions/tests/_commerce.ts` | test | covered | contract test — fails when the repository drifts |
+| `supabase/functions/tests/_commerce.ts` | test | covered | shared integration helpers (login, REST, mail, auth admin) |
+| `supabase/functions/tests/account-lifecycle.test.ts` | test | covered | REQ-01/REQ-13 — reset + confirmation mail, profile edit, erasure and audit |
 | `supabase/functions/tests/config.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/errors.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/export-user.test.ts` | test | covered | integration test — GAP-09.2 the fan export against the live stack (skipped without `RUN_INTEGRATION`) |
+| `supabase/functions/tests/fixture-admin.test.ts` | test | covered | REQ-16 — create/edit/reschedule/delete, sold-ticket refusal and audit |
 | `supabase/functions/tests/hmac.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/http.test.ts` | test | covered | contract test — fails when the repository drifts |
+| `supabase/functions/tests/mfa.test.ts` | test | covered | REQ-15 — TOTP enrol/challenge/verify to aal2 |
 | `supabase/functions/tests/metrics.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/observability.test.ts` | test | covered | Deno test — failure classification, the 5xx predicate, the alert cooldown, the alert text and the unsettled-payment verdict |
+| `supabase/functions/tests/news-admin.test.ts` | test | covered | REQ-25 — publish/edit/unpublish, fan write refusal and public read |
 | `supabase/functions/tests/orders.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/platform.test.ts` | test | covered | Deno test — the generated platform vocabulary under Deno's module rules |
 | `supabase/functions/tests/probe.test.ts` | test | reviewed | unit test — the probe depth needs the token |

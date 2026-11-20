@@ -151,14 +151,17 @@ npm run test:integration
 
 `scripts/run-integration.sh` resets the local database, starts a Stripe stub
 container, serves the functions, seeds the demo fan/admin, moves the demo
-fixtures into the future and runs `orders`, `webhook`, `scan` and
-`refund-order`. The Stripe stub accepts `sk_test_` keys only and the webhook is
-signed locally, so no live money can move. To run a single suite against a
-hosted project instead, export `RUN_INTEGRATION=1` plus the Supabase, Stripe
-and demo credentials and use `deno test` directly.
+fixtures into the future and runs `orders`, `webhook`, `scan`, `refund-order`,
+`account-lifecycle`, `mfa`, `fixture-admin` and `news-admin`. The Stripe stub
+accepts `sk_test_` keys only and the webhook is signed locally, so no live
+money can move. Password-reset and signup-confirmation mail is read from
+Mailpit; TOTP is enabled in the local `[auth.mfa.totp]` config for `mfa.test.ts`.
+To run a single suite against a hosted project instead, export
+`RUN_INTEGRATION=1` plus the Supabase, Stripe and demo credentials and use
+`deno test` directly.
 
-The suites create and then delete their own orders/scan events
-(`tests/_commerce.ts`, `tests/scan.test.ts`).
+The suites create and then delete their own users, orders, fixtures, articles
+and scan events (`tests/_commerce.ts`, `tests/scan.test.ts`).
 
 Typecheck every function:
 

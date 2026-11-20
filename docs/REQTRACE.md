@@ -30,7 +30,7 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 
 | REQ ID | Description (short) | Source | Tests | Coverage | Risk if untested |
 |---|---|---|---|---|---|
-| REQ-01 | Register, sign in/out, password reset, email verification, profile management | REQUIREMENTS §2.1 | `signup.test.mjs` SU-1…4, `redirects.test.mjs` RD-1…3, `auth-test.ts` (profile mapping), `e2e/auth.spec.ts` (sign in/out, wrong password) | **partial** — reset and verification have only link/source contracts; no executed flow | Locked-out users; broken verification silently strands new accounts |
+| REQ-01 | Register, sign in/out, password reset, email verification, profile management | REQUIREMENTS §2.1 | `account-lifecycle.test.ts` (reset + confirmation mail, profile edit), `signup.test.mjs` SU-1…4, `e2e/auth.spec.ts` | **partial** — reset, verification and profile edit are executed; the registration/sign-out screens still rely on source and hosted E2E | Locked-out users; broken verification silently strands new accounts |
 | REQ-02 | Browse upcoming fixtures and past results | §2.1 | `seeall.test.mjs` SA-1/SA-3, `match-phase.test.ts` MP-1…7, `e2e/ops.spec.ts` create fixture | **partial** — grouping unit-tested; list rendering source-only | Past fixtures shown as upcoming; wrong "next match" |
 | REQ-03 | Read club news and match reports | §2.1 | `news-test.tsx` (render, empty, error), `seeall.test.mjs` SA-2/SA-4, `mobile-resilience.test.mjs` MR-2 | **full** | Empty or stale news with no error state |
 | REQ-04 | Select a seating zone and an exact seat | §2.1 | `venues.test.mjs` VEN-1…8, `availability.test.mjs` AV-1…4, `create-fixture-dialog.test.mjs` CF-1…6 | **partial** — inventory is proven; seat-selection interaction is not | Double-booked / unselectable seats |
@@ -42,15 +42,15 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 | REQ-10 | Download / share a PDF receipt | §2.1 | `orders.test.ts` (executed PDF bytes), `money-format.test.mjs` MF-6/7, `share.test.mjs` SH-1…3 | **full** | No receipt / wrong currency-locale |
 | REQ-11 | Push opt-in for kickoff reminders | §2.1 | `push.test.mjs` PUSH-1…8, `push-hardware.test.mjs` PUSH-HW-1…10 | **partial** — config/source contracts + a manual recorded run; no automated send test | Reminders silently never arrive |
 | REQ-12 | Edit profile (name, phone) | §2.1 | `profile-edit-test.tsx` (validation + payload), `rls-auth.test.sql` (own-row RLS) | **full** | Users cannot correct their data |
-| REQ-13 | Delete the account | §2.1 | `erasure.test.mjs` EC-1…6, `export.test.mjs`, `delete-account` source | **partial** — source contracts only; function not executed | Data-retention breach; half-erased account |
+| REQ-13 | Delete the account | §2.1 | `account-lifecycle.test.ts` (executed erase/retain + audit), `erasure.test.mjs` EC-1…6 | **full** | Data-retention breach; half-erased account |
 | REQ-14 | Pass usable without a network | §2.1 | `pass-cache-test.ts` (9), `offline-pass.test.mjs` PASS-1…6, `offline-queue.test.ts` (8) | **full** | Dead pass at the gate |
 
 ## 2. Functional requirements — staff console
 
 | REQ ID | Description (short) | Source | Tests | Coverage | Risk if untested |
 |---|---|---|---|---|---|
-| REQ-15 | Staff sign-in with TOTP MFA | §2.2 | `e2e/auth.spec.ts` (MFA case **skipped unless `E2E_MFA=1`**), `admin-access.test.mjs` AA-1…7, `staff-roles.test.sql` | **partial** — MFA is skipped in default CI | Console reachable without the second factor |
-| REQ-16 | Create, edit and delete fixtures | §2.2 | `e2e/ops.spec.ts` (create), `create-fixture-dialog.test.mjs` CF-1…6, `create-match-full.test.sql` (22), `venue-layout.test.sql` (11) | **partial** — create is proven; edit/delete have no executed test | Orphaned / unremovable fixtures |
+| REQ-15 | Staff sign-in with TOTP MFA | §2.2 | `mfa.test.ts` (enrol → challenge → aal2 in default CI), `e2e/auth.spec.ts` (UI redirect, hosted), `admin-access.test.mjs` AA-1…7 | **partial** — the TOTP factor is executed; the admin UI redirect is still source/hosted-E2E | Console reachable without the second factor |
+| REQ-16 | Create, edit and delete fixtures | §2.2 | `fixture-admin.test.ts` (create → edit → reschedule → blocked delete → delete), `create-match-full.test.sql` (22), `venue-layout.test.sql` (11) | **full** | Orphaned / unremovable fixtures |
 | REQ-17 | Configure zones, rows, seats and prices | §2.2 | `venues.test.mjs`, `create-match-full.test.sql`, `seating-lock.test.sql` (6), `editor-extraction.test.mjs` ED-1…4 | **full** | Bad inventory, wrong prices |
 | REQ-18 | Manage venues (add/delete) | §2.2 | `venues.test.sql` (8), `venues.test.mjs` VEN-1…8, `venue-layout.test.sql` (11) | **full** | Cross-club venue leakage |
 | REQ-19 | Reschedule with rules + stored reason | §2.2 | `reschedule.test.ts` RS-1…6, `reschedule.test.mjs` RS-7…10, `atomicity.test.mjs` AT-1/AT-5, `reschedule-audit.test.sql` (4), `atomicity.test.sql` (30) | **full** | Illegal kickoff moves; missing audit |
@@ -59,7 +59,7 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 | REQ-22 | Undo an accepted scan within 60 s | §2.2 | `scan.test.ts` case "valid → replay → duplicate → undo" (default CI), `gate-ops.test.sql` | **full** | Fan wrongly denied re-entry; operator cannot correct |
 | REQ-23 | Gate works without connectivity (offline queue) | §2.2 | `offline-queue.test.ts` (8 — corruption/quarantine/clear, retry key, no double-admit) | **full** | Duplicate admissions after reconnect |
 | REQ-24 | List, filter, refund and export orders | §2.2 | `refund-order.test.ts` (executed refund + audit + retry), `export.test.ts` (CSV/BOM/escaping), `atomicity.test.mjs` AT-2…4, `search.test.ts` | **full** | Wrong refund, no audit, PII export |
-| REQ-25 | Publish and edit news and results | §2.2 | `phase9.test.mjs` P9b (hook presence), `audit-coverage.test.mjs` | **partial** — source contract only | Unpublished/unaudited content |
+| REQ-25 | Publish and edit news and results | §2.2 | `news-admin.test.ts` (publish → edit → block fan write → unpublish → public read), `audit-coverage.test.mjs` | **full** | Unpublished/unaudited content |
 | REQ-26 | Manage users and roles (built-in `admin` / `gatekeeper` pair) | §2.2 | `roles.test.ts` (9), `staff-roles.test.mjs` SR-1…12, `staff-roles.test.sql` (26), `identity.test.sql` (28), `rls-auth.test.sql` | **full** — custom roles are tracked separately as REQ-046 | Privilege escalation; stale claim |
 | REQ-27 | Read club settings (lock window, reminders) | §2.2 | `phase9.test.mjs` P9a-05/06, `audit-coverage.test.mjs`, `reschedule.test.ts` RS-1 | **partial** — source contracts, no read/write round-trip | Wrong lock window; unaudited setting change |
 | REQ-28 | See revenue, passes sold and scan activity | §2.2 | `metrics.test.ts` (3), `phase11.test.mjs` P11-18, `scan-stats.test.mjs` ST-1…3 | **partial** — aggregation math only lightly asserted | Wrong revenue / scan counts |
@@ -116,10 +116,7 @@ deferrals; anything else must move to `full` before the next release.
 | REQ-02 | partial | close | Render the fixture list and assert past/upcoming grouping and the next-match label. |
 | REQ-04 | partial | close | Drive seat selection end to end and assert the selected seat reaches the hold call. |
 | REQ-11 | partial | close | Send a reminder through a local FCM stub and assert the device-token fan-out. |
-| REQ-13 | partial | close | Execute `delete-account` and assert erasure, pass voiding and the retained audit/order rows. |
 | REQ-15 | partial | close | Run the TOTP MFA path locally; the hosted-secret E2E stays as the release check. |
-| REQ-16 | partial | close | Execute edit and delete of a fixture; assert audit rows and that tickets cannot be orphaned. |
-| REQ-25 | partial | close | Publish, edit and unpublish news; assert visibility and the audit row. |
 | REQ-27 | partial | close | Round-trip club settings (lock window, reminders) and assert validation and audit. |
 | REQ-28 | partial | close | Compute revenue / passes sold / scan counts from a seeded fixture and compare to SQL aggregates. |
 | REQ-046 | none | accept | Feature is open and deliberately unbuilt (`GAP-11`, ADR-005); the 8 acceptance IDs stay `test.todo`. Owner: product. Review: 2027-02-20. |
@@ -144,15 +141,13 @@ These carry **partial** or **none** and are on the money, entry, identity or com
 | **NFR-14** availability | none | 99.5 % SLO and 5xx page are configured, never measured or fired in a test. |
 | **NFR-17** backup | none | RPO/RTO and restore drill exist only as prose. |
 | **NFR-16** retention | partial | Only `error_events` prune is exercised; the 7-year / 3-year / 90-day jobs are unproven. |
-| **REQ-01 / REQ-13** account lifecycle | partial | Password reset, verification and delete-account are source contracts, not executed flows; profile editing now has a screen test. |
-| **REQ-15** staff MFA | partial | The TOTP case only runs with `E2E_MFA=1` against a hosted project; default CI never proves the second factor. |
-| **REQ-16** fixture edit/delete | partial | Create is executed; edit/delete have no executed test. |
+| **REQ-01** account lifecycle | partial | Reset, verification and profile edit are executed; registration and sign-out screens still rely on source/hosted E2E. |
+| **REQ-15** staff MFA | partial | TOTP enrol/challenge/aal2 now runs in default CI; the admin UI redirect is still source/hosted-E2E. |
 | **REQ-11** push | partial | Delivery is documented/config-asserted; the only end-to-end proof is a manual recorded run. |
-| **REQ-25** news publishing | partial | No publish/edit behaviour is exercised. |
 
 ## 7. Partially covered requirements (summary)
 
-All of: REQ-01, 02, 04, 11, 13, 15, 16, 25, 27, 28; NFR-12, 13, 16; SC-07.
+All of: REQ-01, 02, 04, 11, 15, 27, 28; NFR-12, 13, 16; SC-07.
 
 The previously deceptive rows were **REQ-21/22/24**: the tests existed and were good, but skipped; they now run in the default pipeline through `scripts/run-integration.sh`.
 
@@ -189,12 +184,10 @@ The remaining list is ranked by risk removed per test added.
 2. **Retention jobs** — implement and test the 7 y / 3 y / 90 d prunes; today only `error_events` (30 d) is enforced. Closes NFR-16.
 3. **Availability SLO test** — record request outcomes, compute monthly availability, and fire a synthetic 5xx burst to assert the page. Closes NFR-14.
 4. **Restore-drill automation** — restore a backup into a scratch database and run the pgTAP suite; wire the result into the quarterly release ticket. Closes NFR-17.
-5. **Account lifecycle integration** — password reset, email verification and `delete-account` executed against local Supabase. Closes REQ-01/REQ-13.
-6. **Fixture edit/delete** — execute both against the local stack, including a fixture with sold tickets and the audit row. Closes REQ-16.
-7. **Local MFA acceptance** — enrol a TOTP factor and complete the second step against the local admin build. Closes REQ-15.
-8. **News publish/edit/unpublish** — execute the admin mutations and assert visibility plus audit rows. Closes REQ-25.
-9. **Seat-availability latency check** — a timed pgTAP/k6 read of `zone_availability` asserting p95 ≤ 300 ms at a representative seat count. Closes NFR-13.
-10. **Thai-capable receipt font** — bundle a Unicode font (or a Thai subset) so the PDF can use the club's language instead of the current ASCII/English fallback. Closes the residual on REQ-10/NFR-12.
+5. **Account lifecycle remaining screens** — registration and sign-out against local Supabase. Closes the rest of REQ-01.
+6. **MFA UI acceptance** — complete the local admin redirect and TOTP form, not just the Auth API. Closes REQ-15.
+7. **Seat-availability latency check** — a timed pgTAP/k6 read of `zone_availability` asserting p95 ≤ 300 ms at a representative seat count. Closes NFR-13.
+8. **Thai-capable receipt font** — bundle a Unicode font (or a Thai subset) so the PDF can use the club's language instead of the current ASCII/English fallback. Closes the residual on REQ-10/NFR-12.
 
 ## 10. Top 10 risks
 
@@ -202,11 +195,10 @@ The remaining list is ranked by risk removed per test added.
 2. **Retention is mostly unimplemented** (NFR-16): only `error_events` has a prune job; the 7-year, 3-year and 90-day windows are policy, not code-under-test.
 3. **Backup/restore is not executable** (NFR-17): RPO 24 h / RTO 4 h and the quarterly drill have no script or test.
 4. **The 99.5 % availability SLO is unmeasured** (NFR-14); the alert has never been fired in a test.
-5. **Account lifecycle is source-asserted** (REQ-01/13): password reset, verification and account deletion are never executed end to end.
-6. **MFA is skipped in default CI** (REQ-15): the console's second factor is only proven with hosted E2E secrets.
-7. **Fixture edit/delete has no executed test** (REQ-16): create is covered; edit/delete are not.
-8. **News publishing has no behaviour test** (REQ-25): the hooks exist and are audited, but publish/edit/unpublish are never executed.
-9. **The receipt is ASCII/English only** (REQ-10/NFR-12): the standard PDF font cannot render Thai or `฿`, so a Thai club's receipt is English with `THB 350`.
-10. **Push delivery is manual** (REQ-11): config and source are asserted; FCM delivery has no automated acceptance.
+5. **Registration/sign-out and the MFA UI redirect** (REQ-01/REQ-15) are still source/hosted-E2E; the Auth API paths are executed.
+6. **The receipt is ASCII/English only** (REQ-10/NFR-12): the standard PDF font cannot render Thai or `฿`, so a Thai club's receipt is English with `THB 350`.
+7. **Push delivery is manual** (REQ-11): config and source are asserted; FCM delivery has no automated acceptance.
+8. **Seat-availability latency is unmeasured** (NFR-13).
+9. **News audit writes are source-contracted** (REQ-25/NFR-05): the DB flow is executed, but the console's audit row is not.
 
 Honourable mentions: **SC-04/SC-05** rely on absence rather than a guard; **NFR-13** still needs a latency probe; **REQ-02/REQ-04** still lack a rendered list/selection interaction test.

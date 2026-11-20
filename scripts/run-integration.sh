@@ -115,7 +115,7 @@ fi
 # compile can outrun the gateway timeout and surface as a 502 in the first
 # test, so warm every function the suites use and ignore the auth result.
 echo "integration: warming the Edge Functions"
-for fn in stripe-checkout stripe-webhook scan-ticket scan-undo ticket-qr receipt refund-order; do
+for fn in stripe-checkout stripe-webhook scan-ticket scan-undo ticket-qr receipt refund-order delete-account; do
   curl -s -o /dev/null -X POST "$api_url/functions/v1/$fn" \
     -H "apikey: $anon_key" \
     -H "content-type: application/json" \
@@ -152,6 +152,7 @@ export DEMO_EMAIL="fan@kickoff.app"
 export DEMO_PASSWORD="kickoffdemo"
 export ADMIN_EMAIL="admin@kickoff.app"
 export ADMIN_PASSWORD="kickoffadmin"
+export MAILPIT_URL="${MAILPIT_URL:-}"
 
 (
   cd supabase/functions
@@ -159,7 +160,11 @@ export ADMIN_PASSWORD="kickoffadmin"
     tests/orders.test.ts \
     tests/webhook.test.ts \
     tests/scan.test.ts \
-    tests/refund-order.test.ts
+    tests/refund-order.test.ts \
+    tests/account-lifecycle.test.ts \
+    tests/mfa.test.ts \
+    tests/fixture-admin.test.ts \
+    tests/news-admin.test.ts
 )
 
 echo "integration: all executed suites passed"

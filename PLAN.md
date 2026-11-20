@@ -25,7 +25,7 @@ built it that way. The task-level history of the original build lives in
 | B | Walkthrough fixes — remaining punch list (#1–#13) | ✅ complete |
 | **C** | **Production hardening — cleanup, enterprise standards, B2B readiness** | ✅ complete |
 | **D** | **Documentation Full A + REQ-046 contract** | ✅ complete — docs and doc contracts; custom RBAC implementation is **not** in this cycle |
-| **E** | **Verification-gap closure** | ✅ complete 2026-11-20 — executed Edge integration (checkout/webhook/scan/undo/refund/receipt), client-screen and accessibility tests, service-key scan, ASCII receipt fallback; remaining gaps in [`REQTRACE.md`](docs/REQTRACE.md) §9 |
+| **E** | **Verification-gap closure** | ✅ complete 2026-11-20 — executed Edge integration (checkout/webhook/scan/undo/refund/receipt), Wave 1 local flows (account lifecycle, TOTP MFA, fixture edit/delete, news publishing), client-screen and accessibility tests, service-key scan, ASCII receipt fallback; remaining gaps in [`REQTRACE.md`](docs/REQTRACE.md) §9 |
 | **GAP-11** | **Custom per-club staff roles (`REQ-046`, `NFR-10`)** | ⏳ **open / pending** — no role-management screen; acceptance `RBAC-1…RBAC-8` is `test.todo` |
 
 ### Phase C — Production hardening (active)
