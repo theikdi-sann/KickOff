@@ -127,7 +127,7 @@ select ok(
     "app_settings": 0, "audit_logs": 0, "gates": 0, "match_gates": 0, "match_notifications": 0, "venue_seats": 0, "venue_zones": 0,
     "match_zone_prices": 0, "matches": 0, "news_items": 0, "order_seats": 0,
     "orders": 0, "refunds": 0, "scan_events": 0, "seat_holds": 0, "seats": 0,
-    "staff_members": 0, "staff_roles": 0, "stripe_events": 0, "tickets": 0,
+    "staff_members": 0, "staff_role_capabilities": 0, "staff_roles": 0, "stripe_events": 0, "tickets": 0,
     "venues": 0, "zones": 0
   }'::jsonb),
   'EE-7 a second erase deletes nothing'

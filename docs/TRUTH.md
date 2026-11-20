@@ -13,9 +13,9 @@ re-checked instead of trusted.
 
 | Fact | Value | Verified by |
 |---|---|---|
-| Migrations | **70** ordered SQL files; next is `0071` | `ls supabase/migrations/*.sql \| wc -l` |
+| Migrations | **71** ordered SQL files; next is `0072` | `ls supabase/migrations/*.sql \| wc -l` |
 | Edge Functions | **20** (excluding `_shared` and `tests`) | `supabase/functions/*/index.ts` |
-| pgTAP | **458 assertions across 30 suites** | `bash scripts/run-pgtap.sh` |
+| pgTAP | **476 assertions across 31 suites** | `bash scripts/run-pgtap.sh` |
 | Repo/JS tests | **312** | `npm test` |
 | Postgres | **17** | deployment / `supabase/config.toml` |
 | Availability target | **99.5 % monthly** | NFR-14 |

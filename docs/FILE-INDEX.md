@@ -498,6 +498,7 @@ before the suite is green again.
 | `supabase/migrations/0068_availability_probes.sql` | data | reviewed | NFR-14 — probe table, monthly SLO view and service-only grants |
 | `supabase/migrations/0069_retention_windows.sql` | data | reviewed | NFR-16 — retention sweep, device `last_seen_at`, daily cron |
 | `supabase/migrations/0070_news_audit_trigger.sql` | data | reviewed | NFR-05 — news create/update/delete audit row in the same transaction |
+| `supabase/migrations/0071_capability_rbac.sql` | data | reviewed | REQ-046 — capability catalogue, role CRUD/assignment guards, capability RLS |
 | `supabase/seed.sql` | data | reviewed | demo seed data |
 | `supabase/tests/atomicity.test.sql` | test | covered | pgTAP suite — reschedule/refund atomicity, 30 assertions |
 | `supabase/tests/connect.test.sql` | test | covered | pgTAP suite — C8.1 Stripe Connect: the platform fee in minor units, the club a connected account belongs to, the event ledger; 0050's omittable payment-intent and account parameters (16 assertions) |
@@ -514,6 +515,7 @@ before the suite is green again.
 | `supabase/tests/order-expiry.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/platform.test.sql` | data | covered | pgTAP suite — PF-1…PF-28: the grant/refusal, the registry, status and fee guards, provisioning |
 | `supabase/tests/reschedule-audit.test.sql` | data | covered | pgTAP suite — asserts the database contract |
+| `supabase/tests/rbac.test.sql` | test | covered | REQ-046 — registry, capabilities, guards and cross-tenant refusal |
 | `supabase/tests/retention.test.sql` | test | covered | NFR-16 — 7y/3y/90d windows, order cascade, fresh rows survive |
 | `supabase/tests/rls-auth.test.sql` | data | covered | pgTAP suite — asserts the database contract |
 | `supabase/tests/rls.test.sql` | data | covered | pgTAP suite — asserts the database contract |
