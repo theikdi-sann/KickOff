@@ -12,10 +12,11 @@ the client-screen/accessibility tests, the service-key bundle scan and the
 `REQTRACE.md` contract were added. **Wave 1** then added executed local suites
 for account lifecycle (reset/confirmation mail, erasure), TOTP MFA, fixture
 edit/delete, news publish/edit/unpublish, push fan-out through a local Expo
-stub, the availability SLO, the scratch-database restore drill and the
-7y/3y/90d retention sweep. The receipt's default club is `th-TH`; its
-PDF now uses the documented ASCII/English fallback because a Thai font does not
-fit the Edge worker heap. `REQTRACE.md` is the dated coverage register.
+stub, the availability SLO, the scratch-database restore drill, the
+7y/3y/90d retention sweep, sign-up/sign-out, the seat-map latency budget and
+the Thai receipt font. The receipt's default club is `th-TH`; its
+PDF embeds a bundled Noto Sans Thai subset so the club's language fits the Edge
+worker heap. `REQTRACE.md` is the dated coverage register.
 
 **Baseline verified against the repo at HEAD (`40e2f26`):**
 
@@ -202,7 +203,7 @@ After fixing those six (and the ~12 High items), the set moves to **READY WITH C
 | **NFR-09** | “For every tenant-scoped table, a session with club A's claim reads 0 rows of club B and a write referencing club B fails with `23503`/`42501`. Asserted by T-01…T-24 for all 13 scoped tables.” |
 | **NFR-10** | “Per-club role definition: a club can add staff roles without a migration; each role is a tenant-scoped row with a subset of the closed capability catalogue; no authorization path names a role; cross-tenant role reads/writes return zero rows or `23503`/`42501`; every role write is audited. Built-in `admin`/`gatekeeper` shipped; custom roles are `REQ-046` / `GAP-11`, acceptance `RBAC-1…RBAC-8` pending.” |
 | **NFR-11** | “Every 5xx writes one `error_events` row sharing the response `x-request-id`; rows are pruned at 30 days. An alert fires at most once per function+code per 30 minutes. `metrics` exposes `errors.total` and `reconciliation.unsettled`.” |
-| **NFR-12** | “The supporter app renders every user-facing string through `translate()`; the Thai catalog covers 100 % of used keys and contains 0 orphan keys. Every on-screen date and money value renders with `tenants.locale`, `tenants.currency` and `tenants.timezone`. The PDF receipt is the documented exception: it uses English copy and ISO money because the standard PDF font cannot encode Thai or `฿` (REQTRACE §10).” |
+| **NFR-12** | “The supporter app renders every user-facing string through `translate()`; the Thai catalog covers 100 % of used keys and contains 0 orphan keys. Every on-screen date and money value renders with `tenants.locale`, `tenants.currency` and `tenants.timezone`. The PDF receipt embeds a bundled Thai font subset, so it renders the club's language, dates and money.” |
 | **NFR-13 (new)** | “Seat availability: p95 read-to-render ≤ 300 ms; the map polls every 3 s; a value older than 5 s is marked stale, never shown as current.” |
 | **NFR-14 (new)** | “Availability: monthly probe availability ≥ 99.5 %, recorded in `availability_probes` and exposed by `metrics`; a 5xx burst pages once per source+code per cooldown.” |
 | **NFR-15 (new)** | “Accessibility: every interactive control has an accessible name; text contrast ≥ 4.5:1; the seat grid is operable by keyboard and screen reader.” |

@@ -137,6 +137,9 @@ The harness sets `request.jwt.claims` per simulated user, exactly as
 ## 3b. Availability and restore drill
 
 ```bash
+# Seat-map p95 (20 reads, 300 ms budget).
+npm run perf:seat-latency
+
 # One availability probe; records a row and exits 1 below 99.5 %.
 npm run availability:probe
 

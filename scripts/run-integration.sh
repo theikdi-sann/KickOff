@@ -173,6 +173,11 @@ curl -sS -X DELETE "$api_url/rest/v1/rate_limits?key=neq.__never__" \
   -H "apikey: $service_key" \
   -H "authorization: Bearer $service_key" >/dev/null || true
 
+# NFR-13: the seat-map query budget at the seeded seat count.
+SUPABASE_URL="$api_url" \
+SUPABASE_SERVICE_ROLE_KEY="$service_key" \
+node scripts/seat-latency.mjs >/dev/null
+
 # Exercise the scheduled probe against the running stack before the suites.
 SUPABASE_URL="$api_url" \
 SUPABASE_SERVICE_ROLE_KEY="$service_key" \

@@ -128,6 +128,46 @@ Deno.test({
   },
 });
 
+
+Deno.test({
+  name: "account lifecycle: sign-up creates the account, sign-out revokes the token",
+  ignore: !RUN,
+  fn: async () => {
+    const env = requireEnv();
+    const email = uniqueEmail("signup");
+    const password = "signup-pass-123";
+
+    const signedUp = await authPublic<{ user?: { id: string; email: string } }>(env, "signup", {
+      body: { email, password },
+    });
+    assertEquals(signedUp.status, 200, JSON.stringify(signedUp.body));
+    assertEquals(signedUp.body.user?.email, email);
+    const userId = signedUp.body.user?.id;
+    assertExists(userId);
+
+    try {
+      // Local Auth confirms the address in dev; a fresh account can sign in.
+      const token = await login(env, email, password);
+      const signedOut = await authPublic<Record<string, unknown>>(env, "logout", {
+        token,
+        body: {},
+      });
+      assertEquals(signedOut.status, 204);
+
+      const after = await authPublic<Record<string, unknown>>(env, "user", {
+        method: "GET",
+        token,
+      });
+      assert(
+        after.status === 401 || after.status === 403,
+        `the revoked token cannot read the user (got ${after.status})`,
+      );
+    } finally {
+      await authAdmin(env, `users/${userId}`, { method: "DELETE" });
+    }
+  },
+});
+
 Deno.test({
   name: "account lifecycle: a new address receives the signup confirmation mail",
   ignore: !RUN,

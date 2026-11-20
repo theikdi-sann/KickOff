@@ -30,7 +30,7 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 
 | REQ ID | Description (short) | Source | Tests | Coverage | Risk if untested |
 |---|---|---|---|---|---|
-| REQ-01 | Register, sign in/out, password reset, email verification, profile management | REQUIREMENTS §2.1 | `account-lifecycle.test.ts` (reset + confirmation mail, profile edit), `signup.test.mjs` SU-1…4, `e2e/auth.spec.ts` | **partial** — reset, verification and profile edit are executed; the registration/sign-out screens still rely on source and hosted E2E | Locked-out users; broken verification silently strands new accounts |
+| REQ-01 | Register, sign in/out, password reset, email verification, profile management | REQUIREMENTS §2.1 | `account-lifecycle.test.ts` (sign-up, sign-out, reset + confirmation mail, profile edit), `signup.test.mjs` SU-1…4 | **full** | Locked-out users; broken verification silently strands new accounts |
 | REQ-02 | Browse upcoming fixtures and past results | §2.1 | `seeall.test.mjs` SA-1/SA-3, `match-phase.test.ts` MP-1…7, `e2e/ops.spec.ts` create fixture | **partial** — grouping unit-tested; list rendering source-only | Past fixtures shown as upcoming; wrong "next match" |
 | REQ-03 | Read club news and match reports | §2.1 | `news-test.tsx` (render, empty, error), `seeall.test.mjs` SA-2/SA-4, `mobile-resilience.test.mjs` MR-2 | **full** | Empty or stale news with no error state |
 | REQ-04 | Select a seating zone and an exact seat | §2.1 | `venues.test.mjs` VEN-1…8, `availability.test.mjs` AV-1…4, `create-fixture-dialog.test.mjs` CF-1…6 | **partial** — inventory is proven; seat-selection interaction is not | Double-booked / unselectable seats |
@@ -81,8 +81,8 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 | NFR-09 | Multi-tenant isolation | §3 | `tenancy.test.sql`, `isolation.test.sql`, `uniques.test.sql` (13), `tenants.test.sql` (27) | **full** | Club A reads club B |
 | NFR-10 | Per-club role definition | §3 | Built-in pair: `staff-roles.test.sql`, `roles.test.ts`. Custom: RBAC-1…8 **todo** | **none** (requirement open) | Same as REQ-046 |
 | NFR-11 | Observability: logs, metrics, error tracking | §3 | `observability.test.mjs` OBS-1…7, `observability.test.ts` (7), `observability.test.sql` (9), `logging.test.mjs` | **full** | Blind to production failure |
-| NFR-12 | Multi-language and multi-currency | §3 | `i18n.test.ts` (9), `i18n.test.mjs` I18N-1…8, `money.test.ts` (20), `display-config.test.mjs` DC-1…6 | **partial** — on-screen copy is proven; the PDF receipt falls back to ASCII/English | Wrong currency/locale on money |
-| NFR-13 | Seat availability p95 ≤ 300 ms, 3 s poll | §3 | `phaseb.test.mjs` PB1-1 (poll interval), `availability.test.mjs` (mapping only) | **partial** — no latency measurement | Slow map; stale availability |
+| NFR-12 | Multi-language and multi-currency | §3 | `i18n.test.ts` (9), `i18n.test.mjs` I18N-1…8, `money.test.ts` (20), `orders.test.ts` (Thai receipt PDF), `display-config.test.mjs` DC-1…6 | **full** | Wrong currency/locale on money |
+| NFR-13 | Seat availability p95 ≤ 300 ms, 3 s poll | §3 | `seat-latency.mjs` (p95 over 20 reads), `phaseb.test.mjs` PB1-1 (poll interval), `availability.test.mjs` | **full** | Slow map; stale availability |
 | NFR-14 | 99.5 % monthly availability, 5xx alert | §3 | `availability.test.ts` (probe + SLO + burst page), `availability-probe.mjs`, `metrics.test.ts`, `observability` | **full** | Outage unnoticed; SLO unproven |
 | NFR-15 | Accessibility: names, contrast, keyboard/SR seat grid | §3 | `seat-grid-test.tsx` (button names, selected/sold state), `theme.test.ts` THEME-1 (contrast), `phase11.test.mjs` P11-14/24, `admin-access.test.mjs` AA-3 | **full** | Unusable for assistive-tech fans |
 | NFR-16 | Retention: 7 y / 3 y / 90 d / 30 d / erasure ≤30 d | §3 | `retention.test.sql` RET-1…14 (7y/3y/90d/cascade), `observability.test.mjs` OBS-7 (30d), `erasure.test.mjs` EC-1…6 | **full** | Compliance / data-hoarding breach |
@@ -112,7 +112,6 @@ deferrals; anything else must move to `full` before the next release.
 
 | ID | Coverage | Decision | Action / rationale |
 |---|---|---|---|
-| REQ-01 | partial | close | Execute password reset, email verification and sign-out against local Supabase; keep the source contracts as guards. |
 | REQ-02 | partial | close | Render the fixture list and assert past/upcoming grouping and the next-match label. |
 | REQ-04 | partial | close | Drive seat selection end to end and assert the selected seat reaches the hold call. |
 | REQ-15 | partial | close | Run the TOTP MFA path locally; the hosted-secret E2E stays as the release check. |
@@ -120,8 +119,6 @@ deferrals; anything else must move to `full` before the next release.
 | REQ-28 | partial | close | Compute revenue / passes sold / scan counts from a seeded fixture and compare to SQL aggregates. |
 | REQ-046 | none | accept | Feature is open and deliberately unbuilt (`GAP-11`, ADR-005); the 8 acceptance IDs stay `test.todo`. Owner: product. Review: 2027-02-20. |
 | NFR-10 | none | accept | Same open requirement as REQ-046: built-in roles are done; custom per-club roles are not. Owner: product. Review: 2027-02-20. |
-| NFR-12 | partial | close | Bundle a Unicode font that fits the Edge worker budget so the receipt can use the club's language. |
-| NFR-13 | partial | close | Timed availability read at a representative seat count; assert p95 ≤ 300 ms and the 3 s poll. |
 | SC-01 | n/a | reclassify | Superseded by multi-tenancy at migration `0045`; the tenancy suites are the real guard. |
 | SC-04 | none | reclassify | A scope exclusion: the absence of season-ticket code is the evidence; no behaviour to test. |
 | SC-05 | none | reclassify | A scope exclusion: no loyalty code exists; no behaviour to test. |
@@ -134,12 +131,11 @@ These carry **partial** or **none** and are on the money, entry, identity or com
 | Requirement | Coverage | Why it is P0/P1 |
 |---|---|---|
 | **REQ-046 / NFR-10** | none | Whole feature unbuilt; 8 acceptance IDs are `todo`. Documentation correctly says open, but there is zero executable proof. |
-| **REQ-01** account lifecycle | partial | Reset, verification and profile edit are executed; registration and sign-out screens still rely on source/hosted E2E. |
 | **REQ-15** staff MFA | partial | TOTP enrol/challenge/aal2 now runs in default CI; the admin UI redirect is still source/hosted-E2E. |
 
 ## 7. Partially covered requirements (summary)
 
-All of: REQ-01, 02, 04, 15, 27, 28; NFR-12, 13; SC-07.
+All of: REQ-02, 04, 15, 27, 28; SC-07.
 
 The previously deceptive rows were **REQ-21/22/24**: the tests existed and were good, but skipped; they now run in the default pipeline through `scripts/run-integration.sh`.
 
@@ -169,21 +165,17 @@ Orphans are not waste — they defend engineering standards — but they must no
 
 Closed since the audit: executed checkout → webhook → ticket → receipt,
 scan/undo, refunds, CSV export, service-key bundle scanning, the seat-grid
-accessibility contract, profile/orders/news screens, push fan-out, the availability SLO/restore drill, retention windows and the offline retry key.
+accessibility contract, profile/orders/news screens, push fan-out, the availability SLO/restore drill, retention windows, Thai receipt rendering, sign-up/sign-out, the seat-map latency budget and the offline retry key.
 The remaining list is ranked by risk removed per test added.
 
 1. **RBAC-1…RBAC-8** — replace the `todo`s with real pgTAP + unit/contract tests when REQ-046 is built. Closes REQ-046/NFR-10.
-2. **Account lifecycle remaining screens** — registration and sign-out against local Supabase. Closes the rest of REQ-01.
-3. **MFA UI acceptance** — complete the local admin redirect and TOTP form, not just the Auth API. Closes REQ-15.
-4. **Seat-availability latency check** — a timed pgTAP/k6 read of `zone_availability` asserting p95 ≤ 300 ms at a representative seat count. Closes NFR-13.
-5. **Thai-capable receipt font** — bundle a Unicode font (or a Thai subset) so the PDF can use the club's language instead of the current ASCII/English fallback. Closes the residual on REQ-10/NFR-12.
+2. **MFA UI acceptance** — complete the local admin redirect and TOTP form, not just the Auth API. Closes REQ-15.
 
 ## 10. Top 10 risks
 
 1. **Custom RBAC is entirely unbuilt** (`REQ-046`, `NFR-10`, `GAP-11`): 8 acceptance IDs are `todo`. The docs are honest, but any "roles are done" claim is false.
-2. **Registration/sign-out and the MFA UI redirect** (REQ-01/REQ-15) are still source/hosted-E2E; the Auth API paths are executed.
-3. **The receipt is ASCII/English only** (REQ-10/NFR-12): the standard PDF font cannot render Thai or `฿`, so a Thai club's receipt is English with `THB 350`.
-4. **Seat-availability latency is unmeasured** (NFR-13).
-5. **News audit writes are source-contracted** (REQ-25/NFR-05): the DB flow is executed, but the console's audit row is not.
+2. **The MFA UI redirect** (REQ-15) is still source/hosted-E2E; the TOTP Auth API path is executed.
+3. **News audit writes are source-contracted** (REQ-25/NFR-05): the DB flow is executed, but the console's audit row is not.
+4. **Fixture/order screens** (REQ-02/REQ-04) still lack rendered list/selection interaction tests.
 
 Honourable mentions: **SC-04/SC-05** rely on absence rather than a guard; **NFR-13** still needs a latency probe; **REQ-02/REQ-04** still lack a rendered list/selection interaction test.

@@ -94,21 +94,20 @@ test('MF-5 the deployed Edge money copy is generated, never hand-edited', async 
   );
 });
 
-test('MF-6 the receipt formats money from the order currency with an ASCII scale', () => {
+test('MF-6 the receipt formats with formatMoney and the order currency', () => {
   const receipt = read(RECEIPT);
 
   assert.match(
     receipt,
-    /import \{ minorUnitScale \} from "\.\.\/_shared\/money\.ts";/,
-    'the receipt must take the scale from the generated money module',
+    /import \{ formatMoney \} from "\.\.\/_shared\/money\.ts";/,
+    'the receipt must use the generated formatter, not a private one',
   );
   assert.match(receipt, /currency: string/, 'the receipt row must carry the order currency');
   assert.match(
     receipt,
-    /pdfMoney\([^,]+,\s*receipt\.currency\)/,
+    /formatMoney\([^,]+,\s*receipt\.currency(,|\))/,
     'the receipt must format with the order currency',
   );
-  assert.match(receipt, /currency\.toUpperCase\(\).*formatted/s, 'the PDF uses the ISO code');
   assert.doesNotMatch(receipt, /function thb\(/, 'the private thb() formatter is gone');
   assert.doesNotMatch(receipt, /\/ *100\b/, 'no hardcoded scale division');
 });
