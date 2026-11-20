@@ -71,11 +71,11 @@ inherit SCRUB automatically.
 
 | Data | Maximum retention | Enforcement |
 |---|---|---|
-| Orders, tickets, refunds, audit logs | **7 years** | financial/safety records; annual purge job |
-| `scan_events` | **3 years** | stadium-safety window; annual purge job |
-| `stripe_events` | **90 days** | scheduled prune |
-| `error_events` | **30 days** | scheduled prune (C10.1) |
-| Unused `device_tokens` | **90 days** | sweep on registration/reminder |
+| Orders, tickets, refunds, audit logs | **7 years** | financial/safety records; daily `prune_retention_windows()` (`0069`) |
+| `scan_events` | **3 years** | stadium-safety window; daily `prune_retention_windows()` (`0069`) |
+| `stripe_events` | **90 days** | daily `prune_retention_windows()` (`0069`) |
+| `error_events` | **30 days** | dedicated prune job (`0055`) |
+| Unused `device_tokens` | **90 days** | `last_seen_at` + daily `prune_retention_windows()` (`0069`) |
 | A fan's erasure request | **30 days** to complete | `delete-account` + the schedule above |
 
 Retention is a maximum, not a promise to keep: a row is deleted at the end of

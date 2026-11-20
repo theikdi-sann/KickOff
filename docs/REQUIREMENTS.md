@@ -186,7 +186,7 @@ pending tests are listed in [`TESTING.md`](TESTING.md) §10 and registered as
 | NFR-13 | Seat availability performance | p95 read-to-render ≤ 300 ms; the map polls every 3 s; a value older than 5 s is marked stale, never shown as current | `zone_availability`, `scripts/tests/availability.test.mjs`; enforced by review until a load test lands |
 | NFR-14 | Availability | monthly p95 API availability ≥ **99.5 %**, measured by `health`; a 5xx burst of >5 in 5 minutes pages | `availability-probe.mjs`, `availability_probes`, `metrics`, the alert channel |
 | NFR-15 | Accessibility | every interactive control has an accessible name; text contrast ≥ 4.5:1; the seat grid is operable by keyboard and screen reader | mobile a11y tests + admin Playwright; `scripts/tests/ui.test.mjs` |
-| NFR-16 | Retention | orders/tickets/refunds/audit **7 years**; `scan_events` **3 years**; `stripe_events` **90 days**; `error_events` **30 days**; `device_tokens` 90 days unused; erasure within **30 days** of request | `PRIVACY.md` §Retention; scheduled prune jobs |
+| NFR-16 | Retention | orders/tickets/refunds/audit **7 years**; `scan_events` **3 years**; `stripe_events` **90 days**; `error_events` **30 days**; `device_tokens` 90 days unused; erasure within **30 days** of request | `PRIVACY.md` §Retention; `prune_retention_windows()` + cron, `retention.test.sql` |
 | NFR-17 | Backup and recovery | RPO ≤ **24 h**, RTO ≤ **4 h**; a quarterly restore drill restores into a scratch project and passes the pgTAP suite before sign-off | `scripts/restore-drill.sh`, `RUNBOOK.md` §7; release ticket |
 
 ## 4. Scope constraints (from the proposal)

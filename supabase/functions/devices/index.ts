@@ -61,6 +61,8 @@ async function handler(request: Request): Promise<Response> {
         user_id: context.user.id,
         token: body.token,
         platform: body.platform,
+        // NFR-16: the 90-day device-token window is idle time, not age.
+        last_seen_at: new Date().toISOString(),
       },
       { onConflict: "token" },
     );

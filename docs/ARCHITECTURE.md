@@ -121,7 +121,7 @@ packages/shared/src/
   theme.ts             brand tokens
 
 supabase/
-  migrations/          68 ordered SQL migrations: schema, RLS, RPCs, views, cron
+  migrations/          69 ordered SQL migrations: schema, RLS, RPCs, views, cron
   functions/_shared/   auth, config, validate, hmac, stripe, rate-limit,
                        metrics, audit, http envelope, logger, qr
   functions/<name>/    one directory per function (20)

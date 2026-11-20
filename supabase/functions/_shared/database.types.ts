@@ -101,14 +101,14 @@ isOneToOne: false
                   ]
                 },"device_tokens": {
                   Row: {
-                    "created_at": string,"id": string,"platform": string,"token": string,"user_id": string
+                    "created_at": string,"id": string,"last_seen_at": string,"platform": string,"token": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"platform": string,"token": string,"user_id": string
+                    "created_at"?: string,"id"?: string,"last_seen_at"?: string,"platform": string,"token": string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"platform"?: string,"token"?: string,"user_id"?: string
+                    "created_at"?: string,"id"?: string,"last_seen_at"?: string,"platform"?: string,"token"?: string,"user_id"?: string
                   }
                   Relationships: [
 
@@ -1051,6 +1051,60 @@ isOneToOne: false
 "current_tenant":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"dblink":
+{ Args: { "": string }; Returns: Record<string, unknown>[]
+                           },
+"dblink_cancel_query":
+{ Args: { "": string }; Returns: string
+                           },
+"dblink_close":
+{ Args: { "": string }; Returns: string
+                           },
+"dblink_connect":
+{ Args: { "": string }; Returns: string
+                           },
+"dblink_connect_u":
+{ Args: { "": string }; Returns: string
+                           },
+"dblink_current_query":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"dblink_disconnect":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           } |
+{ Args: { "": string }; Returns: string
+                           },
+"dblink_error_message":
+{ Args: { "": string }; Returns: string
+                           },
+"dblink_exec":
+{ Args: { "": string }; Returns: string
+                           },
+"dblink_fdw_validator":
+{ Args: { "catalog": unknown,"options": (string)[] }; Returns: undefined
+                           },
+"dblink_get_connections":
+{ Args: Record<PropertyKey, never>; Returns: (string)[]
+                           },
+"dblink_get_notify":
+{ Args: { "conname": string }; Returns: Record<string, unknown>[]
+                           } |
+{ Args: Record<PropertyKey, never>; Returns: Record<string, unknown>[]
+                           },
+"dblink_get_pkey":
+{ Args: { "": string }; Returns: Database["public"]['CompositeTypes']["dblink_pkey_results"][]
+                          SetofOptions: {
+        from: "*"
+        to: "dblink_pkey_results"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"dblink_get_result":
+{ Args: { "": string }; Returns: Record<string, unknown>[]
+                           },
+"dblink_is_busy":
+{ Args: { "": string }; Returns: number
+                           },
 "diag":
 { Args: { "msg": unknown }; Returns: { error: true } & "Could not choose the best candidate function between: public.diag(msg => text), public.diag(msg => anyelement). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
                            } |
@@ -1185,6 +1239,9 @@ isOneToOne: false
 "provision_tenant":
 { Args: { "p_currency"?: string,"p_locale"?: string,"p_name": string,"p_slug": string,"p_timezone"?: string }; Returns: string
                            },
+"prune_retention_windows":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "record_match_clock":
 { Args: { "p_now"?: string }; Returns: number
                            },
@@ -1246,6 +1303,8 @@ isOneToOne: false
           CompositeTypes: {
             "_time_trial_type": {
                         "a_time": number | null
+                      },"dblink_pkey_results": {
+                        "position": number | null,"colname": string | null
                       }
           }
         }
