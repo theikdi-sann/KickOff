@@ -280,8 +280,9 @@ before the suite is green again.
 | `scripts/check-no-mocks.sh` | config | reviewed | configuration |
 | `scripts/mvp-gate.mjs` | source | reviewed | tool or gate script |
 | `scripts/pg-url-parts.mjs` | source | covered | splits a DB URL so the password stays out of the command line |
-| `scripts/run-integration.sh` | config | reviewed | executes the Edge commerce/scan/refund suites against the local stack with a Stripe stub |
+| `scripts/run-integration.sh` | config | reviewed | executes the Edge commerce/scan/refund/account/MFA/fixture/news/push suites against the local stack with Stripe and Expo stubs |
 | `scripts/run-pgtap.sh` | config | reviewed | configuration |
+| `scripts/push-stub.mjs` | source | reviewed | local Expo Push stub used only by `run-integration.sh`; records the batch for assertions |
 | `scripts/stripe-stub.mjs` | source | reviewed | local Stripe stub used only by `run-integration.sh`; accepts test keys only |
 | `scripts/seed-demo.mjs` | source | reviewed | tool or gate script — seeds the demo fan/admin, staff membership and paid tickets |
 | `scripts/sync-edge-schemas.mjs` | source | reviewed | generates the Edge copy of a shared Zod contract; drift fails CI |
@@ -407,6 +408,7 @@ before the suite is green again.
 | `supabase/functions/tests/orders.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/platform.test.ts` | test | covered | Deno test — the generated platform vocabulary under Deno's module rules |
 | `supabase/functions/tests/probe.test.ts` | test | reviewed | unit test — the probe depth needs the token |
+| `supabase/functions/tests/push-delivery.test.ts` | test | covered | REQ-11 — reminder fan-out through the local Expo stub, no-device and bad-secret paths |
 | `supabase/functions/tests/refund-order.test.ts` | test | covered | REQ-24 — executed refund ledger, void pass and audit, idempotent retry |
 | `supabase/functions/tests/roles.test.ts` | test | covered | contract test — fails when the repository drifts |
 | `supabase/functions/tests/scan.test.ts` | test | covered | contract test — fails when the repository drifts |

@@ -11,7 +11,8 @@ integration suite (checkout → webhook → ticket → receipt, scan/undo, refun
 the client-screen/accessibility tests, the service-key bundle scan and the
 `REQTRACE.md` contract were added. **Wave 1** then added executed local suites
 for account lifecycle (reset/confirmation mail, erasure), TOTP MFA, fixture
-edit/delete and news publish/edit/unpublish. The receipt's default club is `th-TH`; its
+edit/delete, news publish/edit/unpublish and push fan-out through a local Expo
+stub. The receipt's default club is `th-TH`; its
 PDF now uses the documented ASCII/English fallback because a Thai font does not
 fit the Edge worker heap. `REQTRACE.md` is the dated coverage register.
 

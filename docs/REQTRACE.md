@@ -40,7 +40,7 @@ A source-text assertion is **never** `full`: it proves a string exists, not that
 | REQ-08 | Digital pass with match, supporter and signed QR | §2.1 | `hmac.test.ts` (8), `orders.test.ts` (issuance + QR v2), `scan.test.ts`, `scan-concurrency.test.sql` (3) | **full** | Forged/invalid pass; no entry |
 | REQ-09 | Order history and order detail | §2.1 | `orders-test.tsx` (render + lifetime spend), `phaseb0.test.mjs` PB0-1…5, `mappers.test.ts` `toOrderDto` (4) | **full** | Missing/incorrect order |
 | REQ-10 | Download / share a PDF receipt | §2.1 | `orders.test.ts` (executed PDF bytes), `money-format.test.mjs` MF-6/7, `share.test.mjs` SH-1…3 | **full** | No receipt / wrong currency-locale |
-| REQ-11 | Push opt-in for kickoff reminders | §2.1 | `push.test.mjs` PUSH-1…8, `push-hardware.test.mjs` PUSH-HW-1…10 | **partial** — config/source contracts + a manual recorded run; no automated send test | Reminders silently never arrive |
+| REQ-11 | Push opt-in for kickoff reminders | §2.1 | `push-delivery.test.ts` (executed fan-out through a local Expo stub), `push.test.mjs` PUSH-1…8, `push-hardware.test.mjs` | **full** | Reminders silently never arrive |
 | REQ-12 | Edit profile (name, phone) | §2.1 | `profile-edit-test.tsx` (validation + payload), `rls-auth.test.sql` (own-row RLS) | **full** | Users cannot correct their data |
 | REQ-13 | Delete the account | §2.1 | `account-lifecycle.test.ts` (executed erase/retain + audit), `erasure.test.mjs` EC-1…6 | **full** | Data-retention breach; half-erased account |
 | REQ-14 | Pass usable without a network | §2.1 | `pass-cache-test.ts` (9), `offline-pass.test.mjs` PASS-1…6, `offline-queue.test.ts` (8) | **full** | Dead pass at the gate |
@@ -115,7 +115,6 @@ deferrals; anything else must move to `full` before the next release.
 | REQ-01 | partial | close | Execute password reset, email verification and sign-out against local Supabase; keep the source contracts as guards. |
 | REQ-02 | partial | close | Render the fixture list and assert past/upcoming grouping and the next-match label. |
 | REQ-04 | partial | close | Drive seat selection end to end and assert the selected seat reaches the hold call. |
-| REQ-11 | partial | close | Send a reminder through a local FCM stub and assert the device-token fan-out. |
 | REQ-15 | partial | close | Run the TOTP MFA path locally; the hosted-secret E2E stays as the release check. |
 | REQ-27 | partial | close | Round-trip club settings (lock window, reminders) and assert validation and audit. |
 | REQ-28 | partial | close | Compute revenue / passes sold / scan counts from a seeded fixture and compare to SQL aggregates. |
@@ -143,11 +142,10 @@ These carry **partial** or **none** and are on the money, entry, identity or com
 | **NFR-16** retention | partial | Only `error_events` prune is exercised; the 7-year / 3-year / 90-day jobs are unproven. |
 | **REQ-01** account lifecycle | partial | Reset, verification and profile edit are executed; registration and sign-out screens still rely on source/hosted E2E. |
 | **REQ-15** staff MFA | partial | TOTP enrol/challenge/aal2 now runs in default CI; the admin UI redirect is still source/hosted-E2E. |
-| **REQ-11** push | partial | Delivery is documented/config-asserted; the only end-to-end proof is a manual recorded run. |
 
 ## 7. Partially covered requirements (summary)
 
-All of: REQ-01, 02, 04, 11, 15, 27, 28; NFR-12, 13, 16; SC-07.
+All of: REQ-01, 02, 04, 15, 27, 28; NFR-12, 13, 16; SC-07.
 
 The previously deceptive rows were **REQ-21/22/24**: the tests existed and were good, but skipped; they now run in the default pipeline through `scripts/run-integration.sh`.
 
@@ -177,7 +175,7 @@ Orphans are not waste — they defend engineering standards — but they must no
 
 Closed since the audit: executed checkout → webhook → ticket → receipt,
 scan/undo, refunds, CSV export, service-key bundle scanning, the seat-grid
-accessibility contract, profile/orders/news screens and the offline retry key.
+accessibility contract, profile/orders/news screens, push fan-out and the offline retry key.
 The remaining list is ranked by risk removed per test added.
 
 1. **RBAC-1…RBAC-8** — replace the `todo`s with real pgTAP + unit/contract tests when REQ-046 is built. Closes REQ-046/NFR-10.
@@ -197,8 +195,7 @@ The remaining list is ranked by risk removed per test added.
 4. **The 99.5 % availability SLO is unmeasured** (NFR-14); the alert has never been fired in a test.
 5. **Registration/sign-out and the MFA UI redirect** (REQ-01/REQ-15) are still source/hosted-E2E; the Auth API paths are executed.
 6. **The receipt is ASCII/English only** (REQ-10/NFR-12): the standard PDF font cannot render Thai or `฿`, so a Thai club's receipt is English with `THB 350`.
-7. **Push delivery is manual** (REQ-11): config and source are asserted; FCM delivery has no automated acceptance.
-8. **Seat-availability latency is unmeasured** (NFR-13).
-9. **News audit writes are source-contracted** (REQ-25/NFR-05): the DB flow is executed, but the console's audit row is not.
+7. **Seat-availability latency is unmeasured** (NFR-13).
+8. **News audit writes are source-contracted** (REQ-25/NFR-05): the DB flow is executed, but the console's audit row is not.
 
 Honourable mentions: **SC-04/SC-05** rely on absence rather than a guard; **NFR-13** still needs a latency probe; **REQ-02/REQ-04** still lack a rendered list/selection interaction test.

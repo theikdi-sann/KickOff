@@ -126,10 +126,14 @@ async function handler(request: Request): Promise<Response> {
     data: { url: "/(tabs)" },
   }));
 
+  // Test seam: the integration suite points this at a local Expo stub. A
+  // deployment never sets it and calls the public service.
+  const pushUrl = Deno.env.get("EXPO_PUSH_URL") ?? "https://exp.host/--/api/v2/push/send";
+
   let sent = 0;
   for (let index = 0; index < messages.length; index += 100) {
     const batch = messages.slice(index, index + 100);
-    const response = await fetch("https://exp.host/--/api/v2/push/send", {
+    const response = await fetch(pushUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

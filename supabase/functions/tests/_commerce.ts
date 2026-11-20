@@ -100,6 +100,13 @@ export async function createPaidOrder(
   seatId: string,
   matchId = "m-bkk",
 ): Promise<{ orderId: string; sessionId: string; eventId: string }> {
+  // Checkout is rate-limited per IP. The suite makes more than the production
+  // budget in a minute, so each order starts from a clean checkout window.
+  await rest(env, "rate_limits?key=like.checkout:*", {
+    token: env.service,
+    method: "DELETE",
+  });
+
   const hold = await rest<{ id: string }>(env, "rpc/create_hold", {
     token: fanToken,
     method: "POST",

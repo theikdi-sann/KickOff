@@ -18,6 +18,8 @@ webhook_secret="whsec_local_integration_only"
 
 tmpdir="$(mktemp -d)"
 stub_pid=""
+push_stub_pid=""
+push_port="${PUSH_STUB_PORT:-12112}"
 functions_pid=""
 
 cleanup() {
@@ -28,6 +30,7 @@ cleanup() {
   fi
   [ -n "$functions_pid" ] && kill "$functions_pid" 2>/dev/null || true
   [ "$stub_pid" = "docker" ] && docker rm -f kickoff-stripe-stub >/dev/null 2>&1 || true
+  [ "$push_stub_pid" = "docker" ] && docker rm -f kickoff-push-stub >/dev/null 2>&1 || true
   rm -rf "$tmpdir"
 }
 trap cleanup EXIT
@@ -83,6 +86,27 @@ if [ -z "$stub_ready" ]; then
   exit 1
 fi
 
+docker rm -f kickoff-push-stub >/dev/null 2>&1 || true
+echo "integration: starting the Expo push stub container"
+docker run --rm -d \
+  --name kickoff-push-stub \
+  --network supabase_network_kickoff \
+  -p "127.0.0.1:$push_port:12112" \
+  -v "$root/scripts/push-stub.mjs:/app/push-stub.mjs:ro" \
+  -e PUSH_STUB_PORT=12112 \
+  node:22-alpine node /app/push-stub.mjs >/dev/null
+push_stub_pid="docker"
+push_ip="$(docker inspect kickoff-push-stub \
+  --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')"
+if [ -z "$push_ip" ]; then
+  echo "integration: could not read the push stub's address" >&2
+  exit 1
+fi
+for _ in $(seq 1 30); do
+  curl -s -o /dev/null "http://127.0.0.1:$push_port/__batches" && break
+  sleep 1
+done
+
 cat >"$tmpdir/functions.env" <<EOF
 SUPABASE_URL=$api_url
 SUPABASE_ANON_KEY=$anon_key
@@ -90,6 +114,7 @@ SUPABASE_SERVICE_ROLE_KEY=$service_key
 STRIPE_SECRET_KEY=sk_test_local_integration
 STRIPE_WEBHOOK_SECRET=$webhook_secret
 STRIPE_API_BASE=http://$stub_ip:12111
+EXPO_PUSH_URL=http://$push_ip:12112/--/api/v2/push/send
 TICKET_HMAC_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 METRICS_TOKEN=local-integration-metrics-token
 ADMIN_APP_URL=http://localhost:3000
@@ -115,7 +140,7 @@ fi
 # compile can outrun the gateway timeout and surface as a 502 in the first
 # test, so warm every function the suites use and ignore the auth result.
 echo "integration: warming the Edge Functions"
-for fn in stripe-checkout stripe-webhook scan-ticket scan-undo ticket-qr receipt refund-order delete-account; do
+for fn in stripe-checkout stripe-webhook scan-ticket scan-undo ticket-qr receipt refund-order delete-account send-kickoff-reminders; do
   curl -s -o /dev/null -X POST "$api_url/functions/v1/$fn" \
     -H "apikey: $anon_key" \
     -H "content-type: application/json" \
@@ -142,6 +167,12 @@ curl -sS -X PATCH "$api_url/rest/v1/matches?id=in.(m-bkk,m-cmi)" \
   -H "prefer: return=minimal" \
   -d "{\"kickoff_at\":\"$kickoff\"}" >/dev/null
 
+# Rate limits are per client IP and survive the DB reset seed; clear them so
+# the suites do not depend on how many checkout calls ran in the last minute.
+curl -sS -X DELETE "$api_url/rest/v1/rate_limits?key=neq.__never__" \
+  -H "apikey: $service_key" \
+  -H "authorization: Bearer $service_key" >/dev/null || true
+
 echo "integration: running the Edge Function suites"
 export RUN_INTEGRATION=1
 export SUPABASE_URL="$api_url"
@@ -153,6 +184,7 @@ export DEMO_PASSWORD="kickoffdemo"
 export ADMIN_EMAIL="admin@kickoff.app"
 export ADMIN_PASSWORD="kickoffadmin"
 export MAILPIT_URL="${MAILPIT_URL:-}"
+export PUSH_STUB_URL="http://127.0.0.1:$push_port"
 
 (
   cd supabase/functions
@@ -164,7 +196,8 @@ export MAILPIT_URL="${MAILPIT_URL:-}"
     tests/account-lifecycle.test.ts \
     tests/mfa.test.ts \
     tests/fixture-admin.test.ts \
-    tests/news-admin.test.ts
+    tests/news-admin.test.ts \
+    tests/push-delivery.test.ts
 )
 
 echo "integration: all executed suites passed"
