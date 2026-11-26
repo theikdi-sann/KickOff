@@ -184,6 +184,7 @@ export const th: Record<string, string> = {
   'SEATS': 'ที่นั่ง',
   'ZONE': 'โซน',
   'FREE': 'ฟรี',
+  'STALE': 'ข้อมูลเก่า',
   'FROM': 'เริ่มที่',
   'Available': 'ว่าง',
   'Unavailable': 'ไม่พร้อมใช้งาน',

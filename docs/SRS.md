@@ -235,10 +235,14 @@ database (`mark_order_refunded()`); audited. News publishing via
 
 ### REQ-26..REQ-29 — Users, settings, reporting, audit (`shipped`)
 
-User and role management (`admin-users`: a role change writes the **membership**
+User and role management (`admin-users`: an admin **creates** staff accounts
+with an initial password; a role change writes the **membership**
 and the JWT claim together, the last-admin guard counts admins that can act, and
 the console shows when the new role applies; assigning **Customer** deletes the
-membership). Settings are read by staff, written by admin.
+membership; a customer cannot be promoted by a role update). A fan (no
+membership) can be **suspended** (auth ban, restorable) or **soft-deleted**
+(auth soft delete, retained for audit, irreversible); the Users screen shows
+FAN and the lifecycle state. Settings are read by staff, written by admin.
 Overview metrics via `orders-aggregate` and the `metrics` machine endpoint
 (token-guarded). `audit_logs` readable by admin, console is read-only over it.
 
@@ -256,13 +260,17 @@ Custom roles live in `staff_roles(tenant_id, code, …)` with capabilities in
 `refund_orders`, `read_audit`, `manage_settings`, `export_data`,
 `view_reports`. `admin` = all ten; `gatekeeper` = `operate_gate`. Assignment
 writes the membership and the claim (`role`, `capabilities`) together, with
-compensation on failure; assigning **Customer** deletes the membership. Guards:
+compensation on failure; removing staff access deletes the membership and sets
+the **Fan** (`customer`) state. **Staff accounts are created by an
+administrator** with an e-mail and initial
+password, not promoted from an existing fan account: the database
+refuses a fan→staff role update. Guards:
 `manage_staff` required, no capability escalation, no self-demotion, last
 manager protected, cross-tenant access refused. RLS and Edge guards check
 capabilities only. The full rules and error codes are normative in
 [`REQUIREMENTS.md`](REQUIREMENTS.md) REQ-046.
 
-**Verified by.** `RBAC-1…RBAC-8` — `rbac.test.sql`, `rbac-api.test.ts` and `TESTING.md` §10.
+**Verified by.** `RBAC-1…RBAC-9` — `rbac.test.sql`, `rbac-api.test.ts` and `TESTING.md` §10.
 
 ## 4. Non-functional requirements
 
@@ -279,7 +287,7 @@ Each NFR states the measurable target and the enforcement mechanism.
 | NFR-07 | Type safety | strict TS, `noUncheckedIndexedAccess` on, no `any`, no non-null assertions | `tsconfig.base.json`, ESLint, `scripts/tests/type-safety.test.mjs` |
 | NFR-08 | Offline entry verification | cached signed payload; server authoritative | **shipped** — `GAP-01` closed at C10.3 |
 | NFR-09 | Multi-tenant isolation | per-club data isolation, branding, currency | **shipped** — `GAP-02` closed at `0045` (isolation suite green); ADR-002, C6–C7 |
-| NFR-10 | Per-club role definition | beyond `admin`/`gatekeeper`: a club may add roles | **shipped** — `0071` capability catalogue/RLS, `admin-roles`, capability claims, `RBAC-1…RBAC-8` |
+| NFR-10 | Per-club role definition | beyond `admin`/`gatekeeper`: a club may add roles | **shipped** — `0071` capability catalogue/RLS, `admin-roles`, capability claims, `RBAC-1…RBAC-9` |
 | NFR-11 | Observability | structured logs (single JSON line, redacted), request IDs, error tracking, alerting | **shipped** — C10.1: `error_events` carries the same request id as the envelope and the log line, `ALERT_WEBHOOK_URL` pages (optional, cooldown-gated), and the reconciliation sweep finds unsettled payments; the logger itself landed in C4.11 |
 | NFR-12 | Multi-language/currency | per-tenant locale and currency | **shipped** — `GAP-05` closed at C10.2: schema (C6/C7), formatting (C8.2), the translation layer with a coverage-contracted Thai catalog (C10.2), and a bundled Thai font subset for the PDF receipt. |
 | NFR-13 | Seat availability performance | p95 read-to-render ≤ 300 ms; 3 s poll; >5 s marked stale | `zone_availability`; `availability.test.mjs` |
@@ -324,7 +332,7 @@ anon key + user JWT.
 | `refund-order` | admin JWT | atomic refund + audit |
 | `ticket-qr` | user JWT | signed pass payload |
 | `scan-ticket` / `scan-undo` | staff JWT | gate surface |
-| `admin-users` | admin JWT | staff list and role assignment (membership + claim atomic) |
+| `admin-users` | admin JWT | staff list, staff account creation (initial password) and role assignment (membership + claim atomic) |
 | `admin-roles` | JWT with `manage_staff` | custom role CRUD, capability subset, built-in immutability |
 | `receipt` | user JWT | PDF receipt |
 | `delete-account` | user JWT | account deletion |
@@ -409,5 +417,5 @@ the execution order fixed in `PLAN.md`:
   every pass for their order until it is designed as its own feature.
 - **GAP-11 (REQ-046, NFR-10)** — **closed** by the capability roles in `0071` and `admin-roles`.
   The built-in pair ships; custom role CRUD, capability assignment and the
-  `RBAC-1…RBAC-8` acceptance suite are **pending**. Design:
+  `RBAC-1…RBAC-9` acceptance suite are **shipped**. Design:
   [`ADR-005`](adr/ADR-005-custom-rbac.md).

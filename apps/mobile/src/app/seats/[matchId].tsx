@@ -1,14 +1,16 @@
 import { ChevronLeft, ShieldCheck } from 'lucide-react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, type AlertButton, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   formatMatchDate,
   formatMatchTime,
   formatMoney,
+  isAvailabilityStale,
   MAX_SEATS_PER_ORDER,
+  SEAT_AVAILABILITY_STALE_MS,
   SEAT_HOLD_TTL_SECONDS,
   type SeatDto,
   type ZoneDto,
@@ -51,6 +53,22 @@ export default function SeatSelectionScreen() {
   // Occupancy is derived server-side; this is the "someone has this seat" set.
   const takenSeatsQuery = useTakenSeats(matchId, { refetchInterval: POLL_INTERVAL_MS });
   const takenSeats = takenSeatsQuery.data ?? NO_TAKEN_SEATS;
+
+  // NFR-13 — availability older than 5 s must be marked stale, never shown as
+  // current. The queries update at different times, so the map is only as fresh
+  // as its oldest input. A boundary timer flips the flag exactly when the budget
+  // runs out; the next successful poll resets it.
+  const availabilityUpdatedAt = [seatsQuery.dataUpdatedAt, takenSeatsQuery.dataUpdatedAt]
+    .filter((value): value is number => typeof value === 'number' && value > 0)
+    .reduce((oldest, value) => (oldest === 0 || value < oldest ? value : oldest), 0);
+  const [freshnessNow, setFreshnessNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!availabilityUpdatedAt) return;
+    const remaining = availabilityUpdatedAt + SEAT_AVAILABILITY_STALE_MS + 1 - Date.now();
+    const timer = setTimeout(() => setFreshnessNow(Date.now()), Math.max(remaining, 0));
+    return () => clearTimeout(timer);
+  }, [availabilityUpdatedAt]);
+  const availabilityStale = isAvailabilityStale(availabilityUpdatedAt, freshnessNow);
   const rows = zone?.rows ?? [];
   const selectedSeats = seats.filter((seat) => selected.includes(seat.id));
   const total = (zone?.priceMinorUnits ?? 0) * selected.length;
@@ -315,10 +333,15 @@ export default function SeatSelectionScreen() {
                 </AppText>
               </View>
               <View style={styles.availBox}>
-                <AppText variant="h3" color={colors.primary}>
+                <AppText variant="h3" color={availabilityStale ? colors.muted : colors.primary}>
                   {freeCount}
                 </AppText>
-                <AppText variant="caption" color={colors.muted} style={styles.availLabel}>{t('FREE')}</AppText>
+                <AppText
+                  variant="caption"
+                  color={availabilityStale ? colors.danger : colors.muted}
+                  style={styles.availLabel}>
+                  {availabilityStale ? t('STALE') : t('FREE')}
+                </AppText>
               </View>
             </View>
 

@@ -18,6 +18,9 @@ export default function MfaSettingsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
 
   const refreshFactors = async () => {
     const { data, error: factorError } = await createClient().auth.mfa.listFactors();
@@ -87,8 +90,7 @@ export default function MfaSettingsPage() {
     }
   };
 
-  const disable = async () => {
-    if (!verifiedFactorId) return;
+  const disable = async () => {    if (!verifiedFactorId) return;
     setBusy(true);
     setError(null);
     try {
@@ -109,6 +111,33 @@ export default function MfaSettingsPage() {
       setError(caught instanceof Error ? caught.message : "Could not disable 2FA.");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const changePassword = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    setNotice(null);
+    if (newPassword.length < 8) {
+      setError("The new password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("The two passwords do not match.");
+      return;
+    }
+    setPasswordBusy(true);
+    try {
+      const supabase = createClient();
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+      setNewPassword("");
+      setConfirmPassword("");
+      setNotice("Password changed. Use the new password the next time you sign in.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not change the password.");
+    } finally {
+      setPasswordBusy(false);
     }
   };
 
@@ -212,6 +241,48 @@ export default function MfaSettingsPage() {
           </div>
         </section>
       ) : null}
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="flex items-start gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-pitch">
+            <KeyRound size={19} />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-sm font-semibold text-slate-900">Change your password</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              Use this after signing in with the initial password an administrator gave you.
+            </p>
+            <form onSubmit={changePassword} className="mt-4 space-y-3">
+              <label className="block text-xs text-slate-500">
+                New password
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  autoComplete="new-password"
+                  className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-pitch focus:ring-4 focus:ring-pitch/10"
+                />
+              </label>
+              <label className="block text-xs text-slate-500">
+                Confirm new password
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  autoComplete="new-password"
+                  className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-pitch focus:ring-4 focus:ring-pitch/10"
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={passwordBusy || newPassword.length < 8}
+                className="btn-primary h-10 text-xs disabled:opacity-60">
+                {passwordBusy ? "Saving…" : "Change password"}
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

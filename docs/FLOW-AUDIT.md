@@ -77,7 +77,7 @@ display-only.
 | A10 Orders + CSV export | `dashboard/tickets/**` | RLS + Edge `orders-aggregate`; export is browser-only | ad-hoc | surfaced | **none** for the export (F-05) | Playwright (header only) |
 | A11 Refund order | `dashboard/tickets/**` | Edge `refund-order` — `requireAdmin` → atomic `mark_order_refunded` RPC | Zod (shared `refundOrderSchema`, generated Edge copy) | surfaced | `audit_logs` (`order.refund`, same transaction) | pgTAP `atomicity.test.sql`; Playwright, **skipped** without keys |
 | A12 Publish news | `dashboard/news/page.tsx` | direct PostgREST write, RLS | Zod (shared) | surfaced | **none** (F-05) | schema only |
-| A13 Manage users / roles | `dashboard/users/page.tsx` | Edge `admin-users` — `requireAdmin` | Zod (function-local) | surfaced | `audit_logs` (`admin.user.update`) | **none** |
+| A13 Manage users / roles | `dashboard/users/page.tsx` | Edge `admin-users` — `requireCapability('manage_staff')`; `POST` creates a staff account, `PATCH` reassigns existing staff / suspends or soft-deletes fans | Zod (function-local) | surfaced | `audit_logs` (`admin.user.create`, `admin.user.update`, `admin.user.suspend`, `admin.user.restore`, `admin.user.delete`) | pgTAP `rbac.test.sql` RBAC-9 + `fans.test.sql` + `rbac-api.test.ts` + Playwright |
 | A14 Club settings | `dashboard/settings/page.tsx` | direct PostgREST upsert, RLS | ad-hoc (`clampInt` silently coerces) | surfaced | **none** — but the page claims otherwise (F-06) | source-text assertions only |
 | A15 Reschedule kickoff | `components/match-form.tsx` | atomic RPC `admin_update_match` (`0038`) | Zod (shared `adminRescheduleSchema`) | surfaced; **atomic** — the database refuses a move without a reason | `audit_logs` (`reschedule`, same transaction) | unit + contract + pgTAP `atomicity.test.sql` |
 
@@ -85,7 +85,7 @@ display-only.
 
 | Flow | Entry | Trust boundary | Validation | Failure path | Audit | Test proof |
 |---|---|---|---|---|---|---|
-| A16 Define / assign a custom role | Roles screen (`REQ-046`, shipped) | `admin-roles` — `manage_staff` capability | closed capability catalogue | `403`/`409`/`422` | `rbac.role.*` | `RBAC-1…RBAC-8` |
+| A16 Define / assign a custom role | Roles screen (`REQ-046`, shipped) | `admin-roles` — `manage_staff` capability | closed capability catalogue | `403`/`409`/`422` | `rbac.role.*` | `RBAC-1…RBAC-9` |
 
 **Effective authorisation** for every admin mutation is the RLS membership
 predicate (`is_admin()` reading `staff_members` + `staff_roles`, not the JWT

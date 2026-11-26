@@ -21,11 +21,35 @@ const patchSchema = z
     role: z.string().regex(/^[a-z][a-z0-9_]*$/).optional(),
     fullName: z.string().trim().min(1).max(120).optional(),
     phone: z.string().max(32).nullable().optional(),
+    /** Fan lifecycle. Staff use `role`/Remove staff instead. */
+    fanStatus: z.enum(["active", "suspended", "deleted"]).optional(),
   })
   .refine(
-    (value) => value.role !== undefined || value.fullName !== undefined || value.phone !== undefined,
+    (value) =>
+      value.role !== undefined ||
+      value.fullName !== undefined ||
+      value.phone !== undefined ||
+      value.fanStatus !== undefined,
     "Nothing to update",
+  )
+  .refine(
+    (value) => !(value.role !== undefined && value.fanStatus !== undefined),
+    "A role change and a fan status change cannot be combined",
   );
+
+/**
+ * RBAC-9 — an administrator creates a staff account with the initial password
+ * they hand to the staff member. A customer is never promoted by a PATCH.
+ */
+const createStaffSchema = z.object({
+  email: z.string().trim().email().max(254),
+  password: z.string().min(8).max(72),
+  fullName: z.string().trim().min(1).max(120).optional(),
+  role: z
+    .string()
+    .regex(/^[a-z][a-z0-9_]{1,30}$/)
+    .refine((value) => value !== "customer", "customer is not a staff role"),
+});
 
 type ProfileRow = {
   id: string;
@@ -42,15 +66,74 @@ type MembershipRow = {
   staff_role: string;
 };
 
-function toDto(row: ProfileRow, role: string) {
+function toDto(row: ProfileRow, role: string, fanStatus: FanStatus = "active") {
   return {
     id: row.id,
     email: row.email,
     fullName: row.full_name,
     role,
+    fanStatus,
     phone: row.phone,
     joinedAt: row.created_at,
   };
+}
+
+type FanStatus = "active" | "suspended" | "deleted";
+
+/** The fan lifecycle state, defaulting to active when no `fans` row exists. */
+async function fanStatusOf(db: ReturnType<typeof serviceClient>, userId: string): Promise<FanStatus> {
+  const { data, error } = await db
+    .from("fans")
+    .select("status")
+    .eq("id", userId)
+    .maybeSingle<{ status: FanStatus }>();
+  if (error) throw error;
+  return data?.status ?? "active";
+}
+
+/**
+ * Applies a fan lifecycle state to both projections: the `fans` row the
+ * console reads and the auth user's ability to sign in / refresh a token.
+ */
+async function writeFanStatus(
+  db: ReturnType<typeof serviceClient>,
+  userId: string,
+  status: FanStatus,
+): Promise<FanStatus> {
+  const current = await fanStatusOf(db, userId);
+  if (current === "deleted" && status !== "deleted") {
+    throw new AppError("conflict", "A deleted fan cannot be restored");
+  }
+  if (current === status) return status;
+
+  if (status === "suspended") {
+    const { error } = await db.auth.admin.updateUserById(userId, {
+      ban_duration: "876000h",
+    });
+    if (error) throw error;
+  } else if (status === "active") {
+    const { error } = await db.auth.admin.updateUserById(userId, {
+      ban_duration: "none",
+    });
+    if (error) throw error;
+  } else {
+    // Soft delete: the auth user row stays for the audit trail and cannot sign in.
+    const { error } = await db.auth.admin.deleteUser(userId, true);
+    if (error) throw error;
+  }
+
+  const now = new Date().toISOString();
+  const { error } = await db.from("fans").upsert(
+    {
+      id: userId,
+      status,
+      suspended_at: status === "suspended" ? now : null,
+      deleted_at: status === "deleted" ? now : null,
+    },
+    { onConflict: "id" },
+  );
+  if (error) throw error;
+  return status;
 }
 
 function idFromRequest(request: Request): string | null {
@@ -133,6 +216,11 @@ async function handler(request: Request): Promise<Response> {
 
     const memberships = await clubMemberships(context);
     const roles = new Map(memberships.map((m) => [m.id, m.staff_role]));
+    const { data: fanRows, error: fanError } = await db.from("fans").select("id,status");
+    if (fanError) throw fanError;
+    const fanStatuses = new Map(
+      ((fanRows ?? []) as Array<{ id: string; status: FanStatus }>).map((row) => [row.id, row.status]),
+    );
 
     let query = db
       .from("profiles")
@@ -160,7 +248,13 @@ async function handler(request: Request): Promise<Response> {
     if (error) throw error;
 
     const items = ((data ?? []) as ProfileRow[])
-      .map((row) => toDto(row, (roles.get(row.id) as string | undefined) ?? "customer"))
+      .map((row) =>
+        toDto(
+          row,
+          (roles.get(row.id) as string | undefined) ?? "customer",
+          fanStatuses.get(row.id) ?? "active",
+        ),
+      )
       .filter((item) => (role ? item.role === role : true));
 
     return ok(
@@ -169,6 +263,81 @@ async function handler(request: Request): Promise<Response> {
         page,
         perPage,
         total: count ?? items.length,
+      },
+      request,
+    );
+  }
+
+  // RBAC-9 — create the account, then let the service-only RPC write the
+  // membership. The claim is set at creation so the account's first session
+  // carries the right role; the DB function re-checks escalation.
+  if (request.method === "POST") {
+    const input = await validateBody(request, createStaffSchema);
+    const tenantId = await callerClub(context);
+
+    const { data: roleRow, error: roleError } = await db
+      .from("staff_roles")
+      .select("code,active")
+      .eq("tenant_id", tenantId)
+      .eq("code", input.role)
+      .maybeSingle<{ code: string; active: boolean }>();
+    if (roleError) throw roleError;
+    if (!roleRow?.active) {
+      throw new AppError("validation", "Role not found or inactive");
+    }
+
+    const { data: caps, error: capError } = await db
+      .from("staff_role_capabilities")
+      .select("capability")
+      .eq("tenant_id", tenantId)
+      .eq("role_code", input.role);
+    if (capError) throw capError;
+    const capabilities = ((caps ?? []) as Array<{ capability: Capability }>).map(
+      (row) => row.capability,
+    );
+    if (capabilities.length === 0) {
+      throw new AppError("validation", "Role not found or inactive");
+    }
+
+    const created = await db.auth.admin.createUser({
+      email: input.email,
+      password: input.password,
+      email_confirm: true,
+      user_metadata: { full_name: input.fullName ?? "" },
+      app_metadata: { role: input.role, capabilities },
+    });
+    if (created.error || !created.data.user) {
+      throw new AppError("conflict", created.error?.message ?? "Could not create the account");
+    }
+    const userId = created.data.user.id;
+
+    const assigned = await db.rpc("admin_create_staff_member", {
+      p_actor_id: context.user.id,
+      p_tenant_id: tenantId,
+      p_user_id: userId,
+      p_role: input.role,
+    });
+    if (assigned.error) {
+      // The auth user must not survive a refused membership.
+      await db.auth.admin.deleteUser(userId);
+      throw assigned.error;
+    }
+
+    const { data: profile, error: profileError } = await db
+      .from("profiles")
+      .select("id,email,full_name,phone,created_at")
+      .eq("id", userId)
+      .single<ProfileRow>();
+    if (profileError) {
+      await db.auth.admin.deleteUser(userId);
+      throw profileError;
+    }
+
+    return ok(
+      {
+        user: toDto(profile, input.role),
+        roleAppliesAtNextSignIn: false,
+        roleChanged: true,
       },
       request,
     );
@@ -191,6 +360,22 @@ async function handler(request: Request): Promise<Response> {
   const memberships = await clubMemberships(context);
   const currentRole =
     memberships.find((m) => m.id === targetId)?.staff_role ?? "customer";
+
+  // RBAC-9 — the database refuses this too; the Edge check keeps the public
+  // error stable and avoids creating a claim for a promotion that cannot land.
+  if (body.role !== undefined && body.role !== "customer" && currentRole === "customer") {
+    throw new AppError("conflict", "customer_not_staff");
+  }
+
+  // REQ-26 — fan lifecycle. Staff are never suspended/deleted from here; their
+  // access is removed through the role path.
+  let fanStatus = await fanStatusOf(db, targetId);
+  if (body.fanStatus !== undefined) {
+    if (currentRole !== "customer") {
+      throw new AppError("conflict", "staff_status_not_fan");
+    }
+    fanStatus = await writeFanStatus(db, targetId, body.fanStatus);
+  }
 
   const patch: Database["public"]["Tables"]["profiles"]["Update"] = {};
   if (body.fullName !== undefined) patch.full_name = body.fullName;
@@ -256,12 +441,20 @@ async function handler(request: Request): Promise<Response> {
   await writeAudit(
     {
       actorId: context.user.id,
-      action: "admin.user.update",
+      action:
+        body.fanStatus === "suspended"
+          ? "admin.user.suspend"
+          : body.fanStatus === "deleted"
+            ? "admin.user.delete"
+            : body.fanStatus === "active"
+              ? "admin.user.restore"
+              : "admin.user.update",
       entity: "profiles",
       entityId: targetId,
       metadata: {
         ...patch,
         ...(body.role !== undefined ? { role: body.role } : {}),
+        ...(body.fanStatus !== undefined ? { fan_status: body.fanStatus } : {}),
         role_claim_updated: body.role !== undefined,
       },
     },
@@ -270,7 +463,7 @@ async function handler(request: Request): Promise<Response> {
 
   return ok(
     {
-      ...toDto(updated, body.role ?? currentRole),
+      ...toDto(updated, body.role ?? currentRole, fanStatus),
       // The claim travels in the access token, so an existing session keeps
       // the old role until the token is refreshed.
       roleAppliesAtNextSignIn: body.role !== undefined,
@@ -280,4 +473,4 @@ async function handler(request: Request): Promise<Response> {
   );
 }
 
-Deno.serve(serveJson(handler, ["GET", "PATCH"]));
+Deno.serve(serveJson(handler, ["GET", "POST", "PATCH"]));

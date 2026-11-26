@@ -13,6 +13,29 @@
  * same numbers the same way.
  */
 
+/** How old availability may be before it is shown as stale (NFR-13). */
+export const SEAT_AVAILABILITY_STALE_MS = 5_000;
+
+/**
+ * Whether an availability value is too old to be shown as current.
+ *
+ * NFR-13: “a value older than 5 s is marked stale, never shown as current.”
+ * Exactly 5 s is still current; the first millisecond after is stale.
+ *
+ * @param updatedAt when the value was last refreshed, as epoch milliseconds
+ * @param now the current epoch milliseconds (injectable for tests)
+ * @param staleAfterMs the freshness budget, defaulting to 5 s
+ * @returns `true` when the value is older than the budget
+ */
+export function isAvailabilityStale(
+  updatedAt: number,
+  now: number = Date.now(),
+  staleAfterMs: number = SEAT_AVAILABILITY_STALE_MS,
+): boolean {
+  if (!Number.isFinite(updatedAt) || updatedAt <= 0) return false;
+  return now - updatedAt > staleAfterMs;
+}
+
 /** A row of the `public.zone_availability` view, with its match. */
 export interface ZoneAvailabilityRow {
   zone_id: string;

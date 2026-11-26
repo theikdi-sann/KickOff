@@ -170,6 +170,51 @@ test.describe("admin operations", () => {
     "Set E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD (or NEXT_PUBLIC_DEMO_*) to run operations E2E.",
   );
 
+  test("lists the built-in staff roles without a function error", async ({ page }) => {
+    await signIn(page);
+    await page.goto(`${baseUrl}/dashboard/settings/roles`);
+
+    // The list is a GET. supabase-js defaults an omitted method to POST, which
+    // made this screen show "Request body must be valid JSON".
+    await expect(page.getByText("BUILT-IN", { exact: true })).toHaveCount(2);
+    const roleList = page.locator(".panel").first();
+    await expect(roleList.getByText("Admin", { exact: true })).toBeVisible();
+    await expect(roleList.getByText("Gatekeeper", { exact: true })).toBeVisible();
+    await expect(page.getByText("Request body must be valid JSON")).toHaveCount(0);
+  });
+
+  test("creates staff accounts instead of promoting fans", async ({ page }) => {
+    await signIn(page);
+    await page.goto(`${baseUrl}/dashboard/users`);
+
+    // A customer has no staff_role to update. The create form is the only way
+    // to add staff; it asks for the initial password the admin hands over.
+    const customerRow = page
+      .locator("tbody tr")
+      .filter({ hasNot: page.locator("select") })
+      .first();
+    await expect(customerRow).toBeVisible();
+    await expect(customerRow.getByText("FAN", { exact: true })).toBeVisible();
+    await expect(customerRow.locator("select")).toHaveCount(0);
+    await expect(customerRow.getByRole("button", { name: "Suspend" })).toBeVisible();
+    await expect(customerRow.getByRole("button", { name: "Soft delete" })).toBeVisible();
+
+    // Staff rows choose between staff roles only. Fan is not a role; removing
+    // staff access is its own action.
+    const staffRow = page.locator("tbody tr").filter({ has: page.locator("select") }).first();
+    const options = (await staffRow.locator("option").allTextContents()).map((option) =>
+      option.toUpperCase(),
+    );
+    expect(options).not.toContain("CUSTOMER");
+    expect(options).not.toContain("FAN");
+    await expect(staffRow.getByRole("button", { name: "Remove staff" })).toBeVisible();
+
+    await page.getByRole("button", { name: /Create staff/i }).click();
+    await expect(page.getByLabel("Staff email")).toBeVisible();
+    await expect(page.getByLabel("Initial password")).toBeVisible();
+    await expect(page.getByLabel("Initial role")).toBeVisible();
+  });
+
   test("walks login → match → gate scan → CSV export", async ({ page }) => {
     // Five UI stages plus two fixtures; the default 30s cannot cover cleanup
     // when a step is slow, which left rows behind.

@@ -337,7 +337,7 @@ before the suite is green again.
 | `scripts/tests/retention.test.mjs` | test | covered | NFR-16 — daily cron, window constants, append-only maintenance flag |
 | `scripts/tests/reschedule.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/service-key.test.mjs` | test | covered | NFR-02 — no service-role JWT reaches client source or static chunks |
-| `scripts/tests/rbac-acceptance.test.mjs` | test | covered | REQ-046 acceptance contract — RBAC-1…RBAC-8 across the DB, Edge and console |
+| `scripts/tests/rbac-acceptance.test.mjs` | test | covered | REQ-046 acceptance contract — RBAC-1…RBAC-9 across the DB, Edge and console |
 | `scripts/tests/rbac-docs.test.mjs` | test | covered | doc contract — REQ-046/NFR-10 shipped, acceptance IDs mapped, capability catalogue closed (RBAC-D1…RBAC-D6) |
 | `scripts/tests/scan-stats.test.mjs` | test | covered | contract test — fails when the repository drifts |
 | `scripts/tests/schema-usage.test.mjs` | test | covered | contract test — the shared schemas are actually used (F-11) |

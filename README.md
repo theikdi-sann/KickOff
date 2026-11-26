@@ -302,7 +302,7 @@ Sales close **15 minutes before kick-off**; unpaid orders expire after
 │                                #   date formatting, theme tokens, QR contract,
 │                                #   English string table, Bangkok greeting
 ├── supabase/
-│   ├── migrations/              # 71 migrations: schema, RLS, RPCs, cron, seeds
+│   ├── migrations/              # 73 migrations: schema, RLS, RPCs, cron, seeds
 │   ├── functions/               # 16 Edge Functions + _shared helpers
 │   ├── tests/                   # pgTAP suites (RLS, expiry, concurrency)
 │   └── seed.sql

@@ -13,6 +13,7 @@ const read = (path) => readFileSync(resolve(root, path), 'utf8');
 const sql = read('supabase/tests/rbac.test.sql');
 const api = read('supabase/functions/tests/rbac-api.test.ts');
 const roles = read('supabase/functions/admin-roles/index.ts');
+const rolesQuery = read('apps/admin/src/lib/queries/roles.ts');
 const adminUsers = read('supabase/functions/admin-users/index.ts');
 const migration = read('supabase/migrations/0071_capability_rbac.sql');
 
@@ -45,4 +46,23 @@ test('RBAC-8 the console exposes Roles and capability roles in Users', () => {
   assert.match(roles, /admin_create_role/);
   assert.match(roles, /admin_update_role/);
   assert.match(roles, /admin_delete_role/);
+});
+
+test('RBAC-9 staff accounts are created; customers are not promoted', () => {
+  const migration = read('supabase/migrations/0072_staff_accounts.sql');
+  assert.match(migration, /customer_not_staff/);
+  assert.match(migration, /admin_create_staff_member/);
+  assert.match(api, /RBAC-9/);
+  assert.match(read('apps/admin/tests/staff-accounts.test.ts'), /canEditRole/);
+});
+
+test('RBAC-8 the console reads roles with an explicit GET', () => {
+  // supabase.functions.invoke defaults to POST, and the function only treats
+  // GET as the list operation; an omitted method made page load fail with
+  // "Request body must be valid JSON".
+  assert.match(
+    rolesQuery,
+    /invokeFunction<[^>]+>\("admin-roles",\s*\{\s*method:\s*"GET"\s*\}\)/,
+    'the list query must pass method: "GET"',
+  );
 });

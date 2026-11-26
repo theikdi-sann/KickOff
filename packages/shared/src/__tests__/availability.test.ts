@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  isAvailabilityStale,
   potentialRevenueMinorUnits,
+  SEAT_AVAILABILITY_STALE_MS,
   sellThroughPercent,
   summariseAvailability,
   toZoneAvailabilityDto,
@@ -150,5 +152,33 @@ describe('potentialRevenueMinorUnits', () => {
     );
 
     expect(revenue).toBe(0);
+  });
+});
+
+// NFR-13 — “a value older than 5 s is marked stale, never shown as current.”
+// Exactly five seconds is still current; the first millisecond after is not.
+describe('isAvailabilityStale', () => {
+  const updatedAt = 1_700_000_000_000;
+
+  it('keeps a value current inside the five-second budget', () => {
+    expect(SEAT_AVAILABILITY_STALE_MS).toBe(5_000);
+    expect(isAvailabilityStale(updatedAt, updatedAt + 4_999)).toBe(false);
+  });
+
+  it('treats the exact five-second boundary as current', () => {
+    expect(isAvailabilityStale(updatedAt, updatedAt + 5_000)).toBe(false);
+  });
+
+  it('marks a value stale one millisecond past the boundary', () => {
+    expect(isAvailabilityStale(updatedAt, updatedAt + 5_001)).toBe(true);
+  });
+
+  it('honours a caller-supplied budget', () => {
+    expect(isAvailabilityStale(updatedAt, updatedAt + 1_001, 1_000)).toBe(true);
+  });
+
+  it('never marks missing data stale (there is nothing to label)', () => {
+    expect(isAvailabilityStale(0, updatedAt + 60_000)).toBe(false);
+    expect(isAvailabilityStale(Number.NaN, updatedAt + 60_000)).toBe(false);
   });
 });

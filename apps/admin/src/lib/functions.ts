@@ -3,7 +3,12 @@
 import { createClient } from "@/lib/supabase/client";
 
 interface InvokeOptions {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  /**
+   * Required: supabase-js `functions.invoke` defaults to POST, so an omitted
+   * method turns a read into a bodyless POST. Being explicit here makes that
+   * mistake a compile error instead of a 422 at runtime.
+   */
+  method: "GET" | "POST" | "PATCH" | "DELETE";
   body?: Record<string, unknown>;
   headers?: Record<string, string>;
 }
@@ -35,7 +40,7 @@ export class EdgeFunctionError extends Error {
  * `functions.invoke` throws a generic FunctionsHttpError on non-2xx; this reads
  * the response body so callers get the real message.
  */
-export async function invokeFunction<T>(name: string, options: InvokeOptions = {}): Promise<T> {
+export async function invokeFunction<T>(name: string, options: InvokeOptions): Promise<T> {
   const supabase = createClient();
   const { data, error } = await supabase.functions.invoke(name, options);
   if (!error) {

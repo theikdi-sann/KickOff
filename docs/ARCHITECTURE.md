@@ -383,6 +383,18 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
   `requireStaff`). Membership first, claim second; a failed claim write
   restores the membership. Assigning `customer` deletes the membership and
   sets the claim to `customer`.
+- **Staff are created, fans are not promoted.** `admin-users` has a
+  `POST` create path: an administrator supplies e-mail, initial password and
+  role; the function creates the auth user, profile, membership and claim. A
+  `PATCH` cannot turn a fan (`customer`) into staff — the `admin_assign_role`
+  RPC refuses it (`customer_not_staff`); only existing staff can be reassigned.
+  The console's **Remove staff** action returns a staff member to the
+  `customer`/Fan state. The new staff member changes the initial password from
+  Security.
+- **Fan lifecycle.** A fan (no membership) can be suspended (auth ban; restore
+  unbans) or soft-deleted (auth soft delete; the profile/audit row is retained
+  and cannot be restored). `fans.status = active | suspended | deleted` is the
+  console projection; every change is audited.
 - **No third projection.** `profiles.role` was dropped in `0048`; no code may
   read or write it.
 - **Capability flags drive the database.** `staff_roles(tenant_id, code)`
@@ -426,7 +438,7 @@ tool can enforce them (ESLint, `tsc`, CI), and reviewed where it cannot.
 | --- | --- |
 | Multi-tenancy (`GAP-02`) | **Delivered** at `0045`: `tenants`, `tenant_id` on every scoped table, composite FKs, `current_tenant()`, `provision_tenant()` and the isolation suite. |
 | Staff roles (`GAP-03`) | **Delivered** built-in pair (`admin` \| `gatekeeper`), per-club `staff_roles` with capability flags and `staff_members`. |
-| Custom staff roles (`GAP-11`, REQ-046, NFR-10) | **Shipped.** Capability roles from the Roles screen; `RBAC-1…RBAC-8`. Design: [`ADR-005`](adr/ADR-005-custom-rbac.md). |
+| Custom staff roles (`GAP-11`, REQ-046, NFR-10) | **Shipped.** Capability roles from the Roles screen; staff accounts created by an admin; `RBAC-1…RBAC-9`. Design: [`ADR-005`](adr/ADR-005-custom-rbac.md). |
 | Observability (`GAP-04`) | **Delivered** (C10.1): structured logger, request ids, `error_events`, alert webhook, reconciliation sweep. |
 | Locale & currency (`GAP-05`) | **Delivered** (C10.2): per-club locale/currency/time zone, source-key translation, Thai catalog. |
 | Ticket transfer (`GAP-08`) | **Open / out of scope:** a buyer holds every pass for their order. |

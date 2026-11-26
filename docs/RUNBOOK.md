@@ -129,8 +129,8 @@ verify. The short version:
 1. `select public.provision_tenant('Club Name', 'club-slug', 'THB', 'th-TH');`
    — platform-operator only (`0054`); idempotent by slug; seeds `staff_roles`
    (`admin`, `gatekeeper`) and default `app_settings`.
-2. Create the venue, zones and seats; invite the first admin
-   (`admin-users`), who grants the rest.
+2. Create the venue, zones and seats; create the first admin account from Users
+   (`admin-users` with an initial password), who creates the rest of the staff.
 3. Complete Stripe Connect onboarding for the club (`tenants.stripe_account_id`)
    and set `application_fee_bps` in the platform console.
 4. Build the white-label app with the club's `slug` and push credentials
@@ -223,11 +223,21 @@ every override (SECURITY §9).
 
 ### 6.6 Role change / last admin
 
+Staff accounts are **created** from Users by an administrator holding
+`manage_staff`: e-mail, initial password, role. The new staff member signs in
+with that password and changes it from Security. Do **not** try to promote an
+existing customer through the role selector — the database refuses it
+(`customer_not_staff`); create a staff account instead.
+Removing a staff member's access is the separate **Remove staff** action; it
+deletes the membership and sets the claim to `customer`. The Users screen
+displays that state as **Fan** because people are rows in `fans`; the stored
+value stays `customer`.
+
 `admin-users` writes the `staff_members` row and the JWT claim together; the
 console states when the new role applies (re-login). The last-admin guard
 counts admins that can act — if it refuses, promote another admin first.
 Assigning **Customer** deletes the membership; `customer` is the absence of a
-`staff_members` row, not a staff role.
+`staff_members` row, not a staff role. The console labels it **Fan**.
 The built-in roles are `admin` and `gatekeeper`; per-club custom roles
 (REQ-046 / `GAP-11`) are available from the Roles screen, so the role-management
 screen to operate.

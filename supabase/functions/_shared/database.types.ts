@@ -129,14 +129,14 @@ isOneToOne: false
                   ]
                 },"fans": {
                   Row: {
-                    "created_at": string,"id": string
+                    "created_at": string,"deleted_at": string | null,"id": string,"status": string,"suspended_at": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id": string
+                    "created_at"?: string,"deleted_at"?: string | null,"id": string,"status"?: string,"suspended_at"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string
+                    "created_at"?: string,"deleted_at"?: string | null,"id"?: string,"status"?: string,"suspended_at"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1024,6 +1024,9 @@ isOneToOne: false
                            },
 "admin_create_role":
 { Args: { "p_capabilities": (string)[],"p_code": string,"p_name": string }; Returns: Json
+                           },
+"admin_create_staff_member":
+{ Args: { "p_actor_id": string,"p_role": string,"p_tenant_id": string,"p_user_id": string }; Returns: Json
                            },
 "admin_delete_role":
 { Args: { "p_code": string }; Returns: Json

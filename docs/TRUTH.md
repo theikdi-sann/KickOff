@@ -33,8 +33,10 @@ re-checked instead of trusted.
 | Staff authority (Edge) | `auth.users.app_metadata.role` — the claim `requireAdmin` / `requireStaff` read. |
 | Legacy projection | `public.profiles.role` was **dropped in `0048`** with its dual-write trigger. No code may read or write it. |
 | Built-in staff roles | **Exactly `admin` and `gatekeeper`.** `admin` holds every capability; `gatekeeper` holds gate operation only. |
-| `customer` | **Not a staff role.** It means *no `staff_members` row* at the current club. It appears in the role vocabulary only so the console and the claim can name the no-authority state. |
-| Role assignment | An admin writes the **membership** and the **JWT claim** together, membership first; a failed claim write restores the membership. Assigning `customer` deletes the membership and sets the claim to `customer`. |
+| `customer` | **Not a staff role.** It means *no `staff_members` row* at the current club. It appears in the role vocabulary only so the console and the claim can name the no-authority state. The console displays it as **Fan**; the stored value stays `customer`. |
+| Role assignment | An admin writes the **membership** and the **JWT claim** together, membership first; a failed claim write restores the membership. Removing staff access (`customer`) deletes the membership and sets the claim to `customer`. |
+| Staff creation | **Admins create staff accounts** with an e-mail, initial password and role. A fan (`customer`) cannot be promoted by a role update (`customer_not_staff`); only existing staff can be reassigned or returned to the Fan state. The new staff member changes the initial password from Security. |
+| Fan lifecycle | A fan can be **suspended** (auth `ban_duration`; restorable) or **soft-deleted** (auth soft delete; the profile/audit row stays and cannot be restored). `fans.status` is `active \| suspended \| deleted`; the Users screen shows FAN / FAN · SUSPENDED / FAN · DELETED. |
 | Apply window | A role change reaches an existing session at the next access-token refresh; the console states this. |
 | Custom roles | **Shipped.** `REQ-046` / `GAP-11` closed; a club defines capability roles from the Roles screen. |
 
@@ -46,7 +48,7 @@ re-checked instead of trusted.
 | NFR-10 per-club role definition | **shipped** | `0071` capability roles + `admin-roles` |
 | GAP-02 multi-tenancy | **closed** | `0045` |
 | GAP-03 fixed staff-role pair | **closed** | `0039`/`0041` delivered the built-in pair with per-club capability flags |
-| GAP-11 custom club roles | **closed** | REQ-046; `RBAC-1…RBAC-8` |
+| GAP-11 custom club roles | **closed** | REQ-046; `RBAC-1…RBAC-9` |
 | `is_platform_admin()` | **shipped** | `0054` |
 | Offline pass cache | **shipped** | `GAP-01` closed at C10.3 |
 

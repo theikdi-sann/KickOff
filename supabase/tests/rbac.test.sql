@@ -1,6 +1,6 @@
 -- REQ-046 / NFR-10 — custom roles, capabilities and guards.
 begin;
-select plan(18);
+select plan(25);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000b1', 'rbac-admin@kickoff.test'),
@@ -9,6 +9,9 @@ insert into auth.users (id, email) values
 
 insert into public.staff_members (id, tenant_id, staff_role)
 values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-000000000001', 'admin');
+-- RBAC-9: b2 starts as existing staff; a customer cannot be promoted later.
+insert into public.staff_members (id, tenant_id, staff_role)
+values ('00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-000000000001', 'gatekeeper');
 
 -- RBAC-2: seed counts.
 select is(
@@ -150,6 +153,68 @@ select is(
     where id = '00000000-0000-0000-0000-0000000000b2'),
   0::bigint,
   'RBAC-3 no membership remains'
+);
+
+-- ── RBAC-9: staff accounts are created; customers are not promoted ──────────
+-- Act as the admin again (RBAC-6 left the claims on the fan).
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000b1', true);
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated","app_metadata":{"role":"admin"}}',
+  true
+);
+
+select throws_ok(
+  $$select public.admin_assign_role('00000000-0000-0000-0000-0000000000b3', 'gatekeeper')$$,
+  'P0001', 'customer_not_staff',
+  'RBAC-9 a customer cannot be promoted by a role update'
+);
+select is(
+  (select count(*) from public.staff_members
+    where id = '00000000-0000-0000-0000-0000000000b3'),
+  0::bigint,
+  'RBAC-9 the refused promotion wrote no membership'
+);
+
+select lives_ok(
+  $$select public.admin_create_staff_member(
+      '00000000-0000-0000-0000-0000000000b1',
+      '00000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-0000000000b3',
+      'gatekeeper')$$,
+  'RBAC-9 an admin creates a staff account'
+);
+select is(
+  (select staff_role from public.staff_members
+    where id = '00000000-0000-0000-0000-0000000000b3'
+      and tenant_id = '00000000-0000-0000-0000-000000000001'),
+  'gatekeeper',
+  'RBAC-9 the created account carries the requested role'
+);
+select is(
+  (select count(*) from public.audit_logs
+    where action = 'admin.user.create'
+      and entity_id = '00000000-0000-0000-0000-0000000000b3'),
+  1::bigint,
+  'RBAC-9 staff creation is audited once'
+);
+select throws_ok(
+  $$select public.admin_create_staff_member(
+      '00000000-0000-0000-0000-0000000000b1',
+      '00000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-0000000000b3',
+      'customer')$$,
+  '22023', null,
+  'RBAC-9 customer is not a creatable role'
+);
+select throws_ok(
+  $$select public.admin_create_staff_member(
+      '00000000-0000-0000-0000-0000000000b1',
+      '00000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-0000000000b3',
+      'admin')$$,
+  'P0001', null,
+  'RBAC-9 an existing staff membership cannot be created twice'
 );
 
 select * from finish();

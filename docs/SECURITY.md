@@ -129,6 +129,12 @@ screen. The normative requirement is
 - **Capability checks only:** no RLS policy or Edge guard may branch on the
   literal role name.
 - **No escalation:** an actor cannot grant a capability it does not hold.
+- **Create, don't promote:** staff accounts are created by an administrator
+  holding `manage_staff` (e-mail + initial password + role). An existing fan
+  (`customer`) cannot be promoted by a role update; the database refuses it
+  with `customer_not_staff`. The new account signs in with the initial password
+  and can change it from Security. Removing staff access is a separate console
+  action that returns the person to the `customer`/Fan state.
 - **No last-manager removal:** the last role holding `manage_staff` cannot be
   deactivated or lose its last holder.
 - **Two projections, compensated:** membership first, claim second; restore on
@@ -136,10 +142,16 @@ screen. The normative requirement is
   token refresh.
 - **Tenant boundary:** a cross-club role read/write returns zero rows,
   `404 role_not_found`, or `23503`/`42501`.
+- **Fan lifecycle:** a fan may be suspended (auth `ban_duration`; restorable)
+  or soft-deleted (auth soft delete; the profile/audit row stays; cannot be
+  restored). A suspension stops token refresh and new sign-ins; an already
+  issued access token lasts until its expiry. Staff are not suspended through
+  this path — **Remove staff** returns them to the fan state.
 - **Audit:** `admin.role.create`, `admin.role.update`, `admin.role.deactivate`,
-  `admin.user.update`.
+  `admin.user.create`, `admin.user.update`, `admin.user.suspend`,
+  `admin.user.restore`, `admin.user.delete`.
 
-Acceptance is `RBAC-1…RBAC-8` in [`TESTING.md`](TESTING.md) §10.
+Acceptance is `RBAC-1…RBAC-9` in [`TESTING.md`](TESTING.md) §10.
 
 ## 3. Edge Function authorization
 

@@ -34,11 +34,11 @@ Supabase backend with Stripe payments and the Expo Push Service.
 ### 1.1 Actors
 
 | Actor | Surface | Trust level |
-|---|---|---|
+| --- | --- | --- |
 | **Supporter** | mobile app | untrusted (own data only) |
-| **Box-office staff** | admin console | elevated, scoped by role |
 | **Gate staff** | admin console / scanner | elevated, scoped to assigned gates |
-| **Club administrator** | admin console | full club scope |
+| **Other staff** | admin console | elevated, scoped to a capability set from the 10-key catalogue |
+| **Club administrator (admin)** | admin console | full club scope |
 | **Platform operator** | infrastructure | cross-tenant, audited |
 | **Scheduler** | `pg_cron` | service identity, secret-guarded |
 
@@ -47,7 +47,7 @@ Supabase backend with Stripe payments and the Expo Push Service.
 ### 2.1 Supporter app (mobile)
 
 | ID | Requirement | State | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | REQ-01 | Register, sign in, sign out, password reset, email verification, profile management | shipped | Supabase Auth + `profiles` |
 | REQ-02 | Browse upcoming fixtures and past results | shipped | `matches.status` = upcoming/live/completed |
 | REQ-03 | Read club news and match reports | shipped | `news_items` + public bucket for images |
@@ -66,7 +66,7 @@ Supabase backend with Stripe payments and the Expo Push Service.
 ### 2.2 Staff console (admin)
 
 | ID | Requirement | State | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | REQ-15 | Staff sign-in with TOTP MFA | shipped | `app_metadata.role` claim |
 | REQ-16 | Create, edit and delete fixtures | shipped | incl. kickoff, competition, home/away, scores |
 | REQ-17 | Configure zones, rows, seats and prices | shipped | `zone-editor`, per-zone pricing |
@@ -78,15 +78,32 @@ Supabase backend with Stripe payments and the Expo Push Service.
 | REQ-23 | Work at the gate without connectivity (offline queue) | shipped | `offline-queue`, idempotency keys |
 | REQ-24 | List, filter, refund and export orders | shipped | CSV export, refunds with used-pass override |
 | REQ-25 | Publish and edit news and match results | shipped | `news_input_schema` + admin RLS |
-| REQ-26 | Manage users and roles | shipped | `admin-users` function |
+| REQ-26 | Manage users and roles; suspend or soft-delete fan accounts | shipped | `admin-users` function; `fans.status` |
 | REQ-27 | Read club settings (lock window, reminders) | shipped | `app_settings` |
 | REQ-28 | See revenue, passes sold and scan activity | shipped | overview page + `metrics` endpoint |
 | REQ-29 | See who changed what (audit trail) | shipped | `audit_logs` + admin console |
 | REQ-046 | Define, edit, deactivate and assign **custom per-club staff roles** | **shipped** | `admin-roles`, capability claims, `rbac.test.sql` + `rbac-api.test.ts` |
 
-### REQ-046 — Per-club staff role definition and assignment (`shipped`)
+### REQ-26 — Fan account lifecycle (`shipped`)
 
-**Behaviour.** An admin that holds `manage_staff` can define, rename, deactivate
+A fan is a person with no `staff_members` row. An administrator holding
+`manage_staff` may:
+
+- **Suspend** a fan — the auth user is banned (`ban_duration`), the `fans` row
+  becomes `suspended`, and the console offers **Restore**. The current access
+  token may remain valid until it expires; refreshes and new sign-ins fail.
+- **Soft-delete** a fan — the auth user is soft-deleted and the `fans` row
+  becomes `deleted`. The profile/audit row is retained, but the account cannot
+  sign in and cannot be restored.
+
+The Users screen shows `FAN`, `FAN · SUSPENDED` or `FAN · DELETED` and offers
+the matching actions. Staff are never suspended/deleted through this path:
+their access is removed with **Remove staff** (back to the fan state). Every
+action is audited as `admin.user.suspend`, `admin.user.restore` or
+`admin.user.delete`.
+
+### REQ-046 — Per-club staff role definition and assignment (`shipped`)**Behaviour.** An admin that holds `manage_staff` can define, rename, deactivate
+
 and assign club-scoped staff roles beyond the two built-in roles. A role is a
 named set of capabilities; every authorization decision is derived from those
 capabilities, never from the role's name.
@@ -97,8 +114,11 @@ capabilities, never from the role's name.
    `gatekeeper`. They are seeded by `provision_tenant()` for every club and
    cannot be renamed, deleted or have their capability set reduced. `customer`
    is **not** a role: it is the absence of a `staff_members` row at the current
-   club. Roles are scoped to one club (`tenant_id`); venue- or gate-level role
-   scoping is not part of REQ-046.
+   club, and the claim/database value for that state. The console displays it
+   as **Fan** because people are rows in `fans`; the value stays `customer` so
+   the claim, RLS and Edge guards have one wire contract. Roles are scoped to
+   one club (`tenant_id`); venue- or gate-level role scoping is not part of
+   REQ-046.
 2. **Definition.** A custom role is stored in
    `staff_roles(tenant_id, code, display_name, is_system, sort_order)` with a
    unique `(tenant_id, code)`. `code` matches `^[a-z][a-z0-9_]{1,31}$`;
@@ -111,7 +131,7 @@ capabilities, never from the role's name.
    `staff_role_capabilities(tenant_id, role_code, capability)`:
 
    | Capability | Grants |
-   |---|---|
+   | --- | --- |
    | `manage_staff` | create/edit/deactivate roles; invite, assign and demote staff; read the staff list |
    | `operate_gate` | scan a pass, undo **own** scan within 60 s, read `gates`, `match_gates` and own `scan_events` |
    | `manage_matches` | create/edit/postpone/cancel fixtures, match clock, results |
@@ -129,7 +149,9 @@ capabilities, never from the role's name.
 4. **Seeded capability sets.** `admin` = all ten capabilities. `gatekeeper` =
    `operate_gate` only. This preserves today's behaviour exactly.
 5. **Who may write.** Defining, editing, deactivating or assigning a role
-   requires `manage_staff` at the caller's club. An actor may not grant a
+   requires `manage_staff` at the caller's club. Creating a staff account also
+   requires `manage_staff`; a person who is a customer (no membership) cannot
+   be promoted by a role update. An actor may not grant a
    capability it does not itself hold (`403 capability_escalation`). A role
    holding `manage_staff` may not be deactivated, emptied of `manage_staff`, or
    have its last holder demoted while it is the only role at the club with
@@ -156,21 +178,34 @@ capabilities, never from the role's name.
    role_not_found`; a cross-club assignment is refused by the composite foreign
    key (`23503`).
 10. **Surfaces.** The admin console provides a Roles screen (list/create/edit/
-    deactivate) and the Users screen lists the caller club's active roles plus
-    **Customer**. Selecting **Customer** removes staff authority. Both screens
-    show the capabilities of a role before it is saved or assigned.
+    deactivate) and the Users screen lists the caller club's active staff
+    roles. A person with no membership is shown as **Fan** (the `customer`
+    value); the role selector only offers staff roles. Removing a staff
+    member's access is a separate **Remove staff** action, which deletes the
+    membership and writes `role = 'customer'`. Both screens show the
+    capabilities of a role before it is saved or assigned.
+11. **Account lifecycle.** Staff accounts are **created** by an administrator
+    holding `manage_staff`, not promoted from an existing fan. The
+    administrator supplies the e-mail address, an initial password and the
+    initial role; the function creates the auth user, its profile, the
+    `staff_members` membership, the capability claim and one
+    `admin.user.create` audit row. The new staff member signs in with that
+    password and can change it from Security. A `PATCH` that tries to move a
+    fan (no membership at the club) to a staff role is refused by the database
+    with `customer_not_staff`; only an existing staff member can be reassigned,
+    or have their staff access removed (returned to the `customer`/Fan state).
 
 **Non-goals.** Venue-scoped roles, per-user capability overrides, role
 inheritance, and delegated role administration below `manage_staff`.
 
-**Acceptance.** `RBAC-1…RBAC-8` (executed in `rbac.test.sql`, `rbac-api.test.ts` and the console contracts). The
-pending tests are listed in [`TESTING.md`](TESTING.md) §10 and registered as
-`test.todo` until the implementation lands.
+**Acceptance.** `RBAC-1…RBAC-9` (executed in `rbac.test.sql`, `rbac-api.test.ts`
+and the console contracts). `RBAC-9` covers admin-created staff accounts and
+the refusal to promote a customer.
 
 ## 3. Non-functional requirements
 
 | ID | Requirement | State | Evidence |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | NFR-01 | Row-level security on every table | shipped | `docs/SECURITY.md` matrix, pgTAP suites |
 | NFR-02 | Service-role key never reaches a client bundle | shipped | env layout, `check:no-mocks` + review |
 | NFR-03 | Stripe test mode only | shipped | `_shared/config.ts` refuses non-`sk_test_` keys |
@@ -180,7 +215,7 @@ pending tests are listed in [`TESTING.md`](TESTING.md) §10 and registered as
 | NFR-07 | Type safety: strict TS, no `any` | shipped | `tsconfig.base.json`, ESLint `no-explicit-any` |
 | NFR-08 | Offline entry verification without a network | **shipped** | `GAP-01` closed at C10.3 — `useTicketQr`/`useTicket` fall back to the cache with `fromCache`, proven by PASS-1…PASS-6 and the cache unit tests |
 | NFR-09 | Multi-tenant isolation | **shipped** | `GAP-02` closed at `0045` — ADR-002; C6–C7 (`0040`–`0045`), isolation suite green |
-| NFR-10 | Per-club role definition | a club can add staff roles without a migration; each role is a tenant-scoped row with a subset of the closed capability catalogue; no authorization path names a role; cross-tenant role reads/writes return zero rows or `23503`/`42501`; every role write is audited | **shipped** — `0071` capability catalogue/RLS, `admin-roles`, capability claims; `RBAC-1…RBAC-8` |
+| NFR-10 | Per-club role definition | a club can add staff roles without a migration; each role is a tenant-scoped row with a subset of the closed capability catalogue; no authorization path names a role; cross-tenant role reads/writes return zero rows or `23503`/`42501`; every role write is audited | **shipped** — `0071` capability catalogue/RLS, `admin-roles`, capability claims; `RBAC-1…RBAC-9` |
 | NFR-11 | Observability: structured logs, metrics, error tracking | **shipped** | `GAP-04` closed at C10.1 — `error_events` (durable, one request id across response, log and record), the optional `ALERT_WEBHOOK_URL` channel with a per-function cooldown, and `xclub-reconcile-payments` finding the C8.1 unsettled payments |
 | NFR-12 | Multi-language and multi-currency | **shipped** | `GAP-05` closed at C10.2 — schema (`tenants.locale`/`currency`/`timezone`) in C6/C7, formatting in C8.2, and the translation layer in C10.2: source-as-key `translate()`, a contract-enforced Thai catalog, `useTranslator()` in the app, the club locale on every date and money call, and the receipt in the club's language through a bundled Thai font subset. |
 | NFR-13 | Seat availability performance | p95 read-to-render ≤ 300 ms; the map polls every 3 s; a value older than 5 s is marked stale, never shown as current | `zone_availability`, `scripts/tests/availability.test.mjs`; enforced by review until a load test lands |
@@ -192,7 +227,7 @@ pending tests are listed in [`TESTING.md`](TESTING.md) §10 and registered as
 ## 4. Scope constraints (from the proposal)
 
 | ID | Constraint | Honoured |
-|---|---|---|
+| --- | --- | --- |
 | SC-01 | Single club (no multi-tenancy) | yes — lifted for B2B at `0045` (`GAP-02`) |
 | SC-02 | Stripe test mode, mock credentials only | yes, enforced in code |
 | SC-03 | Seat allocation is a grid, not a 3D stadium map | yes |
@@ -209,7 +244,7 @@ Requirement → implementation → the test that proves it. Tests live in
 `supabase/tests/` (pgTAP) and `supabase/functions/tests/` (Deno).
 
 | ID | Implementation | Proof |
-|---|---|---|
+| --- | --- | --- |
 | REQ-01 | `apps/mobile/src/app/(auth)/*`, `lib/auth.ts` | `scripts/tests/signup.test.mjs`, `redirects.test.mjs` |
 | REQ-02 | `apps/mobile/src/app/fixtures.tsx`, `lib/queries/matches.ts` | `scripts/tests/seeall.test.mjs` |
 | REQ-03 | `apps/mobile/src/app/news.tsx`, `lib/queries/news.ts` | `scripts/tests/phase11.test.mjs` |
@@ -235,11 +270,11 @@ Requirement → implementation → the test that proves it. Tests live in
 | REQ-23 | `apps/admin/src/lib/offline-queue.ts` | `scripts/tests/phase11.test.mjs` |
 | REQ-24 | `apps/admin/src/app/dashboard/tickets/*`, `functions/refund-order` | `supabase/tests/order-expiry.test.sql` |
 | REQ-25 | `apps/admin/src/app/dashboard/news/page.tsx` | `scripts/tests/phase11.test.mjs` |
-| REQ-26 | `supabase/functions/admin-users` | `supabase/tests/rls-auth.test.sql` |
+| REQ-26 | `supabase/functions/admin-users`, `supabase/migrations/0073_fan_status.sql`, admin Users screen | `fans.test.sql`, `rbac-api.test.ts` RBAC-9/FAN-1, admin Playwright |
 | REQ-27 | `apps/admin/src/app/dashboard/settings/page.tsx` | `scripts/tests/reschedule.test.mjs` (RS-7) |
 | REQ-28 | `apps/admin/src/app/dashboard/page.tsx`, `functions/metrics` | `scripts/tests/phase11.test.mjs` |
 | REQ-29 | `apps/admin/src/lib/audit.ts`, `supabase/migrations/0012_audit_logs.sql` | `supabase/tests/reschedule-audit.test.sql` |
-| REQ-046 | `supabase/migrations/0071_capability_rbac.sql`, `functions/admin-roles`, `functions/admin-users`, admin Roles/Users screens | `rbac.test.sql`, `rbac-api.test.ts`, `RBAC-1…RBAC-8` |
+| REQ-046 | `supabase/migrations/0071_capability_rbac.sql`, `supabase/migrations/0072_staff_accounts.sql`, `functions/admin-roles`, `functions/admin-users`, admin Roles/Users screens | `rbac.test.sql`, `rbac-api.test.ts`, `RBAC-1…RBAC-9` |
 | NFR-01 | `supabase/migrations/0016–0018`, `0035–0037` | `supabase/tests/rls*.test.sql` |
 | NFR-03 | `supabase/functions/_shared/config.ts` | `scripts/tests/ci.test.mjs` |
 | NFR-06 | `.github/workflows/ci.yml` | `scripts/tests/ci.test.mjs` |
@@ -251,7 +286,7 @@ Open items with an owner. Nothing here is silently dropped — each one is a
 tracked decision, not an accident.
 
 | ID | Gap | Impact | Plan |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **GAP-01** | **Offline pass verification.** The signed QR payload is fetched over the network, so a pass cannot be presented without connectivity. The proposal's SC-08 wants issued passes cached locally. | Supporter at a venue with poor signal cannot show the pass. | ✅ **closed at C10.3** — `pass-cache.ts` records the signed payload and the ticket row verbatim (no local re-signing: PASS-4), both queries fall back with `fromCache`, the screen shows an offline hint, sign-out clears the cache, and the scan stays server-authoritative — the gate refuses a used pass regardless of what the screen shows. |
 | **GAP-02** | **No multi-tenancy.** One club per deployment; branding, currency and staff are global. | Blocks the B2B model. | ✅ closed by C7.3 — ADR-002; `0045` ships the tenant-isolation pgTAP suite (T-01…T-24) green. |
 | **GAP-03** | **Staff roles are a fixed built-in pair.** `GAP-03a` delivered the two-role scope (`admin` \| `gatekeeper`, migration `0039`): a gatekeeper may scan and undo only their own scans and is confined to the gate surface. | Gate staff no longer hold refund/user authority. A club still cannot define its own roles — that is `GAP-11`. | ✅ closed by C6.2 — `0041` ships per-tenant `staff_roles` with capability flags and `staff_members(id, tenant_id)` (ADR-001). |
@@ -262,7 +297,7 @@ tracked decision, not an accident.
 | **GAP-08** | **No ticket transfer/claim.** A fan who buys four seats holds all four passes in their own account; friends cannot claim their own pass. | Buying for friends works at the gate (four QRs) but not in the app. | Out of scope now — revisit after C9; needs buyer/holder split on `tickets`. |
 | **GAP-09** | **Closed at GAP-09.6 — before the first club is onboarded (C8.2/C9).** A club leaving the platform now gets a clean, auditable exit: the schedule ([`docs/PRIVACY.md`](PRIVACY.md)), the fan export (`export-user`) and erasure (the `delete-account` repair plus the schedule), the club archive (`export_tenant()`), and the erase behind the human money gate (`mark_tenant_offboarded()` / `erase_tenant()`), with the exit runbook (RUNBOOK §9) and fan-rights procedure (§6.8). | The platform must not hold a club's money with no agreed way to hand it back (ADR-003 §6). The Connect *plumbing* (C8.1) shipped first — it changes nothing while no club holds a connected account, and the exit procedure now lands before the platform could hold a club's money on its own account. | ✅ closed at GAP-09.6 |
 | **GAP-10** | **White-label release overhead is unproven.** One app per club means per-club EAS projects, bundle ids, Expo push credentials and store listings. | The delivery model multiplies release work. | Onboarding checklist delivered in C9 (`RUNBOOK` §10 — provision → fee → Connect → build → verify); the first second-tenant build remains open. |
-| **GAP-11** | **A club cannot define its own staff roles.** `staff_roles` is per club but the code still ships exactly two seeded roles, the shared `STAFF_ROLES` union, and Edge guards that read a role name. | A club with a box-office lead, a matchday manager or a read-only auditor must reuse `admin` (too broad) or `gatekeeper` (too narrow). | ✅ **closed at 0071** — capability roles, `admin-roles`, capability claims and `RBAC-1…RBAC-8`. |
+| **GAP-11** | **A club cannot define its own staff roles.** `staff_roles` is per club but the code still ships exactly two seeded roles, the shared `STAFF_ROLES` union, and Edge guards that read a role name. | A club with a box-office lead, a matchday manager or a read-only auditor must reuse `admin` (too broad) or `gatekeeper` (too narrow). | ✅ **closed at 0071** — capability roles, `admin-roles`, capability claims, admin-created staff accounts and `RBAC-1…RBAC-9`. |
 
 ## 7. Change control
 

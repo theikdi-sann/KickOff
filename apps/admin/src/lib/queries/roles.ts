@@ -37,7 +37,8 @@ export interface RoleInput {
 export function useRoles() {
   return useQuery({
     queryKey: ["admin-roles"],
-    queryFn: async () => (await invokeFunction<{ roles: RoleDto[] }>("admin-roles")).roles,
+    queryFn: async () =>
+      (await invokeFunction<{ roles: RoleDto[] }>("admin-roles", { method: "GET" })).roles,
   });
 }
 

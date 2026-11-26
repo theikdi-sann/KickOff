@@ -212,6 +212,7 @@ export METRICS_TOKEN="local-integration-metrics-token"
     tests/metrics-integration.test.ts \
     tests/news-admin.test.ts \
     tests/rbac-api.test.ts \
+    tests/fans-admin.test.ts \
     tests/rate-limit.test.ts \
     tests/push-delivery.test.ts \
     tests/availability.test.ts

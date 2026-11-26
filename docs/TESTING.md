@@ -9,7 +9,7 @@ gate locally it will break the build.
 |---|---|---|
 | Workspace unit tests | `npm test` | shared schemas/format/i18n/greeting (Vitest), admin node tests, mobile Jest tests, repo script tests |
 | Typecheck + lint | `npm run check` | TypeScript across shared/mobile/admin, ESLint |
-| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary, tenant provisioning, identity split, tenancy columns, sales restructure, gate ops, tenant isolation, per-club uniques, Stripe Connect, tenant export and erase, the platform authority, observability, the match clock, venue layout, stand-level gates atomic fixture creation and the retention windows (458 assertions, 30 suites) |
+| Database (pgTAP) | `npm run db:test` | RLS matrix, order expiry, seat holds, scan concurrency, reschedule/refund atomicity, staff-role boundary (incl. RBAC-9 customer-promotion refusal), tenant provisioning, identity split, tenancy columns, sales restructure, gate ops, tenant isolation, per-club uniques, Stripe Connect, tenant export and erase, the platform authority, observability, the match clock, venue layout, stand-level gates atomic fixture creation and the retention windows (486 assertions, 32 suites) |
 | Edge Functions (unit) | `cd supabase/functions && deno test --allow-env --allow-net tests/` | HMAC, config, error mapping, metrics helpers |
 | Edge Functions (integration) | `npm run test:integration` | local checkout → webhook → ticket → receipt, scan/undo, refunds |
 | Functions typecheck | `npm run functions:check` | `deno check` on every `supabase/functions/*/index.ts` |
@@ -70,7 +70,7 @@ The script prefers a local Supabase/Docker instance and falls back to running
 the same SQL against the hosted project when Docker is unavailable. It applies
 the `supabase/tests/*.sql` suites and reports pass/fail per assertion.
 
-**458 assertions across 30 suites**, verified against the local stack on
+**486 assertions across 32 suites**, verified against the local stack on
 2026-11-19: constraints, hold concurrency, hold TTL, order expiry, reschedule
 audit, RLS (auth + anonymous), scan concurrency, seat reservation, venues, the
 F-07 atomicity suite (reschedule and refund), the GAP-03a staff-role suite
@@ -280,9 +280,11 @@ contract in `rbac-acceptance.test.mjs`.
 |---|---|---|
 | `RBAC-1` | Create a custom role with a capability subset; duplicate/reserved/unknown refused; one audit row. | `rbac.test.sql` |
 | `RBAC-2` | `admin` seeds all ten capabilities; `gatekeeper` seeds `operate_gate`; built-ins immutable. | `rbac.test.sql` |
-| `RBAC-3` | Assign a custom role: membership + claim agree; Customer removes the membership. | `rbac-api.test.ts` |
+| `RBAC-3` | Assign a custom role: membership + claim agree; removing staff access returns the person to the Fan (`customer`) state. | `rbac-api.test.ts` |
 | `RBAC-4` | No privilege escalation, no self-demotion, last `manage_staff` holder protected. | `rbac.test.sql` |
 | `RBAC-5` | Cross-tenant role write is refused. | `rbac.test.sql` |
 | `RBAC-6` | Capability-driven authorization; no literal role branch in policies. | `rbac.test.sql` + `rbac-acceptance.test.mjs` |
 | `RBAC-7` | Claim-write failure restores the membership. | `rbac-acceptance.test.mjs` (contract) |
 | `RBAC-8` | Users lists every club role; Roles screen creates/edits/deactivates. | `rbac-acceptance.test.mjs` + admin build |
+| `RBAC-9` | Staff accounts are created by an admin (e-mail + initial password + role); a fan cannot be promoted by a role update; the new account can sign in. | `rbac.test.sql`, `rbac-api.test.ts`, admin unit + Playwright |
+| `FAN-1` | A fan can be suspended (sign-in fails, restore works) and soft-deleted (sign-in fails, profile retained, irreversible). | `fans.test.sql`, `rbac-api.test.ts`, admin Playwright |

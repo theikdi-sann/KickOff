@@ -97,6 +97,7 @@ export function useStripeOnboard() {
   return useMutation({
     mutationFn: async (input: { tenantId: string; country: string }) =>
       invokeFunction<StripeOnboardResult>("stripe-onboard", {
+        method: "POST",
         body: { tenantId: input.tenantId, country: input.country },
       }),
     onSuccess: () => {
